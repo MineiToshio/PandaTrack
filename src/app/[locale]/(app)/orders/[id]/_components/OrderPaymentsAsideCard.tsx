@@ -2,10 +2,12 @@
 
 import { forwardRef, useImperativeHandle, useState } from "react";
 import { useTranslations } from "next-intl";
-import { CircleDollarSign, CircleOff, Wallet } from "lucide-react";
+import Link from "next/link";
+import { CircleDollarSign, CircleOff, ExternalLink, Wallet } from "lucide-react";
 import Chip from "@/components/core/Chip";
 import Eyebrow, { type EyebrowTone } from "@/components/core/Eyebrow";
 import { cn } from "@/lib/styles";
+import { ROUTES } from "@/lib/constants";
 import type { PaymentSummary } from "@/lib/orders/paymentSummary";
 import { formatAmountSymbolOnly } from "@/lib/currency";
 import type { OrderStatus } from "../../../../../../../generated/prisma/client";
@@ -46,7 +48,19 @@ function derivePaymentsTone({
   return "cool";
 }
 
-type PaymentRecord = { id: string; amount: number; paymentDate: Date };
+/**
+ * A payment as this order sees it: one allocation, carrying its parent payment's id/total/shared
+ * flag so this card (and the row's delete-confirm modal) can describe the shared case without a
+ * second query. Mirrors `OrderPaymentRecord` (see `orderPaymentAllocations.ts`).
+ */
+type PaymentRecord = {
+  id: string;
+  amount: number;
+  paymentDate: Date;
+  paymentId: string;
+  paymentTotalMinor: number;
+  isShared: boolean;
+};
 
 export type OrderPaymentsAsideCardHandle = {
   openForm: () => void;
@@ -64,6 +78,10 @@ type OrderPaymentsAsideCardProps = {
   currencyCode: string;
   orderDate: Date;
   locale: string;
+  /** Store this order belongs to — threads into the "Parte de un pago a {store}" row subtitle and
+      the empty-state "Ver deuda de la tienda" link. */
+  storeName: string;
+  storeSlug: string;
   /** Handlers are owned by the parent; this card only triggers them via UI events. */
   onAddPayment: (amount: number, paymentDate: Date) => Promise<{ ok: boolean; error?: string }>;
   onDeletePayment: (paymentId: string) => Promise<{ ok: boolean; error?: string }>;
@@ -91,6 +109,8 @@ const OrderPaymentsAsideCard = forwardRef<OrderPaymentsAsideCardHandle, OrderPay
       currencyCode,
       orderDate,
       locale,
+      storeName,
+      storeSlug,
       onAddPayment,
       onDeletePayment,
       showAddCta = true,
@@ -114,6 +134,7 @@ const OrderPaymentsAsideCard = forwardRef<OrderPaymentsAsideCardHandle, OrderPay
     // that money is sunk, not an active balance. A cancelled order with no payments (removed,
     // refunded, or never paid) shows no marker.
     const showLostMarker = isCancelled && summary.paidAmount > 0;
+    const storeHref = `/${locale}${ROUTES.stores}/${storeSlug}`;
 
     async function handleAddPayment(amount: number, paymentDate: Date) {
       const result = await onAddPayment(amount, paymentDate);
@@ -136,12 +157,10 @@ const OrderPaymentsAsideCard = forwardRef<OrderPaymentsAsideCardHandle, OrderPay
           </Eyebrow>
         </div>
 
-        {/* Payment rows — only rendered when there are payments. Sergio wants the totals
-            block (Total pagado / Saldo pendiente) to look identical whether there are 0 or
-            N payments, so it lives below and is unconditional. With 0 payments the rows
-            container is omitted and the totals separator (border-t) sits flush under the
-            section heading, which still reads cleanly. */}
-        {payments.length > 0 && (
+        {/* Payment rows — only rendered when there are payments. With 0 payments, an empty-state
+            line replaces the rows so the collector knows nothing is assigned to THIS order yet
+            (it may still owe the store from other orders — the link below points there). */}
+        {payments.length > 0 ? (
           <ul className="mt-3 list-none" role="list">
             {payments.map((payment) => (
               <OrderPaymentRow
@@ -149,10 +168,22 @@ const OrderPaymentsAsideCard = forwardRef<OrderPaymentsAsideCardHandle, OrderPay
                 payment={payment}
                 currencyCode={currencyCode}
                 locale={locale}
+                storeName={storeName}
                 onConfirmDelete={onDeletePayment}
               />
             ))}
           </ul>
+        ) : (
+          <div className="mt-3 space-y-1.5">
+            <p className="text-text-muted text-[13px]">{t("detail.payments.emptyAllocated")}</p>
+            <Link
+              href={storeHref}
+              className="text-accent inline-flex items-center gap-1.5 text-[13px] font-medium underline-offset-2 hover:underline"
+            >
+              <ExternalLink size={14} aria-hidden="true" />
+              {t("detail.payments.viewStoreDebt")}
+            </Link>
+          </div>
         )}
 
         {/* Demo totals breakdown: padding-top 8px · padding-right 40px (= pay-delete width
@@ -161,7 +192,7 @@ const OrderPaymentsAsideCard = forwardRef<OrderPaymentsAsideCardHandle, OrderPay
         <div className={cn("border-border space-y-1 border-t pt-2 pr-10", payments.length === 0 ? "mt-3" : "mt-0")}>
           <div className="flex items-baseline justify-between gap-2">
             <span className="flex items-center gap-1.5">
-              <span className="text-text-muted text-[12px]">{t("detail.payments.totalPaid")}</span>
+              <span className="text-text-muted text-[12px]">{t("detail.payments.totalAllocated")}</span>
               {showLostMarker && (
                 <Chip variant="warning" size="sm" icon={<CircleOff size={12} aria-hidden="true" />}>
                   {t("detail.payments.lostMarker")}
@@ -173,7 +204,7 @@ const OrderPaymentsAsideCard = forwardRef<OrderPaymentsAsideCardHandle, OrderPay
             </span>
           </div>
           <div className="flex items-baseline justify-between">
-            <span className="text-text-secondary text-[13px]">{t("detail.payments.saldoPendiente")}</span>
+            <span className="text-text-secondary text-[13px]">{t("detail.payments.remainingToAllocate")}</span>
             <strong
               className={cn(
                 "text-[15px] font-bold tabular-nums",

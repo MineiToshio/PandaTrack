@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import {
   AtSign,
   CircleAlert,
+  CircleDollarSign,
   Clock,
   Copy,
   ExternalLink,
@@ -27,6 +28,7 @@ import BackNavLink from "@/components/core/BackNavLink";
 import Button from "@/components/core/Button/Button";
 import Chip from "@/components/core/Chip";
 import Eyebrow from "@/components/core/Eyebrow";
+import Tooltip from "@/components/core/Tooltip";
 import Typography from "@/components/core/Typography";
 import AlertBanner from "@/components/modules/AlertBanner";
 import ChannelRow from "@/components/modules/ChannelRow";
@@ -47,6 +49,7 @@ import type {
 } from "@/lib/data/stores/storeGovernanceQueries";
 import type { AdminOpenStoreReport } from "@/lib/data/admin/adminStoreReportQueries";
 import type { AdminPendingStoreChangeRequest } from "@/lib/data/admin/adminStoreChangeRequestQueries";
+import type { StoreDebtRow } from "@/lib/data/orders/storePaymentQueries";
 import {
   resolveStoreProductTypeName,
   type AuthoredStoreProductTypeNameMap,
@@ -73,6 +76,9 @@ type StoreDetailContentProps = {
   governanceSummary: StoreGovernanceSummary;
   governanceViewerContext: StoreGovernanceViewerContext;
   viewerActivity: ViewerStoreActivity;
+  /** The viewer's debt with this store, one row per currency they have committed orders or
+      payments in (§ store-level payments). Empty when the viewer has no orders here. */
+  storeDebtByCurrency: StoreDebtRow[];
   /**
    * Open reports with reporter identity and raw free-text, populated only when the viewer is an
    * administrator. Absent for every non-admin viewer, so no admin read is exposed to the client.
@@ -138,6 +144,7 @@ export default function StoreDetailContent({
   governanceSummary,
   governanceViewerContext,
   viewerActivity,
+  storeDebtByCurrency,
   adminOpenReports,
   adminChangeRequests,
   canAccessEditRoute,
@@ -449,6 +456,25 @@ export default function StoreDetailContent({
                             .join(" · ")}
                         />
                       )}
+                      {/* Debt per currency, stacked (§ store-level payments): a credit renders
+                        in success green so it reads as money owed back, not a balance due. */}
+                      {storeDebtByCurrency.map((debt) => (
+                        <SummaryStatRow
+                          key={debt.currencyCode}
+                          label={tStores("redesign.detail.aside.debtLabel")}
+                          value={
+                            debt.debtMinor < 0 ? (
+                              <span className="text-success">
+                                {tStores("redesign.detail.aside.debtCredit", {
+                                  amount: formatAmount(Math.abs(debt.debtMinor), debt.currencyCode),
+                                })}
+                              </span>
+                            ) : (
+                              formatAmount(debt.debtMinor, debt.currencyCode)
+                            )
+                          }
+                        />
+                      ))}
                     </div>
                     {/* Inline hyperlink recipe (playbook §1, `link` variant is legacy) — matches
                       the "Ver entregas" link in OrderItemsReadOnlyList. */}
@@ -473,6 +499,32 @@ export default function StoreDetailContent({
                     storeId={store.id}
                     label={tStores("redesign.detail.actions.anotarPedido")}
                   />
+                  {/* Store-level payments land in the next phase; the entry point is visible now
+                    so the flow reads as "coming", not missing. */}
+                  <Tooltip
+                    content={tStores("redesign.detail.actions.registerPaymentHint")}
+                    asDiv
+                    className="w-full"
+                    triggerClassName="w-full"
+                  >
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      leadingIcon={<CircleDollarSign size={16} aria-hidden="true" />}
+                      fullWidth
+                      disabled
+                      className="justify-start"
+                    >
+                      {tStores("redesign.detail.actions.registerPayment")}
+                    </Button>
+                  </Tooltip>
+                  <Link
+                    href={`/${locale}${ROUTES.orders}?view=store`}
+                    className="text-accent inline-flex items-center gap-1.5 self-start [font-size:var(--text-caption)] font-medium underline-offset-2 hover:underline"
+                  >
+                    <ExternalLink size={14} aria-hidden="true" />
+                    {tStores("redesign.detail.aside.viewOrdersHere")}
+                  </Link>
                   {canAccessEditRoute && (
                     <Button
                       as="a"

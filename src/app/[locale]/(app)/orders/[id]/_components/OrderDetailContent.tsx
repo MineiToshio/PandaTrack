@@ -21,6 +21,9 @@ type OrderDetailContentProps = {
   baseCurrencyCode: string | null;
   backHref?: string | null;
   detailHref: string;
+  /** The store's debt in this order's currency, read server-side (§ store-level payments). Only
+      surfaced by the hero when this order itself has nothing allocated to it yet. */
+  storeDebtMinor: number;
 };
 
 function formatDate(date: Date, locale: string) {
@@ -32,6 +35,7 @@ export default async function OrderDetailContent({
   locale,
   baseCurrencyCode,
   backHref,
+  storeDebtMinor,
 }: OrderDetailContentProps) {
   const t = await getTranslations({ locale, namespace: "orders" });
 
@@ -102,8 +106,9 @@ export default async function OrderDetailContent({
           isOverdue={isOverdue}
           overdueDays={overdueDays}
           locale={locale}
+          storeDebtMinor={storeDebtMinor}
           quickArrivalItems={quickArrivalItems}
-              settledItemCount={settledItemCount}
+          settledItemCount={settledItemCount}
           canCreateDelivery={canCreateDelivery}
           baseCurrencyCode={baseCurrencyCode}
           mainColumnExtras={

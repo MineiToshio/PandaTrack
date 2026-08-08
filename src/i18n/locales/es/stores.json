@@ -543,11 +543,16 @@
         "ordersTotalLabel": "Pedidos anotados",
         "ordersActiveLabel": "Pedidos activos",
         "totalSpentLabel": "Total facturado",
+        "debtLabel": "Deuda pendiente",
+        "debtCredit": "A favor {amount}",
         "viewLinkedOrders": "Ver pedidos vinculados",
+        "viewOrdersHere": "Ver mis pedidos en esta tienda",
         "noOrdersYet": "Aún no hay pedidos en esta tienda."
       },
       "actions": {
         "anotarPedido": "Anotar pedido aquí",
+        "registerPayment": "Registrar pago",
+        "registerPaymentHint": "Disponible en la siguiente fase",
         "suggestChanges": "Sugerir cambios",
         "editStore": "Editar tienda",
         "reportStore": "Reportar tienda"

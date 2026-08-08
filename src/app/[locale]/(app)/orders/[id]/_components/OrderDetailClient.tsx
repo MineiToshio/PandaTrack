@@ -20,7 +20,19 @@ import OrderDeleteModal from "./OrderDeleteModal";
 import { QuickArrivalModal, type QuickArrivalItem } from "@/components/modules/QuickArrival";
 import { useQuickArrival } from "@/components/modules/QuickArrival/useQuickArrival";
 
-type PaymentRecord = { id: string; amount: number; paymentDate: Date };
+/**
+ * A payment as this order sees it: one allocation, carrying its parent payment's id/total/shared
+ * flag so the aside card and its delete-confirm modal can describe the shared case without a
+ * second query. Mirrors `OrderPaymentRecord` (see `orderPaymentAllocations.ts`).
+ */
+type PaymentRecord = {
+  id: string;
+  amount: number;
+  paymentDate: Date;
+  paymentId: string;
+  paymentTotalMinor: number;
+  isShared: boolean;
+};
 type Store = {
   id: string;
   name: string;
@@ -53,6 +65,9 @@ type OrderDetailClientProps = {
   isOverdue: boolean;
   overdueDays: number;
   locale: string;
+  /** The store's debt in this order's currency, read server-side. Surfaced by the hero only when
+      this order has nothing allocated to it yet. */
+  storeDebtMinor: number;
   /** Products still eligible for a delivery; an empty list hides the quick-arrival action. */
   quickArrivalItems: QuickArrivalItem[];
   /** Forwarded to `QuickArrivalModal`; see its own prop. */
@@ -81,6 +96,7 @@ export default function OrderDetailClient({
   isOverdue,
   overdueDays,
   locale,
+  storeDebtMinor,
   quickArrivalItems,
   settledItemCount,
   canCreateDelivery,
@@ -151,7 +167,17 @@ export default function OrderDetailClient({
    */
   async function handleAddPayment(amount: number, paymentDate: Date) {
     const tempId = `temp-${Date.now()}`;
-    const optimistic: PaymentRecord = { id: tempId, amount, paymentDate };
+    // Optimistic stand-in reads as its own 1:1 payment (not shared) until the server reconciles
+    // it with the real allocation — a brand-new payment can never already be sharing with another
+    // order at the instant it is created.
+    const optimistic: PaymentRecord = {
+      id: tempId,
+      amount,
+      paymentDate,
+      paymentId: tempId,
+      paymentTotalMinor: amount,
+      isShared: false,
+    };
     const previous = payments;
     setPayments([...payments, optimistic]);
 
@@ -210,11 +236,11 @@ export default function OrderDetailClient({
             totalCost: order.totalCost,
             status: order.status,
           }}
-          remainingAmount={summary.remainingAmount}
-          paymentPercentage={summary.paymentPercentage}
+          allocatedAmountMinor={summary.paidAmount}
           hasUnpaidBalance={hasUnpaidBalance}
           isOverdue={isOverdue}
           overdueDays={overdueDays}
+          storeDebtMinor={storeDebtMinor}
           locale={locale}
         />
         {mainColumnExtras}
@@ -234,6 +260,8 @@ export default function OrderDetailClient({
           currencyCode={order.currencyCode}
           orderDate={order.orderDate}
           locale={locale}
+          storeName={order.storeName}
+          storeSlug={order.store.slug}
           onAddPayment={handleAddPayment}
           onDeletePayment={handleDeletePayment}
         />
@@ -253,6 +281,8 @@ export default function OrderDetailClient({
           currencyCode={order.currencyCode}
           orderDate={order.orderDate}
           locale={locale}
+          storeName={order.storeName}
+          storeSlug={order.store.slug}
           onAddPayment={handleAddPayment}
           onDeletePayment={handleDeletePayment}
           showAddCta={false}
@@ -281,6 +311,7 @@ export default function OrderDetailClient({
         status={order.status}
         isOverdue={isOverdue}
         remainingAmount={summary.remainingAmount}
+        allocatedAmountMinor={summary.paidAmount}
         currencyCode={order.currencyCode}
         hasUnpaidBalance={hasUnpaidBalance}
         canCreateDelivery={canCreateDelivery}

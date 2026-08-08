@@ -97,6 +97,35 @@ demo_anchors:
 > and prototype anchors still describe the pre-v5 payment-percentage design; adding the "Por tienda"
 > screens and updating the affected `#s7-orders-list-*` anchors in the prototype HTML is tracked as
 > follow-up design work, not done in this phase (which was scoped to implementation).
+>
+> **Amendment (store-level payments v5, phase 3b — not yet reflected in the prototype below.)**
+> The order detail hero, payments card, cancel flow, and the store detail aside changed to read
+> declared allocations (`PaymentAllocation`) instead of the pre-v5 payment-percentage model this
+> FDD's `#s7-order-detail-*` and `#s7-order-detail-cancel-modal` anchors still describe:
+>
+> - **Detail hero** — the protagonist figure is now the order's TOTAL, a stable number that never
+>   moves as payments come and go (superseding "the outstanding balance ('Saldo pendiente') against
+>   the total" in §1 above). Below it: while this order has an allocation, "Asignado {X} de {Y}" plus
+>   a progress bar (allocated/total); while it has none, a "Deuda de la tienda: {Z}" link into the
+>   store detail (green "A favor {|Z|}" when the store owes the collector instead). A "Pago
+>   completado" chip joins the status chips once allocated is greater than or equal to the total.
+>   Dropped: the old "Saldo pendiente"/"de {total}" amount swap and the payment-percent meta segment.
+> - **Payments card** — the totals block reads "Asignado" / "Por asignar" (was "Total pagado" /
+>   "Saldo pendiente"). A payment shared with other orders shows a "Parte de un pago de {total} a
+>   {tienda}" subtitle on its row, and its delete-confirm copy makes clear only this order's slice is
+>   removed, not the whole payment. A new empty state ("Sin pagos asignados a este pedido" + "Ver
+>   deuda de la tienda") replaces the blank rows list when nothing is allocated yet.
+> - **Sticky bar** — the primary CTA reads "Saldar {X}" once something is already allocated
+>   (continuing a payment), "Anotar pago" while nothing is (a first one), regardless of order status.
+> - **Cancel modal** (`#s7-order-detail-cancel-modal`) — the payments-choice radios are now "Queda a
+>   favor de {tienda}" (`credit`, default) / "Lo doy por perdido" (`lost`), replacing "Conservarlos" /
+>   "Quitarlos"; the question copy is "Pagaste {X} de este pedido. ¿Qué hacemos con ese dinero?".
+> - **Store detail aside** (FRD-04, not pictured in this FDD) — a "Deuda pendiente" row per currency
+>   (green "A favor" when negative), a disabled "Registrar pago" action (store-level payment
+>   authoring ships in the next phase), and a "Ver mis pedidos en esta tienda" link.
+>
+> Updating the prototype HTML and `#s7-order-detail-*` anchors for this model is tracked as
+> follow-up design work, same as the phase 3a note above.
 
 ---
 

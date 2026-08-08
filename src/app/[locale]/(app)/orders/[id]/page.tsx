@@ -5,6 +5,7 @@ import { AUTH_RETURN_TO_PARAM } from "@/lib/auth/authRedirect";
 import { buildPageMetadata } from "@/lib/seo";
 import { getSession } from "@/lib/auth/auth-server";
 import { getOrderDetail } from "@/lib/data/orders/orderQueries";
+import { getStoreDebtByCurrency } from "@/lib/data/orders/storePaymentQueries";
 import { ROUTES } from "@/lib/constants";
 import { safeRelativeReturnTo } from "@/lib/navigation/safeRelativeReturnTo";
 import { prisma } from "@/lib/prisma";
@@ -46,6 +47,12 @@ export default async function OrdersDetailPage({ params, searchParams }: Props) 
 
   if (!order) notFound();
 
+  // The store's debt figure the hero surfaces when this order has nothing allocated to it yet
+  // (§ store-level payments). Needs the order's own store + currency, so it can only run once
+  // the order is known.
+  const storeDebtRows = await getStoreDebtByCurrency(userId, order.storeId);
+  const storeDebtMinor = storeDebtRows.find((row) => row.currencyCode === order.currencyCode)?.debtMinor ?? 0;
+
   return (
     <OrderDetailContent
       order={order}
@@ -53,6 +60,7 @@ export default async function OrdersDetailPage({ params, searchParams }: Props) 
       baseCurrencyCode={user?.baseCurrencyCode ?? null}
       backHref={backHref}
       detailHref={detailHref}
+      storeDebtMinor={storeDebtMinor}
     />
   );
 }

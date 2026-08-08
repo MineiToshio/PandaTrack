@@ -7,6 +7,7 @@ import {
   getViewerStoreActivity,
   type ViewerStoreActivity,
 } from "@/lib/data/stores/storeQueries";
+import { getStoreDebtByCurrency, type StoreDebtRow } from "@/lib/data/orders/storePaymentQueries";
 import {
   getEditableStoreBySlug,
   getStoreGovernanceSummary,
@@ -68,6 +69,7 @@ export default async function StoreDetailPage({ params, searchParams }: StoreDet
     governanceSummary,
     governanceViewerContext,
     viewerActivity,
+    storeDebtByCurrency,
     adminOpenReports,
     adminChangeRequests,
     authoredProductTypeNames,
@@ -81,6 +83,7 @@ export default async function StoreDetailPage({ params, searchParams }: StoreDet
     session?.user?.id
       ? getViewerStoreActivity(session.user.id, store.id)
       : ({ ordersTotal: 0, ordersActive: 0, totalSpentByCurrency: [] } satisfies ViewerStoreActivity),
+    session?.user?.id ? getStoreDebtByCurrency(session.user.id, store.id) : ([] satisfies StoreDebtRow[]),
     // Admin-only read of raw report free-text and reporter identity. Gated by `isAdmin` so a
     // non-admin request never triggers it; the public read model is never widened (BR-04-25).
     isAdmin ? getAdminOpenStoreReports(store.id) : undefined,
@@ -107,6 +110,7 @@ export default async function StoreDetailPage({ params, searchParams }: StoreDet
       governanceSummary={governanceSummary}
       governanceViewerContext={governanceViewerContext}
       viewerActivity={viewerActivity}
+      storeDebtByCurrency={storeDebtByCurrency}
       adminOpenReports={adminOpenReports}
       adminChangeRequests={adminChangeRequests}
       canAccessEditRoute={canAccessEditRoute}

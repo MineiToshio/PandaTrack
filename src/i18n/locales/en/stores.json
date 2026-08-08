@@ -543,11 +543,16 @@
         "ordersTotalLabel": "Orders logged",
         "ordersActiveLabel": "Active orders",
         "totalSpentLabel": "Total billed",
+        "debtLabel": "Outstanding debt",
+        "debtCredit": "In your favor {amount}",
         "viewLinkedOrders": "View linked orders",
+        "viewOrdersHere": "View my orders at this store",
         "noOrdersYet": "No orders at this store yet."
       },
       "actions": {
         "anotarPedido": "Log order here",
+        "registerPayment": "Log payment",
+        "registerPaymentHint": "Available in the next phase",
         "suggestChanges": "Suggest changes",
         "editStore": "Edit store",
         "reportStore": "Report store"

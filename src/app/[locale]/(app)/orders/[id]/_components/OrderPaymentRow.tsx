@@ -8,12 +8,22 @@ import { Modal } from "@/components/modules/Modal";
 import { formatAmountSymbolOnly } from "@/lib/currency";
 import { formatDomainDate } from "@/lib/domainDate";
 
-type PaymentRecord = { id: string; amount: number; paymentDate: Date };
+type PaymentRecord = {
+  id: string;
+  amount: number;
+  paymentDate: Date;
+  paymentId: string;
+  paymentTotalMinor: number;
+  isShared: boolean;
+};
 
 type OrderPaymentRowProps = {
   payment: PaymentRecord;
   currencyCode: string;
   locale: string;
+  /** Store this order belongs to — only needed for the "part of a payment to {store}" copy on a
+      shared payment. */
+  storeName: string;
   /** Parent owns the payments list and removes the row when this resolves with `ok: true`. */
   onConfirmDelete: (paymentId: string) => Promise<{ ok: boolean; error?: string }>;
 };
@@ -22,8 +32,19 @@ type OrderPaymentRowProps = {
  * Single row of the payments list. Layout mirrors the demo's `.pay-row`:
  * date (left) · amount (right, mono) · delete × button (far right, muted).
  * The amount always carries two decimals so it lines up across rows.
+ *
+ * Under store-level payments, a row is one order's allocation of a store payment. When that
+ * payment is shared with other orders (`payment.isShared`), a subtitle names the payment's full
+ * amount and the delete-confirm modal makes clear that only this order's slice goes, not the
+ * whole payment.
  */
-export default function OrderPaymentRow({ payment, currencyCode, locale, onConfirmDelete }: OrderPaymentRowProps) {
+export default function OrderPaymentRow({
+  payment,
+  currencyCode,
+  locale,
+  storeName,
+  onConfirmDelete,
+}: OrderPaymentRowProps) {
   const t = useTranslations("orders");
   const [modalOpen, setModalOpen] = useState(false);
   const [isPending, setIsPending] = useState(false);
@@ -31,6 +52,7 @@ export default function OrderPaymentRow({ payment, currencyCode, locale, onConfi
 
   const dateLabel = formatDomainDate(payment.paymentDate, locale, { dateStyle: "medium" });
   const amountLabel = formatAmountSymbolOnly(payment.amount, currencyCode, locale);
+  const paymentTotalLabel = formatAmountSymbolOnly(payment.paymentTotalMinor, currencyCode, locale);
 
   async function handleConfirm() {
     setIsPending(true);
@@ -48,10 +70,19 @@ export default function OrderPaymentRow({ payment, currencyCode, locale, onConfi
     <>
       {/* Demo `.pay-row`: gap 12px · py 6px · font 14px. No inter-row border — payments
           read as a single block; the only visible separator is the one between the last
-          payment and the `Total pagado` row (rendered by the parent aside card). */}
-      <li className="flex items-center gap-3 py-1.5 text-[14px]">
-        <span className="text-text-muted flex-1 font-mono text-[12px] tabular-nums">{dateLabel}</span>
-        <span className="text-text-title font-semibold tabular-nums">{amountLabel}</span>
+          payment and the totals row (rendered by the parent aside card). */}
+      <li className="flex items-start gap-3 py-1.5 text-[14px]">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-baseline gap-3">
+            <span className="text-text-muted font-mono text-[12px] tabular-nums">{dateLabel}</span>
+          </div>
+          {payment.isShared && (
+            <p className="text-text-muted mt-0.5 text-[11px] leading-snug">
+              {t("detail.payments.sharedSubtitle", { paymentTotal: paymentTotalLabel, store: storeName })}
+            </p>
+          )}
+        </div>
+        <span className="text-text-title shrink-0 font-semibold tabular-nums">{amountLabel}</span>
         {/* Demo `.pay-row .pay-delete`: 28×28 · rounded 6px · transparent bg · muted icon */}
         <button
           type="button"
@@ -66,8 +97,16 @@ export default function OrderPaymentRow({ payment, currencyCode, locale, onConfi
       <Modal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
-        title={t("detail.payments.deleteModalTitle")}
-        subtitle={t("detail.payments.deleteModalDescription")}
+        title={t(payment.isShared ? "detail.payments.deleteModalTitleShared" : "detail.payments.deleteModalTitle")}
+        subtitle={
+          payment.isShared
+            ? t("detail.payments.deleteModalDescriptionShared", {
+                amount: amountLabel,
+                paymentTotal: paymentTotalLabel,
+                store: storeName,
+              })
+            : t("detail.payments.deleteModalDescription")
+        }
         icon={<Trash2 size={20} aria-hidden="true" />}
         tone="destructive"
         role="alertdialog"
