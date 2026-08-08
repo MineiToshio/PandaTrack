@@ -1,11 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
   DEFAULT_ACTIVE_STATUSES,
+  DEFAULT_ORDER_LIST_VIEW,
   hasOnlyDefaultActiveFilters,
   isDefaultActiveStatusSet,
   parseOrderListingParams,
+  resolveOrderListView,
 } from "../orderListingParams";
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
+import { ORDER_LIST_SORT_VALUES } from "@/lib/orders/orderListSort";
 
 describe("parseOrderListingParams", () => {
   it("leaves statuses empty when no status param is present (defaults live in the nav href)", () => {
@@ -78,6 +81,34 @@ describe("parseOrderListingParams", () => {
     expect(parseOrderListingParams({ perPage: "0" }).perPage).toBe(DEFAULT_PAGE_SIZE);
     expect(parseOrderListingParams({ perPage: "abc" }).perPage).toBe(DEFAULT_PAGE_SIZE);
   });
+
+  it("drops the retired payment-asc sort value and falls back to the default", () => {
+    expect(parseOrderListingParams({ sort: "payment-asc" }).sort).toBe("recent");
+    expect(ORDER_LIST_SORT_VALUES).not.toContain("payment-asc");
+  });
+
+  it("silently ignores an unknown ?payment= param (paid/partial/unpaid filtering was retired)", () => {
+    // parseOrderListingParams no longer has a `paymentStates` field at all — this just proves a
+    // legacy `?payment=paid` in a bookmarked URL cannot throw or leak into any other field.
+    expect(() => parseOrderListingParams({ payment: "paid" })).not.toThrow();
+  });
+});
+
+describe("resolveOrderListView", () => {
+  it("prefers an explicit ?view= over the cookie", () => {
+    expect(resolveOrderListView("store", "order")).toBe("store");
+    expect(resolveOrderListView("order", "store")).toBe("order");
+  });
+
+  it("falls back to the cookie when no ?view= is present", () => {
+    expect(resolveOrderListView(undefined, "store")).toBe("store");
+  });
+
+  it("falls back to the hard default when both are missing or invalid", () => {
+    expect(resolveOrderListView(undefined, undefined)).toBe(DEFAULT_ORDER_LIST_VIEW);
+    expect(resolveOrderListView("bogus", "also-bogus")).toBe(DEFAULT_ORDER_LIST_VIEW);
+    expect(resolveOrderListView(["store"], undefined)).toBe("store");
+  });
 });
 
 describe("isDefaultActiveStatusSet", () => {
@@ -106,7 +137,6 @@ describe("hasOnlyDefaultActiveFilters", () => {
         productTypeKeys: [],
         storeId: undefined,
         statuses: DEFAULT_ACTIVE_STATUSES,
-        paymentStates: [],
         fxPendingOnly: false,
         sort: "recent",
         appliedDefaultStatuses: false,
@@ -128,7 +158,6 @@ describe("hasOnlyDefaultActiveFilters", () => {
         productTypeKeys: [],
         storeId: undefined,
         statuses: DEFAULT_ACTIVE_STATUSES,
-        paymentStates: [],
         fxPendingOnly: false,
         sort: "recent",
         appliedDefaultStatuses: false,

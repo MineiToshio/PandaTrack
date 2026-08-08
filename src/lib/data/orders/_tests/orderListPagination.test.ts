@@ -67,52 +67,25 @@ function findManyArgs(callIndex = 0) {
   };
 }
 
-function paymentBranch(callIndex = 0) {
-  const groups = findManyArgs(callIndex).where.AND ?? [];
-  return groups.find((group) => "OR" in group) as { OR: Array<Record<string, unknown>> } | undefined;
-}
-
 beforeEach(() => {
   vi.clearAllMocks();
   prismaMock.order.findMany.mockResolvedValue([]);
   prismaMock.order.count.mockResolvedValue(0);
 });
 
-describe("getOrdersList SQL payment-state pagination", () => {
-  it("pushes the payment-state filter into SQL and paginates natively (no in-memory full fetch)", async () => {
-    prismaMock.order.count.mockResolvedValue(5);
-
-    await getOrdersList("user-1", baseFilters({ paymentStates: ["paid"], page: 2, pageSize: 10 }));
-
-    const args = findManyArgs();
-    // Native skip/take pagination — the removed path used `take: 1000` with no skip.
-    expect(args.skip).toBe(10);
-    expect(args.take).toBe(10);
-    // The paid state maps onto the persisted paymentPercent cache.
-    expect(paymentBranch()).toEqual({ OR: [{ paymentPercent: { gte: 100 } }] });
-  });
-
+describe("getOrdersList SQL pagination", () => {
   it("derives totalCount and totalPages from the filtered DB count, not an in-memory length", async () => {
     // The original bug surfaced when totals came from an unfiltered count; they must track the
     // same filtered `where` the DB paginates over.
     prismaMock.order.count.mockResolvedValue(25);
 
-    const result = await getOrdersList("user-1", baseFilters({ paymentStates: ["paid"], pageSize: 10 }));
+    const result = await getOrdersList("user-1", baseFilters({ pageSize: 10 }));
 
     expect(prismaMock.order.count).toHaveBeenCalledWith({
-      where: expect.objectContaining({ AND: expect.any(Array) }),
+      where: expect.any(Object),
     });
     expect(result.totalCount).toBe(25);
     expect(result.totalPages).toBe(3);
-  });
-
-  it("sorts payment-asc by the persisted paymentPercent with a stable orderDate tiebreaker", async () => {
-    await getOrdersList("user-1", baseFilters({ sort: "payment-asc" }));
-
-    const args = findManyArgs();
-    expect(args.orderBy).toEqual([{ paymentPercent: "asc" }, { orderDate: "desc" }, { id: "asc" }]);
-    expect(args.skip).toBe(0);
-    expect(args.take).toBe(10);
   });
 
   it("maps paidAmount, paymentPercentage and hasUnpaidBalance from the allocation cache", async () => {
@@ -140,35 +113,15 @@ describe("getOrdersList SQL payment-state pagination", () => {
     });
   });
 
-  it("expresses the overdue state as a date/status predicate independent of payment progress", async () => {
-    await getOrdersList("user-1", baseFilters({ paymentStates: ["overdue"] }));
-
-    const branch = paymentBranch();
-    expect(branch?.OR[0]).toMatchObject({
-      expectedDeliveryTo: { lt: expect.any(Date) },
-      status: { notIn: ["COMPLETED", "CANCELLED"] },
-    });
-  });
-
-  it("combines multiple payment states as OR branches", async () => {
-    await getOrdersList("user-1", baseFilters({ paymentStates: ["paid", "unpaid"] }));
-
-    expect(paymentBranch()).toEqual({
-      OR: [{ paymentPercent: { gte: 100 } }, { paymentPercent: 0 }],
-    });
-  });
-
-  it("keeps the payment filter and a name query as separate AND'd OR groups", async () => {
-    await getOrdersList("user-1", baseFilters({ paymentStates: ["partial"], nameQuery: "abc" }));
+  it("keeps the name query as its own AND'd OR group", async () => {
+    await getOrdersList("user-1", baseFilters({ nameQuery: "abc" }));
 
     const groups = findManyArgs().where.AND ?? [];
     const orGroups = groups.filter((group) => "OR" in group);
-    // One OR group for the name/id match, one for the payment state.
-    expect(orGroups).toHaveLength(2);
-    expect(orGroups).toContainEqual({ OR: [{ paymentPercent: { gt: 0, lt: 100 } }] });
+    expect(orGroups).toHaveLength(1);
   });
 
-  it("uses native skip/take pagination and the DB count when no payment filter is present", async () => {
+  it("uses native skip/take pagination and the DB count", async () => {
     prismaMock.order.count.mockResolvedValue(45);
 
     const result = await getOrdersList("user-1", baseFilters({ page: 2, pageSize: 10 }));

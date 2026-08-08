@@ -184,7 +184,7 @@ describe("OrdersTable layout", () => {
     expect(separator?.className).toContain("[@media(min-width:1360px)]:inline");
   });
 
-  it("keeps the seven-track grid rather than spending a column on the arrival", () => {
+  it("keeps the six-track grid rather than spending a column on the arrival", () => {
     const { container } = renderTable(makeOrder({ expectedDeliveryTo: new Date("2026-08-15T00:00:00.000Z") }));
 
     const header = screen.getAllByRole("row")[0]!;
@@ -192,6 +192,17 @@ describe("OrdersTable layout", () => {
     expect(header.className).not.toContain("minmax(0,0.95fr)_minmax(0,0.95fr)");
     // Still rendered, just not in a column of its own.
     expect(within(container).getByText("llega 15 ago")).toBeInTheDocument();
+  });
+
+  /**
+   * The per-order "% paid" progress column and the "Impago" pill were retired with store-level
+   * payments (FRD-05 v5): the list no longer tracks a per-order paid ratio worth a column.
+   */
+  it("does not render a payment progress bar or an unpaid pill", () => {
+    renderTable(makeOrder({ hasUnpaidBalance: true, status: "COMPLETED" }));
+
+    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+    expect(screen.queryByText("card.unpaid")).not.toBeInTheDocument();
   });
 });
 

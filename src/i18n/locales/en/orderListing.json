@@ -38,7 +38,6 @@
     "storePlaceholder": "All stores",
     "productTypeLabel": "Product type",
     "statusLabel": "Order status",
-    "paymentLabel": "Payment status",
     "dateLabel": "Order date",
     "dateFromLabel": "From",
     "dateToLabel": "To",
@@ -69,15 +68,17 @@
     "newest": "Newest",
     "oldest": "Oldest",
     "storeAZ": "Store A–Z",
-    "paymentAsc": "% Paid: lowest",
     "totalDesc": "Total: highest",
-    "storeZA": "Store Z–A"
+    "storeZA": "Store Z–A",
+    "arrivalAsc": "Soonest arrival"
   },
   "payment": {
-    "paid": "Paid",
-    "partial": "Partial",
-    "unpaid": "Unpaid",
-    "overdue": "Overdue"
+    "paid": "Paid"
+  },
+  "view": {
+    "groupLabel": "List view",
+    "order": "By order",
+    "store": "By store"
   },
   "statusFilter": {
     "active": "Active",
@@ -120,7 +121,6 @@
     "deliveryTo": "Until {to}",
     "overdue": "Overdue",
     "overdueDays": "Overdue {days}d",
-    "unpaid": "Unpaid",
     "itemsSectionTitle": "Order items",
     "itemQuantity": "× {quantity}",
     "itemDelivery": {
@@ -135,9 +135,27 @@
     "headerProducts": "Products",
     "headerStatus": "Status",
     "headerTotal": "Total",
-    "headerProgress": "% Paid",
     "arrivalArrives": "arrives {window}",
     "arrivalExpected": "expected {window}"
+  },
+  "storeView": {
+    "orderSummary": "{orders} {orders, plural, one {open order} other {open orders}} · {products} {products, plural, one {pending product} other {pending products}}",
+    "debtAmount": "You owe {amount}",
+    "creditAmount": "Credit {amount}",
+    "registerPayment": "Register payment",
+    "registerPaymentDisabledHint": "Available in the next phase",
+    "viewStore": "View store",
+    "columnProduct": "Product",
+    "columnPrice": "Price",
+    "columnArrival": "Arrival",
+    "columnPaid": "Paid",
+    "orderedOn": "ordered on {date}",
+    "addPrice": "Add price",
+    "settled": "Settled",
+    "empty": {
+      "title": "No pending products",
+      "description": "You have no products on the way from any store right now."
+    }
   },
   "empty": {
     "noOrders": {

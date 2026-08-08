@@ -11,7 +11,6 @@ import { isOrderOverdue, resolveOrderArrivalDueDate } from "@/lib/orders/orderDe
 import { formatArrivalWindow } from "@/lib/arrivalWindow";
 import { ROUTES } from "@/lib/constants";
 import { cn } from "@/lib/styles";
-import OrderUnpaidPill from "./share/OrderUnpaidPill";
 import StoreTombstoneNotice from "./share/StoreTombstoneNotice";
 import { describeOrderListChip, describeOverdueDays, getOrderListChipToneClassName } from "./share/orderListStatusChip";
 import { resolveStoreTombstone } from "@/lib/store/storeTombstone";
@@ -63,18 +62,9 @@ export default function OrderCard({
     overdueDays,
   });
   const ChipIcon = chip.icon;
-  const showUnpaid = order.status === "COMPLETED" && order.hasUnpaidBalance;
   const detailHref = `/${locale}${ROUTES.orders}/${order.id}?returnTo=${encodeURIComponent(returnTo)}`;
   const isCompletedOrCancelled = order.status === "COMPLETED" || order.status === "CANCELLED";
   const storeTombstone = resolveStoreTombstone(order.store);
-
-  const progressTone = isCompletedOrCancelled
-    ? "[background:var(--success)]"
-    : overdue || (order.status === "COMPLETED" && order.hasUnpaidBalance)
-      ? "[background:var(--warning)]"
-      : order.paymentPercentage >= 100
-        ? "[background:var(--success)]"
-        : "[background:var(--accent)]";
 
   const handleToggle = (event: React.MouseEvent<HTMLButtonElement>) => {
     // The card is overlaid by a full-bleed detail link; stop the toggle from navigating.
@@ -146,34 +136,15 @@ export default function OrderCard({
           <ChipIcon width={12} height={12} aria-hidden="true" />
           {t(chip.labelKey, chip.labelVars)}
         </span>
-        {showUnpaid && <OrderUnpaidPill label={t("card.unpaid")} />}
       </div>
 
-
-      <div className="pointer-events-none relative flex flex-col gap-1.5">
-        <div
-          role="progressbar"
-          aria-label={t("card.paymentBarLabel")}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={order.paymentPercentage}
-          className="relative h-[3px] w-full overflow-hidden rounded-full [background:color-mix(in_oklch,var(--text-primary)_10%,transparent)]"
-        >
-          <div
-            className={cn("h-full rounded-full", progressTone)}
-            style={{ width: `${Math.min(100, Math.max(0, order.paymentPercentage))}%` }}
-          />
-        </div>
-        <p className="flex flex-wrap items-center gap-x-1.5 [font-size:var(--text-caption)] [color:var(--text-secondary)] tabular-nums">
-          <span>{t("card.items", { count: order.itemCount })}</span>
-          <span aria-hidden>·</span>
-          <span>{t("card.paymentPercentage", { pct: order.paymentPercentage })}</span>
-          <span aria-hidden>·</span>
-          <span className="[font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
-            {formatAmountWithSymbol(order.totalCost, order.currencyCode, locale)}
-          </span>
-        </p>
-      </div>
+      <p className="pointer-events-none relative flex flex-wrap items-center gap-x-1.5 [font-size:var(--text-caption)] [color:var(--text-secondary)] tabular-nums">
+        <span>{t("card.items", { count: order.itemCount })}</span>
+        <span aria-hidden>·</span>
+        <span className="[font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
+          {formatAmountWithSymbol(order.totalCost, order.currencyCode, locale)}
+        </span>
+      </p>
 
       {isExpanded && (
         <div

@@ -85,6 +85,18 @@ demo_anchors:
 > **Language.** Prose is English (repository docs convention); user-facing copy is quoted
 > verbatim in Spanish (`es` is the default locale). The `en` equivalents live in
 > `src/i18n/locales/en/orders.json` (with list copy under the `orderListing` namespace).
+>
+> **Amendment (store-level payments v5, phase 3a — not yet reflected in the prototype below.)**
+> The Orders list gained a second view, "Por tienda" (`?view=store`, toggled next to the sort
+> control), that groups every store's pending products with a per-currency debt summary, in place
+> of the per-order payment percentage this FDD's `#s7-orders-list-*` anchors still show. The classic
+> "Por pedido" list itself dropped the payment-progress column/bar, the paid/partial/unpaid payment
+> filter pills, and the `payment-asc` sort (see the amendment in `WO-06`). New components:
+> `OrderListViewToggle`, `StoreGroupedView`, `StoreGroupHeader`, `StorePendingProductRow`,
+> `StorePendingProductCard` under `src/app/[locale]/(app)/orders/_components/`. This FDD's screens
+> and prototype anchors still describe the pre-v5 payment-percentage design; adding the "Por tienda"
+> screens and updating the affected `#s7-orders-list-*` anchors in the prototype HTML is tracked as
+> follow-up design work, not done in this phase (which was scoped to implementation).
 
 ---
 

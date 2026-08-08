@@ -1,5 +1,5 @@
 import type { OrderStatus } from "../../../../../../generated/prisma/client";
-import { ORDER_LIST_SORT_VALUES, type OrderListPaymentState, type OrderListSort } from "@/lib/orders/orderListSort";
+import { ORDER_LIST_SORT_VALUES, type OrderListSort } from "@/lib/orders/orderListSort";
 import { DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS } from "@/lib/constants";
 
 const ALL_ORDER_STATUSES: OrderStatus[] = [
@@ -20,14 +20,11 @@ export const DEFAULT_ACTIVE_STATUSES: OrderStatus[] = [
 
 export const DEFAULT_ORDER_LIST_SORT: OrderListSort = "recent";
 
-const ALL_PAYMENT_STATES: OrderListPaymentState[] = ["paid", "partial", "unpaid", "overdue"];
-
 export type ParsedOrderListingParams = {
   nameQuery: string | undefined;
   productTypeKeys: string[];
   storeId: string | undefined;
   statuses: OrderStatus[];
-  paymentStates: OrderListPaymentState[];
   fxPendingOnly: boolean;
   sort: OrderListSort;
   /** True when no `?status=` param is present and the default active set was applied. */
@@ -49,7 +46,6 @@ export type OrderListActiveFilters = {
   productTypeKeys: string[];
   storeId: string | undefined;
   statuses: OrderStatus[];
-  paymentStates: OrderListPaymentState[];
   fxPendingOnly: boolean;
   sort: OrderListSort;
   appliedDefaultStatuses: boolean;
@@ -74,10 +70,6 @@ export function parseOrderListingParams(raw: Record<string, string | string[] | 
     (ALL_ORDER_STATUSES as string[]).includes(value),
   );
 
-  const paymentStates = arrayFromParam(raw.payment).filter((value): value is OrderListPaymentState =>
-    (ALL_PAYMENT_STATES as string[]).includes(value),
-  );
-
   const fxPendingOnly = parseBoolean(raw.fxPending);
 
   const sortParam = typeof raw.sort === "string" ? raw.sort : undefined;
@@ -100,7 +92,6 @@ export function parseOrderListingParams(raw: Record<string, string | string[] | 
     productTypeKeys,
     storeId,
     statuses,
-    paymentStates,
     fxPendingOnly,
     sort,
     // No longer represents an auto-default — kept on the shape only because callers still
@@ -136,7 +127,6 @@ export function buildOrderListFilterUrl(
     productTypeKeys: "productTypeKeys" in overrides ? overrides.productTypeKeys! : filters.productTypeKeys,
     storeId: "storeId" in overrides ? overrides.storeId : filters.storeId,
     statuses: "statuses" in overrides ? overrides.statuses! : filters.statuses,
-    paymentStates: "paymentStates" in overrides ? overrides.paymentStates! : filters.paymentStates,
     fxPendingOnly: "fxPendingOnly" in overrides ? Boolean(overrides.fxPendingOnly) : filters.fxPendingOnly,
     sort: "sort" in overrides ? overrides.sort! : filters.sort,
     appliedDefaultStatuses:
@@ -159,7 +149,6 @@ export function buildOrderListFilterUrl(
   if (next.statuses.length === 0 && overrides.statuses !== undefined) {
     params.set("status", "");
   }
-  next.paymentStates.forEach((value) => params.append("payment", value));
   if (next.fxPendingOnly) params.set("fxPending", "true");
   if (next.sort !== DEFAULT_ORDER_LIST_SORT) params.set("sort", next.sort);
   if (next.dateFromIso) params.set("dateFrom", next.dateFromIso);
@@ -188,7 +177,6 @@ export function hasOnlyDefaultActiveFilters(filters: OrderListActiveFilters): bo
     !filters.deliveryToIso &&
     !filters.deliveryOverdueOnly &&
     !filters.deliveryLateOnly &&
-    filters.paymentStates.length === 0 &&
     !filters.fxPendingOnly &&
     filters.sort === DEFAULT_ORDER_LIST_SORT &&
     isDefaultActiveStatusSet(filters.statuses)
@@ -229,4 +217,28 @@ function parseDateParam(value: string | string[] | undefined): Date | undefined 
 function parseBoolean(value: string | string[] | undefined): boolean {
   const first = Array.isArray(value) ? value[0] : value;
   return first === "true" || first === "1";
+}
+
+/** The Orders list has two views: grouped by store (pending products) or the classic per-order list. */
+export type OrderListViewMode = "store" | "order";
+
+export const DEFAULT_ORDER_LIST_VIEW: OrderListViewMode = "order";
+
+function isOrderListViewMode(value: string | undefined): value is OrderListViewMode {
+  return value === "store" || value === "order";
+}
+
+/**
+ * Resolves the active view: an explicit `?view=` wins, then the collector's last choice (read
+ * server-side from a cookie the view toggle writes on change), then the hard default. An unknown
+ * value at either source falls back the same defensive way `?sort=` does — never trusted blindly.
+ */
+export function resolveOrderListView(
+  rawView: string | string[] | undefined,
+  cookieView: string | undefined,
+): OrderListViewMode {
+  const first = Array.isArray(rawView) ? rawView[0] : rawView;
+  if (isOrderListViewMode(first)) return first;
+  if (isOrderListViewMode(cookieView)) return cookieView;
+  return DEFAULT_ORDER_LIST_VIEW;
 }

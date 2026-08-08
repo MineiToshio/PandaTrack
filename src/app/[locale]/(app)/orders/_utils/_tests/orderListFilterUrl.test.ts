@@ -9,7 +9,6 @@ const DEFAULT_FILTERS: OrderListActiveFilters = {
   productTypeKeys: ["manga", "figure"],
   storeId: "store-1",
   statuses: ["OPEN", "IN_TRANSIT"],
-  paymentStates: [],
   fxPendingOnly: false,
   sort: "recent",
   appliedDefaultStatuses: false,

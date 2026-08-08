@@ -6,6 +6,13 @@ export const THEME_STORAGE_KEY = "pandatrack-theme";
 /** Local storage key for private app sidebar expanded/collapsed preference. */
 export const APP_SHELL_SIDEBAR_STORAGE_KEY = "appShellSidebarExpanded";
 
+/**
+ * Cookie holding the collector's last chosen Orders list view ("store" | "order"). Read
+ * server-side (`orders/page.tsx`) so the default view survives a fresh load with no flash, written
+ * client-side by the view toggle on change.
+ */
+export const ORDER_LIST_VIEW_COOKIE_NAME = "pandatrack-orders-view";
+
 /** Height of the verification email banner (px) for layout offset. Used so the fixed sidebar starts below it. */
 export const VERIFICATION_BANNER_HEIGHT_PX = 56;
 
@@ -180,6 +187,9 @@ export const POSTHOG_EVENTS = {
     SPLIT_MERGE_MODAL_OPENED: "order_split_merge_modal_opened",
     CREATE_METHOD_SELECTOR_OPENED: "order_create_method_selector_opened",
     CREATE_METHOD_SELECTED: "order_create_method_selected",
+    LIST_VIEW_CHANGED: "orders_list_view_changed",
+    LIST_STORE_GROUP_EXPANDED: "orders_list_store_group_expanded",
+    LIST_STORE_GROUP_COLLAPSED: "orders_list_store_group_collapsed",
   },
   IMAGE_INTAKE: {
     INTAKE_OPENED: "image_intake_opened",

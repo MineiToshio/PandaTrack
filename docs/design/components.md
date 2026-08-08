@@ -159,6 +159,18 @@ Multi-part organisms and orchestration.
 
 ---
 
+## Notable route-scoped composites
+
+These live under a route's own `_components/` (per `project-structure.mdc`), not in `src/components/core|modules`, so the inventory guard does not track them — they are page-specific enough that promoting them would be premature. Listed here anyway because they are non-obvious composites future orders/store work should reuse before re-inventing.
+
+| Component                 | Path                                             | When to use                                                                                                                                                         |
+| ------------------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `OrderListViewToggle`     | `orders/_components/OrderListViewToggle.tsx`     | Segmented "Por pedido / Por tienda" switch for the Orders list; writes the choice to `?view=` and a cookie so it survives a fresh load.                             |
+| `StoreGroupedView`        | `orders/_components/StoreGroupedView.tsx`        | The Orders "Por tienda" list body: one collapsible card per store (local expand state, not `useListExpansion`).                                                     |
+| `StoreGroupHeader`        | `orders/_components/StoreGroupHeader.tsx`        | A store group's collapsible header: identity, open-orders/pending-products summary, per-currency debt, "Registrar pago" (disabled pending Fase 4) and "Ver tienda". |
+| `StorePendingProductRow`  | `orders/_components/StorePendingProductRow.tsx`  | Desktop grid row for one pending product inside a store group (Producto / Precio / Llegada / Pagado).                                                               |
+| `StorePendingProductCard` | `orders/_components/StorePendingProductCard.tsx` | Mobile two-line counterpart of `StorePendingProductRow`.                                                                                                            |
+
 ## Per-component deep specs
 
 Detailed per-component specs (anatomy, all variants, edge cases, full state recipes) were authored during the redesign subproject (historical context only). They are not a source of truth: **the code is authoritative**, and the durable system contract is this catalog plus the topic docs in `docs/design/`.

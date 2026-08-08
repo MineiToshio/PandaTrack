@@ -56,13 +56,6 @@ export default function OrderListFilterChips({ basePath, locale, filters, stores
       }),
     );
   }
-  filters.paymentStates.forEach((state) =>
-    chips.push({
-      key: `payment-${state}`,
-      label: t(`payment.${state}`),
-      onRemove: () => pushOverride({ paymentStates: filters.paymentStates.filter((s) => s !== state) }, "payment"),
-    }),
-  );
   if (filters.storeId) {
     chips.push({
       key: "store",

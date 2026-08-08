@@ -10,7 +10,7 @@ import {
   type OrderPaymentRecord,
 } from "./orderPaymentAllocations";
 import type { ItemDeliveryState } from "@/lib/orders/orderState";
-import type { OrderListPaymentState, OrderListSort } from "@/lib/orders/orderListSort";
+import type { OrderListSort } from "@/lib/orders/orderListSort";
 import { DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS } from "@/lib/constants";
 import {
   DeliveryStatus,
@@ -213,7 +213,11 @@ export async function getOrderById(orderId: string, userId: string): Promise<Ord
   };
 }
 
-function deriveItemDeliveryState(
+/**
+ * Exported for `pendingProductsByStoreQueries.ts` (the "Por tienda" list view), so both list shapes
+ * derive an item's display state from the same rule instead of drifting apart.
+ */
+export function deriveItemDeliveryState(
   deliveryItems: Array<{ delivery: { status: DeliveryStatus } }>,
   ownDeliveryState: OrderItemDeliveryStatePrisma,
 ): ItemDeliveryState {
@@ -376,14 +380,13 @@ export type OrdersListPageItem = {
 };
 
 export { ORDER_LIST_SORT_VALUES } from "@/lib/orders/orderListSort";
-export type { OrderListPaymentState, OrderListSort } from "@/lib/orders/orderListSort";
+export type { OrderListSort } from "@/lib/orders/orderListSort";
 
 export type OrdersListPageFilters = {
   nameQuery?: string;
   productTypeKeys?: string[];
   storeId?: string;
   statuses?: OrderStatus[];
-  paymentStates?: OrderListPaymentState[];
   dateFrom?: Date;
   dateTo?: Date;
   /** Expected-delivery range overlap (any part of the order's window inside the range). */
@@ -519,7 +522,6 @@ export async function getOrdersList(userId: string, filters: OrdersListPageFilte
     productTypeKeys,
     storeId,
     statuses,
-    paymentStates,
     dateFrom,
     dateTo,
     deliveryFrom,
@@ -617,18 +619,9 @@ export async function getOrdersList(userId: string, filters: OrdersListPageFilte
     matchAny.push({ store: { is: { name: { contains: trimmedQuery, mode: "insensitive" } } } });
   }
 
-  // Payment-state filters still map onto the legacy `paymentPercent` column, except `overdue`,
-  // which is a pure date/status predicate. That column is frozen under store-level payments and no
-  // longer maintained, so these branches (and the `payment-asc` sort below) read a snapshot rather
-  // than live data; they are retired together with the filter chips they serve. Each
-  // selected state adds one OR branch so an order matching any of them qualifies. Merged into the
-  // existing AND so it composes with the delivery-overlap conditions already in `baseFilters`.
-  const paymentStateWhere = buildPaymentStateWhere(paymentStates, now);
-
   const existingAnd = baseFilters.AND;
   const andGroups: Array<Record<string, unknown>> = Array.isArray(existingAnd) ? [...existingAnd] : [];
   if (matchAny.length > 0) andGroups.push({ OR: matchAny });
-  if (paymentStateWhere) andGroups.push(paymentStateWhere);
   if (fxPendingWhere) andGroups.push(fxPendingWhere);
 
   const { AND: _ignoredBaseAnd, ...baseWithoutAnd } = baseFilters;
@@ -735,43 +728,9 @@ function resolveOrderBy(sort: OrderListSort) {
       return [{ store: { name: "desc" as const } }, ID_TIEBREAKER];
     case "total-desc":
       return [{ totalCost: "desc" as const }, ID_TIEBREAKER];
-    case "payment-asc":
-      // Sort by the persisted paid ratio; `orderDate` desc breaks the common ties.
-      return [{ paymentPercent: "asc" as const }, { orderDate: "desc" as const }, ID_TIEBREAKER];
     case "recent":
     default:
       return [{ orderDate: "desc" as const }, ID_TIEBREAKER];
-  }
-}
-
-/**
- * Builds the payment-state `where` fragment from the selected states. Returns `null` when no
- * states are selected. `paid`/`partial`/`unpaid` read the persisted `paymentPercent` cache;
- * `overdue` is a date/status predicate independent of payment progress. States are OR'd.
- */
-function buildPaymentStateWhere(
-  paymentStates: OrderListPaymentState[] | undefined,
-  now: Date,
-): Record<string, unknown> | null {
-  if (!paymentStates || paymentStates.length === 0) return null;
-  return { OR: paymentStates.map((state) => paymentStateBranch(state, now)) };
-}
-
-function paymentStateBranch(state: OrderListPaymentState, now: Date): Record<string, unknown> {
-  switch (state) {
-    case "paid":
-      // paymentPercent is clamped to 100, so a fully covered order is exactly 100.
-      return { paymentPercent: { gte: 100 } };
-    case "partial":
-      return { paymentPercent: { gt: 0, lt: 100 } };
-    case "unpaid":
-      return { paymentPercent: 0 };
-    case "overdue":
-      // A non-null delivery window that has closed while the order is still live. Mirrors the
-      // previous in-memory predicate (a null `expectedDeliveryTo` never matches `lt`).
-      return { expectedDeliveryTo: { lt: now }, status: { notIn: ["COMPLETED", "CANCELLED"] as OrderStatus[] } };
-    default:
-      return {};
   }
 }
 

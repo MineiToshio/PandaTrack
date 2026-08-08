@@ -2,6 +2,8 @@ import { Suspense } from "react";
 import { getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
+import { Store as StoreIcon } from "lucide-react";
 import { buildPageMetadata } from "@/lib/seo";
 import { domainDateToIsoString } from "@/lib/domainDate";
 import { getIsAdmin, getSession } from "@/lib/auth/auth-server";
@@ -11,12 +13,15 @@ import {
   getOrdersList,
   listOrdersPendingFxReconciliation,
 } from "@/lib/data/orders/orderQueries";
+import { getPendingProductsByStore } from "@/lib/data/orders/pendingProductsByStoreQueries";
 import { getImageIntakeQuotaSnapshotCached } from "@/lib/data/imageIntake/imageIntakeQuotaQueries";
 import { getCollectorPreferencesSnapshot } from "@/lib/data/user-settings/userSettingsQueries";
-import { DEFAULT_PAGE_SIZE, POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
+import { DEFAULT_PAGE_SIZE, ORDER_LIST_VIEW_COOKIE_NAME, POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
+import { DEFAULT_STORE_VIEW_SORT, parseStoreViewSort, sortStoreGroups } from "@/lib/orders/storeViewSort";
 import {
   DEFAULT_ORDER_LIST_SORT,
   parseOrderListingParams,
+  resolveOrderListView,
   type OrderListActiveFilters,
 } from "./_utils/orderListingParams";
 import OrderListContent from "./_components/OrderListContent";
@@ -25,6 +30,9 @@ import OrderListFilterChips from "./_components/OrderListFilterChips";
 import OrderListPagination from "./_components/OrderListPagination";
 import FxAnnouncer from "./_components/FxAnnouncer";
 import OrderListLoadingSkeleton from "./_components/OrderListLoadingSkeleton";
+import StoreGroupedView from "./_components/StoreGroupedView";
+import StoreGroupedViewLoadingSkeleton from "./_components/StoreGroupedViewLoadingSkeleton";
+import EmptyState from "@/components/modules/EmptyState";
 import type { FxPendingOrder } from "./_components/FxReconciliationModal";
 import { ListExpandAllToggle, ListExpansionProvider } from "@/hooks/useListExpansion";
 
@@ -87,7 +95,6 @@ function buildActiveFilters(parsed: ReturnType<typeof parseOrderListingParams>):
     productTypeKeys: parsed.productTypeKeys,
     storeId: parsed.storeId,
     statuses: parsed.statuses,
-    paymentStates: parsed.paymentStates,
     fxPendingOnly: parsed.fxPendingOnly,
     sort: parsed.sort,
     appliedDefaultStatuses: parsed.appliedDefaultStatuses,
@@ -107,7 +114,6 @@ function hasActiveFilter(parsed: ReturnType<typeof parseOrderListingParams>): bo
     parsed.productTypeKeys.length > 0 ||
     Boolean(parsed.storeId) ||
     parsed.statuses.length > 0 ||
-    parsed.paymentStates.length > 0 ||
     parsed.fxPendingOnly ||
     Boolean(parsed.dateFrom) ||
     Boolean(parsed.dateTo) ||
@@ -147,6 +153,13 @@ export default async function OrdersPage({ params, searchParams }: OrdersPagePro
   // "Limpiar filtros" lands on the bare /orders URL: no filter at all.
   const resetHref = basePath;
 
+  // View mode: URL-first, then the collector's last choice (cookie, read server-side so the
+  // default renders with no client flash), then "order". Store view's own sort domain shares the
+  // ?sort= param but is parsed separately (its default is "arrival-asc", not "recent").
+  const cookieStore = await cookies();
+  const view = resolveOrderListView(rawParams.view, cookieStore.get(ORDER_LIST_VIEW_COOKIE_NAME)?.value);
+  const storeSort = parseStoreViewSort(rawParams.sort);
+
   // Chrome data only (no heavy list query): store options feed the filter drawer + chips.
   const [storeOptions, t, tc] = await Promise.all([
     getOrderStoreOptions(userId),
@@ -184,40 +197,58 @@ export default async function OrdersPage({ params, searchParams }: OrdersPagePro
           photoCounter={photoCounter}
           storeOptions={storeOptions.map((store) => ({ id: store.id, name: store.name }))}
           initial={activeFilters}
+          view={view}
+          storeSort={storeSort}
         />
 
         {/* Filter chips + expand/collapse-all share one row (chips left, toggle pinned right). The
             provider wraps this row and the data Suspense so the toggle — outside the boundary —
             stays flicker-free while the list re-suspends. `empty:hidden` drops the row when there
-            are neither chips nor a toggle. */}
+            are neither chips nor a toggle. Store view has no filters to chip and reuses none of
+            the classic list's expand/collapse-all (its own groups collapse independently), so this
+            whole row is order-view only. */}
         <ListExpansionProvider events={ORDER_EXPANSION_EVENTS}>
-          <div className="flex items-center gap-3 empty:hidden">
-            <OrderListFilterChips locale={locale} basePath={basePath} filters={activeFilters} storesById={storesById} />
-            <ListExpandAllToggle className="ml-auto shrink-0" />
-          </div>
-
-          {/* Data region — only this suspends, with a layout-matching (table desktop / cards mobile) skeleton. */}
-          <Suspense
-            key={fingerprint}
-            fallback={
-              <OrderListLoadingSkeleton
-                loadingLabel={tc("skeleton.loading")}
-                headerOrder={t("table.headerOrder")}
-                headerProducts={t("table.headerProducts")}
-                headerStatus={t("table.headerStatus")}
-                headerTotal={t("table.headerTotal")}
-                headerProgress={t("table.headerProgress")}
+          {view === "order" && (
+            <div className="flex items-center gap-3 empty:hidden">
+              <OrderListFilterChips
+                locale={locale}
+                basePath={basePath}
+                filters={activeFilters}
+                storesById={storesById}
               />
+              <ListExpandAllToggle className="ml-auto shrink-0" />
+            </div>
+          )}
+
+          {/* Data region — only this suspends, with a layout-matching skeleton per view. */}
+          <Suspense
+            key={`${view}:${fingerprint}`}
+            fallback={
+              view === "store" ? (
+                <StoreGroupedViewLoadingSkeleton loadingLabel={tc("skeleton.loading")} />
+              ) : (
+                <OrderListLoadingSkeleton
+                  loadingLabel={tc("skeleton.loading")}
+                  headerOrder={t("table.headerOrder")}
+                  headerProducts={t("table.headerProducts")}
+                  headerStatus={t("table.headerStatus")}
+                  headerTotal={t("table.headerTotal")}
+                />
+              )
             }
           >
-            <OrdersDataSection
-              locale={locale}
-              userId={userId}
-              parsed={parsed}
-              rawParams={rawParams}
-              basePath={basePath}
-              resetHref={resetHref}
-            />
+            {view === "store" ? (
+              <StoreViewDataSection locale={locale} userId={userId} storeSort={storeSort} basePath={basePath} />
+            ) : (
+              <OrdersDataSection
+                locale={locale}
+                userId={userId}
+                parsed={parsed}
+                rawParams={rawParams}
+                basePath={basePath}
+                resetHref={resetHref}
+              />
+            )}
           </Suspense>
         </ListExpansionProvider>
       </div>
@@ -262,7 +293,6 @@ async function OrdersDataSection({
     productTypeKeys: parsed.productTypeKeys.length > 0 ? parsed.productTypeKeys : undefined,
     storeId: parsed.storeId,
     statuses: parsed.statuses.length > 0 ? parsed.statuses : undefined,
-    paymentStates: parsed.paymentStates.length > 0 ? parsed.paymentStates : undefined,
     dateFrom: parsed.dateFrom,
     dateTo: parsed.dateTo,
     deliveryFrom: parsed.deliveryFrom,
@@ -312,4 +342,44 @@ async function OrdersDataSection({
       />
     </>
   );
+}
+
+/**
+ * "Por tienda" view data: every pending product across every store, grouped and two-level sorted.
+ * Not paginated (see `getPendingProductsByStore`), so this is the whole list in one query.
+ */
+async function StoreViewDataSection({
+  locale,
+  userId,
+  storeSort,
+  basePath,
+}: {
+  locale: string;
+  userId: string;
+  storeSort: ReturnType<typeof parseStoreViewSort>;
+  basePath: string;
+}) {
+  const [groupsRaw, t] = await Promise.all([
+    getPendingProductsByStore(userId),
+    getTranslations({ locale, namespace: "orderListing" }),
+  ]);
+
+  if (groupsRaw.length === 0) {
+    return (
+      <EmptyState
+        appearance="card"
+        headingAs="h2"
+        icon={<StoreIcon width={28} height={28} />}
+        iconTone="accent"
+        title={t("storeView.empty.title")}
+        subtitle={t("storeView.empty.description")}
+      />
+    );
+  }
+
+  const groups = sortStoreGroups(groupsRaw, storeSort);
+  const sortParam = storeSort === DEFAULT_STORE_VIEW_SORT ? undefined : storeSort;
+  const returnTo = `${basePath}?view=store${sortParam ? `&sort=${sortParam}` : ""}`;
+
+  return <StoreGroupedView groups={groups} locale={locale} returnTo={returnTo} />;
 }

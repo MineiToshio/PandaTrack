@@ -1,20 +1,9 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
-import {
-  AlertTriangle,
-  Ban,
-  CheckCircle,
-  CircleDot,
-  Clock,
-  PackageCheck,
-  PackageX,
-  Plus,
-  Truck,
-  XCircle,
-} from "lucide-react";
+import { Ban, Clock, PackageCheck, PackageX, Plus, Truck } from "lucide-react";
 import posthog from "posthog-js";
 import Button from "@/components/core/Button/Button";
 import FilterTriggerButton from "@/components/core/FilterTriggerButton/FilterTriggerButton";
@@ -23,16 +12,20 @@ import Select from "@/components/core/Select";
 import FilterDrawer, { type FilterDrawerValues, type FilterSection } from "@/components/modules/FilterDrawer";
 import { useHasDesktopToolbar } from "@/hooks/useMediaQuery";
 import { POSTHOG_EVENTS } from "@/lib/constants";
-import { ORDER_LIST_SORT_VALUES, type OrderListPaymentState, type OrderListSort } from "@/lib/orders/orderListSort";
+import { cn } from "@/lib/styles";
+import { ORDER_LIST_SORT_VALUES, type OrderListSort } from "@/lib/orders/orderListSort";
+import { DEFAULT_STORE_VIEW_SORT, STORE_VIEW_SORT_VALUES, type StoreViewSort } from "@/lib/orders/storeViewSort";
 import type { OrderStatus } from "../../../../../../generated/prisma/client";
 import {
   buildOrderListFilterUrl,
   DEFAULT_ORDER_LIST_SORT,
   isDefaultActiveStatusSet,
   type OrderListActiveFilters,
+  type OrderListViewMode,
 } from "../_utils/orderListingParams";
 import { addDays, endOfMonth, startOfMonth, toIsoDateString } from "@/lib/localDate";
 import OrderCreateMethodSelector from "@/components/modules/OrderCreateMethodSelector/OrderCreateMethodSelector";
+import OrderListViewToggle from "./OrderListViewToggle";
 import type { PhotoCounterSnapshot } from "./share/photoCounterContract";
 
 type StoreOption = { id: string; name: string };
@@ -41,6 +34,10 @@ type OrderListFiltersProps = {
   locale: string;
   storeOptions: StoreOption[];
   initial: OrderListActiveFilters;
+  /** Active Orders list view — the search/filter drawer only apply in "order" view. */
+  view: OrderListViewMode;
+  /** Current "Por tienda" sort, only meaningful when `view === "store"`. */
+  storeSort: StoreViewSort;
   /** Photo balance for the create-method selector this toolbar opens; read server-side by the page. */
   photoCounter?: PhotoCounterSnapshot | null;
 };
@@ -55,7 +52,6 @@ type DateRangeWithFlag = { from?: string; to?: string; flag?: boolean; choice?: 
 
 type DrawerState = {
   statuses: string[];
-  paymentStates: string[];
   stores: string[];
   dateRange: { from?: string; to?: string };
   /** Composite value: range + `flag` (Por recibir / overdue) handled by the trailing switch. */
@@ -106,12 +102,16 @@ export default function OrderListFilters({
   locale,
   storeOptions,
   initial,
+  view,
+  storeSort,
   photoCounter = null,
 }: OrderListFiltersProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const t = useTranslations("orderListing");
-  // The toolbar carries the sort control from `lg` up; below that the drawer has to.
+  // The toolbar carries the sort control from `lg` up; below that the drawer has to. Store view has
+  // no drawer at all (search/filters do not apply there), so its Select is always visible instead.
   const hasDesktopToolbar = useHasDesktopToolbar();
 
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -120,7 +120,6 @@ export default function OrderListFilters({
   const initialDrawer = useMemo<DrawerState>(
     () => ({
       statuses: statusValuesFromFilters(initial),
-      paymentStates: initial.paymentStates,
       stores: initial.storeId ? [initial.storeId] : [],
       dateRange: { from: initial.dateFromIso, to: initial.dateToIso },
       deliveryRange: {
@@ -162,7 +161,6 @@ export default function OrderListFilters({
     // Badge mirrors the drawer state — each checked pill counts individually.
     // "Solo activas" is a visual chip collapse, not a count collapse.
     count += statuses.length;
-    count += (draft.paymentStates as string[] | undefined)?.length ?? 0;
     count += (draft.stores as string[] | undefined)?.length ?? 0;
     const range = (draft.dateRange ?? {}) as { from?: string; to?: string };
     if (range.from || range.to) count += 1;
@@ -176,13 +174,15 @@ export default function OrderListFilters({
     return count;
   }, [draft]);
 
+  // Store view swaps the sort domain (its default is "arrival-asc", not "recent") but the two enums
+  // overlap on every value except that one, so one label lookup serves both.
   const sortOptions = useMemo(
     () =>
-      ORDER_LIST_SORT_VALUES.map((value) => ({
+      (view === "store" ? STORE_VIEW_SORT_VALUES : ORDER_LIST_SORT_VALUES).map((value) => ({
         value,
         label: t(`sort.${sortLabelKey(value)}`),
       })),
-    [t],
+    [t, view],
   );
 
   const sections: FilterSection[] = useMemo(() => {
@@ -206,17 +206,6 @@ export default function OrderListFilters({
           },
           { value: "COMPLETED", label: t("status.COMPLETED"), icon: <PackageCheck size={12} aria-hidden /> },
           { value: "CANCELLED", label: t("status.CANCELLED"), icon: <Ban size={12} aria-hidden /> },
-        ],
-      },
-      {
-        id: "paymentStates",
-        type: "pills",
-        label: t("filters.paymentLabel"),
-        options: [
-          { value: "paid", label: t("payment.paid"), icon: <CheckCircle size={12} aria-hidden /> },
-          { value: "partial", label: t("payment.partial"), icon: <CircleDot size={12} aria-hidden /> },
-          { value: "unpaid", label: t("payment.unpaid"), icon: <XCircle size={12} aria-hidden /> },
-          { value: "overdue", label: t("payment.overdue"), icon: <AlertTriangle size={12} aria-hidden /> },
         ],
       },
       {
@@ -319,14 +308,26 @@ export default function OrderListFilters({
     pushUrl({ sort: next, page: 1 });
   };
 
+  // Store view has no filter drawer and its sort domain differs from the order list's (its default
+  // is "arrival-asc", not "recent"), so it navigates directly instead of going through
+  // `buildOrderListFilterUrl` (which only knows the order-list sort domain). Every other param —
+  // including the order-mode filters, which stay inert but preserved while in store view — is
+  // carried forward unchanged.
+  const handleStoreSortChange = (value: string) => {
+    const next: StoreViewSort = (STORE_VIEW_SORT_VALUES as readonly string[]).includes(value)
+      ? (value as StoreViewSort)
+      : DEFAULT_STORE_VIEW_SORT;
+    const params = new URLSearchParams(searchParams.toString());
+    if (next === DEFAULT_STORE_VIEW_SORT) params.delete("sort");
+    else params.set("sort", next);
+    const qs = params.toString();
+    router.push(qs ? `${pathname}?${qs}` : pathname);
+  };
+
   const handleApply = () => {
     const statusesRaw = (draft.statuses as string[] | undefined) ?? [];
     const { statuses, appliedDefaultStatuses } = classifyStatuses(statusesRaw);
     const stores = (draft.stores as string[] | undefined) ?? [];
-    const paymentStates = ((draft.paymentStates as string[] | undefined) ?? []).filter(
-      (value): value is OrderListPaymentState =>
-        value === "paid" || value === "partial" || value === "unpaid" || value === "overdue",
-    );
     const range = (draft.dateRange ?? {}) as { from?: string; to?: string };
     const deliveryRange = (draft.deliveryRange ?? {}) as DateRangeWithFlag;
     const deliveryOverdueOnly = deliveryRange.choice === DELIVERY_CHOICE_OVERDUE;
@@ -338,7 +339,6 @@ export default function OrderListFilters({
     posthog.capture(POSTHOG_EVENTS.ORDER.LIST_FILTERED, {
       query_present: Boolean(nameQuery.trim()),
       status_count: statuses.length,
-      payment_count: paymentStates.length,
       store_count: stores.length,
       date_from: Boolean(range.from),
       date_to: Boolean(range.to),
@@ -353,7 +353,6 @@ export default function OrderListFilters({
     pushUrl({
       statuses,
       appliedDefaultStatuses,
-      paymentStates,
       storeId: stores[0],
       dateFromIso: range.from,
       dateToIso: range.to,
@@ -374,7 +373,6 @@ export default function OrderListFilters({
     // The default-active state is now scoped to the sidebar/burger entry-point only.
     setDraft({
       statuses: [],
-      paymentStates: [],
       stores: [],
       dateRange: {},
       deliveryRange: {},
@@ -383,47 +381,58 @@ export default function OrderListFilters({
     });
   };
 
+  const isStoreView = view === "store";
+
   return (
     <>
-      {/* Desktop toolbar */}
+      {/* Desktop toolbar. Store view drops search + the filter drawer (they don't apply there,
+          per the "Por tienda" view spec) and keeps the view toggle, a sort select bound to the
+          store-view sort domain, and the create CTA. */}
       <div className="hidden flex-col gap-3 lg:flex lg:flex-row lg:items-center">
-        <div className="flex-1">
-          <SearchInput
-            value={nameQuery}
-            onChange={setNameQuery}
-            onSubmit={submitSearch}
-            placeholder={t("search.placeholder")}
-            searchLabel={t("search.label")}
-          />
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Order: filter → sort → new (matches demo `.orders-toolbar`) */}
-          <FilterTriggerButton
-            appliedCount={drawerAppliedCount}
-            onClick={() => setDrawerOpen(true)}
-            label={t("filters.openButton")}
-            className="[color:var(--text-primary)] [background:var(--surface-elevated)] [border:1px_solid_var(--border-strong)] hover:[background:color-mix(in_oklab,var(--text-primary)_4%,var(--surface-elevated))]"
-          />
-          <Select
-            id="orders-sort"
-            aria-label={t("sort.label")}
-            value={initial.sort}
-            onChange={handleSortChange}
-            size="md"
-            options={sortOptions}
-            className="w-max"
-          />
-          <Button
-            type="button"
-            variant="primary"
-            size="md"
-            leadingIcon={<Plus size={16} aria-hidden />}
-            onClick={() => setCreateSelectorOpen(true)}
-            posthogEvent={POSTHOG_EVENTS.ORDER.CREATE_METHOD_SELECTOR_OPENED}
-            posthogProps={{ source: "toolbar" }}
-          >
-            {t("hero.newOrder")}
-          </Button>
+        {!isStoreView && (
+          <div className="flex-1">
+            <SearchInput
+              value={nameQuery}
+              onChange={setNameQuery}
+              onSubmit={submitSearch}
+              placeholder={t("search.placeholder")}
+              searchLabel={t("search.label")}
+            />
+          </div>
+        )}
+        <div className={cn("flex flex-wrap items-center gap-2", isStoreView && "flex-1 justify-between")}>
+          <OrderListViewToggle view={view} />
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Order: filter → sort → new (matches demo `.orders-toolbar`) */}
+            {!isStoreView && (
+              <FilterTriggerButton
+                appliedCount={drawerAppliedCount}
+                onClick={() => setDrawerOpen(true)}
+                label={t("filters.openButton")}
+                className="[color:var(--text-primary)] [background:var(--surface-elevated)] [border:1px_solid_var(--border-strong)] hover:[background:color-mix(in_oklab,var(--text-primary)_4%,var(--surface-elevated))]"
+              />
+            )}
+            <Select
+              id="orders-sort"
+              aria-label={t("sort.label")}
+              value={isStoreView ? storeSort : initial.sort}
+              onChange={isStoreView ? handleStoreSortChange : handleSortChange}
+              size="md"
+              options={sortOptions}
+              className="w-max"
+            />
+            <Button
+              type="button"
+              variant="primary"
+              size="md"
+              leadingIcon={<Plus size={16} aria-hidden />}
+              onClick={() => setCreateSelectorOpen(true)}
+              posthogEvent={POSTHOG_EVENTS.ORDER.CREATE_METHOD_SELECTOR_OPENED}
+              posthogProps={{ source: "toolbar" }}
+            >
+              {t("hero.newOrder")}
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -431,26 +440,43 @@ export default function OrderListFilters({
           `min-w-0 flex-1` so it absorbs all shrink (an input's intrinsic min-content otherwise
           keeps the row wider than the viewport, S9.1 overflow). No "Nuevo" button here: below
           1024px the single-action floating button is the create entry point, and the two
-          affordances must never coexist on the same screen. */}
+          affordances must never coexist on the same screen. Store view has no drawer to hide
+          behind a breakpoint, so its sort Select is shown here directly rather than through the
+          drawer's mobile "sort" pills section. */}
       <div className="sticky top-14 z-30 -mx-4 flex items-center gap-2 px-4 py-2 [background:color-mix(in_oklab,var(--background)_92%,transparent)] supports-[backdrop-filter:blur(8px)]:backdrop-blur lg:hidden">
-        <div className="min-w-0 flex-1">
-          <SearchInput
-            value={nameQuery}
-            onChange={setNameQuery}
-            onSubmit={submitSearch}
-            placeholder={t("search.placeholder")}
-            searchLabel={t("search.label")}
+        <OrderListViewToggle view={view} className="shrink-0" />
+        {isStoreView ? (
+          <Select
+            id="orders-sort-mobile"
+            aria-label={t("sort.label")}
+            value={storeSort}
+            onChange={handleStoreSortChange}
+            size="md"
+            options={sortOptions}
+            className="min-w-0 flex-1"
           />
-        </div>
-        <FilterTriggerButton
-          appliedCount={drawerAppliedCount}
-          onClick={() => setDrawerOpen(true)}
-          variant="icon-only"
-          aria-label={t("filters.iconLabel")}
-          // Match the bordered look of the Search input so both controls share the same
-          // visual height + container affordance in the mobile action row.
-          className="shrink-0 [background:var(--surface-elevated)] [border:1px_solid_var(--border-strong)] hover:[background:color-mix(in_oklab,var(--text-primary)_4%,var(--surface-elevated))]"
-        />
+        ) : (
+          <>
+            <div className="min-w-0 flex-1">
+              <SearchInput
+                value={nameQuery}
+                onChange={setNameQuery}
+                onSubmit={submitSearch}
+                placeholder={t("search.placeholder")}
+                searchLabel={t("search.label")}
+              />
+            </div>
+            <FilterTriggerButton
+              appliedCount={drawerAppliedCount}
+              onClick={() => setDrawerOpen(true)}
+              variant="icon-only"
+              aria-label={t("filters.iconLabel")}
+              // Match the bordered look of the Search input so both controls share the same
+              // visual height + container affordance in the mobile action row.
+              className="shrink-0 [background:var(--surface-elevated)] [border:1px_solid_var(--border-strong)] hover:[background:color-mix(in_oklab,var(--text-primary)_4%,var(--surface-elevated))]"
+            />
+          </>
+        )}
       </div>
 
       <OrderCreateMethodSelector
@@ -480,7 +506,7 @@ export default function OrderListFilters({
   );
 }
 
-function sortLabelKey(value: OrderListSort): string {
+function sortLabelKey(value: OrderListSort | StoreViewSort): string {
   switch (value) {
     case "oldest":
       return "oldest";
@@ -488,10 +514,10 @@ function sortLabelKey(value: OrderListSort): string {
       return "storeAZ";
     case "store-desc":
       return "storeZA";
-    case "payment-asc":
-      return "paymentAsc";
     case "total-desc":
       return "totalDesc";
+    case "arrival-asc":
+      return "arrivalAsc";
     case "recent":
     default:
       return "newest";

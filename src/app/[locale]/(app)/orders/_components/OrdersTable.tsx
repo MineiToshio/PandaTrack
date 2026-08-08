@@ -11,7 +11,6 @@ import { isOrderOverdue, resolveOrderArrivalDueDate } from "@/lib/orders/orderDe
 import { formatArrivalWindow } from "@/lib/arrivalWindow";
 import { ROUTES } from "@/lib/constants";
 import { cn } from "@/lib/styles";
-import OrderUnpaidPill from "./share/OrderUnpaidPill";
 import StoreTombstoneNotice from "./share/StoreTombstoneNotice";
 import { describeOrderListChip, describeOverdueDays, getOrderListChipToneClassName } from "./share/orderListStatusChip";
 import { resolveStoreTombstone } from "@/lib/store/storeTombstone";
@@ -30,8 +29,7 @@ type OrdersTableProps = {
   onToggle: (orderId: string) => void;
 };
 
-const GRID_COLS =
-  "[grid-template-columns:40px_minmax(0,1.6fr)_minmax(0,0.9fr)_minmax(0,1.2fr)_minmax(0,0.9fr)_minmax(0,1.1fr)_24px]";
+const GRID_COLS = "[grid-template-columns:40px_minmax(0,1.6fr)_minmax(0,0.9fr)_minmax(0,1.2fr)_minmax(0,1fr)_24px]";
 
 const HEADER_CELL_CLASS =
   "[font-family:var(--font-mono)] [font-size:11px] [letter-spacing:0.06em] uppercase [color:var(--text-muted)]";
@@ -69,8 +67,7 @@ export default function OrdersTable({
         <span className={HEADER_CELL_CLASS}>{t("table.headerOrder")}</span>
         <span className={cn(HEADER_CELL_CLASS, "text-center")}>{t("table.headerProducts")}</span>
         <span className={cn(HEADER_CELL_CLASS, "text-center")}>{t("table.headerStatus")}</span>
-        <span className={cn(HEADER_CELL_CLASS, "text-center")}>{t("table.headerTotal")}</span>
-        <span className={cn(HEADER_CELL_CLASS, "text-center")}>{t("table.headerProgress")}</span>
+        <span className={cn(HEADER_CELL_CLASS, "text-right")}>{t("table.headerTotal")}</span>
         <span aria-hidden />
       </div>
 
@@ -94,20 +91,10 @@ export default function OrdersTable({
             overdueDays,
           });
           const ChipIcon = chip.icon;
-          const showUnpaid = order.status === "COMPLETED" && order.hasUnpaidBalance;
           const isCompletedOrCancelled = order.status === "COMPLETED" || order.status === "CANCELLED";
           const isExpanded = expandedIds.has(order.id);
           const detailHref = `/${locale}${ROUTES.orders}/${order.id}?returnTo=${encodeURIComponent(returnTo)}`;
           const storeTombstone = resolveStoreTombstone(order.store);
-
-          const progressTone = isCompletedOrCancelled
-            ? "[background:var(--success)]"
-            : overdue || showUnpaid
-              ? "[background:var(--warning)]"
-              : order.paymentPercentage >= 100
-                ? "[background:var(--success)]"
-                : "[background:var(--accent)]";
-
 
           return (
             <li
@@ -163,10 +150,7 @@ export default function OrdersTable({
                   </p>
                   {!isCompletedOrCancelled && arrivalWindow && (
                     <>
-                      <span
-                        aria-hidden
-                        className="hidden [color:var(--text-muted)] [@media(min-width:1360px)]:inline"
-                      >
+                      <span aria-hidden className="hidden [color:var(--text-muted)] [@media(min-width:1360px)]:inline">
                         ·
                       </span>
                       <p
@@ -203,33 +187,13 @@ export default function OrdersTable({
                   <ChipIcon width={12} height={12} aria-hidden="true" />
                   {t(chip.labelKey, chip.labelVars)}
                 </span>
-                {showUnpaid && <OrderUnpaidPill label={t("card.unpaid")} />}
               </div>
 
               <p className="pointer-events-none relative text-right [font-size:var(--text-body)] [font-weight:var(--font-weight-medium)] [color:var(--text-primary)] tabular-nums">
                 {formatAmountWithSymbol(order.totalCost, order.currencyCode, locale)}
               </p>
 
-              <div className="pointer-events-none relative flex items-center justify-start gap-2">
-                <div
-                  role="progressbar"
-                  aria-label={t("card.paymentBarLabel")}
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                  aria-valuenow={order.paymentPercentage}
-                  className="h-[3px] w-[60px] overflow-hidden rounded-full [background:color-mix(in_oklch,var(--text-primary)_10%,transparent)]"
-                >
-                  <div
-                    className={cn("h-full rounded-full", progressTone)}
-                    style={{ width: `${Math.min(100, Math.max(0, order.paymentPercentage))}%` }}
-                  />
-                </div>
-                <span className="inline-block min-w-[3.2ch] [font-size:var(--text-caption)] [color:var(--text-secondary)] tabular-nums">
-                  {t("card.paymentPercentage", { pct: order.paymentPercentage })}
-                </span>
-              </div>
-
-              {/* Chevron — center-aligned to the % Pago row, not pinned to top */}
+              {/* Chevron — center-aligned to the row */}
               <button
                 type="button"
                 onClick={() => onToggle(order.id)}
@@ -258,7 +222,7 @@ export default function OrdersTable({
                     // Recessed "drawer" so the expanded detail reads as this order's interior,
                     // not another row: bleeds to the row edges, tinted surface + accent-cool rail,
                     // ending before the next order's clean row divider.
-                    "relative col-span-7 -mx-4 mt-3 -mb-3 flex flex-col gap-1.5 py-3 pr-4 pl-[calc(1rem-2px)]",
+                    "relative col-span-6 -mx-4 mt-3 -mb-3 flex flex-col gap-1.5 py-3 pr-4 pl-[calc(1rem-2px)]",
                     "[border-left:2px_solid_color-mix(in_oklch,var(--accent-cool)_55%,transparent)]",
                     "[background:color-mix(in_oklch,var(--text-primary)_3.5%,transparent)]",
                   )}

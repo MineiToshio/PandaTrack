@@ -38,7 +38,6 @@
     "storePlaceholder": "Todas las tiendas",
     "productTypeLabel": "Tipo de producto",
     "statusLabel": "Estado del pedido",
-    "paymentLabel": "Estado de pago",
     "dateLabel": "Fecha del pedido",
     "dateFromLabel": "Desde",
     "dateToLabel": "Hasta",
@@ -69,15 +68,17 @@
     "newest": "Más recientes",
     "oldest": "Más antiguas",
     "storeAZ": "Tienda A–Z",
-    "paymentAsc": "% Pago: menor",
     "totalDesc": "Total: mayor",
-    "storeZA": "Tienda Z–A"
+    "storeZA": "Tienda Z–A",
+    "arrivalAsc": "Llegada más próxima"
   },
   "payment": {
-    "paid": "Pagado",
-    "partial": "Pago parcial",
-    "unpaid": "Impago",
-    "overdue": "Atrasado"
+    "paid": "Pagado"
+  },
+  "view": {
+    "groupLabel": "Vista de la lista",
+    "order": "Por pedido",
+    "store": "Por tienda"
   },
   "statusFilter": {
     "active": "Activas",
@@ -120,7 +121,6 @@
     "deliveryTo": "Hasta {to}",
     "overdue": "Atrasado",
     "overdueDays": "Atrasado {days}d",
-    "unpaid": "Impago",
     "itemsSectionTitle": "Productos del pedido",
     "itemQuantity": "× {quantity}",
     "itemDelivery": {
@@ -135,9 +135,27 @@
     "headerProducts": "Productos",
     "headerStatus": "Estado",
     "headerTotal": "Total",
-    "headerProgress": "% Pago",
     "arrivalArrives": "llega {window}",
     "arrivalExpected": "esperada {window}"
+  },
+  "storeView": {
+    "orderSummary": "{orders} {orders, plural, one {pedido abierto} other {pedidos abiertos}} · {products} {products, plural, one {producto pendiente} other {productos pendientes}}",
+    "debtAmount": "Debes {amount}",
+    "creditAmount": "A favor {amount}",
+    "registerPayment": "Registrar pago",
+    "registerPaymentDisabledHint": "Disponible en la siguiente fase",
+    "viewStore": "Ver tienda",
+    "columnProduct": "Producto",
+    "columnPrice": "Precio",
+    "columnArrival": "Llegada",
+    "columnPaid": "Pagado",
+    "orderedOn": "pedido el {date}",
+    "addPrice": "Añadir precio",
+    "settled": "Saldado",
+    "empty": {
+      "title": "Sin productos pendientes",
+      "description": "No tienes productos por llegar de ninguna tienda en este momento."
+    }
   },
   "empty": {
     "noOrders": {
