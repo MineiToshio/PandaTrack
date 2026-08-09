@@ -5,7 +5,7 @@ slug: order-payment-shipment
 title: Orders, Payments & Shipment — Feature Design Document
 status: ACTIVE
 parent: FRD-05
-last_updated: 2026-07-23
+last_updated: 2026-08-08
 prototype: ./prototype/order-payment-shipment.html
 design_system: ../../../design/README.md
 demo_anchors:
@@ -86,46 +86,57 @@ demo_anchors:
 > verbatim in Spanish (`es` is the default locale). The `en` equivalents live in
 > `src/i18n/locales/en/orders.json` (with list copy under the `orderListing` namespace).
 >
-> **Amendment (store-level payments v5, phase 3a — not yet reflected in the prototype below.)**
-> The Orders list gained a second view, "Por tienda" (`?view=store`, toggled next to the sort
-> control), that groups every store's pending products with a per-currency debt summary, in place
-> of the per-order payment percentage this FDD's `#s7-orders-list-*` anchors still show. The classic
-> "Por pedido" list itself dropped the payment-progress column/bar, the paid/partial/unpaid payment
-> filter pills, and the `payment-asc` sort (see the amendment in `WO-06`). New components:
-> `OrderListViewToggle`, `StoreGroupedView`, `StoreGroupHeader`, `StorePendingProductRow`,
-> `StorePendingProductCard` under `src/app/[locale]/(app)/orders/_components/`. This FDD's screens
-> and prototype anchors still describe the pre-v5 payment-percentage design; adding the "Por tienda"
-> screens and updating the affected `#s7-orders-list-*` anchors in the prototype HTML is tracked as
-> follow-up design work, not done in this phase (which was scoped to implementation).
+> **Amendment — Store-level payments (v5, 2026-08-08).** Money moved from a per-order payment
+> ledger to the store (`StorePayment`, with an optional, declared `PaymentAllocation` per
+> order/item — `docs/design/decisions/0025-store-level-payments-declared-allocations.md`). This
+> consolidates the three implementation phases (3a orders-list view, 3b order-detail/store-aside,
+> 4 payment sheet + create-flow advance) into one section; none of it is yet reflected in the
+> prototype HTML below (see the follow-up note at the end).
 >
-> **Amendment (store-level payments v5, phase 3b — not yet reflected in the prototype below.)**
-> The order detail hero, payments card, cancel flow, and the store detail aside changed to read
-> declared allocations (`PaymentAllocation`) instead of the pre-v5 payment-percentage model this
-> FDD's `#s7-order-detail-*` and `#s7-order-detail-cancel-modal` anchors still describe:
->
-> - **Detail hero** — the protagonist figure is now the order's TOTAL, a stable number that never
->   moves as payments come and go (superseding "the outstanding balance ('Saldo pendiente') against
->   the total" in §1 above). Below it: while this order has an allocation, "Asignado {X} de {Y}" plus
->   a progress bar (allocated/total); while it has none, a "Deuda de la tienda: {Z}" link into the
->   store detail (green "A favor {|Z|}" when the store owes the collector instead). A "Pago
+> - **Orders list — "Por tienda" view.** A second view, `?view=store` (toggled next to the sort
+>   control, remembered per collector via a cookie), groups every store's pending products with a
+>   per-currency debt summary and a "Registrar pago" entry point per group, in place of the
+>   per-order payment percentage the `#s7-orders-list-*` anchors below still show. The classic "Por
+>   pedido" list itself dropped the payment-progress column/bar, the paid/partial/unpaid filter
+>   pills, and the `payment-asc` sort. New components: `OrderListViewToggle`, `StoreGroupedView`,
+>   `StoreGroupHeader`, `StorePendingProductRow`, `StorePendingProductCard` under
+>   `src/app/[locale]/(app)/orders/_components/`.
+> - **Order detail hero.** The protagonist figure is now the order's TOTAL, a stable number that
+>   never moves as payments come and go (superseding "the outstanding balance ('Saldo pendiente')
+>   against the total" in §1 below). Below it: while this order has an allocation, "Asignado {X} de
+>   {Y}" plus a progress bar (allocated/total); while it has none, a "Deuda de la tienda: {Z}" link
+>   into the store detail (green "A favor {|Z|}" when the store owes the collector instead). A "Pago
 >   completado" chip joins the status chips once allocated is greater than or equal to the total.
 >   Dropped: the old "Saldo pendiente"/"de {total}" amount swap and the payment-percent meta segment.
-> - **Payments card** — the totals block reads "Asignado" / "Por asignar" (was "Total pagado" /
+> - **Payments card.** The totals block reads "Asignado" / "Por asignar" (was "Total pagado" /
 >   "Saldo pendiente"). A payment shared with other orders shows a "Parte de un pago de {total} a
 >   {tienda}" subtitle on its row, and its delete-confirm copy makes clear only this order's slice is
 >   removed, not the whole payment. A new empty state ("Sin pagos asignados a este pedido" + "Ver
 >   deuda de la tienda") replaces the blank rows list when nothing is allocated yet.
-> - **Sticky bar** — the primary CTA reads "Saldar {X}" once something is already allocated
+> - **Sticky bar.** The primary CTA reads "Saldar {X}" once something is already allocated
 >   (continuing a payment), "Anotar pago" while nothing is (a first one), regardless of order status.
-> - **Cancel modal** (`#s7-order-detail-cancel-modal`) — the payments-choice radios are now "Queda a
->   favor de {tienda}" (`credit`, default) / "Lo doy por perdido" (`lost`), replacing "Conservarlos" /
->   "Quitarlos"; the question copy is "Pagaste {X} de este pedido. ¿Qué hacemos con ese dinero?".
-> - **Store detail aside** (FRD-04, not pictured in this FDD) — a "Deuda pendiente" row per currency
->   (green "A favor" when negative), a disabled "Registrar pago" action (store-level payment
->   authoring ships in the next phase), and a "Ver mis pedidos en esta tienda" link.
+> - **Cancel modal** (`#s7-order-detail-cancel-modal`). The payments-choice radios are "Queda a
+>   favor de {tienda}" (`credit`, default) / "Lo doy por perdido" (`lost`), replacing the earlier
+>   "Conservarlos" / "Quitarlos"; the question copy is "Pagaste {X} de este pedido. ¿Qué hacemos con
+>   ese dinero?".
+> - **Store detail aside** (FRD-04, not pictured in this FDD). A "Deuda pendiente" row per currency
+>   (green "A favor" when negative), a "Registrar pago" action opening the store payment sheet below
+>   (shipped active, not the placeholder-disabled state an earlier draft of this note described),
+>   and a "Ver mis pedidos en esta tienda" link.
+> - **Store payment sheet** (`StorePaymentSheet`, `src/components/modules/StorePaymentSheet/`). A
+>   `ModalSheet` (ADR 0008) reachable from the "Por tienda" view and the store detail aside above: an
+>   amount + date + currency header, then one row per standing order (its own amount field) that
+>   expands to one row per product (its own amount field or a "Saldado" toggle). Shows the running
+>   "Sin asignar" remainder and blocks submit on any line exceeding its own ceiling or the payment
+>   exceeding the store's debt (`FR-05-43`).
+> - **Order create — "¿Pagaste algo hoy?".** An optional toggle in the confirm step (Paso 3) with
+>   "Pagué todo" / "Adelanto" quick options, an amount field, and a payment-date field (default
+>   today); submitting creates the order and its pre-assigned payment together (`FR-05-45`).
 >
-> Updating the prototype HTML and `#s7-order-detail-*` anchors for this model is tracked as
-> follow-up design work, same as the phase 3a note above.
+> **Follow-up (explicit, not scheduled):** the prototype HTML and its `#s7-orders-list-*` /
+> `#s7-order-detail-*` anchors have not been updated for this model; the FDD prose above and the
+> shipped implementation are the source of truth in the meantime (per the Authority order in
+> `.agents/rules/frd-design-documentation.mdc`).
 
 ---
 

@@ -7,7 +7,7 @@ status: ACTIVE
 parent: PRD-02
 children:
   - BP-01
-last_updated: 2026-07-30
+last_updated: 2026-08-08
 source_features: []
 implementation_status: IMPLEMENTED
 ---
@@ -201,6 +201,7 @@ As a collector, I want the image method to create or match the store on my behal
   **Shipped deviation**: the advice renders as the second level of the pre-upload guidance (`FR-11-12d`, "Antes de subir"), behind a labelled disclosure trigger, rather than as a standalone line beside the format hint. It reaches a minority of orders, so it stays one click away instead of spending every collector's attention before the dropzone, while the arithmetic that makes it worth stating up front (one photo now against the whole batch later) is preserved: the review screen asks for the same screenshot afterwards (`FR-11-100`), but only this screen can ask for it before the read.
 - `FR-11-100`: The review screen must point at each product whose name is still weak and offer to name it from a product page screenshot. Weak means the product carries a captured link and either its name is only that link's host (the fallback of `FR-11-95`) or its group came back doubtful. The offer must name the products it is about rather than warn generically, must state what reading again costs in photos (the batch already uploaded plus the new screenshot) together with the balance left when a cap applies, must return to the attach surface with the submission's photos still attached, and must never block saving: the collector can save as is and rename the product afterwards. When the balance cannot pay for another read, the notice stays and the action is withdrawn rather than leading to a submission the quota would refuse. Showing the offer and accepting it are both measured through `POSTHOG_EVENTS` (`image_intake_product_sheet_hint_shown`, `image_intake_product_sheet_requested`), carrying counts and reason codes only, never extracted content, consistent with `FR-11-88`.
 - `FR-11-101`: The weak-name test must be a pure comparison of the product's name against its own link's host, insensitive to the scheme, a `www.` prefix, a trailing slash, surrounding space and letter case, and must not pattern-match for anything that merely looks like a domain: a real product may legitimately be named after a brand that is also a domain. It lives in `src/lib/imageIntake/referenceProductNaming.ts` and is unit-tested directly.
+- `FR-11-102` **(added 2026-08-08, store-level payments):** Each draft payment row is recorded through `addOrderPayment` exactly as the manual form does (`FR-11-52b`), which now raises a store payment pre-assigned to the just-created order rather than an order-scoped `OrderPayment` (see `FRD-05` `FR-05-17`, `docs/design/decisions/0025-store-level-payments-declared-allocations.md`); this is a write-path detail, not a change to what the collector sees on the review screen. The save result must report how many payment rows were recorded versus skipped (`paymentsRecorded` / `paymentsSkipped`, `imageIntakeSaveAction.ts`), and when `paymentsSkipped > 0` the screen must surface a warning toast naming the count so an incomplete row silently dropped at save time (`recordDraftPayments`'s existing skip-incomplete rule) is not mistaken for success.
 
 ### Split and merge
 
@@ -416,7 +417,7 @@ The visual and interaction contract for each screen is [`fdd-11-order-image-inta
 ### Data
 
 - **Read, never written by this FRD**: `User.baseCurrencyCode`, `User.budgetResetDayOfMonth`, `Store` and its contact channels, the store product-type and country catalogs. The product-type catalog is read twice per extraction request from one query: once to tell the model which categories exist, and once to check what it answered (`FR-11-91`, `FR-11-92`).
-- **Written through existing domain mutations**: `Order`, `OrderItem`, `OrderPayment`, `Delivery`, and `Store` (inline creation), all through the paths owned by FRD-05 and FRD-04. This FRD adds no parallel write path for them.
+- **Written through existing domain mutations**: `Order`, `OrderItem`, `StorePayment`/`PaymentAllocation` (via the `addOrderPayment` wrapper — store-level payments, `docs/design/decisions/0025-store-level-payments-declared-allocations.md`), `Delivery`, and `Store` (inline creation), all through the paths owned by FRD-05 and FRD-04. This FRD adds no parallel write path for them.
 - **Owned by this FRD**: `ImageIntakeUsage` (reservation-then-settlement consumption ledger: a `PENDING` row with an estimated cost precedes the provider call, settled once to `SUCCEEDED` or `FAILED` with the real tokens and cost), `ImageIntakePeriod` (per-user, per-period aggregate), and `User.aiMonthlyPhotoLimit` (optional per-user override). Shapes are specified in [BP-01](bp-01-order-image-intake/bp-01-order-image-intake.md).
 - **Never persisted**: the source images, the extracted draft itself, and a product's captured reference link (`FR-11-96`: no order field exists for it, and this FRD adds none). The draft lives only in the client session between `review` and `saving`; there is no draft table in this FRD.
 
