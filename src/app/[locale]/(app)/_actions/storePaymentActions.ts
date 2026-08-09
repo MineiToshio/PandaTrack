@@ -13,6 +13,7 @@ import {
   getAssignableOrdersByStore,
   type AssignableOrder,
 } from "@/lib/data/orders/storePaymentAssignableOrdersQueries";
+import type { StorePaymentListRow } from "@/lib/data/orders/storePaymentQueries";
 import { storePaymentCreateSchema, storePaymentDeleteSchema } from "@/lib/orders/orderValidation";
 import { revalidateCollectionSurfaces } from "@/lib/cache/revalidateCollectionSurfaces";
 
@@ -47,6 +48,9 @@ export type CreateStorePaymentActionResult =
       paymentId: string;
       currencyCode: string;
       affectedOrders: { orderId: string; allocatedAmountMinor: number }[];
+      /** Canonical row for the "Pagos a esta tienda" card, so a caller can reconcile an optimistic
+          insert without a second query. */
+      payment: StorePaymentListRow;
     }
   | { ok: false; error: CreateStorePaymentError | "unauthorized" | "validation" | "server_error" };
 
@@ -96,6 +100,7 @@ export async function createStorePaymentAction(
         orderId: order.orderId,
         allocatedAmountMinor: order.allocatedAmountMinor,
       })),
+      payment: result.payment,
     };
   } catch (error) {
     Sentry.withScope((scope) => {

@@ -21,6 +21,20 @@ type StorePaymentStateContextValue = {
   deleteStorePayment: (paymentId: string) => Promise<{ ok: boolean; error?: string }>;
 };
 
+/**
+ * Inserts a payment into the "Pagos a esta tienda" list at its sorted position (newest first),
+ * mirroring `getStorePaymentsForStore`'s `[paymentDate desc, id desc]` order so an optimistic add
+ * lands in the same spot a server refetch would put it.
+ */
+function insertPaymentSortedByDateDesc(
+  list: StorePaymentListRow[],
+  payment: StorePaymentListRow,
+): StorePaymentListRow[] {
+  const index = list.findIndex((existing) => existing.paymentDate.getTime() <= payment.paymentDate.getTime());
+  if (index === -1) return [...list, payment];
+  return [...list.slice(0, index), payment, ...list.slice(index)];
+}
+
 const StorePaymentStateContext = createContext<StorePaymentStateContextValue | null>(null);
 
 /** Reads the store detail's live debt figure and the sheet opener. Throws outside {@link StorePaymentStateProvider}. */
@@ -76,12 +90,30 @@ export default function StorePaymentStateProvider({
 
   const handleSubmitPayment = useCallback(
     (input: StorePaymentSheetSubmitInput) => {
-      const previous = debts;
+      const previousDebts = debts;
+      const previousPayments = payments;
+      const previousTotalCount = paymentsTotalCount;
+
       setDebts((prev) =>
         prev.map((debt) =>
           debt.currencyCode === input.currencyCode ? { ...debt, debtMinor: debt.debtMinor - input.amount } : debt,
         ),
       );
+
+      // Optimistic stand-in for the "Pagos a esta tienda" card: the real id and any server-side
+      // normalization arrive on success and reconcile this row in place (see below).
+      const tempId = `temp-${Date.now()}`;
+      const optimisticPayment: StorePaymentListRow = {
+        id: tempId,
+        amount: input.amount,
+        currencyCode: input.currencyCode,
+        paymentDate: input.paymentDate,
+        note: input.note,
+        allocatedTotal: input.allocations.reduce((sum, allocation) => sum + allocation.amountMinor, 0),
+        allocationsCount: input.allocations.length,
+      };
+      setPayments((prev) => insertPaymentSortedByDateDesc(prev, optimisticPayment));
+      setPaymentsTotalCount((prev) => prev + 1);
 
       void createStorePaymentAction({
         storeId,
@@ -92,17 +124,26 @@ export default function StorePaymentStateProvider({
         allocations: input.allocations,
       }).then((result) => {
         if (!result.ok) {
-          setDebts(previous);
+          setDebts(previousDebts);
+          setPayments(previousPayments);
+          setPaymentsTotalCount(previousTotalCount);
           const key = `error.${result.error}` as const;
           addToast(tPayment.has(key as never) ? tPayment(key as never) : tPayment("error.server_error"), {
             variant: "error",
           });
           return;
         }
+        // Reconcile the optimistic row with the authoritative one (real id, server-normalized data).
+        setPayments((prev) =>
+          insertPaymentSortedByDateDesc(
+            prev.filter((payment) => payment.id !== tempId),
+            result.payment,
+          ),
+        );
         addToast(tPayment("toastSuccess"), { variant: "success" });
       });
     },
-    [addToast, debts, storeId, tPayment],
+    [addToast, debts, payments, paymentsTotalCount, storeId, tPayment],
   );
 
   const handleDeleteStorePayment = useCallback(

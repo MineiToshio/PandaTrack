@@ -7,7 +7,7 @@ import {
   type OrderPaymentRecord,
 } from "./orderPaymentAllocations";
 import { runSerializableTransaction } from "./serializableTransaction";
-import { getStoreDebtMinor, resolveInheritedStoreCurrency } from "./storePaymentQueries";
+import { getStoreDebtMinor, resolveInheritedStoreCurrency, type StorePaymentListRow } from "./storePaymentQueries";
 
 /**
  * Store-level payments.
@@ -82,7 +82,15 @@ export type AffectedOrderSnapshot = {
 };
 
 export type CreateStorePaymentResult =
-  | { ok: true; paymentId: string; currencyCode: string; affectedOrders: AffectedOrderSnapshot[] }
+  | {
+      ok: true;
+      paymentId: string;
+      currencyCode: string;
+      affectedOrders: AffectedOrderSnapshot[];
+      /** The written payment in the exact shape the "Pagos a esta tienda" card lists it in, so a
+          caller can reconcile an optimistic row without a second query. */
+      payment: StorePaymentListRow;
+    }
   | { ok: false; error: CreateStorePaymentError; orderId?: string; orderItemId?: string };
 
 export type DeleteStorePaymentResult = { ok: true; affectedOrderIds: string[] } | { ok: false; error: "NOT_FOUND" };
@@ -368,8 +376,23 @@ export async function createStorePayment(input: CreateStorePaymentInput): Promis
     });
 
     const affectedOrders = await loadAffectedOrderSnapshots(tx, written.affectedOrderIds, userId);
+    const allocatedTotal = validated.allocations.reduce((sum, allocation) => sum + allocation.amountMinor, 0);
 
-    return { ok: true, paymentId: written.paymentId, currencyCode, affectedOrders };
+    return {
+      ok: true,
+      paymentId: written.paymentId,
+      currencyCode,
+      affectedOrders,
+      payment: {
+        id: written.paymentId,
+        amount,
+        currencyCode,
+        paymentDate,
+        note,
+        allocatedTotal,
+        allocationsCount: validated.allocations.length,
+      },
+    };
   });
 }
 
