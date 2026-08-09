@@ -5,10 +5,12 @@ import { prisma } from "@/lib/prisma";
  * What the collector owes one store in one currency.
  *
  * `committedMinor` is what they promised (the total of every order that is still standing),
- * `paidMinor` is what actually left their hands for that store, and the difference is the debt.
- * It is deliberately NOT clamped at zero: a negative value is real money the store is holding on
- * the collector's behalf (an overpayment, or a cancelled order that was already paid), and
- * clamping it would erase the only signal that credit exists.
+ * `paidMinor` is what actually left their hands for that store AND is still available (it excludes
+ * money deliberately left declared against a cancelled order, `lost` at cancel time per BR-05-15 -
+ * that money is sunk, not a credit the store owes back), and the difference is the debt. It is
+ * deliberately NOT clamped at zero: a negative value is real money the store is holding on the
+ * collector's behalf (an overpayment, or a cancelled order whose payment was freed as `credit`
+ * instead of `lost`), and clamping it would erase the only signal that credit exists.
  */
 export type StoreDebtRow = {
   storeId: string;
@@ -25,12 +27,44 @@ function debtKey(storeId: string, currencyCode: string): DebtKey {
 }
 
 /**
+ * Money still declared (`PaymentAllocation.amountMinor`) against a now-CANCELLED order, grouped by
+ * the parent payment's store and currency. This is the `lost` half of the cancel-time `lost`/
+ * `credit` choice (BR-05-15): the allocation is left in place on purpose as a "sunk" signal for the
+ * dashboard's "Perdido en cancelados" figure, so it must not also read as money still available to
+ * pay off the store's other orders. `credit` deletes the allocation instead, which is why that path
+ * needs no exclusion here: a freed allocation no longer shows up in this query at all.
+ */
+async function sumLostAllocationsByKey(
+  client: Prisma.TransactionClient,
+  userId: string,
+  storeId?: string,
+): Promise<Map<DebtKey, number>> {
+  const rows = await client.paymentAllocation.findMany({
+    where: {
+      userId,
+      order: { status: OrderStatus.CANCELLED },
+      ...(storeId ? { payment: { storeId } } : {}),
+    },
+    select: { amountMinor: true, payment: { select: { storeId: true, currencyCode: true } } },
+  });
+
+  const lostByKey = new Map<DebtKey, number>();
+  for (const row of rows) {
+    const key = debtKey(row.payment.storeId, row.payment.currencyCode);
+    lostByKey.set(key, (lostByKey.get(key) ?? 0) + row.amountMinor);
+  }
+  return lostByKey;
+}
+
+/**
  * Debt per store and currency for one collector, optionally narrowed to a single store.
  *
  * Cancelled orders are excluded from the committed side (nothing is owed on an order that no
- * longer stands) while their payments stay counted, which is exactly what turns a paid-then-
- * cancelled order into store credit. A store/currency pair appears when either side has rows, so a
- * payment made in a currency the collector has no open order in is still visible.
+ * longer stands) while their payments stay counted, minus whatever of those payments is still
+ * declared `lost` against one of those same cancelled orders (see `sumLostAllocationsByKey`). That
+ * is what turns a paid-then-`credit`-cancelled order into store credit while a paid-then-`lost`-
+ * cancelled order does not. A store/currency pair appears when either side has rows, so a payment
+ * made in a currency the collector has no open order in is still visible.
  */
 export async function getStoreDebtByCurrency(userId: string, storeId?: string): Promise<StoreDebtRow[]> {
   const storeFilter = storeId ? { storeId } : {};
@@ -47,6 +81,8 @@ export async function getStoreDebtByCurrency(userId: string, storeId?: string): 
     _sum: { amount: true },
   });
 
+  const lostMinorByKey = await sumLostAllocationsByKey(prisma, userId, storeId);
+
   const rowsByKey = new Map<DebtKey, StoreDebtRow>();
 
   for (const group of committedGroups) {
@@ -61,7 +97,8 @@ export async function getStoreDebtByCurrency(userId: string, storeId?: string): 
 
   for (const group of paidGroups) {
     const key = debtKey(group.storeId, group.currencyCode);
-    const paidMinor = group._sum.amount ?? 0;
+    const lostMinor = lostMinorByKey.get(key) ?? 0;
+    const paidMinor = (group._sum.amount ?? 0) - lostMinor;
     const existing = rowsByKey.get(key);
     if (existing) {
       existing.paidMinor = paidMinor;
@@ -83,7 +120,8 @@ export async function getStoreDebtByCurrency(userId: string, storeId?: string): 
 /**
  * The single store/currency debt figure a payment is checked against, read inside the caller's
  * transaction so the check and the write it guards see the same snapshot. Same derivation as
- * `getStoreDebtByCurrency`, narrowed to one pair.
+ * `getStoreDebtByCurrency`, narrowed to one pair, including the same exclusion of money left
+ * declared `lost` against a cancelled order.
  */
 export async function getStoreDebtMinor(
   tx: Prisma.TransactionClient,
@@ -99,8 +137,13 @@ export async function getStoreDebtMinor(
     where: { userId, storeId, currencyCode },
     _sum: { amount: true },
   });
+  const lost = await tx.paymentAllocation.aggregate({
+    where: { userId, payment: { storeId, currencyCode }, order: { status: OrderStatus.CANCELLED } },
+    _sum: { amountMinor: true },
+  });
 
-  return (committed._sum.totalCost ?? 0) - (paid._sum.amount ?? 0);
+  const paidMinor = (paid._sum.amount ?? 0) - (lost._sum.amountMinor ?? 0);
+  return (committed._sum.totalCost ?? 0) - paidMinor;
 }
 
 /** Row cap for the store detail "Pagos a esta tienda" list — a simple list, deliberately not paginated. */

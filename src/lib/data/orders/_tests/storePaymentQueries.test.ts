@@ -4,6 +4,7 @@ const { prismaMock } = vi.hoisted(() => ({
   prismaMock: {
     order: { groupBy: vi.fn(), aggregate: vi.fn(), findMany: vi.fn() },
     storePayment: { groupBy: vi.fn(), aggregate: vi.fn(), findMany: vi.fn(), count: vi.fn() },
+    paymentAllocation: { findMany: vi.fn(), aggregate: vi.fn() },
   },
 }));
 
@@ -29,6 +30,7 @@ describe("getStoreDebtByCurrency", () => {
     prismaMock.storePayment.groupBy.mockResolvedValue([
       { storeId: "store-1", currencyCode: "USD", _sum: { amount: 3000 } },
     ]);
+    prismaMock.paymentAllocation.findMany.mockResolvedValue([]);
 
     const rows = await getStoreDebtByCurrency("user-1");
 
@@ -50,6 +52,7 @@ describe("getStoreDebtByCurrency", () => {
     prismaMock.storePayment.groupBy.mockResolvedValue([
       { storeId: "store-1", currencyCode: "USD", _sum: { amount: 4000 } },
     ]);
+    prismaMock.paymentAllocation.findMany.mockResolvedValue([]);
 
     const rows = await getStoreDebtByCurrency("user-1");
 
@@ -63,6 +66,7 @@ describe("getStoreDebtByCurrency", () => {
     prismaMock.storePayment.groupBy.mockResolvedValue([
       { storeId: "store-1", currencyCode: "PEN", _sum: { amount: 1500 } },
     ]);
+    prismaMock.paymentAllocation.findMany.mockResolvedValue([]);
 
     const rows = await getStoreDebtByCurrency("user-1");
 
@@ -76,6 +80,7 @@ describe("getStoreDebtByCurrency", () => {
       { storeId: "store-1", currencyCode: "PEN", _sum: { totalCost: 2000 } },
     ]);
     prismaMock.storePayment.groupBy.mockResolvedValue([]);
+    prismaMock.paymentAllocation.findMany.mockResolvedValue([]);
 
     const rows = await getStoreDebtByCurrency("user-1");
 
@@ -87,6 +92,7 @@ describe("getStoreDebtByCurrency", () => {
   it("narrows both queries to a single store when one is given", async () => {
     prismaMock.order.groupBy.mockResolvedValue([]);
     prismaMock.storePayment.groupBy.mockResolvedValue([]);
+    prismaMock.paymentAllocation.findMany.mockResolvedValue([]);
 
     await getStoreDebtByCurrency("user-1", "store-1");
 
@@ -98,6 +104,58 @@ describe("getStoreDebtByCurrency", () => {
     expect(prismaMock.storePayment.groupBy).toHaveBeenCalledWith(
       expect.objectContaining({ where: { userId: "user-1", storeId: "store-1" } }),
     );
+    expect(prismaMock.paymentAllocation.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          userId: "user-1",
+          order: { status: OrderStatus.CANCELLED },
+          payment: { storeId: "store-1" },
+        },
+      }),
+    );
+  });
+
+  it("excludes money left declared lost against a cancelled order from the debt (Baul Jare case)", async () => {
+    // Synthetic reproduction of the real Baul Jare bug: 16,000 minor units were paid and then left
+    // declared against a cancelled order (paymentsChoice: "lost"). The store had only 25,000
+    // committed and 41,000 total paid, so the old formula (committed - paid) read as -16,000 ("a
+    // favor"), while the money is actually gone, not a credit.
+    prismaMock.order.groupBy.mockResolvedValue([
+      { storeId: "store-baul-jare", currencyCode: "PEN", _sum: { totalCost: 25000 } },
+    ]);
+    prismaMock.storePayment.groupBy.mockResolvedValue([
+      { storeId: "store-baul-jare", currencyCode: "PEN", _sum: { amount: 41000 } },
+    ]);
+    prismaMock.paymentAllocation.findMany.mockResolvedValue([
+      { amountMinor: 16000, payment: { storeId: "store-baul-jare", currencyCode: "PEN" } },
+    ]);
+
+    const rows = await getStoreDebtByCurrency("user-1");
+
+    expect(rows).toEqual([
+      { storeId: "store-baul-jare", currencyCode: "PEN", committedMinor: 25000, paidMinor: 25000, debtMinor: 0 },
+    ]);
+  });
+
+  it("raises a store's live debt once lost-on-cancelled money is excluded from what is paid (Kenshin case)", async () => {
+    // Synthetic reproduction of the Kenshin bug: 900 minor units were left declared lost against a
+    // cancelled order. The old formula silently let that 900 count as if it still paid down the
+    // store's live debt; it must not.
+    prismaMock.order.groupBy.mockResolvedValue([
+      { storeId: "store-kenshin", currencyCode: "PEN", _sum: { totalCost: 1118270 } },
+    ]);
+    prismaMock.storePayment.groupBy.mockResolvedValue([
+      { storeId: "store-kenshin", currencyCode: "PEN", _sum: { amount: 1086870 } },
+    ]);
+    prismaMock.paymentAllocation.findMany.mockResolvedValue([
+      { amountMinor: 900, payment: { storeId: "store-kenshin", currencyCode: "PEN" } },
+    ]);
+
+    const rows = await getStoreDebtByCurrency("user-1");
+
+    expect(rows).toEqual([
+      { storeId: "store-kenshin", currencyCode: "PEN", committedMinor: 1118270, paidMinor: 1085970, debtMinor: 32300 },
+    ]);
   });
 });
 
@@ -110,6 +168,7 @@ describe("getStoreDebtMinor", () => {
     const tx = {
       order: { aggregate: vi.fn().mockResolvedValue({ _sum: { totalCost: 9000 } }) },
       storePayment: { aggregate: vi.fn().mockResolvedValue({ _sum: { amount: 4000 } }) },
+      paymentAllocation: { aggregate: vi.fn().mockResolvedValue({ _sum: { amountMinor: 0 } }) },
     };
 
     const debt = await getStoreDebtMinor(tx as never, "user-1", "store-1", "USD");
@@ -123,12 +182,21 @@ describe("getStoreDebtMinor", () => {
       where: { userId: "user-1", storeId: "store-1", currencyCode: "USD" },
       _sum: { amount: true },
     });
+    expect(tx.paymentAllocation.aggregate).toHaveBeenCalledWith({
+      where: {
+        userId: "user-1",
+        payment: { storeId: "store-1", currencyCode: "USD" },
+        order: { status: OrderStatus.CANCELLED },
+      },
+      _sum: { amountMinor: true },
+    });
   });
 
   it("returns a negative debt uncapped when the store was overpaid", async () => {
     const tx = {
       order: { aggregate: vi.fn().mockResolvedValue({ _sum: { totalCost: 1000 } }) },
       storePayment: { aggregate: vi.fn().mockResolvedValue({ _sum: { amount: 6000 } }) },
+      paymentAllocation: { aggregate: vi.fn().mockResolvedValue({ _sum: { amountMinor: 0 } }) },
     };
 
     const debt = await getStoreDebtMinor(tx as never, "user-1", "store-1", "USD");
@@ -140,11 +208,25 @@ describe("getStoreDebtMinor", () => {
     const tx = {
       order: { aggregate: vi.fn().mockResolvedValue({ _sum: { totalCost: null } }) },
       storePayment: { aggregate: vi.fn().mockResolvedValue({ _sum: { amount: null } }) },
+      paymentAllocation: { aggregate: vi.fn().mockResolvedValue({ _sum: { amountMinor: null } }) },
     };
 
     const debt = await getStoreDebtMinor(tx as never, "user-1", "store-1", "USD");
 
     expect(debt).toBe(0);
+  });
+
+  it("excludes money left declared lost against a cancelled order from what counts as paid", async () => {
+    const tx = {
+      order: { aggregate: vi.fn().mockResolvedValue({ _sum: { totalCost: 9000 } }) },
+      storePayment: { aggregate: vi.fn().mockResolvedValue({ _sum: { amount: 4000 } }) },
+      paymentAllocation: { aggregate: vi.fn().mockResolvedValue({ _sum: { amountMinor: 900 } }) },
+    };
+
+    const debt = await getStoreDebtMinor(tx as never, "user-1", "store-1", "USD");
+
+    // 9000 committed - (4000 paid - 900 lost) = 5900, not the 5000 the old formula would give.
+    expect(debt).toBe(5900);
   });
 });
 

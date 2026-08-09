@@ -7,7 +7,8 @@ import { OrderStatus } from "../../../../../generated/prisma/client";
  * `createStorePayment` (and, through it, `addOrderPayment`) walks a fixed sequence of Prisma
  * calls inside its Serializable transaction: `store.findFirst`, optionally
  * `order.findMany` (distinct currencies) for inherited-currency resolution, `order.aggregate` +
- * `storePayment.aggregate` for the debt ceiling, `order.findMany` (by id) + optionally
+ * `storePayment.aggregate` + `paymentAllocation.aggregate` (money left declared lost against a
+ * cancelled order, excluded from the ceiling) for the debt ceiling, `order.findMany` (by id) + optionally
  * `paymentAllocation.groupBy` (by `orderItemId`) for allocation validation, then
  * `storePayment.create` + `paymentAllocation.createMany` + `paymentAllocation.groupBy` (by
  * `orderId`) + `order.update` for the write and cache refresh, and finally `order.findFirst` +
@@ -43,7 +44,7 @@ export function makeFixtureOrder(overrides: Partial<FixtureOrder> = {}): Fixture
   };
 }
 
-type DebtByCurrency = Record<string, { committedMinor?: number; paidMinor?: number }>;
+type DebtByCurrency = Record<string, { committedMinor?: number; paidMinor?: number; lostMinor?: number }>;
 
 export type CreateStorePaymentTxOptions = {
   storeExists?: boolean;
@@ -108,6 +109,10 @@ export function makeCreateStorePaymentTx(options: CreateStorePaymentTxOptions = 
       create: vi.fn().mockResolvedValue({ id: createdPaymentId }),
     },
     paymentAllocation: {
+      aggregate: vi.fn().mockImplementation((args: { where: { payment: { currencyCode: string } } }) => {
+        const entry = debtByCurrency[args.where.payment.currencyCode] ?? {};
+        return Promise.resolve({ _sum: { amountMinor: entry.lostMinor ?? 0 } });
+      }),
       groupBy: vi.fn().mockImplementation((args: { by: string[] }) => {
         if (args.by.includes("orderItemId")) {
           return Promise.resolve(

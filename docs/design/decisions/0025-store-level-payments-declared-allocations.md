@@ -69,7 +69,12 @@ declaration.**
    "perdido" on cancel — see the cancelled-orders decision doc) and clamping would erase the only
    signal that credit exists. The store view and the store payment sheet surface this as "a favor"
    (green), never as a second, unrelated "crédito" concept (that word stays reserved for the photo
-   quota; see `docs/product/glossary.md`).
+   quota; see `docs/product/glossary.md`). **Corrected 2026-08-09:** `paidMinor` excludes money left
+   declared `lost` against one of the store's own cancelled orders (BR-05-15's `lost` branch keeps
+   the `PaymentAllocation` in place as a sunk-money signal for the dashboard). The initial
+   implementation counted it as available payment anyway, so a store with a large `lost` cancel
+   could read as "a favor" while the dashboard simultaneously reported the same money as lost, an
+   internal contradiction found against real data. See `FRD-05 FR-05-43`.
 5. **Per-order payment percentage is retired from the UI.** `paymentPercentage` still exists as a
    value derived from `calculatePaymentSummary`, but it is fed by `allocatedAmountMinor`
    (declared money), not by a full-price certainty, and the orders list dropped the paid/partial/
