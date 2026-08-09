@@ -1,6 +1,6 @@
 /**
  * `User.budgetAmount` is persisted in minor units, like every other money column
- * (`Order.totalCost`, `OrderPayment.amount`). The collector still enters whole currency
+ * (`Order.totalCost`, `StorePayment.amount`). The collector still enters whole currency
  * units — the settings boundary converts, and `BUDGET_MINOR_UNITS_PER_MAJOR` divides evenly
  * into every bound below so "no fractional subunits" stays enforceable server-side.
  */
