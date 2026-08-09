@@ -76,11 +76,10 @@ demo_anchors:
 > - **"Acciones" card, new second row.** A ghost "Registrar pago" button (`CircleDollarSign`
 >   icon, `StoreRegisterPaymentButton`) sits directly below the existing "Anotar pedido aquí"
 >   primary and above the edit affordance, opening the shared `StorePaymentSheet`
->   (`src/components/modules/StorePaymentSheet/`) pre-targeted at this store. Disabled only when
->   the viewer has no debt row at all for this store (never ordered, never paid); it stays enabled
->   when a row is a credit ("A favor") since that is still a real balance to declare against a new
->   order. The disabled state wraps the button in a `Tooltip` reading "Sin deuda pendiente con esta
->   tienda". Below it,
+>   (`src/components/modules/StorePaymentSheet/`) pre-targeted at this store. Disabled unless the
+>   viewer owes this store a strictly positive amount in at least one currency; a zero or negative
+>   (credit, "A favor") row does not enable it on its own. The disabled state wraps the button in a
+>   `Tooltip` reading "Sin deuda pendiente con esta tienda". Below it,
 >   an inline hyperlink "Ver mis pedidos en esta tienda" (`ExternalLink` icon, same recipe as the
 >   "Resumen" card's "Ver pedidos vinculados" link) navigates to `/orders?view=store`.
 > - **New main-column subcard, "Pagos a esta tienda"** (`StorePaymentsSection`, a
