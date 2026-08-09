@@ -41,7 +41,7 @@ export default function StoreGroupHeader({
 }: StoreGroupHeaderProps) {
   const t = useTranslations("orderListing");
   const tStores = useTranslations("stores");
-  const canRegisterPayment = Boolean(onRegisterPayment) && debts.length > 0;
+  const canRegisterPayment = Boolean(onRegisterPayment) && debts.some((debt) => debt.debtMinor > 0);
 
   const isPerson = store.sellerType === "PERSON";
   const isProxy = store.sellerType === "PROXY";

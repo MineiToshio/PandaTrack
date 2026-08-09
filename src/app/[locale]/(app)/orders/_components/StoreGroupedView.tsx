@@ -208,6 +208,13 @@ export default function StoreGroupedView({ groups, locale, returnTo }: StoreGrou
       })}
 
       <StorePaymentSheet
+        // Keyed by store: remounts the sheet's internal draft state (currency, amount, note,
+        // allocations) whenever the active store changes, instead of relying on a `useState`
+        // initializer that only ever runs once. Without this, the sheet's first-ever open mounts
+        // with `debts=[]` (this view renders it unconditionally, before any store is active) and
+        // every later open of a different store keeps replaying the previous store's currency and
+        // draft — the sheet only reset on its own `handleClose`, never on switching targets.
+        key={activeStoreId ?? "none"}
         isOpen={sheet.isOpen}
         onClose={sheet.close}
         storeName={activeGroup?.store.name ?? ""}

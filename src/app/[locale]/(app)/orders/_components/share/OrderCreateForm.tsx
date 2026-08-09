@@ -34,6 +34,7 @@ import {
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 import { formatAmount, formatCentsForInput } from "@/lib/currency";
 import { isValidPositiveDecimal, sanitizeDecimalInput } from "@/lib/decimalInput";
+import { toLocalIsoDateString } from "@/lib/domainDate";
 import { fetchTodayRate } from "@/lib/fx/exchangeRates";
 import { deriveManualFormPrefill, readAndClearManualPrefillStash } from "@/lib/imageIntake/manualPrefillStash";
 import { deriveItemizedTotal, shouldShowDiscrepancyModal } from "@/lib/orders/orderItemUtils";
@@ -393,7 +394,10 @@ export default function OrderCreateForm({ stores, productTypeKeys, baseCurrencyC
       fd.set("totalCost", totalCost);
       if (initialPaymentAmount.trim() !== "" && initialPaymentDateValue) {
         fd.set("initialPaymentAmount", initialPaymentAmount);
-        fd.set("initialPaymentDate", initialPaymentDateValue.toISOString().split("T")[0]!);
+        // `DatePickerInput` emits local midnight — `toLocalIsoDateString` reads it with local
+        // getters. `toISOString().split("T")[0]` (used elsewhere on this form for its pre-existing
+        // fields) converts to UTC first, which shifts the calendar day for any viewer west of UTC.
+        fd.set("initialPaymentDate", toLocalIsoDateString(initialPaymentDateValue));
       }
       return fd;
     },

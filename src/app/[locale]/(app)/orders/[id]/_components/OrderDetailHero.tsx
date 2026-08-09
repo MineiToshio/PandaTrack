@@ -272,16 +272,22 @@ export default function OrderDetailHero({
               </div>
             </>
           ) : (
-            <Link
-              href={storeHref}
-              className={cn(
-                "mt-1 inline-flex items-center gap-1 text-[14px] font-medium hover:underline",
-                isCreditAtStore ? "text-success" : "text-text-secondary",
-              )}
-            >
-              {debtLabel}
-              <ArrowUpRight className="size-3.5 shrink-0" aria-hidden />
-            </Link>
+            // Nothing declared against THIS order yet. A debt link only makes sense when there is
+            // something to say: > 0 owed to the store, or < 0 (a credit, the existing "A favor"
+            // link). At exactly 0 the collector owes this store nothing at all, so the line is
+            // omitted entirely rather than rendering a "Deuda de la tienda: 0.00" link to nowhere.
+            storeDebtMinor !== 0 && (
+              <Link
+                href={storeHref}
+                className={cn(
+                  "mt-1 inline-flex items-center gap-1 text-[14px] font-medium hover:underline",
+                  isCreditAtStore ? "text-success" : "text-text-secondary",
+                )}
+              >
+                {debtLabel}
+                <ArrowUpRight className="size-3.5 shrink-0" aria-hidden />
+              </Link>
+            )
           ))}
 
         {isCancelled ? (

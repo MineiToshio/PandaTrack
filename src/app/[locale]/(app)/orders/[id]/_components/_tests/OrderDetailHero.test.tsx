@@ -108,6 +108,13 @@ describe("OrderDetailHero allocation state", () => {
     expect(screen.getByText("detail.hero.paidInFull")).toBeInTheDocument();
   });
 
+  it("renders neither the debt link nor the credit link when nothing is owed either way", () => {
+    render(<OrderDetailHero {...BASE_PROPS} allocatedAmountMinor={0} storeDebtMinor={0} order={order} />);
+
+    expect(screen.queryByRole("link", { name: /detail\.hero\.storeDebtLink/ })).toBeNull();
+    expect(screen.queryByText("detail.hero.storeCreditLink")).toBeNull();
+  });
+
   it("hides both the allocation line and the debt link on a cancelled order", () => {
     const cancelledOrder = { ...order, status: "CANCELLED" as const };
     render(<OrderDetailHero {...BASE_PROPS} allocatedAmountMinor={0} storeDebtMinor={3000} order={cancelledOrder} />);

@@ -294,6 +294,27 @@ describe("deleteOrderPayment", () => {
     expect(tx.paymentAllocation.delete).not.toHaveBeenCalled();
   });
 
+  it("deletes the whole payment when its only remaining allocation is a partial claim (sole claim, partial amount)", async () => {
+    // The allocation being removed is the payment's ONLY one, but it only covers part of the
+    // payment's amount (an unclaimed remainder is riding along "on account"). The UI has no other
+    // door onto an allocation-less StorePayment from this screen, so it must still go with the
+    // allocation rather than being left stranded.
+    const tx = makeDeleteTx({
+      allocation: {
+        id: "alloc-1",
+        amountMinor: 400,
+        payment: { id: "payment-1", amount: 1000, _count: { allocations: 1 } },
+      },
+    });
+    runStorePaymentTx(prismaMock, tx);
+
+    const result = await deleteOrderPayment({ allocationId: "alloc-1", orderId: "order-1", userId: "user-1" });
+
+    expect(result).toMatchObject({ ok: true, deletedPayment: true });
+    expect(tx.storePayment.delete).toHaveBeenCalledWith({ where: { id: "payment-1" } });
+    expect(tx.paymentAllocation.delete).not.toHaveBeenCalled();
+  });
+
   it("removes only this order's declaration when the payment is shared with other orders", async () => {
     const tx = makeDeleteTx({
       allocation: {

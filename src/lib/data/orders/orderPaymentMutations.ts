@@ -141,10 +141,13 @@ export async function addOrderPayment({
 /**
  * Removes one payment declaration from an order.
  *
- * A payment that was raised for this order alone (its only allocation, covering its whole amount)
- * is deleted outright: the collector is undoing the payment, not just its attribution. A payment
- * shared with other orders survives and only loses this order's slice, which leaves it partly
- * undeclared rather than destroying money that is still explaining other orders.
+ * A payment whose only remaining allocation is the one being removed is deleted outright, even when
+ * that allocation was a partial claim (less than the payment's own amount): the UI has no other
+ * screen that can reach an allocation-less `StorePayment` (the store detail "Pagos a esta tienda"
+ * list is the only other door onto it, and it has its own delete action), so leaving one behind here
+ * would strand it as a payment nobody can act on again. A payment still shared with another order
+ * survives and only loses this order's slice, which leaves it partly undeclared rather than
+ * destroying money that is still explaining other orders.
  */
 export async function deleteOrderPayment({
   allocationId,
@@ -170,8 +173,11 @@ export async function deleteOrderPayment({
       return { ok: false, error: "NOT_FOUND" };
     }
 
-    const isSoleClaimOnPayment =
-      allocation.payment._count.allocations === 1 && allocation.amountMinor === allocation.payment.amount;
+    // Deliberately NOT gated on `allocation.amountMinor === allocation.payment.amount`: a partial
+    // allocation that happens to be the payment's only one still leaves the rest of the payment
+    // (the unclaimed remainder) with nothing pointing at it from this UI once this allocation is
+    // gone — see the function doc above.
+    const isSoleClaimOnPayment = allocation.payment._count.allocations === 1;
 
     if (isSoleClaimOnPayment) {
       await tx.storePayment.delete({ where: { id: allocation.payment.id } });

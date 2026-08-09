@@ -274,6 +274,7 @@ export const POSTHOG_EVENTS = {
     PRODUCT_TYPE_REQUEST_REJECTED: "store_product_type_request_rejected",
     PAYMENT_SHEET_OPENED: "store_payment_sheet_opened",
     PAYMENT_REGISTERED: "store_payment_registered",
+    PAYMENT_DELETED: "store_payment_deleted",
   },
   NAVIGATION: {
     VIEW_TRANSITION_NAVIGATED: "view_transition_navigated",

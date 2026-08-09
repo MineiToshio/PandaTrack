@@ -135,6 +135,36 @@ describe("StorePaymentSheet — error de excedente", () => {
   });
 });
 
+describe("StorePaymentSheet — fecha anterior al pedido", () => {
+  it("blocks submission and shows the inline date error once a declared order's date is after the payment date", async () => {
+    // The sheet's payment date defaults to today. An order dated far in the future is always
+    // "after" today without needing to drive the calendar popup — exactly the shape this rule
+    // guards against (a payment allegedly predating the order it is declared for).
+    const futureOrder = makeOrder({ orderDate: new Date("2999-01-01T00:00:00.000Z") });
+    const { onSubmit } = renderSheet({ orders: [futureOrder] });
+
+    await fillAmountAndDate("100");
+    await userEvent.click(screen.getByText("allocations.toggle"));
+    const orderAmountInput = screen.getByLabelText(/orderAmountAria/);
+    await userEvent.type(orderAmountInput, "40");
+
+    expect(screen.getByText("dateBeforeOrder")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "submit" })).toBeDisabled();
+
+    await userEvent.click(screen.getByRole("button", { name: "submit" }));
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it("does not flag an order with no declaration even when its date is in the future", async () => {
+    const futureOrder = makeOrder({ orderDate: new Date("2999-01-01T00:00:00.000Z") });
+    renderSheet({ orders: [futureOrder] });
+
+    await fillAmountAndDate("100");
+
+    expect(screen.queryByText("dateBeforeOrder")).not.toBeInTheDocument();
+  });
+});
+
 describe("StorePaymentSheet — contador vivo", () => {
   beforeEach(() => vi.clearAllMocks());
 

@@ -15,6 +15,9 @@ type PaymentRecord = {
   paymentId: string;
   paymentTotalMinor: number;
   isShared: boolean;
+  /** This is the payment's only allocation, and it does not cover the payment's full amount — an
+      unclaimed remainder rides along, so deleting this allocation deletes the whole payment. */
+  isPartialClaim: boolean;
 };
 
 type OrderPaymentRowProps = {
@@ -33,10 +36,18 @@ type OrderPaymentRowProps = {
  * date (left) · amount (right, mono) · delete × button (far right, muted).
  * The amount always carries two decimals so it lines up across rows.
  *
- * Under store-level payments, a row is one order's allocation of a store payment. When that
- * payment is shared with other orders (`payment.isShared`), a subtitle names the payment's full
- * amount and the delete-confirm modal makes clear that only this order's slice goes, not the
- * whole payment.
+ * Under store-level payments, a row is one order's allocation of a store payment, and the
+ * delete-confirm copy has three variants depending on what deleting this allocation actually does:
+ *  - 1:1 (`!isShared && !isPartialClaim`): the payment exists only for this declaration at its full
+ *    amount, so removing it removes the payment too — the plain "delete this payment" copy applies.
+ *  - shared (`isShared`): other orders also claim this payment, so only this order's slice goes —
+ *    the copy is explicit that the rest of the payment survives.
+ *  - partial claim (`isPartialClaim`): this is the payment's only allocation, but it does not cover
+ *    the payment's full amount (an unclaimed remainder rides along "on account"). Deleting it still
+ *    deletes the whole payment (`deleteOrderPayment` has no partial-allocation path for a sole
+ *    claim), so the copy says so explicitly rather than implying only this order's slice goes — and
+ *    the row's own subtitle names the payment's full amount for the same reason, so it never reads
+ *    as if this order's amount were the entire payment.
  */
 export default function OrderPaymentRow({
   payment,
@@ -76,7 +87,7 @@ export default function OrderPaymentRow({
           <div className="flex items-baseline gap-3">
             <span className="text-text-muted font-mono text-[12px] tabular-nums">{dateLabel}</span>
           </div>
-          {payment.isShared && (
+          {(payment.isShared || payment.isPartialClaim) && (
             <p className="text-text-muted mt-0.5 text-[11px] leading-snug">
               {t("detail.payments.sharedSubtitle", { paymentTotal: paymentTotalLabel, store: storeName })}
             </p>
@@ -97,7 +108,13 @@ export default function OrderPaymentRow({
       <Modal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
-        title={t(payment.isShared ? "detail.payments.deleteModalTitleShared" : "detail.payments.deleteModalTitle")}
+        title={t(
+          payment.isShared
+            ? "detail.payments.deleteModalTitleShared"
+            : payment.isPartialClaim
+              ? "detail.payments.deleteModalTitlePartial"
+              : "detail.payments.deleteModalTitle",
+        )}
         subtitle={
           payment.isShared
             ? t("detail.payments.deleteModalDescriptionShared", {
@@ -105,7 +122,12 @@ export default function OrderPaymentRow({
                 paymentTotal: paymentTotalLabel,
                 store: storeName,
               })
-            : t("detail.payments.deleteModalDescription")
+            : payment.isPartialClaim
+              ? t("detail.payments.deleteModalDescriptionPartial", {
+                  paymentTotal: paymentTotalLabel,
+                  store: storeName,
+                })
+              : t("detail.payments.deleteModalDescription")
         }
         icon={<Trash2 size={20} aria-hidden="true" />}
         tone="destructive"

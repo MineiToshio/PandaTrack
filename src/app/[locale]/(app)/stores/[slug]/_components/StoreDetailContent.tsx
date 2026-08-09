@@ -47,7 +47,7 @@ import type {
 } from "@/lib/data/stores/storeGovernanceQueries";
 import type { AdminOpenStoreReport } from "@/lib/data/admin/adminStoreReportQueries";
 import type { AdminPendingStoreChangeRequest } from "@/lib/data/admin/adminStoreChangeRequestQueries";
-import type { StoreDebtRow } from "@/lib/data/orders/storePaymentQueries";
+import type { StoreDebtRow, StorePaymentListRow } from "@/lib/data/orders/storePaymentQueries";
 import {
   resolveStoreProductTypeName,
   type AuthoredStoreProductTypeNameMap,
@@ -64,6 +64,7 @@ import StoreReportModal from "./StoreReportModal";
 import StoreAdminModerationPanel from "./StoreAdminModerationPanel";
 import StoreCreateOrderButton from "./StoreCreateOrderButton";
 import StorePaymentStateProvider from "./StorePaymentStateProvider";
+import StorePaymentsSection from "./StorePaymentsSection";
 import StoreDebtSummaryRows from "./StoreDebtSummaryRows";
 import StoreRegisterPaymentButton from "./StoreRegisterPaymentButton";
 
@@ -80,6 +81,11 @@ type StoreDetailContentProps = {
   /** The viewer's debt with this store, one row per currency they have committed orders or
       payments in (§ store-level payments). Empty when the viewer has no orders here. */
   storeDebtByCurrency: StoreDebtRow[];
+  /** Every payment the viewer has made to this store, newest first, for the "Pagos a esta tienda"
+      card — capped server-side; see `getStorePaymentsForStore`. */
+  storePayments: StorePaymentListRow[];
+  /** True total behind `storePayments`, independent of the query's display cap. */
+  storePaymentsTotalCount: number;
   /**
    * Open reports with reporter identity and raw free-text, populated only when the viewer is an
    * administrator. Absent for every non-admin viewer, so no admin read is exposed to the client.
@@ -146,6 +152,8 @@ export default function StoreDetailContent({
   governanceViewerContext,
   viewerActivity,
   storeDebtByCurrency,
+  storePayments,
+  storePaymentsTotalCount,
   adminOpenReports,
   adminChangeRequests,
   canAccessEditRoute,
@@ -240,182 +248,189 @@ export default function StoreDetailContent({
           {/* Two-column layout: main + sticky aside on lg. 320px rail matches orders/deliveries detail. */}
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
             {/* ── Main column ── */}
-            <div className="min-w-0 space-y-3">
-              <StoreHero
-                store={store}
-                derivedSignals={<StoreReportedChip />}
-                labels={{
-                  countryName: (code) => tCountries(code),
-                  ratingCount: (count) => tListing("ratingCount", { count }),
-                  ratingFallback: tStores("redesign.detail.ratingFallback"),
-                  presencePhysical: tStores("redesign.detail.presence.physical"),
-                  presenceOnline: tStores("redesign.detail.presence.online"),
-                  hasStock: tStores("redesign.detail.hasStock"),
-                  acceptsPreorders: tStores("redesign.detail.acceptsPreorders"),
-                  personChip: tStores("redesign.detail.personChip"),
-                  personNote: isPerson ? tStores("redesign.detail.personNote") : undefined,
-                  proxyChip: tStores("redesign.detail.proxyChip"),
-                  pendingChip: tStores("redesign.detail.pendingChip"),
-                  zoomLogo: (storeName) => tStores("redesign.detail.zoomLogo", { store: storeName }),
-                }}
-              />
-
-              <CollapsibleSection
-                eyebrow={
-                  <Eyebrow variant="chip" tone="cool" icon={Tags}>
-                    {tStores("redesign.detail.categoriesTitle")}
-                  </Eyebrow>
-                }
-                topAccent="cool"
-              >
-                <div className="space-y-4">
-                  {/* A PROXY has no catalog of its own, so the product-types block is omitted. */}
-                  {!isProxy && (
-                    <div>
-                      <Eyebrow as="p">{tStores("create.productTypesLabel")}</Eyebrow>
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {store.productTypeKeys.length > 0 ? (
-                          store.productTypeKeys.map((key) => (
-                            <Chip key={key} variant="accent">
-                              {resolveStoreProductTypeName(authoredProductTypeNames[key], tProductTypes(key), locale)}
-                            </Chip>
-                          ))
-                        ) : (
-                          <span className="[font-size:var(--text-caption)] [color:var(--text-muted)]">
-                            {tStores("detail.noProductTypes")}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  <div>
-                    <Eyebrow as="p">{tStores("redesign.detail.importsFrom")}</Eyebrow>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {store.importCountryCodes.length > 0 ? (
-                        store.importCountryCodes.map((code) => (
-                          <Chip key={code} variant="neutral">
-                            {tCountries(code)}
-                          </Chip>
-                        ))
-                      ) : (
-                        <span className="[font-size:var(--text-caption)] [color:var(--text-muted)]">
-                          {tStores("detail.noImportCountries")}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </CollapsibleSection>
-
-              {exposesContactInfo && contactChannelsCount > 0 && (
-                <CollapsibleSection
-                  eyebrow={
-                    <Eyebrow variant="chip" tone="cool" icon={AtSign}>
-                      {tStores("redesign.detail.channelsTitle")}
-                    </Eyebrow>
-                  }
-                  count={contactChannelsCount}
-                  topAccent="cool"
-                >
-                  <div className="flex flex-col">
-                    {store.contactChannels?.map((ch) => {
-                      const href = buildContactHref(ch.type, ch.value);
-                      if (!href) return null;
-                      return (
-                        <ChannelRow
-                          key={`${ch.type}-${ch.value}`}
-                          icon={getContactIcon(ch.type)}
-                          label={ch.label ?? tChannelTypes(ch.type)}
-                          value={ch.value}
-                          trailing={
-                            ch.type === "EMAIL" || ch.type === "PHONE" ? (
-                              <a
-                                href={href}
-                                className="inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] [color:var(--text-secondary)] hover:[background:color-mix(in_oklch,var(--text-primary)_5%,transparent)]"
-                                aria-label={tChannelTypes(ch.type)}
-                              >
-                                <Copy size={14} aria-hidden="true" />
-                              </a>
-                            ) : (
-                              <a
-                                href={href}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] [color:var(--text-secondary)] hover:[background:color-mix(in_oklch,var(--text-primary)_5%,transparent)]"
-                                aria-label={tChannelTypes(ch.type)}
-                              >
-                                <ExternalLink size={14} aria-hidden="true" />
-                              </a>
-                            )
-                          }
-                        />
-                      );
-                    })}
-                  </div>
-                </CollapsibleSection>
-              )}
-
-              {exposesContactInfo && addressesCount > 0 && (
-                <CollapsibleSection
-                  eyebrow={
-                    <Eyebrow variant="chip" tone="cool" icon={MapPin}>
-                      {tStores("redesign.detail.addressesTitle")}
-                    </Eyebrow>
-                  }
-                  count={addressesCount}
-                  topAccent="cool"
-                >
-                  <div className="flex flex-col">
-                    {store.addresses?.map((address, index) => {
-                      // Postal-style multi-line: street → reference → city, country.
-                      // Each part flows on its own line and wraps independently so long
-                      // addresses (e.g. Japanese full addresses) stay fully visible.
-                      const lines = [
-                        address.addressLine,
-                        address.reference ?? "",
-                        [address.city, tCountries(store.countryCode)].filter(Boolean).join(", "),
-                      ];
-                      return (
-                        <ChannelRow
-                          key={`${address.addressLine}-${index}`}
-                          icon={<MapPin size={14} aria-hidden="true" />}
-                          label={tStores("redesign.detail.addressDefaultLabel")}
-                          valueLines={lines}
-                          trailing={
-                            <span
-                              aria-hidden="true"
-                              className="inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] [color:var(--text-secondary)]"
-                            >
-                              <MapIcon size={13} aria-hidden="true" />
-                            </span>
-                          }
-                        />
-                      );
-                    })}
-                  </div>
-                </CollapsibleSection>
-              )}
-
-              <CollapsibleSection
-                eyebrow={
-                  <Eyebrow variant="chip" tone="warm" icon={Star}>
-                    {tStores("redesign.detail.reviewsTitle")}
-                  </Eyebrow>
-                }
-                topAccent="warm"
-              >
-                <StorePublicReviewsSection locale={locale} storeSlug={store.slug} />
-              </CollapsibleSection>
-            </div>
-
-            {/* ── Sticky aside ── */}
+            {/* StorePaymentStateProvider wraps both columns: the aside's "Debes" rows/"Registrar
+                pago" action and this column's "Pagos a esta tienda" card share one live debt figure
+                and one payments list, so deleting a payment here updates the sidebar in lockstep. */}
             <StorePaymentStateProvider
               storeId={store.id}
               storeName={store.name}
               storeDebtByCurrency={storeDebtByCurrency}
+              storePayments={storePayments}
+              storePaymentsTotalCount={storePaymentsTotalCount}
               locale={locale}
             >
+              <div className="min-w-0 space-y-3">
+                <StoreHero
+                  store={store}
+                  derivedSignals={<StoreReportedChip />}
+                  labels={{
+                    countryName: (code) => tCountries(code),
+                    ratingCount: (count) => tListing("ratingCount", { count }),
+                    ratingFallback: tStores("redesign.detail.ratingFallback"),
+                    presencePhysical: tStores("redesign.detail.presence.physical"),
+                    presenceOnline: tStores("redesign.detail.presence.online"),
+                    hasStock: tStores("redesign.detail.hasStock"),
+                    acceptsPreorders: tStores("redesign.detail.acceptsPreorders"),
+                    personChip: tStores("redesign.detail.personChip"),
+                    personNote: isPerson ? tStores("redesign.detail.personNote") : undefined,
+                    proxyChip: tStores("redesign.detail.proxyChip"),
+                    pendingChip: tStores("redesign.detail.pendingChip"),
+                    zoomLogo: (storeName) => tStores("redesign.detail.zoomLogo", { store: storeName }),
+                  }}
+                />
+
+                <CollapsibleSection
+                  eyebrow={
+                    <Eyebrow variant="chip" tone="cool" icon={Tags}>
+                      {tStores("redesign.detail.categoriesTitle")}
+                    </Eyebrow>
+                  }
+                  topAccent="cool"
+                >
+                  <div className="space-y-4">
+                    {/* A PROXY has no catalog of its own, so the product-types block is omitted. */}
+                    {!isProxy && (
+                      <div>
+                        <Eyebrow as="p">{tStores("create.productTypesLabel")}</Eyebrow>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {store.productTypeKeys.length > 0 ? (
+                            store.productTypeKeys.map((key) => (
+                              <Chip key={key} variant="accent">
+                                {resolveStoreProductTypeName(authoredProductTypeNames[key], tProductTypes(key), locale)}
+                              </Chip>
+                            ))
+                          ) : (
+                            <span className="[font-size:var(--text-caption)] [color:var(--text-muted)]">
+                              {tStores("detail.noProductTypes")}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    <div>
+                      <Eyebrow as="p">{tStores("redesign.detail.importsFrom")}</Eyebrow>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {store.importCountryCodes.length > 0 ? (
+                          store.importCountryCodes.map((code) => (
+                            <Chip key={code} variant="neutral">
+                              {tCountries(code)}
+                            </Chip>
+                          ))
+                        ) : (
+                          <span className="[font-size:var(--text-caption)] [color:var(--text-muted)]">
+                            {tStores("detail.noImportCountries")}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </CollapsibleSection>
+
+                <StorePaymentsSection locale={locale} />
+
+                {exposesContactInfo && contactChannelsCount > 0 && (
+                  <CollapsibleSection
+                    eyebrow={
+                      <Eyebrow variant="chip" tone="cool" icon={AtSign}>
+                        {tStores("redesign.detail.channelsTitle")}
+                      </Eyebrow>
+                    }
+                    count={contactChannelsCount}
+                    topAccent="cool"
+                  >
+                    <div className="flex flex-col">
+                      {store.contactChannels?.map((ch) => {
+                        const href = buildContactHref(ch.type, ch.value);
+                        if (!href) return null;
+                        return (
+                          <ChannelRow
+                            key={`${ch.type}-${ch.value}`}
+                            icon={getContactIcon(ch.type)}
+                            label={ch.label ?? tChannelTypes(ch.type)}
+                            value={ch.value}
+                            trailing={
+                              ch.type === "EMAIL" || ch.type === "PHONE" ? (
+                                <a
+                                  href={href}
+                                  className="inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] [color:var(--text-secondary)] hover:[background:color-mix(in_oklch,var(--text-primary)_5%,transparent)]"
+                                  aria-label={tChannelTypes(ch.type)}
+                                >
+                                  <Copy size={14} aria-hidden="true" />
+                                </a>
+                              ) : (
+                                <a
+                                  href={href}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] [color:var(--text-secondary)] hover:[background:color-mix(in_oklch,var(--text-primary)_5%,transparent)]"
+                                  aria-label={tChannelTypes(ch.type)}
+                                >
+                                  <ExternalLink size={14} aria-hidden="true" />
+                                </a>
+                              )
+                            }
+                          />
+                        );
+                      })}
+                    </div>
+                  </CollapsibleSection>
+                )}
+
+                {exposesContactInfo && addressesCount > 0 && (
+                  <CollapsibleSection
+                    eyebrow={
+                      <Eyebrow variant="chip" tone="cool" icon={MapPin}>
+                        {tStores("redesign.detail.addressesTitle")}
+                      </Eyebrow>
+                    }
+                    count={addressesCount}
+                    topAccent="cool"
+                  >
+                    <div className="flex flex-col">
+                      {store.addresses?.map((address, index) => {
+                        // Postal-style multi-line: street → reference → city, country.
+                        // Each part flows on its own line and wraps independently so long
+                        // addresses (e.g. Japanese full addresses) stay fully visible.
+                        const lines = [
+                          address.addressLine,
+                          address.reference ?? "",
+                          [address.city, tCountries(store.countryCode)].filter(Boolean).join(", "),
+                        ];
+                        return (
+                          <ChannelRow
+                            key={`${address.addressLine}-${index}`}
+                            icon={<MapPin size={14} aria-hidden="true" />}
+                            label={tStores("redesign.detail.addressDefaultLabel")}
+                            valueLines={lines}
+                            trailing={
+                              <span
+                                aria-hidden="true"
+                                className="inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] [color:var(--text-secondary)]"
+                              >
+                                <MapIcon size={13} aria-hidden="true" />
+                              </span>
+                            }
+                          />
+                        );
+                      })}
+                    </div>
+                  </CollapsibleSection>
+                )}
+
+                <CollapsibleSection
+                  eyebrow={
+                    <Eyebrow variant="chip" tone="warm" icon={Star}>
+                      {tStores("redesign.detail.reviewsTitle")}
+                    </Eyebrow>
+                  }
+                  topAccent="warm"
+                >
+                  <StorePublicReviewsSection locale={locale} storeSlug={store.slug} />
+                </CollapsibleSection>
+              </div>
+
+              {/* ── Sticky aside ── */}
               <DetailSidebar
                 ariaLabel={tStores("detail.quickSummaryLabel")}
                 labels={{

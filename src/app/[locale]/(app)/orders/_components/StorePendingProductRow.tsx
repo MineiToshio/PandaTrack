@@ -100,8 +100,9 @@ export default function StorePendingProductRow({ product, locale, returnTo }: St
             </span>
           </>
         ) : (
-          <span aria-hidden className="[color:var(--text-muted)]">
-            ·
+          <span className="[color:var(--text-muted)]">
+            <span aria-hidden>·</span>
+            <span className="sr-only">{t("storeView.paidEmptyAria")}</span>
           </span>
         )}
       </div>

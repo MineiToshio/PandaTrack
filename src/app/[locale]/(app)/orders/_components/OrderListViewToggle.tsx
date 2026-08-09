@@ -37,6 +37,11 @@ export default function OrderListViewToggle({ view, className }: OrderListViewTo
     const params = new URLSearchParams(searchParams.toString());
     params.set("view", next);
     params.delete("page");
+    // The two views have disjoint sort domains (order view's default is "recent", store view's is
+    // "arrival-asc") and only partially overlap in values — a `?sort=` picked in one view can name
+    // a value the other doesn't offer, or silently mean something else. Drop it on every switch so
+    // each view lands on its own default instead of carrying over a stale or mismatched sort.
+    params.delete("sort");
     router.push(`${pathname}?${params.toString()}`);
   };
 

@@ -21,6 +21,8 @@ export type SheetItemDraft = {
 /** One order's declaration line, plus its own per-product breakdown. */
 export type SheetOrderDraft = {
   orderId: string;
+  /** This order's own date — a payment declared against it can never predate it. */
+  orderDate: Date;
   /** This order's own remaining assignable balance (`totalCost - allocatedAmountMinor`), before this draft. */
   assignableMinor: number;
   /** Amount typed directly against the order, with no product named. 0 when untouched. */
@@ -33,6 +35,8 @@ export type StorePaymentSheetDraft = {
   paymentAmountMinor: number;
   /** The store's outstanding debt in the payment's currency. */
   debtMinor: number;
+  /** The payment's own date. `null` while the collector has not picked one yet. */
+  paymentDate: Date | null;
   orders: SheetOrderDraft[];
 };
 
@@ -67,6 +71,17 @@ export function doesPaymentExceedDebt(paymentAmountMinor: number, debtMinor: num
   return paymentAmountMinor > debtMinor;
 }
 
+/**
+ * True once an order carries a declaration (its own line or any of its products' lines) dated
+ * before the order itself. An order with nothing declared against it never fails this check —
+ * there is nothing to date-check yet, so it stays silent until the collector actually assigns it.
+ */
+export function isOrderDateBeforeOrder(order: SheetOrderDraft, paymentDate: Date | null): boolean {
+  if (!paymentDate) return false;
+  if (sumOrderDraft(order) <= 0) return false;
+  return paymentDate < order.orderDate;
+}
+
 /** The declared total may never exceed the amount actually being paid. */
 export function doesAllocationSumExceedPayment(draft: StorePaymentSheetDraft): boolean {
   return sumAllOrders(draft.orders) > draft.paymentAmountMinor;
@@ -81,6 +96,8 @@ export type StorePaymentSheetValidation = {
   orderErrors: ReadonlySet<string>;
   /** ids of products whose own declared amount outran their remaining base. */
   itemErrors: ReadonlySet<string>;
+  /** ids of orders that carry a declaration dated before the order's own date. */
+  dateErrors: ReadonlySet<string>;
   canSubmit: boolean;
 };
 
@@ -88,7 +105,8 @@ export type StorePaymentSheetValidation = {
  * Runs every client-side rule against a draft and rolls the result into one object the sheet can
  * read directly: which fields to mark invalid, what banner to show, and whether the primary CTA
  * may be enabled. `canSubmit` requires a positive amount, a debt that covers it, an allocation sum
- * that fits inside it, and every order/item line inside its own ceiling.
+ * that fits inside it, every order/item line inside its own ceiling, and no declared order dated
+ * before it was placed.
  */
 export function validateStorePaymentSheetDraft(draft: StorePaymentSheetDraft): StorePaymentSheetValidation {
   const sumAllocatedMinor = sumAllOrders(draft.orders);
@@ -96,12 +114,20 @@ export function validateStorePaymentSheetDraft(draft: StorePaymentSheetDraft): S
   const itemErrors = new Set(
     draft.orders.flatMap((order) => order.items.filter(isItemOverRemainingBase).map((item) => item.itemId)),
   );
+  const dateErrors = new Set(
+    draft.orders.filter((order) => isOrderDateBeforeOrder(order, draft.paymentDate)).map((order) => order.orderId),
+  );
   const exceedsDebt = doesPaymentExceedDebt(draft.paymentAmountMinor, draft.debtMinor);
   const allocationExceedsAmount = doesAllocationSumExceedPayment(draft);
   const hasPositiveAmount = draft.paymentAmountMinor > 0;
 
   const canSubmit =
-    hasPositiveAmount && !exceedsDebt && !allocationExceedsAmount && orderErrors.size === 0 && itemErrors.size === 0;
+    hasPositiveAmount &&
+    !exceedsDebt &&
+    !allocationExceedsAmount &&
+    orderErrors.size === 0 &&
+    itemErrors.size === 0 &&
+    dateErrors.size === 0;
 
   return {
     sumAllocatedMinor,
@@ -110,6 +136,7 @@ export function validateStorePaymentSheetDraft(draft: StorePaymentSheetDraft): S
     allocationExceedsAmount,
     orderErrors,
     itemErrors,
+    dateErrors,
     canSubmit,
   };
 }

@@ -17,6 +17,8 @@ type StorePaymentOrderAllocationRowProps = {
   itemAmounts: Record<string, string>;
   itemSettled: Record<string, boolean>;
   isOrderOverAssignable: boolean;
+  /** True when this order carries a declaration dated before the order's own date. */
+  isDateBeforeOrder: boolean;
   itemErrors: ReadonlySet<string>;
   onOrderAmountChange: (orderId: string, raw: string) => void;
   onItemAmountChange: (orderId: string, itemId: string, raw: string) => void;
@@ -35,6 +37,7 @@ export default function StorePaymentOrderAllocationRow({
   itemAmounts,
   itemSettled,
   isOrderOverAssignable,
+  isDateBeforeOrder,
   itemErrors,
   onOrderAmountChange,
   onItemAmountChange,
@@ -47,7 +50,12 @@ export default function StorePaymentOrderAllocationRow({
     <li className="rounded-xl px-3 py-2.5 [background:var(--surface-elevated)] [border:1px_solid_var(--border)]">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="min-w-0">
-          <p className="[font-size:var(--text-caption)] font-medium [color:var(--text-primary)]">
+          <p
+            className={cn(
+              "[font-size:var(--text-caption)] font-medium",
+              isDateBeforeOrder ? "[color:var(--destructive)]" : "[color:var(--text-primary)]",
+            )}
+          >
             {formatDomainDate(order.orderDate, locale)}
           </p>
           <p className="[font-size:11px] [color:var(--text-muted)]">

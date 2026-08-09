@@ -7,13 +7,14 @@ import Tooltip from "@/components/core/Tooltip";
 import { useStorePaymentState } from "./StorePaymentStateProvider";
 
 /**
- * The sidebar's "Registrar pago" action. Disabled only when the viewer has no debt row at all with
- * this store (never ordered from it, never paid it) — there is nothing to declare a payment against.
+ * The sidebar's "Registrar pago" action. Disabled unless the viewer actually owes this store money
+ * in at least one currency — a debt row with `debtMinor <= 0` (nothing owed, or a credit) still has
+ * nothing to register a NEW payment against.
  */
 export default function StoreRegisterPaymentButton() {
   const tStores = useTranslations("stores");
   const { storeDebtByCurrency, openPaymentSheet } = useStorePaymentState();
-  const canRegisterPayment = storeDebtByCurrency.length > 0;
+  const canRegisterPayment = storeDebtByCurrency.some((debt) => debt.debtMinor > 0);
 
   const button = (
     <Button

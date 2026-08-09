@@ -5,7 +5,7 @@ slug: store-domain
 title: Store Domain — Feature Design Document
 status: ACTIVE
 parent: FRD-04
-last_updated: 2026-07-27
+last_updated: 2026-08-08
 prototype: ./prototype/store-domain.html
 design_system: ../../../design/README.md
 demo_anchors:
@@ -61,6 +61,44 @@ demo_anchors:
 > **Language.** Prose is English (repository docs convention); user-facing copy is quoted
 > verbatim in Spanish (`es` is the default locale). The `en` equivalents live in
 > `src/i18n/locales/en/stores.json`.
+>
+> **Amendment — Store-level payments on the store detail page (2026-08-08, `FR-04-55`–`FR-04-58`).**
+> The money model (`StorePayment`, declared `PaymentAllocation`) is owned by FRD-05
+> ([`docs/design/decisions/0025-store-level-payments-declared-allocations.md`](../../../design/decisions/0025-store-level-payments-declared-allocations.md));
+> this note covers only the four things `#store-detail` itself adds. None of this is pictured
+> in the prototype HTML below (see the follow-up note at the end of this block).
+>
+> - **"Resumen" card, new stacked row.** Below the order-count/spend rows, one "Deuda pendiente
+>   {amount}" row per currency the viewer has ordered from or paid this store in
+>   (`StoreDebtSummaryRows`). A negative debt (the store owes the collector back) swaps to the
+>   success tone, "A favor {amount}", rather than a debt figure. The rows, like the rest of the
+>   card, are entirely absent when the viewer has never ordered from or paid this store.
+> - **"Acciones" card, new second row.** A ghost "Registrar pago" button (`CircleDollarSign`
+>   icon, `StoreRegisterPaymentButton`) sits directly below the existing "Anotar pedido aquí"
+>   primary and above the edit affordance, opening the shared `StorePaymentSheet`
+>   (`src/components/modules/StorePaymentSheet/`) pre-targeted at this store. Disabled unless the
+>   viewer owes this store a strictly positive amount in at least one currency: no debt row at all,
+>   or every row at zero or a credit ("A favor"), leaves nothing new to register. The disabled state
+>   wraps the button in a `Tooltip` reading "Sin deuda pendiente con esta tienda". Below it,
+>   an inline hyperlink "Ver mis pedidos en esta tienda" (`ExternalLink` icon, same recipe as the
+>   "Resumen" card's "Ver pedidos vinculados" link) navigates to `/orders?view=store`.
+> - **New main-column subcard, "Pagos a esta tienda"** (`StorePaymentsSection`, a
+>   `CollapsibleSection` with a `Wallet`-icon accent eyebrow and a count badge), positioned right
+>   after the Categorías/Importa desde subcard and before Contactos. Renders nothing when the
+>   viewer has never paid this store (no empty state, the card is simply absent). Each row: a
+>   monospace date, an amount right-aligned in bold, an optional "Nota: {note}" caption line, a
+>   warning-tone "Sin asignar {amount}" `Chip` when the payment carries an undeclared remainder,
+>   and a ghost icon-only delete button (`X`, 28px hit target, with a descriptive
+>   `aria-label` naming the amount and date). Delete opens the canonical destructive `Modal`
+>   (`role="alertdialog"`, non-dismissible backdrop) titled "¿Eliminar este pago?", whose body
+>   copy names the affected allocation count when the payment has any ("Se eliminará el pago de
+>   {amount} del {date}. Se perderá su asignación con {N} pedido(s).") or a plain single-sentence
+>   variant when it has none. A list beyond the server's row cap adds a trailing caption, "y {N}
+>   más".
+>
+> **Follow-up (explicit, not scheduled):** the `#store-detail` prototype anchors have not been
+> updated for this amendment; this FDD prose is the source of truth in the meantime (per the
+> Authority order in `.agents/rules/frd-design-documentation.mdc`).
 
 ---
 
@@ -577,6 +615,11 @@ There is **no** "Guardar tienda" / watchlist action anywhere in the code. The ow
 reports surface is the governance-summary banner above the layout, not an aside button. The
 private note (`StoreNoteForm`) occupies the third aside slot for any viewer. Admin moderation
 tooling beyond this is an Open Question, not yet built.
+
+**Added 2026-08-08 (`FR-04-56`/`FR-04-57`, see the store-level payments amendment at the top of
+this document):** a "Registrar pago" ghost button sits between "Anotar pedido aquí" and the edit
+affordance, and a "Ver mis pedidos en esta tienda" inline link sits below it, before the edit
+affordance's block.
 
 ### 5.5 Create-flow interactions
 

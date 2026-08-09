@@ -511,6 +511,7 @@
       "categoriesTitle": "Categories and imports",
       "channelsTitle": "Contact channels",
       "addressesTitle": "Addresses",
+      "paymentsTitle": "Payments to this store",
       "reviewsAll": "See all {count} reviews",
       "writeReviewPlaceholder": "What do you think of this store?",
       "publishReview": "Publish review",
@@ -552,10 +553,22 @@
       "actions": {
         "anotarPedido": "Log order here",
         "registerPayment": "Log payment",
-        "registerPaymentHint": "Available in the next phase",
+        "registerPaymentHint": "No outstanding balance with this store",
         "suggestChanges": "Suggest changes",
         "editStore": "Edit store",
         "reportStore": "Report store"
+      },
+      "payments": {
+        "unassignedBadge": "Unassigned {amount}",
+        "noteLabel": "Note: {note}",
+        "moreCount": "and {count} more",
+        "deleteAria": "Delete payment of {amount} from {date}",
+        "deleteModalTitle": "Delete this payment?",
+        "deleteModalDescription": "This will delete the {amount} payment from {date}.",
+        "deleteModalDescriptionWithAllocations": "This will delete the {amount} payment from {date}. It will lose its assignment to {count, plural, one {# order} other {# orders}}.",
+        "deleteConfirm": "Delete",
+        "deleteCancel": "Cancel",
+        "errorDelete": "Could not delete the payment. Please try again."
       },
       "governanceBanner": {
         "summary": "This store has {reportCount, plural, =0 {no reports} one {# report} other {# reports}} and {changeRequestCount, plural, =0 {no change requests} one {# change request} other {# change requests}} pending.",

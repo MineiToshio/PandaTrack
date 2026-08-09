@@ -11,6 +11,7 @@ import Textarea from "@/components/core/Textarea";
 import Modal from "@/components/modules/Modal/Modal";
 import { formatAmountWithSymbol } from "@/lib/currency";
 import { sanitizeDecimalInput } from "@/lib/decimalInput";
+import { toDomainDate } from "@/lib/domainDate";
 import { parseDecimalToMinorUnits } from "@/lib/money/parseDecimalToMinorUnits";
 import { cn } from "@/lib/styles";
 import type { AssignableOrder } from "@/lib/data/orders/storePaymentAssignableOrdersQueries";
@@ -51,18 +52,6 @@ export type StorePaymentSheetProps = {
 function startOfToday(): Date {
   const now = new Date();
   return new Date(now.getFullYear(), now.getMonth(), now.getDate());
-}
-
-function toIsoDate(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-}
-
-/** Domain dates travel as UTC-midnight instants; the picker emits local midnight. */
-function toDomainDate(date: Date): Date {
-  return new Date(`${toIsoDate(date)}T00:00:00.000Z`);
 }
 
 /**
@@ -149,6 +138,7 @@ export default function StorePaymentSheet({
     const amountMinor = parseDecimalToMinorUnits(amount, currencyCode) ?? 0;
     const orderDrafts: SheetOrderDraft[] = ordersForCurrency.map((order) => ({
       orderId: order.orderId,
+      orderDate: order.orderDate,
       assignableMinor: order.assignableMinor,
       amountMinor: Math.max(0, parseDecimalToMinorUnits(orderAmounts[order.orderId] ?? "", currencyCode) ?? 0),
       items: order.items.map((item) => ({
@@ -158,8 +148,13 @@ export default function StorePaymentSheet({
         settled: itemSettled[item.itemId] ?? false,
       })),
     }));
-    return { paymentAmountMinor: amountMinor, debtMinor: debtForCurrency, orders: orderDrafts };
-  }, [amount, currencyCode, ordersForCurrency, orderAmounts, itemAmounts, itemSettled, debtForCurrency]);
+    return {
+      paymentAmountMinor: amountMinor,
+      debtMinor: debtForCurrency,
+      paymentDate: paymentDate ? toDomainDate(paymentDate) : null,
+      orders: orderDrafts,
+    };
+  }, [amount, currencyCode, ordersForCurrency, orderAmounts, itemAmounts, itemSettled, debtForCurrency, paymentDate]);
 
   const validation = useMemo(() => validateStorePaymentSheetDraft(draft), [draft]);
   const amountTouched = amount.trim() !== "";
@@ -264,6 +259,7 @@ export default function StorePaymentSheet({
             <DatePickerInput
               id="store-payment-date"
               value={paymentDate}
+              error={validation.dateErrors.size > 0}
               onChange={(date) => {
                 setPaymentDate(date);
                 setDateError(null);
@@ -273,7 +269,11 @@ export default function StorePaymentSheet({
               disableFuture
               popupAlign="end"
             />
-            {dateError && <FieldErrorMsg>{dateError}</FieldErrorMsg>}
+            {dateError ? (
+              <FieldErrorMsg>{dateError}</FieldErrorMsg>
+            ) : (
+              validation.dateErrors.size > 0 && <FieldErrorMsg>{t("dateBeforeOrder")}</FieldErrorMsg>
+            )}
           </div>
         </div>
 
@@ -351,6 +351,7 @@ export default function StorePaymentSheet({
                       itemAmounts={itemAmounts}
                       itemSettled={itemSettled}
                       isOrderOverAssignable={validation.orderErrors.has(order.orderId)}
+                      isDateBeforeOrder={validation.dateErrors.has(order.orderId)}
                       itemErrors={validation.itemErrors}
                       onOrderAmountChange={handleOrderAmountChange}
                       onItemAmountChange={handleItemAmountChange}

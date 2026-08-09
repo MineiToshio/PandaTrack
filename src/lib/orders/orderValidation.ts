@@ -262,6 +262,12 @@ export const storePaymentCreateSchema = z.object({
   allocations: z.array(storePaymentAllocationSchema).max(MAX_STORE_PAYMENT_ALLOCATIONS).optional(),
 });
 
+/** Deletes a whole store payment (and every allocation hanging off it) from the store detail
+    "Pagos a esta tienda" list — the collector is taking the money itself back, not just a declaration. */
+export const storePaymentDeleteSchema = z.object({
+  paymentId: z.string().cuid({ message: "INVALID_PAYMENT_ID" }),
+});
+
 export const orderItemDeleteSchema = z.object({
   itemId: z.string().cuid({ message: "INVALID_ITEM_ID" }),
   orderId: z.string().cuid({ message: "INVALID_ORDER_ID" }),
@@ -278,3 +284,4 @@ export type OrderPaymentDeleteInput = z.infer<typeof orderPaymentDeleteSchema>;
 export type OrderItemRowInput = z.infer<typeof orderItemRowSchema>;
 export type OrderItemDeleteInput = z.infer<typeof orderItemDeleteSchema>;
 export type StorePaymentCreateInput = z.infer<typeof storePaymentCreateSchema>;
+export type StorePaymentDeleteInput = z.infer<typeof storePaymentDeleteSchema>;

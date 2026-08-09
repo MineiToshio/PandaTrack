@@ -511,6 +511,7 @@
       "categoriesTitle": "Categorías e importaciones",
       "channelsTitle": "Canales de contacto",
       "addressesTitle": "Direcciones",
+      "paymentsTitle": "Pagos a esta tienda",
       "reviewsAll": "Ver todas las {count} reseñas",
       "writeReviewPlaceholder": "¿Qué opinas de esta tienda?",
       "publishReview": "Publicar reseña",
@@ -552,10 +553,22 @@
       "actions": {
         "anotarPedido": "Anotar pedido aquí",
         "registerPayment": "Registrar pago",
-        "registerPaymentHint": "Disponible en la siguiente fase",
+        "registerPaymentHint": "Sin deuda pendiente con esta tienda",
         "suggestChanges": "Sugerir cambios",
         "editStore": "Editar tienda",
         "reportStore": "Reportar tienda"
+      },
+      "payments": {
+        "unassignedBadge": "Sin asignar {amount}",
+        "noteLabel": "Nota: {note}",
+        "moreCount": "y {count} más",
+        "deleteAria": "Eliminar pago de {amount} del {date}",
+        "deleteModalTitle": "¿Eliminar este pago?",
+        "deleteModalDescription": "Se eliminará el pago de {amount} del {date}.",
+        "deleteModalDescriptionWithAllocations": "Se eliminará el pago de {amount} del {date}. Se perderá su asignación con {count, plural, one {# pedido} other {# pedidos}}.",
+        "deleteConfirm": "Eliminar",
+        "deleteCancel": "Cancelar",
+        "errorDelete": "No se pudo eliminar el pago. Intenta de nuevo."
       },
       "governanceBanner": {
         "summary": "Esta tienda tiene {reportCount, plural, =0 {sin reportes} one {# reporte} other {# reportes}} y {changeRequestCount, plural, =0 {sin solicitudes} one {# solicitud} other {# solicitudes}} de cambio pendientes.",

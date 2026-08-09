@@ -32,6 +32,7 @@ type PaymentRecord = {
   paymentId: string;
   paymentTotalMinor: number;
   isShared: boolean;
+  isPartialClaim: boolean;
 };
 type Store = {
   id: string;
@@ -177,6 +178,7 @@ export default function OrderDetailClient({
       paymentId: tempId,
       paymentTotalMinor: amount,
       isShared: false,
+      isPartialClaim: false,
     };
     const previous = payments;
     setPayments([...payments, optimistic]);

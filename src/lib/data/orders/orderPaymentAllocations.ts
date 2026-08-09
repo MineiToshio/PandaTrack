@@ -21,6 +21,13 @@ export type OrderPaymentRecord = {
   paymentTotalMinor: number;
   /** True when the parent payment is declared against more than one target. */
   isShared: boolean;
+  /**
+   * True when this is the payment's only allocation AND it does not cover the payment's full
+   * amount — the payment has an unclaimed remainder ("on account") sitting alongside this
+   * declaration. Deleting this allocation deletes the whole payment (see `deleteOrderPayment`), so
+   * a screen showing it must say so rather than implying only this order's slice goes.
+   */
+  isPartialClaim: boolean;
 };
 
 export const ORDER_PAYMENT_ALLOCATION_SELECT = {
@@ -46,6 +53,7 @@ type AllocationRow = {
 const SHARED_PAYMENT_MIN_ALLOCATIONS = 2;
 
 export function mapAllocationToOrderPayment(row: AllocationRow): OrderPaymentRecord {
+  const isSoleAllocation = row.payment._count.allocations === 1;
   return {
     id: row.id,
     amount: row.amountMinor,
@@ -53,6 +61,7 @@ export function mapAllocationToOrderPayment(row: AllocationRow): OrderPaymentRec
     paymentId: row.payment.id,
     paymentTotalMinor: row.payment.amount,
     isShared: row.payment._count.allocations >= SHARED_PAYMENT_MIN_ALLOCATIONS,
+    isPartialClaim: isSoleAllocation && row.amountMinor !== row.payment.amount,
   };
 }
 

@@ -103,6 +103,67 @@ export async function getStoreDebtMinor(
   return (committed._sum.totalCost ?? 0) - (paid._sum.amount ?? 0);
 }
 
+/** Row cap for the store detail "Pagos a esta tienda" list — a simple list, deliberately not paginated. */
+const STORE_PAYMENTS_LIST_LIMIT = 20;
+
+/** One payment as the store detail page's payments card sees it. */
+export type StorePaymentListRow = {
+  id: string;
+  amount: number;
+  currencyCode: string;
+  paymentDate: Date;
+  note: string | null;
+  /** Sum of every `PaymentAllocation.amountMinor` declared against this payment so far. */
+  allocatedTotal: number;
+  /** Count of declaration lines against this payment — what a delete-confirm modal names as "affected". */
+  allocationsCount: number;
+};
+
+export type StorePaymentsForStoreResult = {
+  payments: StorePaymentListRow[];
+  /** True total, independent of the `STORE_PAYMENTS_LIST_LIMIT` cap on `payments`. */
+  totalCount: number;
+};
+
+/**
+ * Every payment the collector has made to one store, newest first, capped at
+ * `STORE_PAYMENTS_LIST_LIMIT`. This is the only screen that can reach a payment with zero
+ * allocations ("on account") or a payment whose remainder was never declared against anything —
+ * `deleteOrderPayment` cannot orphan one anymore (it deletes the whole payment once its last
+ * allocation goes), but a payment that started life with no allocation at all still needs a door.
+ */
+export async function getStorePaymentsForStore(userId: string, storeId: string): Promise<StorePaymentsForStoreResult> {
+  const [rows, totalCount] = await Promise.all([
+    prisma.storePayment.findMany({
+      where: { userId, storeId },
+      select: {
+        id: true,
+        amount: true,
+        currencyCode: true,
+        paymentDate: true,
+        note: true,
+        allocations: { select: { amountMinor: true } },
+      },
+      orderBy: [{ paymentDate: "desc" }, { id: "desc" }],
+      take: STORE_PAYMENTS_LIST_LIMIT,
+    }),
+    prisma.storePayment.count({ where: { userId, storeId } }),
+  ]);
+
+  return {
+    totalCount,
+    payments: rows.map((row) => ({
+      id: row.id,
+      amount: row.amount,
+      currencyCode: row.currencyCode,
+      paymentDate: row.paymentDate,
+      note: row.note,
+      allocatedTotal: row.allocations.reduce((sum, allocation) => sum + allocation.amountMinor, 0),
+      allocationsCount: row.allocations.length,
+    })),
+  };
+}
+
 /**
  * The currency a payment to this store is denominated in when the caller did not name one.
  * Inherited only when every standing order with the store agrees; a store the collector buys from

@@ -30,6 +30,7 @@ const PAID_PAYMENT = {
   paymentId: "pay1",
   paymentTotalMinor: 16000,
   isShared: false,
+  isPartialClaim: false,
 };
 
 describe("OrderPaymentsAsideCard lost-money marker", () => {

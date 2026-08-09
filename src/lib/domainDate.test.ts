@@ -1,5 +1,12 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { domainDateToIsoString, formatDomainDate, formatDomainShortDate, utcDomainDateToLocal } from "./domainDate";
+import {
+  domainDateToIsoString,
+  formatDomainDate,
+  formatDomainShortDate,
+  toDomainDate,
+  toLocalIsoDateString,
+  utcDomainDateToLocal,
+} from "./domainDate";
 
 /**
  * Domain dates are stored at midnight UTC. These tests run under a negative-offset
@@ -66,5 +73,19 @@ describe("domainDate (negative-offset timezone)", () => {
 
   it("domainDateToIsoString passes through undefined", () => {
     expect(domainDateToIsoString(undefined)).toBeUndefined();
+  });
+
+  it("toLocalIsoDateString reads the picker's LOCAL calendar day, not the UTC one", () => {
+    // A DatePickerInput selection of "12 June" arrives as local midnight. Serializing it with
+    // `toISOString().split("T")[0]` (the bug) would convert to UTC first and read back as the
+    // 11th under this negative-offset timezone — the exact regression this helper exists to avoid.
+    const localMidnight = new Date(2026, 5, 12); // June 12, 2026, local midnight
+    expect(toLocalIsoDateString(localMidnight)).toBe("2026-06-12");
+  });
+
+  it("toDomainDate converts a picker's local-midnight Date to the same UTC calendar day", () => {
+    const localMidnight = new Date(2026, 5, 12);
+    const domain = toDomainDate(localMidnight);
+    expect(domain.toISOString()).toBe("2026-06-12T00:00:00.000Z");
   });
 });

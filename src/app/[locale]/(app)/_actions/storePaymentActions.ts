@@ -4,12 +4,16 @@ import * as Sentry from "@sentry/nextjs";
 import { getSession } from "@/lib/auth/auth-server";
 import { getPostHogClient } from "@/lib/analytics/posthog-server";
 import { POSTHOG_EVENTS } from "@/lib/constants";
-import { createStorePayment, type CreateStorePaymentError } from "@/lib/data/orders/storePaymentMutations";
+import {
+  createStorePayment,
+  deleteStorePayment,
+  type CreateStorePaymentError,
+} from "@/lib/data/orders/storePaymentMutations";
 import {
   getAssignableOrdersByStore,
   type AssignableOrder,
 } from "@/lib/data/orders/storePaymentAssignableOrdersQueries";
-import { storePaymentCreateSchema } from "@/lib/orders/orderValidation";
+import { storePaymentCreateSchema, storePaymentDeleteSchema } from "@/lib/orders/orderValidation";
 import { revalidateCollectionSurfaces } from "@/lib/cache/revalidateCollectionSurfaces";
 
 export type GetStorePaymentSheetOrdersResult =
@@ -100,6 +104,49 @@ export async function createStorePaymentAction(
         storeId: input.storeId,
         hasAllocations: (input.allocations ?? []).length > 0,
       });
+      Sentry.captureException(error);
+    });
+    return { ok: false, error: "server_error" };
+  }
+}
+
+export type DeleteStorePaymentActionResult =
+  | { ok: true; affectedOrderIds: string[] }
+  | { ok: false; error: "NOT_FOUND" | "unauthorized" | "validation" | "server_error" };
+
+/**
+ * Deletes a payment from the store detail "Pagos a esta tienda" list — the only screen that can
+ * reach a payment independent of any single order's allocations. Takes the money back entirely,
+ * including every allocation declared against it, unlike an order-scoped delete which may only
+ * remove that order's slice of a shared payment (see `deleteOrderPayment`).
+ */
+export async function deleteStorePaymentAction(paymentId: string): Promise<DeleteStorePaymentActionResult> {
+  const session = await getSession();
+  if (!session?.user?.id) return { ok: false, error: "unauthorized" };
+  const userId = session.user.id;
+
+  const parsed = storePaymentDeleteSchema.safeParse({ paymentId });
+  if (!parsed.success) return { ok: false, error: "validation" };
+
+  try {
+    const result = await deleteStorePayment(parsed.data.paymentId, userId);
+    if (!result.ok) return result;
+
+    revalidateCollectionSurfaces();
+
+    const posthog = getPostHogClient();
+    posthog.capture({
+      distinctId: userId,
+      event: POSTHOG_EVENTS.STORE.PAYMENT_DELETED,
+      properties: { affected_orders_count: result.affectedOrderIds.length },
+    });
+    await posthog.shutdown();
+
+    return result;
+  } catch (error) {
+    Sentry.withScope((scope) => {
+      scope.setTag("feature", "store_payment");
+      scope.setContext("storePayment", { paymentId });
       Sentry.captureException(error);
     });
     return { ok: false, error: "server_error" };

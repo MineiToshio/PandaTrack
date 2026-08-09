@@ -3,14 +3,19 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 const { prismaMock } = vi.hoisted(() => ({
   prismaMock: {
     order: { groupBy: vi.fn(), aggregate: vi.fn(), findMany: vi.fn() },
-    storePayment: { groupBy: vi.fn(), aggregate: vi.fn() },
+    storePayment: { groupBy: vi.fn(), aggregate: vi.fn(), findMany: vi.fn(), count: vi.fn() },
   },
 }));
 
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 
 import { OrderStatus } from "../../../../../generated/prisma/client";
-import { getStoreDebtByCurrency, getStoreDebtMinor, resolveInheritedStoreCurrency } from "../storePaymentQueries";
+import {
+  getStoreDebtByCurrency,
+  getStoreDebtMinor,
+  getStorePaymentsForStore,
+  resolveInheritedStoreCurrency,
+} from "../storePaymentQueries";
 
 describe("getStoreDebtByCurrency", () => {
   beforeEach(() => {
@@ -140,6 +145,70 @@ describe("getStoreDebtMinor", () => {
     const debt = await getStoreDebtMinor(tx as never, "user-1", "store-1", "USD");
 
     expect(debt).toBe(0);
+  });
+});
+
+describe("getStorePaymentsForStore", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("maps each payment with its allocated total and allocation count", async () => {
+    prismaMock.storePayment.findMany.mockResolvedValue([
+      {
+        id: "pay-1",
+        amount: 1000,
+        currencyCode: "USD",
+        paymentDate: new Date("2024-02-01T00:00:00.000Z"),
+        note: "Adelanto",
+        allocations: [{ amountMinor: 300 }, { amountMinor: 200 }],
+      },
+      {
+        id: "pay-2",
+        amount: 500,
+        currencyCode: "USD",
+        paymentDate: new Date("2024-01-01T00:00:00.000Z"),
+        note: null,
+        allocations: [],
+      },
+    ]);
+    prismaMock.storePayment.count.mockResolvedValue(2);
+
+    const result = await getStorePaymentsForStore("user-1", "store-1");
+
+    expect(result.totalCount).toBe(2);
+    expect(result.payments).toEqual([
+      {
+        id: "pay-1",
+        amount: 1000,
+        currencyCode: "USD",
+        paymentDate: new Date("2024-02-01T00:00:00.000Z"),
+        note: "Adelanto",
+        allocatedTotal: 500,
+        allocationsCount: 2,
+      },
+      {
+        id: "pay-2",
+        amount: 500,
+        currencyCode: "USD",
+        paymentDate: new Date("2024-01-01T00:00:00.000Z"),
+        note: null,
+        allocatedTotal: 0,
+        allocationsCount: 0,
+      },
+    ]);
+  });
+
+  it("caps the list at the display limit but reports the true total separately", async () => {
+    prismaMock.storePayment.findMany.mockResolvedValue([]);
+    prismaMock.storePayment.count.mockResolvedValue(37);
+
+    const result = await getStorePaymentsForStore("user-1", "store-1");
+
+    expect(prismaMock.storePayment.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { userId: "user-1", storeId: "store-1" }, take: 20 }),
+    );
+    expect(result.totalCount).toBe(37);
   });
 });
 

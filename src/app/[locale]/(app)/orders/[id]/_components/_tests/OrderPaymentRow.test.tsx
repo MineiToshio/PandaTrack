@@ -50,6 +50,7 @@ const ONE_TO_ONE_PAYMENT = {
   paymentId: "pay-1",
   paymentTotalMinor: 5000,
   isShared: false,
+  isPartialClaim: false,
 };
 
 const SHARED_PAYMENT = {
@@ -59,6 +60,17 @@ const SHARED_PAYMENT = {
   paymentId: "pay-2",
   paymentTotalMinor: 8000,
   isShared: true,
+  isPartialClaim: false,
+};
+
+const PARTIAL_CLAIM_PAYMENT = {
+  id: "alloc-3",
+  amount: 3000,
+  paymentDate: new Date("2024-02-10T00:00:00.000Z"),
+  paymentId: "pay-3",
+  paymentTotalMinor: 8000,
+  isShared: false,
+  isPartialClaim: true,
 };
 
 const BASE_PROPS = {
@@ -99,5 +111,22 @@ describe("OrderPaymentRow delete-confirm copy", () => {
   it("omits the shared-payment subtitle for a 1:1 payment", () => {
     render(<OrderPaymentRow {...BASE_PROPS} payment={ONE_TO_ONE_PAYMENT} />);
     expect(screen.queryByText("detail.payments.sharedSubtitle")).not.toBeInTheDocument();
+  });
+
+  it("uses the partial-claim delete copy for a sole allocation that doesn't cover the whole payment", async () => {
+    const user = userEvent.setup();
+    render(<OrderPaymentRow {...BASE_PROPS} payment={PARTIAL_CLAIM_PAYMENT} />);
+
+    await user.click(screen.getByRole("button", { name: /detail\.payments\.deleteLabelDetailed/ }));
+
+    expect(screen.getByText("detail.payments.deleteModalTitlePartial")).toBeInTheDocument();
+    expect(screen.getByText("detail.payments.deleteModalDescriptionPartial")).toBeInTheDocument();
+    expect(screen.queryByText("detail.payments.deleteModalTitle")).not.toBeInTheDocument();
+    expect(screen.queryByText("detail.payments.deleteModalTitleShared")).not.toBeInTheDocument();
+  });
+
+  it("shows the shared-payment subtitle on the row for a partial claim too, so the amount is never read as the whole payment", () => {
+    render(<OrderPaymentRow {...BASE_PROPS} payment={PARTIAL_CLAIM_PAYMENT} />);
+    expect(screen.getByText("detail.payments.sharedSubtitle")).toBeInTheDocument();
   });
 });

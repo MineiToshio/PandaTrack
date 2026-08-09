@@ -60,6 +60,7 @@ type PaymentRecord = {
   paymentId: string;
   paymentTotalMinor: number;
   isShared: boolean;
+  isPartialClaim: boolean;
 };
 
 export type OrderPaymentsAsideCardHandle = {

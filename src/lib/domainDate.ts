@@ -57,3 +57,25 @@ export function utcDomainDateToLocal(date: Date): Date {
 export function domainDateToIsoString(date: Date | undefined): string | undefined {
   return date ? date.toISOString().slice(0, 10) : undefined;
 }
+
+/**
+ * Serialize a picker's LOCAL-midnight `Date` (as emitted by `DatePickerInput`) to its `yyyy-mm-dd`
+ * string using local getters, never `toISOString()`. `toISOString()` first converts to UTC, which
+ * shifts the calendar day for any viewer west of UTC (the Americas) — a picker selection of "8 Aug"
+ * silently becomes "7 Aug" once it crosses the wire. Use this at every form boundary that reads a
+ * `DatePickerInput` value and needs it as text for a domain date field (`paymentDate`, etc.).
+ */
+export function toLocalIsoDateString(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+/**
+ * Convert a picker's local-midnight `Date` into the UTC-midnight domain `Date` carrying the SAME
+ * calendar day, ready to compare against or persist alongside other domain dates.
+ */
+export function toDomainDate(date: Date): Date {
+  return new Date(`${toLocalIsoDateString(date)}T00:00:00.000Z`);
+}
