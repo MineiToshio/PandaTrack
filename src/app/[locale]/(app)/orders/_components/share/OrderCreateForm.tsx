@@ -1,6 +1,6 @@
 "use client";
 
-import { Calculator, Check, Image as ImageIcon, Info, Keyboard, Plus, RefreshCw } from "lucide-react";
+import { Calculator, Check, ChevronDown, Image as ImageIcon, Info, Keyboard, Plus, RefreshCw } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -111,6 +111,13 @@ export default function OrderCreateForm({ stores, productTypeKeys, baseCurrencyC
   const [storeError, setStoreError] = useState<string | null>(null);
   const [currencyError, setCurrencyError] = useState<string | null>(null);
   const [orderDateError, setOrderDateError] = useState<string | null>(null);
+
+  // "¿Pagaste algo hoy?" — collapsed by default; becomes the order's `initialPayment`, a store
+  // payment declared entirely against the new order in the same write that creates it.
+  const [showInitialPayment, setShowInitialPayment] = useState(false);
+  const [initialPaymentAmount, setInitialPaymentAmount] = useState("");
+  const [initialPaymentDate, setInitialPaymentDate] = useState<Date | null>(null);
+  const [initialPaymentError, setInitialPaymentError] = useState<string | null>(null);
 
   const wizardRef = useRef<WizardAccordionHandle>(null);
   const [activeStep, setActiveStep] = useState(1);
@@ -320,6 +327,48 @@ export default function OrderCreateForm({ stores, productTypeKeys, baseCurrencyC
     return valid;
   }, [validateStep2Items, totalCost, currencyCode, t]);
 
+  // Defaults to the order's own date until the collector picks a different one — mirrors the
+  // "defaults from context, stays overridable" shape `receivedDate` uses in `QuickArrivalModal`.
+  const initialPaymentDateValue = initialPaymentDate ?? orderDate;
+  const enteredTotalCents = parseCentsFromDecimal(totalCost);
+  const canMarkFullyPaid = enteredTotalCents !== null && enteredTotalCents > 0;
+
+  const validateInitialPayment = useCallback((): boolean => {
+    if (initialPaymentAmount.trim() === "") {
+      setInitialPaymentError(null);
+      return true;
+    }
+    if (!isValidPositiveDecimal(initialPaymentAmount, currencyCode)) {
+      setInitialPaymentError(t("validation.initialPaymentInvalid"));
+      return false;
+    }
+    const amountCents = parseCentsFromDecimal(initialPaymentAmount);
+    const totalCents = parseCentsFromDecimal(totalCost);
+    if (amountCents !== null && totalCents !== null && amountCents > totalCents) {
+      setInitialPaymentError(t("validation.initialPaymentExceedsTotal"));
+      return false;
+    }
+    setInitialPaymentError(null);
+    return true;
+  }, [currencyCode, initialPaymentAmount, t, totalCost]);
+
+  const handleMarkFullyPaid = useCallback(() => {
+    if (!canMarkFullyPaid) return;
+    setShowInitialPayment(true);
+    setInitialPaymentAmount(totalCost);
+    setInitialPaymentError(null);
+  }, [canMarkFullyPaid, totalCost]);
+
+  const handleFocusAdvance = useCallback(() => {
+    setShowInitialPayment(true);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const el = document.getElementById("order-initial-payment-amount") as HTMLInputElement | null;
+        el?.focus();
+      });
+    });
+  }, []);
+
   // Submit
   const formRef = useRef<HTMLFormElement>(null);
   const buildFormData = useCallback(
@@ -342,15 +391,31 @@ export default function OrderCreateForm({ stores, productTypeKeys, baseCurrencyC
       fd.set("currencyCode", currencyCode);
       if (showExchangeRate) fd.set("exchangeRate", exchangeRate);
       fd.set("totalCost", totalCost);
+      if (initialPaymentAmount.trim() !== "" && initialPaymentDateValue) {
+        fd.set("initialPaymentAmount", initialPaymentAmount);
+        fd.set("initialPaymentDate", initialPaymentDateValue.toISOString().split("T")[0]!);
+      }
       return fd;
     },
-    [items, storeId, orderDate, deliveryFrom, deliveryTo, currencyCode, exchangeRate, totalCost, showExchangeRate],
+    [
+      items,
+      storeId,
+      orderDate,
+      deliveryFrom,
+      deliveryTo,
+      currencyCode,
+      exchangeRate,
+      totalCost,
+      initialPaymentAmount,
+      initialPaymentDateValue,
+      showExchangeRate,
+    ],
   );
 
   const handleFinalSubmit = useCallback(
     (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();
-      if (!validateStep1() || !validateStep2()) return;
+      if (!validateStep1() || !validateStep2() || !validateInitialPayment()) return;
 
       const fd = buildFormData(event.currentTarget);
       const enteredCents = parseCentsFromDecimal(totalCost) ?? 0;
@@ -374,7 +439,7 @@ export default function OrderCreateForm({ stores, productTypeKeys, baseCurrencyC
       }
       startTransition(() => formAction(fd));
     },
-    [validateStep1, validateStep2, buildFormData, totalCost, items, pricedRows, formAction],
+    [validateStep1, validateStep2, validateInitialPayment, buildFormData, totalCost, items, pricedRows, formAction],
   );
 
   // ⌘/Ctrl+Enter submits from any step (mirrors the deliveries create wizard). Shift is
@@ -795,6 +860,112 @@ export default function OrderCreateForm({ stores, productTypeKeys, baseCurrencyC
                     <dd className="text-[17px] font-bold [font-variant-numeric:tabular-nums]">{totalLabelForReview}</dd>
                   </dl>
                 </div>
+
+                {/* "¿Pagaste algo hoy?" — collapsed by default; the common case is nothing paid yet. */}
+                <div className="rounded-xl [border:1px_solid_var(--border)]">
+                  <button
+                    type="button"
+                    onClick={() => setShowInitialPayment((current) => !current)}
+                    aria-expanded={showInitialPayment}
+                    className="flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left"
+                  >
+                    <span className="text-[12.5px] font-medium [color:var(--text-secondary)]">
+                      {tCreate("initialPayment.toggle")}
+                    </span>
+                    <ChevronDown
+                      size={15}
+                      aria-hidden
+                      className={cn(
+                        "shrink-0 [color:var(--text-muted)] transition-transform",
+                        showInitialPayment && "rotate-180",
+                      )}
+                    />
+                  </button>
+
+                  {!showInitialPayment && (
+                    <div className="flex flex-wrap items-center gap-2 px-3 pb-2.5">
+                      <Button
+                        type="button"
+                        variant="tonal"
+                        size="sm"
+                        onClick={handleMarkFullyPaid}
+                        disabled={!canMarkFullyPaid}
+                      >
+                        {tCreate("initialPayment.paidInFull")}
+                      </Button>
+                      <Button type="button" variant="ghost" size="sm" onClick={handleFocusAdvance}>
+                        {tCreate("initialPayment.advance")}
+                      </Button>
+                      {!canMarkFullyPaid && (
+                        <span className="text-[11.5px] [color:var(--text-muted)]">
+                          {tCreate("initialPayment.needsTotalHint")}
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {showInitialPayment && (
+                    <div className="space-y-3 px-3 pt-1 pb-3.5">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Button
+                          type="button"
+                          variant="tonal"
+                          size="sm"
+                          onClick={handleMarkFullyPaid}
+                          disabled={!canMarkFullyPaid}
+                        >
+                          {tCreate("initialPayment.paidInFull")}
+                        </Button>
+                      </div>
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="space-y-1.5">
+                          <label
+                            htmlFor="order-initial-payment-amount"
+                            className="text-[13px] font-medium [color:var(--text-secondary)]"
+                          >
+                            {tCreate("initialPayment.amountLabel")}
+                            {currencyCode ? ` (${currencyCode})` : ""}
+                          </label>
+                          <Input
+                            id="order-initial-payment-amount"
+                            type="text"
+                            inputMode="decimal"
+                            value={initialPaymentAmount}
+                            placeholder={tForm("totalCostPlaceholder")}
+                            error={Boolean(initialPaymentError)}
+                            onChange={(e) => {
+                              setInitialPaymentAmount(sanitizeDecimalInput(e.target.value, currencyCode));
+                              setInitialPaymentError(null);
+                            }}
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label
+                            htmlFor="order-initial-payment-date"
+                            className="text-[13px] font-medium [color:var(--text-secondary)]"
+                          >
+                            {tCreate("initialPayment.dateLabel")}
+                          </label>
+                          <DatePickerInput
+                            id="order-initial-payment-date"
+                            value={initialPaymentDateValue}
+                            onChange={setInitialPaymentDate}
+                            placeholder={tForm("orderDatePlaceholder")}
+                            locale={locale}
+                            disableFuture
+                            popupAlign="end"
+                          />
+                        </div>
+                      </div>
+                      {initialPaymentError ? (
+                        <FieldErrorMsg>{initialPaymentError}</FieldErrorMsg>
+                      ) : (
+                        <p className="text-[11.5px] [color:var(--text-muted)]">{tCreate("initialPayment.helper")}</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+
                 <div className="flex items-start gap-2 rounded-[10px] px-3 py-2.5 text-[12.5px] leading-[1.5] [color:var(--text-secondary)] [background:color-mix(in_oklch,var(--info)_6%,transparent)] [border:1px_solid_color-mix(in_oklch,var(--info)_22%,transparent)]">
                   <Info size={14} className="mt-0.5 shrink-0 [color:var(--info)]" aria-hidden />
                   <span>

@@ -4,7 +4,6 @@ import type { ReactNode } from "react";
 import {
   AtSign,
   CircleAlert,
-  CircleDollarSign,
   Clock,
   Copy,
   ExternalLink,
@@ -28,7 +27,6 @@ import BackNavLink from "@/components/core/BackNavLink";
 import Button from "@/components/core/Button/Button";
 import Chip from "@/components/core/Chip";
 import Eyebrow from "@/components/core/Eyebrow";
-import Tooltip from "@/components/core/Tooltip";
 import Typography from "@/components/core/Typography";
 import AlertBanner from "@/components/modules/AlertBanner";
 import ChannelRow from "@/components/modules/ChannelRow";
@@ -65,6 +63,9 @@ import StoreReportNoticeBanner, { StoreReportedChip } from "./StoreReportNotice"
 import StoreReportModal from "./StoreReportModal";
 import StoreAdminModerationPanel from "./StoreAdminModerationPanel";
 import StoreCreateOrderButton from "./StoreCreateOrderButton";
+import StorePaymentStateProvider from "./StorePaymentStateProvider";
+import StoreDebtSummaryRows from "./StoreDebtSummaryRows";
+import StoreRegisterPaymentButton from "./StoreRegisterPaymentButton";
 
 type StoreDetailContentProps = {
   locale: string;
@@ -409,156 +410,130 @@ export default function StoreDetailContent({
             </div>
 
             {/* ── Sticky aside ── */}
-            <DetailSidebar
-              ariaLabel={tStores("detail.quickSummaryLabel")}
-              labels={{
-                resumen: tStores("redesign.detail.aside.resumen"),
-                acciones: tStores("redesign.detail.aside.acciones"),
-                notaPrivada: tStores("redesign.detail.aside.notaPrivada"),
-                notaPrivadaEyebrow: tStores("redesign.detail.aside.notaPrivada"),
-                governance: tStores("moderation.panelTitle"),
-              }}
-              accents={{
-                resumen: { tone: "accent", icon: Package, topAccent: "accent" },
-                acciones: { tone: "accent", icon: Zap, topAccent: "accent" },
-                governance: { tone: "warning", icon: ShieldAlert, topAccent: "warning" },
-              }}
-              governance={
-                canModerate ? (
-                  <StoreAdminModerationPanel
-                    key={store.status}
-                    locale={locale}
-                    storeSlug={store.slug}
-                    storeName={store.name}
-                    initialStatus={store.status as "PENDING" | "APPROVED"}
-                  />
-                ) : undefined
-              }
-              resumen={
-                viewerActivity.ordersTotal > 0 ? (
-                  <>
-                    {/* Rows wrap in a single container so the sidebar's flex gap doesn't
+            <StorePaymentStateProvider
+              storeId={store.id}
+              storeName={store.name}
+              storeDebtByCurrency={storeDebtByCurrency}
+              locale={locale}
+            >
+              <DetailSidebar
+                ariaLabel={tStores("detail.quickSummaryLabel")}
+                labels={{
+                  resumen: tStores("redesign.detail.aside.resumen"),
+                  acciones: tStores("redesign.detail.aside.acciones"),
+                  notaPrivada: tStores("redesign.detail.aside.notaPrivada"),
+                  notaPrivadaEyebrow: tStores("redesign.detail.aside.notaPrivada"),
+                  governance: tStores("moderation.panelTitle"),
+                }}
+                accents={{
+                  resumen: { tone: "accent", icon: Package, topAccent: "accent" },
+                  acciones: { tone: "accent", icon: Zap, topAccent: "accent" },
+                  governance: { tone: "warning", icon: ShieldAlert, topAccent: "warning" },
+                }}
+                governance={
+                  canModerate ? (
+                    <StoreAdminModerationPanel
+                      key={store.status}
+                      locale={locale}
+                      storeSlug={store.slug}
+                      storeName={store.name}
+                      initialStatus={store.status as "PENDING" | "APPROVED"}
+                    />
+                  ) : undefined
+                }
+                resumen={
+                  viewerActivity.ordersTotal > 0 ? (
+                    <>
+                      {/* Rows wrap in a single container so the sidebar's flex gap doesn't
                       pull them apart from their border-top separators. */}
-                    <div className="flex flex-col">
-                      <SummaryStatRow
-                        label={tStores("redesign.detail.aside.ordersTotalLabel")}
-                        value={String(viewerActivity.ordersTotal)}
-                      />
-                      <SummaryStatRow
-                        label={tStores("redesign.detail.aside.ordersActiveLabel")}
-                        value={String(viewerActivity.ordersActive)}
-                      />
-                      {viewerActivity.totalSpentByCurrency.length > 0 && (
+                      <div className="flex flex-col">
                         <SummaryStatRow
-                          label={tStores("redesign.detail.aside.totalSpentLabel")}
-                          value={viewerActivity.totalSpentByCurrency
-                            .map(({ currencyCode, totalMinorUnits }) => formatAmount(totalMinorUnits, currencyCode))
-                            .join(" · ")}
+                          label={tStores("redesign.detail.aside.ordersTotalLabel")}
+                          value={String(viewerActivity.ordersTotal)}
                         />
-                      )}
-                      {/* Debt per currency, stacked (§ store-level payments): a credit renders
-                        in success green so it reads as money owed back, not a balance due. */}
-                      {storeDebtByCurrency.map((debt) => (
                         <SummaryStatRow
-                          key={debt.currencyCode}
-                          label={tStores("redesign.detail.aside.debtLabel")}
-                          value={
-                            debt.debtMinor < 0 ? (
-                              <span className="text-success">
-                                {tStores("redesign.detail.aside.debtCredit", {
-                                  amount: formatAmount(Math.abs(debt.debtMinor), debt.currencyCode),
-                                })}
-                              </span>
-                            ) : (
-                              formatAmount(debt.debtMinor, debt.currencyCode)
-                            )
-                          }
+                          label={tStores("redesign.detail.aside.ordersActiveLabel")}
+                          value={String(viewerActivity.ordersActive)}
                         />
-                      ))}
-                    </div>
-                    {/* Inline hyperlink recipe (playbook §1, `link` variant is legacy) — matches
+                        {viewerActivity.totalSpentByCurrency.length > 0 && (
+                          <SummaryStatRow
+                            label={tStores("redesign.detail.aside.totalSpentLabel")}
+                            value={viewerActivity.totalSpentByCurrency
+                              .map(({ currencyCode, totalMinorUnits }) => formatAmount(totalMinorUnits, currencyCode))
+                              .join(" · ")}
+                          />
+                        )}
+                        {/* Debt per currency, stacked (§ store-level payments): a credit renders
+                        in success green so it reads as money owed back, not a balance due. Reads
+                        the live (optimistically patched) figure from `StorePaymentStateProvider`. */}
+                        <StoreDebtSummaryRows />
+                      </div>
+                      {/* Inline hyperlink recipe (playbook §1, `link` variant is legacy) — matches
                       the "Ver entregas" link in OrderItemsReadOnlyList. */}
+                      <Link
+                        href={`/${locale}${ROUTES.orders}?store=${store.id}`}
+                        className="text-accent inline-flex items-center gap-1.5 self-start [font-size:var(--text-caption)] font-medium underline-offset-2 hover:underline"
+                      >
+                        <ExternalLink size={14} aria-hidden="true" />
+                        {tStores("redesign.detail.aside.viewLinkedOrders")}
+                      </Link>
+                    </>
+                  ) : (
+                    <Typography size="xs" className="text-text-muted">
+                      {tStores("redesign.detail.aside.noOrdersYet")}
+                    </Typography>
+                  )
+                }
+                acciones={
+                  <>
+                    <StoreCreateOrderButton
+                      locale={locale}
+                      storeId={store.id}
+                      label={tStores("redesign.detail.actions.anotarPedido")}
+                    />
+                    <StoreRegisterPaymentButton />
                     <Link
-                      href={`/${locale}${ROUTES.orders}?store=${store.id}`}
+                      href={`/${locale}${ROUTES.orders}?view=store`}
                       className="text-accent inline-flex items-center gap-1.5 self-start [font-size:var(--text-caption)] font-medium underline-offset-2 hover:underline"
                     >
                       <ExternalLink size={14} aria-hidden="true" />
-                      {tStores("redesign.detail.aside.viewLinkedOrders")}
+                      {tStores("redesign.detail.aside.viewOrdersHere")}
                     </Link>
+                    {canAccessEditRoute && (
+                      <Button
+                        as="a"
+                        href={`/${locale}${ROUTES.stores}/${editableStore.slug}/edit`}
+                        variant="ghost"
+                        leadingIcon={
+                          canDirectlyEdit ? (
+                            <Pencil size={16} aria-hidden="true" />
+                          ) : (
+                            <GitPullRequestArrow size={16} aria-hidden="true" />
+                          )
+                        }
+                        fullWidth
+                        className="justify-start"
+                      >
+                        {editModeLabel}
+                      </Button>
+                    )}
+                    <StoreReportModal
+                      locale={locale}
+                      storeSlug={store.slug}
+                      storeName={store.name}
+                      existingReport={governanceViewerContext.openReport}
+                      triggerClassName="w-full justify-start"
+                      triggerVariant="destructive-ghost"
+                      showTriggerLabel
+                      triggerIcon={<Flag size={16} aria-hidden="true" />}
+                    />
                   </>
-                ) : (
-                  <Typography size="xs" className="text-text-muted">
-                    {tStores("redesign.detail.aside.noOrdersYet")}
-                  </Typography>
-                )
-              }
-              acciones={
-                <>
-                  <StoreCreateOrderButton
-                    locale={locale}
-                    storeId={store.id}
-                    label={tStores("redesign.detail.actions.anotarPedido")}
-                  />
-                  {/* Store-level payments land in the next phase; the entry point is visible now
-                    so the flow reads as "coming", not missing. */}
-                  <Tooltip
-                    content={tStores("redesign.detail.actions.registerPaymentHint")}
-                    asDiv
-                    className="w-full"
-                    triggerClassName="w-full"
-                  >
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      leadingIcon={<CircleDollarSign size={16} aria-hidden="true" />}
-                      fullWidth
-                      disabled
-                      className="justify-start"
-                    >
-                      {tStores("redesign.detail.actions.registerPayment")}
-                    </Button>
-                  </Tooltip>
-                  <Link
-                    href={`/${locale}${ROUTES.orders}?view=store`}
-                    className="text-accent inline-flex items-center gap-1.5 self-start [font-size:var(--text-caption)] font-medium underline-offset-2 hover:underline"
-                  >
-                    <ExternalLink size={14} aria-hidden="true" />
-                    {tStores("redesign.detail.aside.viewOrdersHere")}
-                  </Link>
-                  {canAccessEditRoute && (
-                    <Button
-                      as="a"
-                      href={`/${locale}${ROUTES.stores}/${editableStore.slug}/edit`}
-                      variant="ghost"
-                      leadingIcon={
-                        canDirectlyEdit ? (
-                          <Pencil size={16} aria-hidden="true" />
-                        ) : (
-                          <GitPullRequestArrow size={16} aria-hidden="true" />
-                        )
-                      }
-                      fullWidth
-                      className="justify-start"
-                    >
-                      {editModeLabel}
-                    </Button>
-                  )}
-                  <StoreReportModal
-                    locale={locale}
-                    storeSlug={store.slug}
-                    storeName={store.name}
-                    existingReport={governanceViewerContext.openReport}
-                    triggerClassName="w-full justify-start"
-                    triggerVariant="destructive-ghost"
-                    showTriggerLabel
-                    triggerIcon={<Flag size={16} aria-hidden="true" />}
-                  />
-                </>
-              }
-              notaPrivada={
-                <StoreNoteForm key={store.slug} locale={locale} storeSlug={store.slug} existingNote={viewerNote} />
-              }
-            />
+                }
+                notaPrivada={
+                  <StoreNoteForm key={store.slug} locale={locale} storeSlug={store.slug} existingNote={viewerNote} />
+                }
+              />
+            </StorePaymentStateProvider>
           </div>
 
           {/* Hidden h1 for SR (the visible title is in StoreHero) */}

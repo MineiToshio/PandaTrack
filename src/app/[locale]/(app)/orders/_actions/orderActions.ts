@@ -105,6 +105,13 @@ export async function createOrderAction(
 
     const posthog = getPostHogClient();
     posthog.capture({ distinctId: userId, event: POSTHOG_EVENTS.ORDER.CREATED });
+    if (parsed.data.initialPayment) {
+      posthog.capture({
+        distinctId: userId,
+        event: POSTHOG_EVENTS.ORDER.CREATED_WITH_ADVANCE,
+        properties: { orderId: result.orderId },
+      });
+    }
     await posthog.shutdown();
 
     return { success: true, orderId: result.orderId };

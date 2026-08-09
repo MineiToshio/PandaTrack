@@ -19,6 +19,9 @@ type StoreGroupHeaderProps = {
   locale: string;
   isExpanded: boolean;
   onToggleExpand: () => void;
+  /** Opens the store payment sheet for this group. Omitted (or the group has no debt row at all)
+      keeps the action disabled — nothing to declare a payment against. */
+  onRegisterPayment?: () => void;
 };
 
 /**
@@ -34,9 +37,11 @@ export default function StoreGroupHeader({
   locale,
   isExpanded,
   onToggleExpand,
+  onRegisterPayment,
 }: StoreGroupHeaderProps) {
   const t = useTranslations("orderListing");
   const tStores = useTranslations("stores");
+  const canRegisterPayment = Boolean(onRegisterPayment) && debts.length > 0;
 
   const isPerson = store.sellerType === "PERSON";
   const isProxy = store.sellerType === "PROXY";
@@ -104,9 +109,10 @@ export default function StoreGroupHeader({
           variant="secondary"
           size="sm"
           leadingIcon={<HandCoins size={14} aria-hidden />}
-          disabled
-          title={t("storeView.registerPaymentDisabledHint")}
-          aria-label={t("storeView.registerPaymentDisabledHint")}
+          onClick={onRegisterPayment}
+          disabled={!canRegisterPayment}
+          title={canRegisterPayment ? undefined : t("storeView.registerPaymentDisabledHint")}
+          aria-label={canRegisterPayment ? undefined : t("storeView.registerPaymentDisabledHint")}
         >
           {t("storeView.registerPayment")}
         </Button>

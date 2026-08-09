@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import type { ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
+import { ToastProvider } from "@/contexts/ToastContext";
 import type { PendingProductsByStoreGroup } from "@/lib/data/orders/pendingProductsByStoreQueries";
 import StoreGroupedView from "../StoreGroupedView";
 
@@ -18,6 +19,20 @@ vi.mock("posthog-js", () => ({ default: { capture: vi.fn() } }));
 vi.mock("../../_actions/orderItemActions", () => ({
   setOrderItemArrivedAction: vi.fn().mockResolvedValue({ ok: true }),
 }));
+vi.mock("@/app/[locale]/(app)/_actions/storePaymentActions", () => ({
+  getStorePaymentSheetOrdersAction: vi.fn().mockResolvedValue({ ok: true, orders: [] }),
+  createStorePaymentAction: vi
+    .fn()
+    .mockResolvedValue({ ok: true, paymentId: "payment-1", currencyCode: "PEN", affectedOrders: [] }),
+}));
+
+function renderView(props: ComponentProps<typeof StoreGroupedView>) {
+  return render(
+    <ToastProvider>
+      <StoreGroupedView {...props} />
+    </ToastProvider>,
+  );
+}
 
 function makeGroup(overrides: Partial<PendingProductsByStoreGroup> = {}): PendingProductsByStoreGroup {
   return {
@@ -73,7 +88,7 @@ function makeGroup(overrides: Partial<PendingProductsByStoreGroup> = {}): Pendin
 
 describe("StoreGroupedView", () => {
   it("renders a group header with the store name and every pending product expanded by default", () => {
-    render(<StoreGroupedView groups={[makeGroup()]} locale="es" returnTo="/es/orders?view=store" />);
+    renderView({ groups: [makeGroup()], locale: "es", returnTo: "/es/orders?view=store" });
 
     expect(screen.getByText("Akiba Books")).toBeInTheDocument();
     expect(screen.getAllByText("One Piece Vol. 1").length).toBeGreaterThan(0);
@@ -81,19 +96,19 @@ describe("StoreGroupedView", () => {
   });
 
   it("shows a price for a product with a base amount and an 'add price' link when there is none", () => {
-    render(<StoreGroupedView groups={[makeGroup()]} locale="es" returnTo="/es/orders?view=store" />);
+    renderView({ groups: [makeGroup()], locale: "es", returnTo: "/es/orders?view=store" });
 
     expect(screen.getAllByText("storeView.addPrice").length).toBeGreaterThan(0);
   });
 
   it("marks a settled product without re-deriving it from a payment bar", () => {
-    render(<StoreGroupedView groups={[makeGroup()]} locale="es" returnTo="/es/orders?view=store" />);
+    renderView({ groups: [makeGroup()], locale: "es", returnTo: "/es/orders?view=store" });
 
     expect(screen.getAllByText("storeView.settled").length).toBeGreaterThan(0);
   });
 
   it("collapses the group body when its chevron is toggled", () => {
-    render(<StoreGroupedView groups={[makeGroup()]} locale="es" returnTo="/es/orders?view=store" />);
+    renderView({ groups: [makeGroup()], locale: "es", returnTo: "/es/orders?view=store" });
 
     expect(screen.getAllByText("One Piece Vol. 1").length).toBeGreaterThan(0);
 
@@ -114,7 +129,7 @@ describe("StoreGroupedView", () => {
         status: "APPROVED",
       },
     });
-    render(<StoreGroupedView groups={[makeGroup(), groupB]} locale="es" returnTo="/es/orders?view=store" />);
+    renderView({ groups: [makeGroup(), groupB], locale: "es", returnTo: "/es/orders?view=store" });
 
     expect(screen.getByText("Akiba Books")).toBeInTheDocument();
     expect(screen.getByText("Manga Corner")).toBeInTheDocument();

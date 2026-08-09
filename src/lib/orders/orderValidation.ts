@@ -236,6 +236,32 @@ export const orderPaymentDeleteSchema = z.object({
   orderId: z.string().cuid({ message: "INVALID_ORDER_ID" }),
 });
 
+/** Upper bound on declaration lines per store payment. Guards against a tampered client payload. */
+const MAX_STORE_PAYMENT_ALLOCATIONS = 200;
+
+const storePaymentAllocationSchema = z.object({
+  orderId: z.string().cuid({ message: "INVALID_ORDER_ID" }),
+  orderItemId: z.string().cuid({ message: "INVALID_ITEM_ID" }).optional(),
+  // Zero is legal only alongside `settlesTarget` — the mutation, which sees the full batch, is
+  // the one place that rule is enforced; the schema only bounds the shape.
+  amountMinor: z.number().int().min(0).max(MAX_PAYMENT_AMOUNT),
+  settlesTarget: z.boolean().optional(),
+});
+
+/**
+ * A payment to a store, with its optional "what this covers" declaration. `currencyCode` is
+ * omitted when the store's standing orders agree on one; the mutation inherits it in that case and
+ * refuses with `CURRENCY_REQUIRED` otherwise.
+ */
+export const storePaymentCreateSchema = z.object({
+  storeId: z.string().cuid({ message: "INVALID_STORE_ID" }),
+  amount: paymentAmountSchema,
+  paymentDate: z.coerce.date().refine((d) => d <= new Date(), { message: "PAYMENT_DATE_IN_FUTURE" }),
+  currencyCode: currencyCodeSchema.optional(),
+  note: z.string().max(2000).nullable().optional(),
+  allocations: z.array(storePaymentAllocationSchema).max(MAX_STORE_PAYMENT_ALLOCATIONS).optional(),
+});
+
 export const orderItemDeleteSchema = z.object({
   itemId: z.string().cuid({ message: "INVALID_ITEM_ID" }),
   orderId: z.string().cuid({ message: "INVALID_ORDER_ID" }),
@@ -251,3 +277,4 @@ export type OrderPaymentCreateInput = z.infer<typeof orderPaymentCreateSchema>;
 export type OrderPaymentDeleteInput = z.infer<typeof orderPaymentDeleteSchema>;
 export type OrderItemRowInput = z.infer<typeof orderItemRowSchema>;
 export type OrderItemDeleteInput = z.infer<typeof orderItemDeleteSchema>;
+export type StorePaymentCreateInput = z.infer<typeof storePaymentCreateSchema>;

@@ -1,10 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import posthog from "posthog-js";
+import { useToast } from "@/contexts/ToastContext";
 import { POSTHOG_EVENTS } from "@/lib/constants";
+import { createStorePaymentAction } from "@/app/[locale]/(app)/_actions/storePaymentActions";
 import type { PendingProductsByStoreGroup } from "@/lib/data/orders/pendingProductsByStoreQueries";
+import {
+  StorePaymentSheet,
+  useStorePaymentSheetOrders,
+  type StorePaymentSheetSubmitInput,
+} from "@/components/modules/StorePaymentSheet";
 import StoreGroupHeader from "./StoreGroupHeader";
 import StorePendingProductCard from "./StorePendingProductCard";
 import StorePendingProductRow, { STORE_PRODUCT_ROW_GRID } from "./StorePendingProductRow";
@@ -23,10 +30,45 @@ type StoreGroupedViewProps = {
  * Groups default open: this view exists precisely to show every pending product at once (no
  * pagination), so collapsing is an opt-out a collector reaches for once they know what they're
  * hiding, not the default they land on.
+ *
+ * Also owns the store payment sheet, shared by every group's "Registrar pago" button (one sheet
+ * instance, `activeStoreId` tracks which group it is currently open for). A payment success
+ * optimistically patches this view's own copy of `groups`: the store's debt figure, and every
+ * pending product's `allocatedMinor`/`settled` for allocations that named a specific product. A
+ * declaration line with no product (money "on account" against the order as a whole) has no single
+ * pending-product row to attribute to in this view, so it only moves the debt figure — the row-level
+ * `allocatedMinor` catches up on the next full page load, same as the classic per-order list already
+ * does for order-level (non-declared) payments.
  */
 export default function StoreGroupedView({ groups, locale, returnTo }: StoreGroupedViewProps) {
   const t = useTranslations("orderListing");
+  const tPayment = useTranslations("orders.detail.storePayment");
+  const { addToast } = useToast();
   const [collapsedStoreIds, setCollapsedStoreIds] = useState<Set<string>>(() => new Set());
+  const [groupsState, setGroupsState] = useState<PendingProductsByStoreGroup[]>(groups);
+  const [activeStoreId, setActiveStoreId] = useState<string | null>(null);
+  const sheet = useStorePaymentSheetOrders();
+
+  // Reset local state whenever the server hands down a genuinely different `groups` list (a new
+  // navigation, a filter change) — never mid-flight of this view's own optimistic patch, which
+  // already applied its change locally before any server round-trip.
+  const groupsSignature = groups
+    .map(
+      (group) =>
+        `${group.store.id}:${group.debts.map((debt) => `${debt.currencyCode}=${debt.debtMinor}`).join(",")}:${group.pendingProducts
+          .map((product) => `${product.itemId}=${product.allocatedMinor}=${product.settled}`)
+          .join(",")}`,
+    )
+    .join("|");
+  const lastServerSignatureRef = useRef(groupsSignature);
+  useEffect(() => {
+    if (groupsSignature !== lastServerSignatureRef.current) {
+      lastServerSignatureRef.current = groupsSignature;
+      setGroupsState(groups);
+    }
+  }, [groupsSignature, groups]);
+
+  const activeGroup = groupsState.find((group) => group.store.id === activeStoreId) ?? null;
 
   const handleToggle = (storeId: string) => {
     setCollapsedStoreIds((prev) => {
@@ -42,9 +84,69 @@ export default function StoreGroupedView({ groups, locale, returnTo }: StoreGrou
     });
   };
 
+  const handleOpenPayment = (storeId: string) => {
+    setActiveStoreId(storeId);
+    sheet.open(storeId, "orders_store_view");
+  };
+
+  const handleSubmitPayment = (input: StorePaymentSheetSubmitInput) => {
+    const storeId = activeStoreId;
+    if (!storeId) return;
+
+    const previous = groupsState;
+    setGroupsState((prev) =>
+      prev.map((group) => {
+        if (group.store.id !== storeId) return group;
+        const itemDeltas = new Map<string, { amount: number; settled: boolean }>();
+        for (const allocation of input.allocations) {
+          if (!allocation.orderItemId) continue;
+          const current = itemDeltas.get(allocation.orderItemId) ?? { amount: 0, settled: false };
+          itemDeltas.set(allocation.orderItemId, {
+            amount: current.amount + allocation.amountMinor,
+            settled: current.settled || Boolean(allocation.settlesTarget),
+          });
+        }
+        return {
+          ...group,
+          debts: group.debts.map((debt) =>
+            debt.currencyCode === input.currencyCode ? { ...debt, debtMinor: debt.debtMinor - input.amount } : debt,
+          ),
+          pendingProducts: group.pendingProducts.map((product) => {
+            const delta = itemDeltas.get(product.itemId);
+            if (!delta) return product;
+            return {
+              ...product,
+              allocatedMinor: product.allocatedMinor + delta.amount,
+              settled: product.settled || delta.settled,
+            };
+          }),
+        };
+      }),
+    );
+
+    void createStorePaymentAction({
+      storeId,
+      amount: input.amount,
+      paymentDate: input.paymentDate,
+      currencyCode: input.currencyCode,
+      note: input.note,
+      allocations: input.allocations,
+    }).then((result) => {
+      if (!result.ok) {
+        setGroupsState(previous);
+        const key = `error.${result.error}` as const;
+        addToast(tPayment.has(key as never) ? tPayment(key as never) : tPayment("error.server_error"), {
+          variant: "error",
+        });
+        return;
+      }
+      addToast(tPayment("toastSuccess"), { variant: "success" });
+    });
+  };
+
   return (
     <div className="flex flex-col gap-3">
-      {groups.map((group) => {
+      {groupsState.map((group) => {
         const isExpanded = !collapsedStoreIds.has(group.store.id);
         const bodyId = `store-group-body-${group.store.id}`;
 
@@ -61,6 +163,7 @@ export default function StoreGroupedView({ groups, locale, returnTo }: StoreGrou
               locale={locale}
               isExpanded={isExpanded}
               onToggleExpand={() => handleToggle(group.store.id)}
+              onRegisterPayment={() => handleOpenPayment(group.store.id)}
             />
 
             {isExpanded && (
@@ -103,6 +206,17 @@ export default function StoreGroupedView({ groups, locale, returnTo }: StoreGrou
           </section>
         );
       })}
+
+      <StorePaymentSheet
+        isOpen={sheet.isOpen}
+        onClose={sheet.close}
+        storeName={activeGroup?.store.name ?? ""}
+        debts={activeGroup?.debts ?? []}
+        orders={sheet.orders}
+        ordersLoading={sheet.isLoading}
+        locale={locale}
+        onSubmit={handleSubmitPayment}
+      />
     </div>
   );
 }

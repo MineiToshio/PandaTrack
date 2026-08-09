@@ -27,4 +27,6 @@ export function revalidateCollectionSurfaces(): void {
   revalidatePath("/[locale]/(app)/deliveries", "page");
   revalidatePath("/[locale]/(app)/deliveries/[id]", "page");
   revalidatePath("/[locale]/(app)/dashboard", "page");
+  // Store-level payments move the debt figure shown on the store's own detail page.
+  revalidatePath("/[locale]/(app)/stores/[slug]", "page");
 }

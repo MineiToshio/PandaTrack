@@ -190,6 +190,7 @@ export const POSTHOG_EVENTS = {
     LIST_VIEW_CHANGED: "orders_list_view_changed",
     LIST_STORE_GROUP_EXPANDED: "orders_list_store_group_expanded",
     LIST_STORE_GROUP_COLLAPSED: "orders_list_store_group_collapsed",
+    CREATED_WITH_ADVANCE: "order_created_with_advance",
   },
   IMAGE_INTAKE: {
     INTAKE_OPENED: "image_intake_opened",
@@ -271,6 +272,8 @@ export const POSTHOG_EVENTS = {
     CHANGE_REQUEST_REJECTED: "store_change_request_rejected",
     PRODUCT_TYPE_REQUEST_APPROVED: "store_product_type_request_approved",
     PRODUCT_TYPE_REQUEST_REJECTED: "store_product_type_request_rejected",
+    PAYMENT_SHEET_OPENED: "store_payment_sheet_opened",
+    PAYMENT_REGISTERED: "store_payment_registered",
   },
   NAVIGATION: {
     VIEW_TRANSITION_NAVIGATED: "view_transition_navigated",

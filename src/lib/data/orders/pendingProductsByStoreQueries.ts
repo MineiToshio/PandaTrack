@@ -48,7 +48,14 @@ export type PendingProductsByStoreGroup = {
   debts: StoreDebtEntry[];
 };
 
-function resolveBasePagableMinor(
+/**
+ * The amount an item is "responsible" for out of its order's total: unit price × quantity when
+ * known, or the whole order total when this is the order's only item (a single-item order's price
+ * is unambiguous even without a captured per-item `unitPrice`). `null` when neither can be derived.
+ * Exported for `storePaymentAssignableOrdersQueries.ts`, which needs the identical derivation for
+ * the store payment sheet's per-product "falta" figure.
+ */
+export function resolveBasePagableMinor(
   unitPrice: number | null,
   quantity: number,
   orderTotalCost: number,
