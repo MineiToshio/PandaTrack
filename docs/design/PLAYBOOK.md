@@ -513,7 +513,7 @@ Reglas accionables descubiertas implementando Stores. Aplican a todos los módul
 
 ### 9.2 Tokens y theming — refuerzos
 
-- **Surface vs surface-elevated en dark mode** (L013). Δ luminosity entre `--background` y `--surface` es 3% (invisible). `--surface-elevated` da 6% (perceptible). Para cards sobre canvas en dark mode, default a `--surface-elevated`. Calcular Δ antes de elegir.
+- **Surface vs surface-elevated en dark mode** (L013). Δ luminosity entre `--background` y `--surface` es 3% (invisible). `--surface-elevated` da 6% (perceptible). Para cards sobre canvas en dark mode, default a `--surface-elevated`. Calcular Δ antes de elegir. La regla normativa completa (los cinco casos, con la tabla de Δ) vive en [visual-foundations.md → Choosing between `--surface` and `--surface-elevated`](visual-foundations.md).
 - **Card con Input/Textarea: backgrounds distintos** (L014). Convención del proyecto: input siempre `--surface-elevated`; card que lo contiene debe ser `--surface` (Card variant `outlined`, no `elevated`).
 
 ### 9.3 CSS layout — patrones nuevos
