@@ -503,7 +503,10 @@ export default function StoreListingFilters({
             value={sortBy}
             onChange={handleSortChange}
             size="md"
-            options={sortOptions}
+            // Grouped with a single heading so the listbox names what's being chosen when it
+            // opens (see `docs/design/interface-patterns.md` §3 "Toggle choice groups, switches,
+            // selects").
+            options={[{ heading: tListing("s6.toolbar.sortLabel"), options: sortOptions }]}
             className="w-max"
           />
           <FilterTriggerButton

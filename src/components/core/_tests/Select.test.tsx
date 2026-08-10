@@ -133,3 +133,22 @@ describe("ControlledSelect — keyboard navigation", () => {
     expect(onChange).toHaveBeenCalledWith("PE");
   });
 });
+
+describe("ControlledSelect — grouped options heading", () => {
+  // Every listing-page select (Orders/Deliveries/Stores sort, Orders group-by) passes a single
+  // `SelectGroup` so the listbox names what the user is choosing when it opens — see
+  // `docs/design/interface-patterns.md` §3 "Toggle choice groups, switches, selects". This test
+  // covers the shared mechanism all of those callers rely on.
+  const GROUPED_OPTIONS = [{ heading: "Sort by", options: OPTIONS }];
+
+  it("shows the group heading in the listbox when opened", () => {
+    render(<Select {...BASE_PROPS} options={GROUPED_OPTIONS} value={null} onChange={vi.fn()} />);
+
+    expect(screen.queryByText("Sort by")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("combobox"));
+
+    expect(screen.getByText("Sort by")).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Argentina" })).toBeInTheDocument();
+  });
+});

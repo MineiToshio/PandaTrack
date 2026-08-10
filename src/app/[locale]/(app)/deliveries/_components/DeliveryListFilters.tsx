@@ -298,7 +298,10 @@ export default function DeliveryListFilters({ locale, storeOptions, initial }: D
             value={initial.sort}
             onChange={handleSortChange}
             size="md"
-            options={sortOptions}
+            // Grouped with a single heading so the listbox names what's being chosen when it
+            // opens (see `docs/design/interface-patterns.md` §3 "Toggle choice groups, switches,
+            // selects").
+            options={[{ heading: t("list.sort.label"), options: sortOptions }]}
             className="w-max"
           />
           <Button

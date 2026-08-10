@@ -439,7 +439,10 @@ export default function OrderListFilters({
             value={isStoreView ? storeSort : initial.sort}
             onChange={isStoreView ? handleStoreSortChange : handleSortChange}
             size="md"
-            options={sortOptions}
+            // Grouped with a single heading so the listbox names what's being chosen when it
+            // opens, matching `OrderListGroupBy`'s pattern (see `docs/design/interface-patterns.md`
+            // §3 "Toggle choice groups, switches, selects").
+            options={[{ heading: t("sort.label"), options: sortOptions }]}
             className="w-max"
           />
           <OrderListGroupBy id="orders-group-by" view={view} variant="select" />
@@ -473,7 +476,7 @@ export default function OrderListFilters({
             value={storeSort}
             onChange={handleStoreSortChange}
             size="md"
-            options={sortOptions}
+            options={[{ heading: t("sort.label"), options: sortOptions }]}
             className="min-w-0 flex-1"
           />
         ) : (

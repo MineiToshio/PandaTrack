@@ -271,9 +271,35 @@ Use shared form controls before custom markup. Keep labels, helper text, validat
   revisited (e.g. the Orders list "Por pedido / Por tienda" grouping) reads better as a single
   control naming its current value; touching it flips it. Measured on the Orders toolbar: the
   segmented icon+label pair ran ~230px; the value-as-select form (`Select` in controlled/grouped
-  mode, `variant="select"` in `OrderListGroupBy`) runs ~111px, in either language, and needs no
+  mode, `variant="select"` in `OrderListGroupBy`) runs ~106px (EN) / ~115px (ES), and needs no
   tooltip because the visible text already says what's selected. Below the toolbar's own breakpoint,
   the same value shows as a short pill (`variant="compact"`) that opens a `MobilePicker` sheet.
+- **Every listing-page select declares its own heading, in the listbox and in the mobile picker
+  title alike ("Verb by" pattern).** A trigger's visible value ("Newest", "Pedidos") does not say
+  what field it belongs to once several selects sit side by side in a toolbar: the desktop listbox
+  and the mobile `MobilePicker`/`FilterDrawer` section must both open on a short heading naming the
+  choice ("Sort by" / "Ordenar por", "Group by" / "Agrupar por"). For a plain (non-grouped)
+  `Select`, wrap its `options` in a single-entry `SelectGroup[]` (`options={[{ heading: t("sort.label"),
+options: sortOptions }]}`), rather than adding a parallel prop: the component already supports
+  grouped options, and every listing sort (`orders-sort`, `orders-sort-mobile`, `deliveries-sort`,
+  `store-sort`) and `OrderListGroupBy` use this exact shape. A `MobilePicker` gets the same text via
+  its own `title` prop. A `FilterDrawer` pills/radiogroup section already renders its `label` as a
+  visible `Eyebrow` above the options, so a drawer-hosted sort section needs no extra change as long
+  as its `label` reuses the same translation key as the toolbar's `Select` (e.g. `sort.label` /
+  `filters.sortSectionLabel` both resolving to "Sort by"). Scope: toolbar and drawer selects on a
+  listing screen. A form select paired with its own persistent, always-visible `<label>` (e.g.
+  `PerPageSelect`'s "Per page") already names itself outside the trigger and does not need a
+  duplicate in-listbox heading.
+- **A value shown next to another control must name the unit, not read as that control's domain.**
+  `OrderListGroupBy`'s value used to be "By order" / "By store" next to a Sort `Select`: in English
+  it read as "order" the sort concept, not "pedido" the grouping unit, because the two controls sit
+  side by side. The fix is a plain plural noun for the unit ("Orders" / "Stores", "Pedidos" /
+  "Tiendas"), matching the "Group by: <value>" pattern common in list tooling (Linear/Jira "Group
+  by: Assignee"). Use the exact same value string in every surface that shows it (the desktop
+  `Select` trigger, the mobile pill, and the pill's own width-sizer, both labels, so the pill's width
+  and x-position stay constant regardless of which option is active), rather than a shorter
+  "compact" variant with its own key; a second short form is what produced the divergence in the
+  first place.
 
 ---
 
