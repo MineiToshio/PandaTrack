@@ -21,8 +21,12 @@ type OrderListGroupByProps = {
   /**
    * "select"  — desktop `Select` trigger showing only the active option as text: no icon, no
    *             tooltip, no segmented pair. Used from `lg` up, where the toolbar renders it inline.
-   * "compact" — mobile pill trigger + `MobilePicker` sheet, the same shape `OrderCurrencyField` /
-   *             `ItemTypePicker` use for their mobile variant. Used in the sticky mobile action row.
+   * "compact" — mobile compact trigger + `MobilePicker` sheet, the same `--radius-md` shape and
+   *             height `OrderCurrencyField` / `ItemTypePicker` use for their mobile variant (not a
+   *             pill: pill radius is reserved for icon buttons, chips, and badges per
+   *             `docs/design/visual-foundations.md` § Border Radius, and every sibling toolbar
+   *             control in this row — search, filter trigger, desktop `Select` — is `--radius-md`).
+   *             Used in the sticky mobile action row.
    * Default `"select"`.
    */
   variant?: OrderListGroupByVariant;
@@ -93,7 +97,7 @@ export default function OrderListGroupBy({ view, variant = "select", id, classNa
           aria-expanded={sheetOpen}
           aria-label={t("view.compactAriaLabel", { value: activeLabel })}
           className={cn(
-            "inline-flex h-11 shrink-0 items-center gap-1 rounded-[var(--radius-pill)] px-3",
+            "inline-flex h-11 shrink-0 items-center gap-1 rounded-[var(--radius-md)] px-3",
             "[font-size:var(--text-caption)] [line-height:var(--text-caption--line-height)] font-medium",
             "[color:var(--text-primary)] [background:var(--surface-elevated)] [border:1px_solid_var(--border-strong)]",
             "cursor-pointer transition-colors [transition-duration:var(--motion-fast)] [transition-timing-function:var(--ease-emphasis)]",
