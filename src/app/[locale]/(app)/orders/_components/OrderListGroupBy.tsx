@@ -74,8 +74,10 @@ export default function OrderListGroupBy({ view, variant = "select", id, classNa
   const groupLabel = t("view.ariaLabel");
 
   if (variant === "compact") {
-    const compactLabel = view === "order" ? t("view.compactOrder") : t("view.compactStore");
-    const fullLabel = view === "order" ? t("view.order") : t("view.store");
+    // Same plural noun ("Orders"/"Stores", "Pedidos"/"Tiendas") in both the pill and the desktop
+    // `Select` value — a separate short form ("Order"/"Pedido") used to read as the singular
+    // pedido/order concept once it sat next to a Sort control, not as "grouped by this unit".
+    const activeLabel = view === "order" ? t("view.order") : t("view.store");
     const options: MobilePickerOption[] = [
       { value: "order", label: t("view.order") },
       { value: "store", label: t("view.store") },
@@ -89,7 +91,7 @@ export default function OrderListGroupBy({ view, variant = "select", id, classNa
           onClick={() => setSheetOpen(true)}
           aria-haspopup="dialog"
           aria-expanded={sheetOpen}
-          aria-label={t("view.compactAriaLabel", { value: fullLabel })}
+          aria-label={t("view.compactAriaLabel", { value: activeLabel })}
           className={cn(
             "inline-flex h-11 shrink-0 items-center gap-1 rounded-[var(--radius-pill)] px-3",
             "[font-size:var(--text-caption)] [line-height:var(--text-caption--line-height)] font-medium",
@@ -101,8 +103,8 @@ export default function OrderListGroupBy({ view, variant = "select", id, classNa
             className,
           )}
         >
-          {/* Same width-sizer technique `Select` uses for its own trigger: "Pedido"/"Tienda" (or
-              "Order"/"Store") render at slightly different pixel widths, so a shrink-to-fit label
+          {/* Same width-sizer technique `Select` uses for its own trigger: "Orders"/"Stores" (or
+              "Pedidos"/"Tiendas") render at slightly different pixel widths, so a shrink-to-fit label
               shifted the pill's left edge by a couple px depending on which option was active —
               visible as the trigger nudging sideways when the view changed, which is exactly the
               x-position jump this control isn't supposed to have. An invisible zero-height stack of
@@ -111,10 +113,10 @@ export default function OrderListGroupBy({ view, variant = "select", id, classNa
               option is currently shown. */}
           <span className="relative inline-block">
             <span aria-hidden className="pointer-events-none block h-0 overflow-hidden">
-              <span className="block whitespace-nowrap">{t("view.compactOrder")}</span>
-              <span className="block whitespace-nowrap">{t("view.compactStore")}</span>
+              <span className="block whitespace-nowrap">{t("view.order")}</span>
+              <span className="block whitespace-nowrap">{t("view.store")}</span>
             </span>
-            <span className="block text-center whitespace-nowrap">{compactLabel}</span>
+            <span className="block text-center whitespace-nowrap">{activeLabel}</span>
           </span>
           <ChevronDown size={14} aria-hidden="true" className="shrink-0 [color:var(--text-muted)]" />
         </button>

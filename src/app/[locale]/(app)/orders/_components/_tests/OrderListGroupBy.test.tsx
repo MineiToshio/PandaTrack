@@ -83,7 +83,7 @@ describe("OrderListGroupBy", () => {
       const trigger = screen.getByRole("button", {
         name: `view.compactAriaLabel:${JSON.stringify({ value: "view.store" })}`,
       });
-      expect(trigger).toHaveTextContent("view.compactStore");
+      expect(trigger).toHaveTextContent("view.store");
       expect(trigger).toHaveAttribute("aria-haspopup", "dialog");
       expect(trigger).toHaveAttribute("aria-expanded", "false");
     });

@@ -77,10 +77,8 @@
   },
   "view": {
     "ariaLabel": "Agrupar por",
-    "order": "Por pedido",
-    "store": "Por tienda",
-    "compactOrder": "Pedido",
-    "compactStore": "Tienda",
+    "order": "Pedidos",
+    "store": "Tiendas",
     "compactAriaLabel": "Agrupar por: {value}"
   },
   "statusFilter": {

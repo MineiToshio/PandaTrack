@@ -77,10 +77,8 @@
   },
   "view": {
     "ariaLabel": "Group by",
-    "order": "By order",
-    "store": "By store",
-    "compactOrder": "Order",
-    "compactStore": "Store",
+    "order": "Orders",
+    "store": "Stores",
     "compactAriaLabel": "Group by: {value}"
   },
   "statusFilter": {
