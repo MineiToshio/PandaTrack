@@ -444,7 +444,7 @@ export default function OrderListFilters({
           behind a breakpoint, so its sort Select is shown here directly rather than through the
           drawer's mobile "sort" pills section. */}
       <div className="sticky top-14 z-30 -mx-4 flex items-center gap-2 px-4 py-2 [background:color-mix(in_oklab,var(--background)_92%,transparent)] supports-[backdrop-filter:blur(8px)]:backdrop-blur lg:hidden">
-        <OrderListViewToggle view={view} className="shrink-0" />
+        <OrderListViewToggle view={view} variant="icon-only" className="shrink-0" />
         {isStoreView ? (
           <Select
             id="orders-sort-mobile"
