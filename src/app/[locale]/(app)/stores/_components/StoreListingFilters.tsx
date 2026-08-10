@@ -485,7 +485,7 @@ export default function StoreListingFilters({
   return (
     <section>
       <div className="flex flex-col gap-2 md:flex-row md:items-center">
-        <div className="flex-1">
+        <div className="min-w-0 flex-1">
           <SearchInput
             value={nameQuery}
             onChange={setNameQuery}

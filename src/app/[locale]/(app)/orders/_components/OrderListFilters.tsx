@@ -390,7 +390,7 @@ export default function OrderListFilters({
           store-view sort domain, and the create CTA. */}
       <div className="hidden flex-col gap-3 lg:flex lg:flex-row lg:items-center">
         {!isStoreView && (
-          <div className="flex-1">
+          <div className="min-w-0 flex-1">
             <SearchInput
               value={nameQuery}
               onChange={setNameQuery}

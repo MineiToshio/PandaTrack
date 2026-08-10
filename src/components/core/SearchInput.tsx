@@ -82,7 +82,7 @@ export default function SearchInput({
       role="search"
       aria-label={searchLabel}
       className={cn(
-        "group relative flex w-full items-stretch rounded-[var(--radius-md)]",
+        "group relative flex w-full min-w-0 items-stretch rounded-[var(--radius-md)]",
         "has-[input:focus-visible]:[box-shadow:0_0_0_3px_color-mix(in_oklch,var(--accent)_18%,transparent)]",
         className,
       )}
@@ -90,8 +90,11 @@ export default function SearchInput({
       {/* Input container */}
       <div
         className={cn(
-          "flex flex-1 items-center gap-[var(--space-2)]",
-          "w-full",
+          // `min-w-0` lets this container shrink below its content's intrinsic width so the
+          // submit button (flex-shrink-0) stays inside the `role="search"` box instead of being
+          // pushed out of it; a bare `w-full` here would fight the parent's flex sizing and let
+          // the container claim 100% of the row, overflowing the submit button off-screen.
+          "flex min-w-0 flex-1 items-center gap-[var(--space-2)]",
           "rounded-l-[var(--radius-md)] rounded-r-none bg-[var(--surface-elevated)]",
           "border-r-0 [border:1px_solid_var(--border-strong)]",
           "transition-[border-color] [transition-duration:var(--motion-fast)] [transition-timing-function:var(--ease-emphasis)]",
