@@ -290,6 +290,15 @@ options: sortOptions }]}`), rather than adding a parallel prop: the component al
   listing screen. A form select paired with its own persistent, always-visible `<label>` (e.g.
   `PerPageSelect`'s "Per page") already names itself outside the trigger and does not need a
   duplicate in-listbox heading.
+- **A `SelectGroup.heading` must never wrap inside the open listbox.** `Select`'s invisible width
+  sizer floors the control's width to fit its widest content, but a heading renders in different
+  typography than an option (mono, uppercase, tracked eyebrow vs. the plain body font), so a
+  heading can be visually wider than every option despite having fewer characters ("Agrupar por"
+  over "Pedidos"/"Tiendas"). The sizer accounts for both: it stacks the heading text using the
+  heading's own font plus the listbox's own padding, alongside the option labels stacked in the
+  trigger's font plus the trigger's own padding, and the control's floor is the wider of the two.
+  Do not shorten a heading to make it fit; the sizer, not the copy, is what should widen the
+  control.
 - **A value shown next to another control must name the unit, not read as that control's domain.**
   `OrderListGroupBy`'s value used to be "By order" / "By store" next to a Sort `Select`: in English
   it read as "order" the sort concept, not "pedido" the grouping unit, because the two controls sit

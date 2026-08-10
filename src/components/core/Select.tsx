@@ -372,6 +372,17 @@ function ControlledSelect({
         never overflow the viewport (the listbox is `left-0` with no horizontal flip logic) nor be
         clipped by an `overflow-hidden` ancestor.
 
+        Grouped options additionally stack each `SelectGroup.heading` (rendered with its *own*
+        typography — mono, eyebrow size, uppercase, tracked — not the option font) plus the
+        horizontal chrome it actually sits inside once open: the listbox's own `p-[space-1]` plus
+        the heading span's `px-[space-3]`. Options are measured against the *trigger's* chrome
+        (its `SIZE_CLASSES` padding) because that is what the selected option renders inside; a
+        heading never appears in the trigger, only in the listbox, so it must be measured against
+        the listbox's chrome instead — otherwise a heading longer than every option (e.g. "Agrupar
+        por" over "Pedidos"/"Tiendas") wraps to two lines in the open listbox even though the
+        longest *option* fits fine. The resulting floor is effectively
+        `max(longest option + trigger chrome, longest heading + listbox chrome)`.
+
         Inert wherever the caller sets an explicit width (`w-full`, `w-[4.5rem]`, `w-[150px]`),
         since a definite width wins over intrinsic sizing.
       */}
@@ -381,6 +392,20 @@ function ControlledSelect({
             {option.label}
           </span>
         ))}
+        {isGrouped(options) &&
+          options.map((group, idx) => (
+            <span
+              key={`sizer-heading-${idx}`}
+              data-testid="select-width-sizer-heading"
+              className={cn(
+                "block px-[calc(var(--space-1)+var(--space-3))] py-[var(--space-1)] whitespace-nowrap",
+                "[font-family:var(--font-mono)] [font-size:var(--text-eyebrow)]",
+                "[letter-spacing:var(--text-eyebrow--letter-spacing)] uppercase",
+              )}
+            >
+              {group.heading}
+            </span>
+          ))}
       </div>
 
       <button
@@ -501,7 +526,7 @@ function ControlledSelect({
                 <li key={group.heading} role="presentation">
                   <span
                     className={cn(
-                      "block px-[var(--space-3)] py-[var(--space-1)]",
+                      "block px-[var(--space-3)] py-[var(--space-1)] whitespace-nowrap",
                       "[font-family:var(--font-mono)] [font-size:var(--text-eyebrow)]",
                       "[letter-spacing:var(--text-eyebrow--letter-spacing)] uppercase",
                       "[color:var(--text-muted)]",
