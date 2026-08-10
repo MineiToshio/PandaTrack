@@ -12,7 +12,6 @@ import Select from "@/components/core/Select";
 import FilterDrawer, { type FilterDrawerValues, type FilterSection } from "@/components/modules/FilterDrawer";
 import { useHasDesktopToolbar } from "@/hooks/useMediaQuery";
 import { POSTHOG_EVENTS } from "@/lib/constants";
-import { cn } from "@/lib/styles";
 import { ORDER_LIST_SORT_VALUES, type OrderListSort } from "@/lib/orders/orderListSort";
 import { DEFAULT_STORE_VIEW_SORT, STORE_VIEW_SORT_VALUES, type StoreViewSort } from "@/lib/orders/storeViewSort";
 import type { OrderStatus } from "../../../../../../generated/prisma/client";
@@ -25,7 +24,7 @@ import {
 } from "../_utils/orderListingParams";
 import { addDays, endOfMonth, startOfMonth, toIsoDateString } from "@/lib/localDate";
 import OrderCreateMethodSelector from "@/components/modules/OrderCreateMethodSelector/OrderCreateMethodSelector";
-import OrderListViewToggle from "./OrderListViewToggle";
+import OrderListGroupBy from "./OrderListGroupBy";
 import type { PhotoCounterSnapshot } from "./share/photoCounterContract";
 
 type StoreOption = { id: string; name: string };
@@ -385,10 +384,17 @@ export default function OrderListFilters({
 
   return (
     <>
-      {/* Desktop toolbar. Store view drops search + the filter drawer (they don't apply there,
-          per the "Por tienda" view spec) and keeps the view toggle, a sort select bound to the
-          store-view sort domain, and the create CTA. */}
-      <div className="hidden flex-col gap-3 lg:flex lg:flex-row lg:items-center">
+      {/* Desktop toolbar — single row, canonical control order: Search < Filter < Sort < Group by
+          < New order. Every view renders a SUBSEQUENCE of that order, never a permutation. Store
+          view drops Search + Filter (neither applies to the grouped-by-store body), so the
+          trailing cluster (Sort, Group by, New order) lives in its own `ml-auto` container: with a
+          leading `flex-1` Search before it (order view) that margin is a no-op, but with nothing
+          before it (store view) it's what pins the cluster to the right edge instead of it
+          collapsing to the left. Because the cluster is right-anchored, when the Sort select's own
+          width changes between views (order vs store sort option labels), only the cluster's own
+          left edge moves — Group by and New order do not shift. No `flex-wrap`: that was the prior
+          layout's 3-line collapse at `lg` widths. */}
+      <div className="hidden items-center gap-2 lg:flex">
         {!isStoreView && (
           <div className="min-w-0 flex-1">
             <SearchInput
@@ -400,51 +406,66 @@ export default function OrderListFilters({
             />
           </div>
         )}
-        <div className={cn("flex flex-wrap items-center gap-2", isStoreView && "flex-1 justify-between")}>
-          <OrderListViewToggle view={view} />
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Order: filter → sort → new (matches demo `.orders-toolbar`) */}
-            {!isStoreView && (
+        {!isStoreView && (
+          <>
+            {/* `xl` (≥1280px) shows the labeled Filter trigger; `lg` (1024-1279px) collapses it to
+                icon-only so the row stays a single line. Two instances swapped via
+                `display:contents`/`display:none` rather than a `useMediaQuery` read, which would
+                flash the wrong variant on the first client frame before hydration settles;
+                `display:none` also drops the inert copy from the accessibility tree. */}
+            <div className="hidden xl:contents">
               <FilterTriggerButton
                 appliedCount={drawerAppliedCount}
                 onClick={() => setDrawerOpen(true)}
                 label={t("filters.openButton")}
                 className="[color:var(--text-primary)] [background:var(--surface-elevated)] [border:1px_solid_var(--border-strong)] hover:[background:color-mix(in_oklab,var(--text-primary)_4%,var(--surface-elevated))]"
               />
-            )}
-            <Select
-              id="orders-sort"
-              aria-label={t("sort.label")}
-              value={isStoreView ? storeSort : initial.sort}
-              onChange={isStoreView ? handleStoreSortChange : handleSortChange}
-              size="md"
-              options={sortOptions}
-              className="w-max"
-            />
-            <Button
-              type="button"
-              variant="primary"
-              size="md"
-              leadingIcon={<Plus size={16} aria-hidden />}
-              onClick={() => setCreateSelectorOpen(true)}
-              posthogEvent={POSTHOG_EVENTS.ORDER.CREATE_METHOD_SELECTOR_OPENED}
-              posthogProps={{ source: "toolbar" }}
-            >
-              {t("hero.newOrder")}
-            </Button>
-          </div>
+            </div>
+            <div className="contents xl:hidden">
+              <FilterTriggerButton
+                appliedCount={drawerAppliedCount}
+                onClick={() => setDrawerOpen(true)}
+                variant="icon-only"
+                aria-label={t("filters.iconLabel")}
+                className="shrink-0 [color:var(--text-primary)] [background:var(--surface-elevated)] [border:1px_solid_var(--border-strong)] hover:[background:color-mix(in_oklab,var(--text-primary)_4%,var(--surface-elevated))]"
+              />
+            </div>
+          </>
+        )}
+        <div className="ml-auto flex items-center gap-2">
+          <Select
+            id="orders-sort"
+            aria-label={t("sort.label")}
+            value={isStoreView ? storeSort : initial.sort}
+            onChange={isStoreView ? handleStoreSortChange : handleSortChange}
+            size="md"
+            options={sortOptions}
+            className="w-max"
+          />
+          <OrderListGroupBy id="orders-group-by" view={view} variant="select" />
+          <Button
+            type="button"
+            variant="primary"
+            size="md"
+            leadingIcon={<Plus size={16} aria-hidden />}
+            onClick={() => setCreateSelectorOpen(true)}
+            posthogEvent={POSTHOG_EVENTS.ORDER.CREATE_METHOD_SELECTOR_OPENED}
+            posthogProps={{ source: "toolbar" }}
+          >
+            {t("hero.newOrder")}
+          </Button>
         </div>
       </div>
 
-      {/* Mobile sticky action row, below the topbar (h-14 = 56px). The search wrapper takes
-          `min-w-0 flex-1` so it absorbs all shrink (an input's intrinsic min-content otherwise
-          keeps the row wider than the viewport, S9.1 overflow). No "Nuevo" button here: below
-          1024px the single-action floating button is the create entry point, and the two
-          affordances must never coexist on the same screen. Store view has no drawer to hide
-          behind a breakpoint, so its sort Select is shown here directly rather than through the
-          drawer's mobile "sort" pills section. */}
+      {/* Mobile sticky action row, below the topbar (h-14 = 56px). Same canonical order as
+          desktop: Search < Filter < Group by (order view — Sort lives inside the FilterDrawer
+          below `lg`) or Sort < Group by (store view — no drawer there). The leading control
+          (Search or Sort) takes `min-w-0 flex-1` so it absorbs all shrink (an input's intrinsic
+          min-content otherwise keeps the row wider than the viewport, S9.1 overflow); Group by is
+          `shrink-0` and last in both views, so it pins to the same x position regardless of which
+          view is active. No "Nuevo" button here: below 1024px the single-action floating button is
+          the create entry point, and the two affordances must never coexist on the same screen. */}
       <div className="sticky top-14 z-30 -mx-4 flex items-center gap-2 px-4 py-2 [background:color-mix(in_oklab,var(--background)_92%,transparent)] supports-[backdrop-filter:blur(8px)]:backdrop-blur lg:hidden">
-        <OrderListViewToggle view={view} variant="icon-only" className="shrink-0" />
         {isStoreView ? (
           <Select
             id="orders-sort-mobile"
@@ -477,6 +498,7 @@ export default function OrderListFilters({
             />
           </>
         )}
+        <OrderListGroupBy view={view} variant="compact" className="shrink-0" />
       </div>
 
       <OrderCreateMethodSelector

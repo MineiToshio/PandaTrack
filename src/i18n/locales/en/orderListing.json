@@ -76,9 +76,12 @@
     "paid": "Paid"
   },
   "view": {
-    "groupLabel": "List view",
+    "ariaLabel": "Group by",
     "order": "By order",
-    "store": "By store"
+    "store": "By store",
+    "compactOrder": "Order",
+    "compactStore": "Store",
+    "compactAriaLabel": "Group by: {value}"
   },
   "statusFilter": {
     "active": "Active",

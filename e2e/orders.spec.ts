@@ -243,3 +243,132 @@ test.describe("Order FX reconciliation flag", () => {
     baseCurrencyToRestore = null;
   });
 });
+
+/** The toolbar's canonical control order — every breakpoint/view renders a subsequence of it. */
+const TOOLBAR_CANONICAL_ORDER = ["search", "filter", "sort", "group", "new"] as const;
+
+/**
+ * Reads the visible toolbar controls' left edges in DOM order and maps each to its canonical
+ * name. Matches the desktop `Select` sort trigger via its stable id, and the "Group by" control
+ * (desktop `Select` or the mobile compact pill) via its aria-label, since only one of the two
+ * variants is visible (`offsetParent !== null`) at a time.
+ */
+function readToolbarControlOrder(page: Page) {
+  return page.evaluate(() => {
+    const isVisible = (el: Element) => (el as HTMLElement).offsetParent !== null;
+    const search = [...document.querySelectorAll('[role="search"]')].find(isVisible);
+    const buttons = [...document.querySelectorAll("button")].filter(isVisible);
+    const filter = buttons.find((b) => (b.getAttribute("aria-label") || "").toLowerCase().includes("filter"));
+    const sort = [...document.querySelectorAll("#orders-sort, #orders-sort-mobile")].find(isVisible);
+    const group = buttons.find((b) => /group by/i.test(b.getAttribute("aria-label") || ""));
+    const newOrder = buttons.find((b) => /new order/i.test(b.textContent || ""));
+
+    const found: { key: string; left: number }[] = [];
+    if (search) found.push({ key: "search", left: search.getBoundingClientRect().left });
+    if (filter) found.push({ key: "filter", left: filter.getBoundingClientRect().left });
+    if (sort) found.push({ key: "sort", left: sort.getBoundingClientRect().left });
+    if (group) found.push({ key: "group", left: group.getBoundingClientRect().left });
+    if (newOrder) found.push({ key: "new", left: newOrder.getBoundingClientRect().left });
+    found.sort((a, b) => a.left - b.left);
+    return found.map((f) => f.key);
+  });
+}
+
+/** The visible toolbar row's rendered height — desktop (`lg:flex`) or mobile (sticky row). */
+function readToolbarRowHeight(page: Page) {
+  return page.evaluate(() => {
+    const rows = [...document.querySelectorAll("div")];
+    const row = rows.find(
+      (d) =>
+        d.className === "hidden items-center gap-2 lg:flex" ||
+        d.className.startsWith("sticky top-14 z-30 -mx-4 flex items-center gap-2"),
+    );
+    return row ? row.getBoundingClientRect().height : null;
+  });
+}
+
+/**
+ * The visible "Group by" control's right edge — the desktop `Select` or the mobile compact pill.
+ * The right edge, not the left, is the control's actual x-position invariant by design: both
+ * variants are the last `shrink-0` item in a row whose earlier flex-1 sibling (Sort on mobile,
+ * the `ml-auto` cluster on desktop) absorbs any width change, so the right edge is what's pinned
+ * regardless of view. The left edge can drift a sub-pixel amount between "By order"/"By store" (or
+ * "Pedido"/"Tienda") on the desktop `Select` — different glyph widths measured by its own
+ * width-sizer, a pre-existing `Select` characteristic out of scope here — without the control
+ * actually having moved.
+ */
+function readGroupByRight(page: Page) {
+  return page.evaluate(() => {
+    const byId = document.getElementById("orders-group-by");
+    if (byId && (byId as HTMLElement).offsetParent !== null) return byId.getBoundingClientRect().right;
+    const button = [...document.querySelectorAll("button")].find(
+      (b) => (b as HTMLElement).offsetParent !== null && /group by/i.test(b.getAttribute("aria-label") || ""),
+    );
+    return button ? button.getBoundingClientRect().right : null;
+  });
+}
+
+test.describe("Orders toolbar layout", () => {
+  test("keeps a single-line toolbar with the canonical control order across breakpoints", async ({ page }) => {
+    skipUnlessAuthenticatedEnv();
+    await signInAndLandOnDashboard(page);
+
+    const viewports = [
+      { width: 1440, height: 900 },
+      { width: 1280, height: 900 },
+      { width: 1024, height: 900 },
+      { width: 375, height: 800 },
+    ];
+
+    for (const viewport of viewports) {
+      await page.setViewportSize(viewport);
+      await page.goto("/en/orders");
+
+      // The row renders on a single line — never the 3-line wrap the old flex-wrap layout produced
+      // at `lg` widths.
+      const rowHeight = await readToolbarRowHeight(page);
+      expect(rowHeight, `toolbar row exists at ${viewport.width}px`).not.toBeNull();
+      expect(rowHeight as number, `toolbar row height at ${viewport.width}px`).toBeLessThanOrEqual(56);
+
+      // The visible controls, left-to-right, are a SUBSEQUENCE of the canonical order — never a
+      // permutation (a control that doesn't apply at this breakpoint/view is simply absent, the
+      // controls that remain keep their relative order).
+      const rendered = await readToolbarControlOrder(page);
+      let lastIndex = -1;
+      for (const key of rendered) {
+        const index = TOOLBAR_CANONICAL_ORDER.indexOf(key as (typeof TOOLBAR_CANONICAL_ORDER)[number]);
+        expect(index, `"${key}" is a recognized toolbar control at ${viewport.width}px`).toBeGreaterThan(-1);
+        expect(
+          index,
+          `toolbar control order is a subsequence of the canonical order at ${viewport.width}px`,
+        ).toBeGreaterThan(lastIndex);
+        lastIndex = index;
+      }
+    }
+  });
+
+  test("pins Group by's x position regardless of the active view, at desktop and mobile widths", async ({ page }) => {
+    skipUnlessAuthenticatedEnv();
+    await signInAndLandOnDashboard(page);
+
+    for (const viewport of [
+      { width: 1280, height: 900 },
+      { width: 375, height: 800 },
+    ]) {
+      await page.setViewportSize(viewport);
+
+      await page.goto("/en/orders");
+      const orderViewRight = await readGroupByRight(page);
+      expect(orderViewRight, `Group by is visible at ${viewport.width}px (order view)`).not.toBeNull();
+
+      await page.goto("/en/orders?view=store");
+      const storeViewRight = await readGroupByRight(page);
+      expect(storeViewRight, `Group by is visible at ${viewport.width}px (store view)`).not.toBeNull();
+
+      expect(
+        Math.abs((orderViewRight as number) - (storeViewRight as number)),
+        `Group by x position stays within 2px between views at ${viewport.width}px`,
+      ).toBeLessThanOrEqual(2);
+    }
+  });
+});

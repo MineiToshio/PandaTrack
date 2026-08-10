@@ -76,9 +76,12 @@
     "paid": "Pagado"
   },
   "view": {
-    "groupLabel": "Vista de la lista",
+    "ariaLabel": "Agrupar por",
     "order": "Por pedido",
-    "store": "Por tienda"
+    "store": "Por tienda",
+    "compactOrder": "Pedido",
+    "compactStore": "Tienda",
+    "compactAriaLabel": "Agrupar por: {value}"
   },
   "statusFilter": {
     "active": "Activas",

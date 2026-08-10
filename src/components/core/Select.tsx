@@ -38,6 +38,12 @@ export type SelectControlledProps = {
   renderOption?: (option: SelectOption) => ReactNode;
   renderValue?: (option: SelectOption) => ReactNode;
   className?: string;
+  /**
+   * Accessible name for the trigger, for callers whose selected-value text alone doesn't say what
+   * the control is (e.g. a bare "Por pedido" / "Por tienda" reads as a value, not as "grouped by").
+   * Optional: a trigger whose visible text already names the field doesn't need it.
+   */
+  "aria-label"?: string;
   children?: never;
   showChevron?: never;
 };
@@ -186,6 +192,7 @@ function ControlledSelect({
   renderOption,
   renderValue,
   className,
+  "aria-label": ariaLabel,
 }: SelectControlledProps) {
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
@@ -385,6 +392,7 @@ function ControlledSelect({
         aria-expanded={open}
         aria-controls={listboxId}
         aria-activedescendant={activeDescendant}
+        aria-label={ariaLabel}
         aria-required={required ? "true" : undefined}
         aria-invalid={hasError ? "true" : undefined}
         aria-describedby={ariaDescribedBy}
@@ -476,8 +484,8 @@ function ControlledSelect({
             "bg-[var(--surface-elevated)] [border:1px_solid_var(--border)]",
             "[box-shadow:var(--elevation-2)]",
             // 17rem clears seven 38px rows plus padding, so none of the app's sort menus scroll. A row is
-          // 38px (body line-height 22 + py-2), not the 36 the estimate below assumed.
-          "max-h-[17rem] overflow-y-auto p-[var(--space-1)] outline-none",
+            // 38px (body line-height 22 + py-2), not the 36 the estimate below assumed.
+            "max-h-[17rem] overflow-y-auto p-[var(--space-1)] outline-none",
           )}
         >
           {flat.length === 0 && (

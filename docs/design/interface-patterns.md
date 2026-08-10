@@ -254,6 +254,26 @@ Use shared form controls before custom markup. Keep labels, helper text, validat
 - **A `multi: false` pill section is a radio group.** `FilterDrawer` renders exclusive options with
   `role="radiogroup"` + `role="radio"`; as checkboxes, six mutually-exclusive sort options announce
   as six independent toggles.
+- **A toolbar's control order is invariant across breakpoints and views; only the form of each
+  control adapts.** Pick one canonical order once (e.g. the Orders toolbar's Search < Filter <
+  Sort < Group by < New order) and render only a _subsequence_ of it at any given breakpoint/view,
+  never a permutation — a control that drops out (no room, doesn't apply to the current view)
+  simply isn't in the row; the controls that remain keep their relative order. This is what lets a
+  control collapse to a narrower form (a labeled button to icon-only, a row to a drawer) without
+  the whole row visibly reshuffling as the viewport crosses a breakpoint. When a trailing group of
+  controls must stay pinned to the row's right edge even when nothing precedes it (e.g. a view with
+  no search/filter), wrap just that group in its own `ml-auto` container rather than trying to
+  center or space the whole row — a leading `flex-1` control elsewhere in the row makes the margin
+  a no-op, but it's what pins the group right when that leading control is absent.
+- **A low-frequency, always-binary switch is shown as its ACTIVE VALUE, not as a segmented
+  control.** Two chips/segments showing both options side by side is the right shape for a choice
+  the user compares and re-visits often (e.g. a theme toggle); a switch that is set once and rarely
+  revisited (e.g. the Orders list "Por pedido / Por tienda" grouping) reads better as a single
+  control naming its current value; touching it flips it. Measured on the Orders toolbar: the
+  segmented icon+label pair ran ~230px; the value-as-select form (`Select` in controlled/grouped
+  mode, `variant="select"` in `OrderListGroupBy`) runs ~111px, in either language, and needs no
+  tooltip because the visible text already says what's selected. Below the toolbar's own breakpoint,
+  the same value shows as a short pill (`variant="compact"`) that opens a `MobilePicker` sheet.
 
 ---
 

@@ -93,20 +93,26 @@ demo_anchors:
 > 4 payment sheet + create-flow advance) into one section; none of it is yet reflected in the
 > prototype HTML below (see the follow-up note at the end).
 >
-> - **Orders list — "Por tienda" view.** A second view, `?view=store` (toggled next to the sort
->   control, remembered per collector via a cookie), groups every store's pending products with a
->   per-currency debt summary and a "Registrar pago" entry point per group, in place of the
->   per-order payment percentage the `#s7-orders-list-*` anchors below still show. The classic "Por
->   pedido" list itself dropped the payment-progress column/bar, the paid/partial/unpaid filter
->   pills, and the `payment-asc` sort. New components: `OrderListViewToggle`, `StoreGroupedView`,
->   `StoreGroupHeader`, `StorePendingProductRow`, `StorePendingProductCard` under
->   `src/app/[locale]/(app)/orders/_components/`.
-> - **Amendment — compact view switcher (2026-08-09).** `OrderListViewToggle` was rebuilt from two
->   full-width `ToggleChoiceGroup` chips into a compact segmented control (same grammar as
->   `ThemeToggle`): icon + label per option in the desktop toolbar (`variant="label"`), icon-only
->   with a `Tooltip` in the mobile sticky row (`variant="icon-only"`, mirrors
->   `FilterTriggerButton`'s icon-only convention) so it stops competing with the search field for
->   width. Behavior (`?view=`, cookie, sort reset, `orders_list_view_changed`) is unchanged.
+> - **Orders list — "Por tienda" view.** A second view, `?view=store`, remembered per collector via
+>   a cookie, groups every store's pending products with a per-currency debt summary and a
+>   "Registrar pago" entry point per group, in place of the per-order payment percentage the
+>   `#s7-orders-list-*` anchors below still show. The classic "Por pedido" list itself dropped the
+>   payment-progress column/bar, the paid/partial/unpaid filter pills, and the `payment-asc` sort.
+>   New components: `StoreGroupedView`, `StoreGroupHeader`, `StorePendingProductRow`,
+>   `StorePendingProductCard` under `src/app/[locale]/(app)/orders/_components/`.
+>   **The view switcher** (`OrderListGroupBy`) went through two rejected iterations — full-width
+>   `ToggleChoiceGroup` chips, then a compact segmented control with a per-option icon, label, and
+>   `Tooltip` (`ThemeToggle` grammar) — before settling (2026-08-09) on its current shape: the
+>   choice is low-frequency and always binary, so it shows as the ACTIVE VALUE rather than as two
+>   options side by side (see `docs/design/interface-patterns.md` §3, "A low-frequency, always-binary
+>   switch…"). Desktop (`variant="select"`) reuses the shared `Select` in controlled/grouped mode,
+>   text only, no icon, no tooltip, taking its place in the toolbar's canonical control order,
+>   Search < Filter < Sort < **Group by** < New order (Group by sits right after Sort so the pair
+>   anchors together to the row's right edge, in every view, at every desktop width). Mobile
+>   (`variant="compact"`) is a short pill + `MobilePicker` sheet, last in the sticky mobile row so
+>   its x position doesn't shift between views. Behavior (`?view=`, cookie, sort reset,
+>   `orders_list_view_changed`, now carrying a `surface` prop alongside `view`) is unchanged from the
+>   original toggle.
 > - **Order detail hero.** The protagonist figure is now the order's TOTAL, a stable number that
 >   never moves as payments come and go (superseding "the outstanding balance ('Saldo pendiente')
 >   against the total" in §1 below). Below it: while this order has an allocation, "Asignado {X} de
