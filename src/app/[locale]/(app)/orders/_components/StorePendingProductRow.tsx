@@ -31,7 +31,12 @@ export default function StorePendingProductRow({ product, locale, returnTo }: St
       : null;
 
   return (
-    <li className={cn("grid items-center gap-3 py-3", STORE_PRODUCT_ROW_GRID)}>
+    <li
+      className={cn(
+        "grid items-center gap-3 py-3 [border-bottom:1px_solid_var(--border)] last:border-b-0",
+        STORE_PRODUCT_ROW_GRID,
+      )}
+    >
       <div className="flex min-w-0 items-center gap-2.5">
         <span
           className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--radius-md)] [color:var(--accent-cool)] [background:color-mix(in_oklch,var(--accent-cool)_10%,transparent)]"

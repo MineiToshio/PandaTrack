@@ -178,7 +178,7 @@ export default function StoreGroupedView({ groups, locale, returnTo }: StoreGrou
                     <span className="text-center">{t("storeView.columnArrival")}</span>
                     <span className="text-right">{t("storeView.columnPaid")}</span>
                   </div>
-                  <ul role="list" className="flex flex-col divide-y" style={{ borderColor: "var(--border)" }}>
+                  <ul role="list" className="flex flex-col">
                     {group.pendingProducts.map((product) => (
                       <StorePendingProductRow
                         key={product.itemId}

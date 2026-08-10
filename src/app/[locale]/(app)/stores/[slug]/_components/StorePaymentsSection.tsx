@@ -42,7 +42,7 @@ export default function StorePaymentsSection({ locale }: StorePaymentsSectionPro
       count={storePayments.length}
       topAccent="accent"
     >
-      <ul role="list" className="flex flex-col divide-y" style={{ borderColor: "var(--border)" }}>
+      <ul role="list" className="flex flex-col">
         {storePayments.map((payment) => (
           <StorePaymentListItem
             key={payment.id}
@@ -94,7 +94,7 @@ function StorePaymentListItem({ payment, locale, onConfirmDelete }: StorePayment
 
   return (
     <>
-      <li className="flex items-start gap-3 py-2 text-[14px]">
+      <li className="flex items-start gap-3 py-2 text-[14px] [border-bottom:1px_solid_var(--border)] last:border-b-0">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-baseline gap-2">
             <span className="text-text-muted font-mono text-[12px] tabular-nums">{dateLabel}</span>
