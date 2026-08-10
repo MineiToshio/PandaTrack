@@ -97,7 +97,10 @@ export default function StoreCard({ store, locale, labels, viewerOrderCount, vie
       style={{ viewTransitionName: `store-${store.slug}` }}
       className={cn(
         "group flex h-[279px] flex-col gap-3 overflow-hidden rounded-[var(--radius-xl)] p-[18px]",
-        "[background:var(--surface)] [border:1px_solid_var(--border)]",
+        // Leaf card on the page canvas, so it takes the raised fill (see visual-foundations.md,
+        // "Choosing between --surface and --surface-elevated"): --surface is only +3 ΔL over the
+        // dark canvas and the card loses its edges there.
+        "[background:var(--surface-elevated)] [border:1px_solid_var(--border)]",
         "transition-[border-color,transform,box-shadow] [transition-duration:var(--motion-fast)] motion-reduce:transition-none",
         "hover:[transform:translateY(-2px)] hover:[border-color:var(--border-strong)] hover:[box-shadow:var(--shadow-2)]",
         "[outline:none] focus-visible:[outline:2px_solid_var(--focus-ring)] focus-visible:[outline-offset:2px]",

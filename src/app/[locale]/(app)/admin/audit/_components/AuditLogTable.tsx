@@ -13,7 +13,8 @@ const HEADER_CELL_CLASS = cn(
   "px-4 py-3 text-left align-middle",
   "[font-family:var(--font-mono)] [font-size:var(--text-eyebrow)] uppercase [letter-spacing:0.06em]",
   "[font-weight:var(--font-weight-semibold)] [color:var(--text-muted)]",
-  "[border-bottom:1px_solid_var(--border)] [background:var(--surface-elevated)]",
+  // Same header tint as `OrdersTable` / `DeliveriesTable`: a neutral mix over the shell fill.
+  "[border-bottom:1px_solid_var(--border)] [background:color-mix(in_oklab,var(--text-primary)_3%,var(--surface-elevated))]",
 );
 
 const BODY_CELL_CLASS = cn(
@@ -33,7 +34,7 @@ export default async function AuditLogTable({ entries, locale }: AuditLogTablePr
   const t = await getTranslations({ locale, namespace: "admin" });
 
   return (
-    <div className="overflow-x-auto rounded-[var(--radius-xl)] [box-shadow:var(--elevation-1)] [background:var(--surface)] [border:1px_solid_var(--border)]">
+    <div className="overflow-x-auto rounded-[var(--radius-xl)] [box-shadow:var(--elevation-1)] [background:var(--surface-elevated)] [border:1px_solid_var(--border)]">
       <table className="w-full min-w-[640px] border-collapse [font-size:var(--text-body)]">
         <caption className="sr-only">{t("audit.tableLabel")}</caption>
         <thead>
