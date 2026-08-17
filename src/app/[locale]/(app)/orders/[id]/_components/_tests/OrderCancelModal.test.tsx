@@ -64,7 +64,7 @@ describe("OrderCancelModal payments-choice control", () => {
 
   it("hides the control and cancels with the credit default when the order has no payments", async () => {
     const user = userEvent.setup();
-    render(<OrderCancelModal {...BASE_PROPS} paidAmountMinor={0} hasPayments={false} />);
+    render(<OrderCancelModal {...BASE_PROPS} paidAmountMinor={0} hasPayments={false} markedItemCount={0} />);
 
     expect(screen.queryByText("detail.cancelModal.paymentsCreditLabel")).not.toBeInTheDocument();
     expect(screen.queryByText("detail.cancelModal.paymentsLostLabel")).not.toBeInTheDocument();
@@ -76,7 +76,7 @@ describe("OrderCancelModal payments-choice control", () => {
 
   it("shows the control defaulting to credit, and submits the lost choice once selected", async () => {
     const user = userEvent.setup();
-    render(<OrderCancelModal {...BASE_PROPS} paidAmountMinor={16000} hasPayments />);
+    render(<OrderCancelModal {...BASE_PROPS} paidAmountMinor={16000} hasPayments markedItemCount={0} />);
 
     const creditRadio = screen.getByRole("radio", { name: /paymentsCreditLabel/ });
     const lostRadio = screen.getByRole("radio", { name: /paymentsLostLabel/ });

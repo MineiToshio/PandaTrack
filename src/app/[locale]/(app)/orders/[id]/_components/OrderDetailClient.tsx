@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useToast } from "@/contexts/ToastContext";
 import { calculatePaymentSummary } from "@/lib/orders/paymentSummary";
+import { resolveOrderMarkReconciliation } from "@/lib/orders/productPaymentState";
 import { deriveHasUnpaidBalance } from "@/lib/orders/orderState";
 import { formatAmountSymbolOnly } from "@/lib/currency";
 import type { OrderEligibility, OrderFlags } from "@/lib/data/orders/orderQueries";
@@ -15,15 +16,19 @@ import OrderPaymentsAsideCard, { type OrderPaymentsAsideCardHandle } from "./Ord
 import OrderDetailStickyActionBar, { hasStickyBarActions } from "./OrderDetailStickyActionBar";
 import OrderMobileActionsCard from "./OrderMobileActionsCard";
 import OrderPaymentMobileSheet from "./OrderPaymentMobileSheet";
+import type { OrderInlinePaymentOutcome, OrderInlinePaymentSubmission } from "./OrderInlinePaymentForm";
+import type { BreakdownItem } from "@/lib/orders/orderPaymentBreakdown";
 import OrderCancelModal from "./OrderCancelModal";
 import OrderDeleteModal from "./OrderDeleteModal";
 import { QuickArrivalModal, type QuickArrivalItem } from "@/components/modules/QuickArrival";
 import { useQuickArrival } from "@/components/modules/QuickArrival/useQuickArrival";
 
 /**
- * A payment as this order sees it: one allocation, carrying its parent payment's id/total/shared
- * flag so the aside card and its delete-confirm modal can describe the shared case without a
- * second query. Mirrors `OrderPaymentRecord` (see `orderPaymentAllocations.ts`).
+ * A payment as this order sees it: one TRANSFER, carrying this order's total claim on it plus the
+ * payment's own id/total/shared flag, so the aside card and its delete-confirm modal can describe
+ * the shared case without a second query. Mirrors `OrderPaymentRecord` (see
+ * `orderPaymentAllocations.ts`), where `id` is the payment id because that is what an order-scoped
+ * delete acts on.
  */
 type PaymentRecord = {
   id: string;
@@ -33,6 +38,8 @@ type PaymentRecord = {
   paymentTotalMinor: number;
   isShared: boolean;
   isPartialClaim: boolean;
+  /** Products of this order the transfer names. `0` = it sits on the order as a whole. */
+  detailedLineCount: number;
 };
 type Store = {
   id: string;
@@ -62,6 +69,20 @@ type OrderDetailClientProps = {
     initialPayments: PaymentRecord[];
     eligibility: OrderEligibility;
     flags: OrderFlags;
+    /**
+     * Every product of this order, marks included. The coverage axis counts over ALL of them, and
+     * the payment breakdown needs two more facts per product: its price (the weight of the
+     * proportional split) and what earlier payments already declared against it (its ceiling).
+     */
+    items: Array<{
+      id: string;
+      name: string;
+      paidDeclared: boolean;
+      basePagableMinor: number | null;
+      allocatedMinor: number;
+    }>;
+    /** Money declared against this order without naming a product. */
+    undetailedPaidMinor: number;
   };
   isOverdue: boolean;
   overdueDays: number;
@@ -166,7 +187,66 @@ export default function OrderDetailClient({
    * before the server responds — the user sees the bar fill in lockstep with the sheet
    * dismissal instead of staring at a spinner.
    */
-  async function handleAddPayment(amount: number, paymentDate: Date) {
+  /** The order's products in the shape the payment breakdown speaks: name, price, what it holds. */
+  const breakdownItems = useMemo<BreakdownItem[]>(
+    () =>
+      order.items.map((item) => ({
+        itemId: item.id,
+        name: item.name,
+        basePagableMinor: item.basePagableMinor,
+        allocatedMinor: item.allocatedMinor,
+        paidDeclared: item.paidDeclared,
+      })),
+    [order.items],
+  );
+
+  const markReconciliation = resolveOrderMarkReconciliation({
+    items: order.items,
+    totalCost: order.totalCost,
+    allocatedAmountMinor: summary.paidAmount,
+  });
+
+  /**
+   * Turns a refusal into the sentence that names what actually happened.
+   *
+   * `STORE_DEBT_EXCEEDED` used to be flattened into `EXCEEDS_BALANCE` on the server, so the
+   * collector was told the amount exceeded THIS ORDER's balance when the real ceiling was what they
+   * still owe the store across every order. Two different facts and two different next steps.
+   */
+  /**
+   * The one refusal the FORM cannot word for itself: it names the store and the debt across every
+   * order with it, and the form is scoped to this order and holds neither figure. It reaches the
+   * form through the outcome's `message` rather than through two surfaces' worth of props.
+   */
+  function describeStoreDebtExceeded(): string {
+    return t("detail.payments.storeDebtExceeded", {
+      store: order.storeName,
+      debt: formatAmountSymbolOnly(Math.max(0, storeDebtMinor), order.currencyCode, locale),
+    });
+  }
+
+  function describeAddPaymentError(error: string): string {
+    switch (error) {
+      case "EXCEEDS_BALANCE":
+        return t("detail.payments.amountExceedsBalance", {
+          remaining: formatAmountSymbolOnly(summary.remainingAmount, order.currencyCode, locale),
+        });
+      case "STORE_DEBT_EXCEEDED":
+        return describeStoreDebtExceeded();
+      case "DATE_BEFORE_ORDER":
+        return t("detail.payments.dateBeforeOrder");
+      default:
+        return t("detail.payments.errorAdd");
+    }
+  }
+
+  async function handleAddPayment({
+    amount,
+    paymentDate,
+    allocations,
+    splitMode,
+    awaitsVerdict,
+  }: OrderInlinePaymentSubmission): Promise<OrderInlinePaymentOutcome> {
     const tempId = `temp-${Date.now()}`;
     // Optimistic stand-in reads as its own 1:1 payment (not shared) until the server reconciles
     // it with the real allocation — a brand-new payment can never already be sharing with another
@@ -179,26 +259,53 @@ export default function OrderDetailClient({
       paymentTotalMinor: amount,
       isShared: false,
       isPartialClaim: false,
+      // The stand-in is ONE row whatever the breakdown says, because the order's ledger groups by
+      // transfer: a payment split across three products is still one thing the collector paid.
+      detailedLineCount: allocations.length,
     };
     const previous = payments;
     setPayments([...payments, optimistic]);
 
-    const result = await addPaymentAction(order.id, amount, paymentDate);
+    /**
+     * The action is awaited inside a `try`, and that is not defensive tidying.
+     *
+     * A transport failure rejects this promise. Unguarded it propagates through the form's own
+     * `await onSubmit(...)`, which leaves `isPending` stuck at `true` forever: on mobile that is an
+     * undismissable sheet with the whole breakdown draft trapped inside it. Nothing was refused
+     * here, so the outcome says exactly that (`unanswered`) and the form keeps the CTA live for an
+     * identical resend rather than shutting it on a verdict that never came.
+     */
+    let result: Awaited<ReturnType<typeof addPaymentAction>>;
+    try {
+      result = await addPaymentAction(order.id, amount, paymentDate, allocations, splitMode);
+    } catch {
+      setPayments(previous);
+      if (!awaitsVerdict) addToast(t("detail.payments.errorUnanswered"), { variant: "error" });
+      return { ok: false as const, unanswered: true };
+    }
+
     if (!result.ok) {
       setPayments(previous); // rollback to pre-optimistic state
-      const remainingLabel = formatAmountSymbolOnly(summary.remainingAmount, order.currencyCode, locale);
-      const message =
-        result.error === "EXCEEDS_BALANCE"
-          ? t("detail.payments.amountExceedsBalance", { remaining: remainingLabel })
-          : result.error === "DATE_BEFORE_ORDER"
-            ? t("detail.payments.dateBeforeOrder")
-            : t("detail.payments.errorAdd");
-      addToast(message, { variant: "error" });
-      return { ok: false as const, error: result.error };
+      // ONE rule for where a refusal is painted: the form's inline error is authoritative, and this
+      // toast fires only when the form is already gone. The mobile surface is a `<Modal>` and the
+      // toast renders behind it, so a live sheet told through a toast is a sheet told nothing.
+      if (!awaitsVerdict) addToast(describeAddPaymentError(result.error), { variant: "error" });
+      return {
+        ok: false as const,
+        error: result.error,
+        orderItemId: result.orderItemId,
+        message: result.error === "STORE_DEBT_EXCEEDED" ? describeStoreDebtExceeded() : undefined,
+      };
     }
 
     // Reconcile with the authoritative list returned by the server (ids, ordering, dates).
     setPayments(result.payments);
+    // The milestone is the ORDER, not the instalment: one toast when the last centavo lands, and
+    // silence on every partial payment, where the bar moving already is the answer. Read off the
+    // server's own figure so a refused payment can never congratulate anyone.
+    if (summary.paidAmount < order.totalCost && result.paidAmount >= order.totalCost) {
+      addToast(t("detail.payments.paidInFullToast"), { variant: "success" });
+    }
     router.refresh();
     return { ok: true as const };
   }
@@ -264,6 +371,10 @@ export default function OrderDetailClient({
           locale={locale}
           storeName={order.storeName}
           storeSlug={order.store.slug}
+          undetailedPaidMinor={order.undetailedPaidMinor}
+          breakdownItems={breakdownItems}
+          totalCost={order.totalCost}
+          markReconciliation={markReconciliation}
           onAddPayment={handleAddPayment}
           onDeletePayment={handleDeletePayment}
         />
@@ -285,6 +396,10 @@ export default function OrderDetailClient({
           locale={locale}
           storeName={order.storeName}
           storeSlug={order.store.slug}
+          undetailedPaidMinor={order.undetailedPaidMinor}
+          breakdownItems={breakdownItems}
+          totalCost={order.totalCost}
+          markReconciliation={markReconciliation}
           onAddPayment={handleAddPayment}
           onDeletePayment={handleDeletePayment}
           showAddCta={false}
@@ -329,6 +444,9 @@ export default function OrderDetailClient({
         remainingAmount={summary.remainingAmount}
         orderDate={order.orderDate}
         locale={locale}
+        breakdownItems={breakdownItems}
+        totalCost={order.totalCost}
+        undetailedPaidMinor={order.undetailedPaidMinor}
         onSubmit={handleAddPayment}
       />
 
@@ -341,6 +459,7 @@ export default function OrderDetailClient({
         paidAmountMinor={summary.paidAmount}
         currencyCode={order.currencyCode}
         hasPayments={payments.length > 0}
+        markedItemCount={markReconciliation.markedCount}
         onSuccess={() => {
           setMobileModal(null);
           router.refresh();
@@ -361,8 +480,7 @@ export default function OrderDetailClient({
         <QuickArrivalModal
           isOpen={quickArrival.isOpen}
           onClose={quickArrival.close}
-          orderHumanReadableId={order.humanReadableId}
-          storeName={order.storeName}
+          subtitle={`${order.humanReadableId} · ${order.storeName}`}
           items={quickArrivalItems}
           settledItemCount={settledItemCount}
           baseCurrencyCode={baseCurrencyCode}

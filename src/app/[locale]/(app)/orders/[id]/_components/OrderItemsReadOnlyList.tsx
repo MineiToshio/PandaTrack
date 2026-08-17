@@ -6,6 +6,8 @@ import { ROUTES } from "@/lib/constants";
 import { formatAmountSymbolOnly } from "@/lib/currency";
 import { getStoreProductTypeIcon } from "@/lib/catalog/storeProductTypeIcons";
 import type { OrderItemWithDeliveryState } from "@/lib/data/orders/orderQueries";
+import { offersPaidMark, resolveProductPaymentState } from "@/lib/orders/productPaymentState";
+import OrderItemPaidMark from "./OrderItemPaidMark";
 import OrderItemStatePill from "./OrderItemStatePill";
 
 type OrderItemsReadOnlyListProps = {
@@ -15,6 +17,16 @@ type OrderItemsReadOnlyListProps = {
   locale: string;
   isOrderCancelled: boolean;
   showCreateDeliveryLink: boolean;
+  /** This order's own total, so a product can be resolved against its order's balance. */
+  totalCost: number;
+  allocatedAmountMinor: number;
+  /**
+   * Money on this order that names no product. This list draws no ratio, so it changes nothing
+   * here; it is required because `resolveProductPaymentState` refuses to answer without it, and
+   * that refusal is the point: the two "Por tienda" surfaces DO draw a ratio and must not draw one
+   * while this is above zero.
+   */
+  undetailedPaidMinor: number;
   className?: string;
 };
 
@@ -39,6 +51,9 @@ export default async function OrderItemsReadOnlyList({
   locale,
   isOrderCancelled,
   showCreateDeliveryLink,
+  totalCost,
+  allocatedAmountMinor,
+  undetailedPaidMinor,
   className,
 }: OrderItemsReadOnlyListProps) {
   const t = await getTranslations({ locale, namespace: "orders" });
@@ -61,6 +76,26 @@ export default async function OrderItemsReadOnlyList({
             const Icon = item.productTypeKey ? getStoreProductTypeIcon(item.productTypeKey) : Box;
             const itemTotal = item.unitPrice != null ? item.quantity * item.unitPrice : null;
             const lockedByDelivery = item.deliveryState === "in_transit" || item.deliveryState === "delivered";
+            // Proven either by the order's own balance (case 0: nothing is owed at all) or by this
+            // item's own allocations covering its own price base (case 1). A mark outranked by
+            // either case still exists and stays visible; this only decides whether the control
+            // still offers it.
+            const paymentState = resolveProductPaymentState({
+              basePagableMinor: item.basePagableMinor,
+              allocatedMinor: item.allocatedMinor,
+              paidDeclared: item.paidDeclared,
+              orderTotalCost: totalCost,
+              orderAllocatedAmountMinor: allocatedAmountMinor,
+              orderHasUndetailedMoney: undetailedPaidMinor > 0,
+            });
+            // Where the exact number is known, the number is the answer and the mark is not offered
+            // — the same rule the store payment sheet already applied, now shared by both surfaces.
+            const canOfferMark = offersPaidMark({
+              basePagableMinor: item.basePagableMinor,
+              allocatedMinor: item.allocatedMinor,
+              paidDeclared: item.paidDeclared,
+              locked: isOrderCancelled,
+            });
 
             return (
               <li key={item.id} className="border-border flex items-center gap-3 border-b py-2.5 last:border-b-0">
@@ -75,13 +110,47 @@ export default async function OrderItemsReadOnlyList({
                 {/* Demo `.item-name` (14px) + `small` (block 12px text-muted, mt:2px) */}
                 <div className="min-w-0 flex-1">
                   <span className="text-text-title block text-[14px] leading-snug">{item.name}</span>
-                  <span className="mt-0.5 block">
+                  {/* Delivery state and payment coverage are different axes, so they sit side by
+                      side and neither hides the other. Under 640px they stack rather than compete
+                      with the price column on the right. */}
+                  <span className="mt-0.5 flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:gap-2">
                     <OrderItemStatePill
                       orderId={orderId}
                       itemId={item.id}
                       initialState={item.deliveryState}
                       lockedByDelivery={lockedByDelivery}
                       lockedByCancellation={isOrderCancelled}
+                    />
+                    {/* No price base but money against it: state the amount and no ratio. There is
+                        no denominator here, so there is no percentage and no bar to draw. */}
+                    {paymentState === "unpriced-partial" && (
+                      <span className="text-text-secondary text-[11px] tabular-nums">
+                        {t("detail.payments.unpricedPartial", {
+                          amount: formatAmountSymbolOnly(item.allocatedMinor, currencyCode, locale),
+                        })}
+                      </span>
+                    )}
+                    {/* Priced, but its order also holds money that names no product, so this
+                        product's own share is a FLOOR and no ratio built on it is honest (ADR 0028
+                        §6). Same answer and the same copy key the two "Por tienda" surfaces already
+                        give this state: the figure, and nothing to divide it by. Without this
+                        branch the third surface printed nothing at all about a product that does
+                        carry declared money, which is worse than the ratio the rule suppresses. */}
+                    {paymentState === "partial-undetailed" && (
+                      <span className="text-text-secondary text-[11px] tabular-nums">
+                        {t("detail.payments.declaredAgainst", {
+                          amount: formatAmountSymbolOnly(item.allocatedMinor, currencyCode, locale),
+                        })}
+                      </span>
+                    )}
+                    <OrderItemPaidMark
+                      orderId={orderId}
+                      itemId={item.id}
+                      itemName={item.name}
+                      initialDeclared={item.paidDeclared}
+                      proven={paymentState === "proven"}
+                      offersMark={canOfferMark}
+                      locked={isOrderCancelled}
                     />
                   </span>
                 </div>

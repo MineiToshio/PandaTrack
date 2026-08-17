@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { isAllowedCollectorBaseCurrency } from "@/lib/catalog/collectorCountries";
 import { isWholeMajorAmount, isZeroDecimalCurrency } from "@/lib/currency";
+import { domainDateSchema } from "@/lib/domainDateSchema";
 
 /**
  * Zero-decimal currencies have no subunit, so a ×100 minor-units amount must land on a whole
@@ -110,15 +111,15 @@ export const orderItemRowSchema = z.object({
  */
 const initialPaymentSchema = z.object({
   amount: paymentAmountSchema,
-  paymentDate: z.coerce.date().refine((date) => date <= new Date(), { message: "PAYMENT_DATE_IN_FUTURE" }),
+  paymentDate: domainDateSchema.refine((date) => date <= new Date(), { message: "PAYMENT_DATE_IN_FUTURE" }),
 });
 
 export const orderCreateSchema = z
   .object({
     storeId: z.string().cuid({ message: "INVALID_STORE_ID" }),
-    orderDate: z.coerce.date(),
-    expectedDeliveryFrom: z.coerce.date().nullable().optional(),
-    expectedDeliveryTo: z.coerce.date().nullable().optional(),
+    orderDate: domainDateSchema,
+    expectedDeliveryFrom: domainDateSchema.nullable().optional(),
+    expectedDeliveryTo: domainDateSchema.nullable().optional(),
     currencyCode: currencyCodeSchema,
     exchangeRate: exchangeRateSchema.nullable().optional(),
     totalCost: totalCostSchema,
@@ -160,9 +161,9 @@ export const orderItemEditRowSchema = orderItemRowSchema.extend({
 export const orderEditSchema = z
   .object({
     storeId: z.string().cuid({ message: "INVALID_STORE_ID" }).optional(),
-    orderDate: z.coerce.date().optional(),
-    expectedDeliveryFrom: z.coerce.date().nullable().optional(),
-    expectedDeliveryTo: z.coerce.date().nullable().optional(),
+    orderDate: domainDateSchema.optional(),
+    expectedDeliveryFrom: domainDateSchema.nullable().optional(),
+    expectedDeliveryTo: domainDateSchema.nullable().optional(),
     currencyCode: currencyCodeSchema.optional(),
     exchangeRate: exchangeRateSchema.nullable().optional(),
     totalCost: totalCostSchema.optional(),
@@ -217,34 +218,69 @@ export const orderReactivateSchema = z.object({
   orderId: z.string().cuid({ message: "INVALID_ORDER_ID" }),
 });
 
+/** Upper bound on products one payment may declare covered. Guards against a tampered payload. */
+const MAX_DECLARED_PAID_ITEMS = 200;
+
+/**
+ * Products a payment declares covered, with no amount attached. Optional everywhere: the coverage
+ * axis never gates the money one.
+ *
+ * Reached only by {@link storePaymentCreateSchema}, the store payment sheet's own payload. The
+ * order detail's inline form no longer declares coverage at all: marking a product paid is a claim
+ * about a product and it is made on the product's own row, not inside a form about money.
+ */
+const declarePaidItemIdsSchema = z
+  .array(z.string().cuid({ message: "INVALID_ITEM_ID" }))
+  .max(MAX_DECLARED_PAID_ITEMS)
+  .optional();
+
+/** Upper bound on declaration lines per payment. Guards against a tampered client payload. */
+const MAX_PAYMENT_ALLOCATIONS = 200;
+
+/**
+ * One product's share of an order payment, as the order detail's breakdown emits it.
+ *
+ * No `orderId`: on this surface the whole payment lands on one order by construction, so the only
+ * thing a line adds is WHICH product of it the money names. No zero either, for the same reason the
+ * store sheet refuses one: a zero-amount declaration covers nothing, and the server refuses it. The
+ * residual is not a line here at all; the mutation derives it as `amount - sum` so it can never
+ * disagree with the amount actually paid.
+ */
+const orderPaymentAllocationSchema = z.object({
+  orderItemId: z.string().cuid({ message: "INVALID_ITEM_ID" }),
+  amountMinor: z.number().int().min(1).max(MAX_PAYMENT_AMOUNT),
+});
+
 export const orderPaymentCreateSchema = z.object({
   orderId: z.string().cuid({ message: "INVALID_ORDER_ID" }),
   amount: paymentAmountSchema,
-  paymentDate: z.coerce.date().refine((d) => d <= new Date(), { message: "PAYMENT_DATE_IN_FUTURE" }),
+  paymentDate: domainDateSchema.refine((d) => d <= new Date(), { message: "PAYMENT_DATE_IN_FUTURE" }),
+  allocations: z.array(orderPaymentAllocationSchema).max(MAX_PAYMENT_ALLOCATIONS).optional(),
 });
 
 /**
- * Deleting a payment from an order removes that order's declaration on it (the allocation), which
- * is the id an order's payment records carry. Whether the payment itself also goes is decided by
- * the mutation, not by the caller.
+ * Deleting a payment from an order removes that order's whole declaration on the transfer, which is
+ * the payment id an order's payment records carry. Whether the payment itself also goes is decided
+ * by the mutation, not by the caller.
  *
- * Ids are not `cuid()`-shaped here: rows carried over from the per-order ledger keep a derived,
- * prefixed id so they stay traceable to the payment they came from.
+ * `min(1).max(64)` and NOT `cuid()`, and this is load-bearing rather than lax: 606 of the
+ * collector's 626 payments were carried over from the per-order ledger and keep a derived,
+ * prefixed `mig_*` id of 29 characters so they stay traceable to the payment they came from.
+ * Tightening this field to `cuid()` would make 96.8% of the payments impossible to delete, and
+ * deleting is the only correction path there is (see `deleteOrderPayment`).
  */
 export const orderPaymentDeleteSchema = z.object({
-  allocationId: z.string().min(1, { message: "INVALID_ALLOCATION_ID" }).max(64),
+  paymentId: z.string().min(1, { message: "INVALID_PAYMENT_ID" }).max(64),
   orderId: z.string().cuid({ message: "INVALID_ORDER_ID" }),
 });
-
-/** Upper bound on declaration lines per store payment. Guards against a tampered client payload. */
-const MAX_STORE_PAYMENT_ALLOCATIONS = 200;
 
 const storePaymentAllocationSchema = z.object({
   orderId: z.string().cuid({ message: "INVALID_ORDER_ID" }),
   orderItemId: z.string().cuid({ message: "INVALID_ITEM_ID" }).optional(),
-  // Zero is legal only alongside `settlesTarget` — the mutation, which sees the full batch, is
-  // the one place that rule is enforced; the schema only bounds the shape.
-  amountMinor: z.number().int().min(0).max(MAX_PAYMENT_AMOUNT),
+  // Zero used to be legal alongside `settlesTarget`. That declaration is deprecated and refused on
+  // write, so a zero line now says nothing at all and is invalid unconditionally. No production
+  // emitter ever sent one: `buildAllocationInputs` skips every zero-amount line.
+  amountMinor: z.number().int().min(1).max(MAX_PAYMENT_AMOUNT),
   settlesTarget: z.boolean().optional(),
 });
 
@@ -256,10 +292,18 @@ const storePaymentAllocationSchema = z.object({
 export const storePaymentCreateSchema = z.object({
   storeId: z.string().cuid({ message: "INVALID_STORE_ID" }),
   amount: paymentAmountSchema,
-  paymentDate: z.coerce.date().refine((d) => d <= new Date(), { message: "PAYMENT_DATE_IN_FUTURE" }),
+  paymentDate: domainDateSchema.refine((d) => d <= new Date(), { message: "PAYMENT_DATE_IN_FUTURE" }),
   currencyCode: currencyCodeSchema.optional(),
   note: z.string().max(2000).nullable().optional(),
-  allocations: z.array(storePaymentAllocationSchema).max(MAX_STORE_PAYMENT_ALLOCATIONS).optional(),
+  allocations: z.array(storePaymentAllocationSchema).max(MAX_PAYMENT_ALLOCATIONS).optional(),
+  declarePaidItemIds: declarePaidItemIdsSchema,
+});
+
+/** The "Marcar pagado" control's payload: one product, and which way the mark is going. */
+export const orderItemPaidDeclarationSchema = z.object({
+  itemId: z.string().cuid({ message: "INVALID_ITEM_ID" }),
+  orderId: z.string().cuid({ message: "INVALID_ORDER_ID" }),
+  declared: z.boolean(),
 });
 
 /** Deletes a whole store payment (and every allocation hanging off it) from the store detail

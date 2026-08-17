@@ -26,6 +26,11 @@ type OrderCancelModalProps = {
   /** Whether the order has any recorded payments. When false the payments-choice control is
       hidden and the order cancels exactly as before (no added friction). */
   hasPayments: boolean;
+  /**
+   * How many of the order's products carry a paid mark. The credit branch clears them, and that
+   * consequence is only announced when there is something to clear: today every order has zero.
+   */
+  markedItemCount: number;
   onSuccess?: () => void;
 };
 
@@ -48,6 +53,7 @@ export default function OrderCancelModal({
   paidAmountMinor,
   currencyCode,
   hasPayments,
+  markedItemCount,
   onSuccess,
 }: OrderCancelModalProps) {
   const t = useTranslations("orders");
@@ -61,7 +67,10 @@ export default function OrderCancelModal({
     {
       value: "credit",
       label: t("detail.cancelModal.paymentsCreditLabel", { store: storeName }),
-      description: t("detail.cancelModal.paymentsCreditHint"),
+      description:
+        markedItemCount > 0
+          ? `${t("detail.cancelModal.paymentsCreditHint")} ${t("detail.cancelModal.creditClearsMarks")}`
+          : t("detail.cancelModal.paymentsCreditHint"),
     },
     {
       value: "lost",

@@ -15,7 +15,7 @@ implementation_status: IMPLEMENTED
 
 ## Summary
 
-Build the order detail experience at `/orders/[id]`: a status-aware header with action hierarchy, items list, **read-only** automatic history, inline-editable private note, and a payments panel that reuses the payment server mutations from [FRD-05 · BP-01 · WO-03](../../bp-01-order-domain-foundation/work-orders/wo-03-order-payments-balances-and-payment-mutation-rules.md). **As implemented (April 2026):** payments and note changes use optimistic or immediate local UI updates where applicable; order history records **lifecycle events only** (`ORDER_CREATED`, `ORDER_CANCELLED`, `ORDER_REACTIVATED`, and `STATUS_CHANGED` reserved for delivery-driven updates). Note and payment activity **do not** append history rows (see migration `20260423000000_simplify_order_history_event_types`). The history panel is **read-only** (no per-entry delete in UI or `deleteOrderHistoryEntry` in `orderMutations.ts`). On desktop, history sits in the **right column** under the payments block, in a `SectionSurfaceCard` to match the payments list styling. Cancel and reactivate refresh the page after a successful Server Action instead of reconciling a full detail payload on the client. Opening the add-payment form scrolls the form into view (`scrollIntoView` + `scroll-mt-24`) so long payment lists do not hide the form. The header keeps a maximum of two visible affordances: a primary action plus one secondary affordance. In active states that secondary affordance is a split pattern: visible `Edit` plus a small adjacent overflow trigger. `View store` lives inside that overflow menu and links to `/stores/[slug]?returnTo={encodedCurrentOrderDetailUrl}` so store detail can route the collector back to the same order context.
+Build the order detail experience at `/orders/[id]`: a status-aware header with action hierarchy, items list, **read-only** automatic history, inline-editable private note, and a payments panel that reuses the payment server mutations from [FRD-05 · BP-01 · WO-03](../../bp-01-order-domain-foundation/work-orders/wo-03-order-payments-balances-and-payment-mutation-rules.md). **As implemented (April 2026):** payments and note changes use optimistic or immediate local UI updates where applicable; order history records **lifecycle events only** (`ORDER_CREATED`, `ORDER_CANCELLED`, `ORDER_REACTIVATED`, and `STATUS_CHANGED` reserved for delivery-driven updates). Note and payment activity **do not** append history rows (see migration `20260423000000_simplify_order_history_event_types`). The history panel is **read-only** (no per-entry delete in UI or `deleteOrderHistoryEntry` in `orderMutations.ts`). On desktop, history sits at the **bottom of the main column** under Productos, as a `CollapsibleSubcard` matching the Productos subcard; it is not rendered below `lg`. Cancel and reactivate refresh the page after a successful Server Action instead of reconciling a full detail payload on the client. The `scrollIntoView` + `scroll-mt-24` behaviour described in earlier revisions is **not** in the code: neither token appears anywhere under `src/app/[locale]/(app)/orders/`. The header keeps a maximum of two visible affordances: a primary action plus one secondary affordance. In active states that secondary affordance is a split pattern: visible `Edit` plus a small adjacent overflow trigger. `View store` lives inside that overflow menu and links to `/stores/[slug]?returnTo={encodedCurrentOrderDetailUrl}` so store detail can route the collector back to the same order context.
 
 ## Prerequisites
 
@@ -34,7 +34,7 @@ WO-05 extends `orderMutations.ts` with `reactivateOrder` and `saveOrderNote`, an
 - Status-aware action bar: primary action plus one secondary affordance per status
 - `View store` menu action, with `?returnTo=` round-trip back to the current order detail URL
 - `Create delivery` primary action disabled with tooltip until FRD-08 ships
-- Inline-editable private note (reuses visual treatment of `StoreNoteForm`; wired to `Order.note`; no `OrderHistory` row on save)
+- Inline-editable private note (shares the `PrivateNoteCard` module with `StoreNoteForm`; wired to `Order.note`; no `OrderHistory` row on save)
 - Payments panel: list, expandable add form, delete confirmation, optimistic summary recalculation
 - Automatic history list (read-only; no per-entry delete)
 - Cancel, delete, and reactivate flows with context-aware confirmation modals
@@ -74,10 +74,10 @@ WO-05 extends `orderMutations.ts` with `reactivateOrder` and `saveOrderNote`, an
 
 ## Routes
 
-| Route                      | File                                             | Purpose                                                                                                  |
-| -------------------------- | ------------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
-| `/[locale]/orders/[id]` | `src/app/[locale]/(app)/orders/[id]/page.tsx` | Server-rendered detail page; resolves the session `userId` and fetches `getOrderDetail(orderId, userId)` |
-| `/[locale]/stores/[slug]?returnTo={encodedOrderDetailUrl}` | `src/app/[locale]/(app)/stores/[slug]/page.tsx` | Store-detail entry from order detail; preserves the current order URL for back navigation |
+| Route                                                      | File                                            | Purpose                                                                                                  |
+| ---------------------------------------------------------- | ----------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `/[locale]/orders/[id]`                                    | `src/app/[locale]/(app)/orders/[id]/page.tsx`   | Server-rendered detail page; resolves the session `userId` and fetches `getOrderDetail(orderId, userId)` |
+| `/[locale]/stores/[slug]?returnTo={encodedOrderDetailUrl}` | `src/app/[locale]/(app)/stores/[slug]/page.tsx` | Store-detail entry from order detail; preserves the current order URL for back navigation                |
 
 If the order does not exist or does not belong to the session user, the page calls `notFound()` so Next.js renders the locale 404.
 
@@ -126,18 +126,24 @@ src/app/[locale]/(app)/orders/[id]/
   page.tsx
   _components/
     OrderDetailContent.tsx         Server — orchestrator, 2-col layout
-    OrderSummaryHeader.tsx         Server — store, humanReadableId, dates, status chip, unpaid pill
-    OrderStatusBadge.tsx           Server — status chip localized
-    OrderActionBar.tsx             Client — primary + More menu, status-aware
-    OrderItemsList.tsx             Server — renders items read-only in detail (editing happens in WO-04)
-    OrderPaymentSummaryCard.tsx    Client — reconciles with Server Action returns
-    OrderPaymentsPanel.tsx         Client — list + expandable form + optimistic list mutations
-    OrderPaymentForm.tsx           Client — `useState` + `addPaymentAction` (not `useActionState`)
-    OrderPaymentRow.tsx            Client — delete confirmation
-    OrderNoteForm.tsx              Client — `useState` + `saveOrderNoteAction`, local draft / saved state
-    OrderHistoryList.tsx           Client — `SectionSurfaceCard` + map over `initialHistory` (read-only)
-    OrderHistoryRow.tsx            Client — event label + date (read-only)
-    OrderDangerousActionModal.tsx  Client — cancel + delete + reactivate reuse
+    (status chip)                     Rendered inline by the hero (see Status row below), not a separate component
+    OrderDetailContent.tsx            Server — composes hero, subcards and the aside slots
+    OrderDetailClient.tsx             Client coordinator — owns payment state, hero animation, aside + mobile columns
+    OrderDetailHero.tsx               Client — title, status, amount, payment progress
+    OrderDetailStickyActionBar.tsx    Client — mobile sticky primary action
+    OrderItemsReadOnlyList.tsx        Server — renders items read-only in detail (editing happens in WO-04)
+    OrderPaymentsAsideCard.tsx        Client — summary + payment list + inline add form (desktop aside and mobile)
+    OrderInlinePaymentForm.tsx        Client — `useState` + `addPaymentAction` (not `useActionState`)
+    OrderPaymentMobileSheet.tsx       Client — mobile add-payment sheet
+    OrderPaymentRow.tsx               Client — delete confirmation
+    OrderPrivateNoteCard.tsx          Client — autosave-on-blur private note (`saveOrderNoteAction`)
+    OrderHistoryCard.tsx              Server — `CollapsibleSubcard` + map over `history` (read-only)
+    OrderHistoryRow.tsx               Server — event label + date (read-only)
+    OrderActionsCard.tsx              Client — desktop lifecycle actions card
+    OrderMobileActionsCard.tsx        Client — mobile lifecycle actions card
+    OrderCancelModal.tsx              Client — cancel confirmation
+    OrderDeleteModal.tsx              Client — delete confirmation
+    CancellationReasonCallout.tsx     Server — cancellation reason on a cancelled order
   _actions/
     orderNoteActions.ts            saveOrderNoteAction (clear note = save null / empty trim)
     orderLifecycleActions.ts       cancelOrderAction, deleteOrderAction, reactivateOrderAction
@@ -145,42 +151,42 @@ src/app/[locale]/(app)/orders/[id]/
     orderNoteSchema.ts
 ```
 
-Pure eligibility helpers live in `src/lib/orders/orderLifecycle.ts` (with Vitest coverage in `src/lib/orders/_tests/orderLifecycle.test.ts`). There is **no** `orderLifecycleSchema.ts` in the repo; actions validate via session + data-layer checks.
+Pure eligibility helpers live in `src/lib/orders/orderLifecycle.ts` (with Vitest coverage in `src/lib/orders/_tests/orderLifecycle.test.ts`). `getOrderDetail` in `src/lib/data/orders/orderQueries.ts` calls `computeOrderEligibility` to build the `eligibility` object the detail surfaces consume, so the rule has exactly one implementation. The server-side guard in `cancelOrder` / `deleteOrder` (`orderMutations.ts`) is a second, independent check expressed as a live `deliveryOrderItem` lookup inside the transaction: it answers the same question against the database rather than against an already-loaded item list, and returns `HAS_LIVE_DELIVERY_LINKS`. There is **no** `orderLifecycleSchema.ts` in the repo; actions validate via `orderValidation.ts` schemas plus session + data-layer checks.
 
 `orderMutations.ts` (WO-01) includes `reactivateOrder`, `saveOrderNote`, `cancelOrder`, and `deleteOrder` (no `deleteOrderHistoryEntry`). Payment Server Actions live in `orderPaymentActions.ts` and delegate to `orderPaymentMutations.ts`; they return `{ payments, paidAmount, remainingAmount, paymentPercentage }` for panel reconciliation.
 
 ## Layout
 
-The page header (`OrderSummaryHeader`, full width) sits above the two-column block.
+`BackNavLink` and the overdue banner sit full width above the two-column block; the page's own heading is `OrderDetailHero`, which lives inside the main column.
 
 ### Desktop (≥ lg)
 
-Two-column grid `lg:grid-cols-[1fr_360px]`: **left** column — `OrderItemsList`, then `OrderNoteForm` (stacked with `space-y-8`). **Right** column — `OrderPaymentsPanel` (includes `OrderPaymentSummaryCard` + payment list and add form) and **below it** `OrderHistoryList`, both in a **sticky** container (`lg:sticky` with `space-y-4` between the payments section and the history card). The history list uses the same `SectionSurfaceCard` treatment as the payments list for visual consistency in the right rail.
+Two-column grid `lg:grid-cols-[minmax(0,1fr)_320px]`: **left (main)** column — `OrderDetailHero`, then the cancellation callout when present, the Productos `CollapsibleSubcard` (`OrderItemsReadOnlyList`), and finally `OrderHistoryCard` (also a `CollapsibleSubcard`, desktop only). **Right** column — a **sticky** container (`lg:sticky`, `lg:space-y-3.5`) holding `OrderPaymentsAsideCard`, then `OrderActionsCard`, then `OrderPrivateNoteCard`. The note lives in the right rail on desktop, not under the items.
 
 ### Tablet and mobile (< lg)
 
-Single-column flow: after the full-width header, the grid becomes one column. Order: **items** → **payments panel** (summary + list) → **private note** → **history**. The payments panel is surfaced before the note on mobile because it is the most actionable section; the right-rail sticky behavior collapses into normal document flow. The layout uses CSS `order-N` properties on individual children (with a `contents`-display wrapper that dissolves on mobile so children become direct flex items of the outer column) so children participate in the outer flex column on mobile and regroup into the 2-column grid on desktop.
+Single-column flow: the grid collapses to one column. Order: **hero** → **items** (Productos subcard) → **payments** (`OrderPaymentsAsideCard` re-used non-sticky with `showAddCta={false}`) → **private note** → **`OrderMobileActionsCard`**, plus the `OrderDetailStickyActionBar` pinned at the bottom. The payments card is surfaced before the note because it is the most actionable section, and the sticky bar is the single source of truth for the primary add-payment CTA, which is why the inline CTA is suppressed. **History is not rendered below `lg`** (`hidden lg:block`). The desktop aside and the mobile stack are two separate blocks toggled by `hidden lg:block` / `lg:hidden`, not one reordered flow.
 
 ### Header
 
-Uses `BackNavLink` (`appearance="pill"`) linking back to `/orders`, followed by `AppPageHero`:
+Uses `BackNavLink` (default `appearance="text"`) linking back to `/orders` (or the `returnTo` target), followed by `OrderDetailHero`:
 
 - Title line: store name as primary emphasis, `humanReadableId` as secondary metadata.
 - Meta row: order date, expected delivery range, currency/FX badge when `exchangeRate` is present.
-- Status row: `OrderStatusBadge` plus an `Impago` pill when `status === "COMPLETED"` and `summary.hasUnpaidBalance === true` (`FR-05-35`).
-- Below the meta row: the `OrderActionBar`.
+- Status row: the localized status chip plus an `Impago` pill when `status === "COMPLETED"` and `summary.hasUnpaidBalance === true` (`FR-05-35`). The chip is rendered **inline by `OrderDetailHero.tsx`** (local `statusChipClass()` + `StatusChipIcon` helpers, copy from `orders.detail.status.*`). The standalone `OrderStatusBadge` component this work order originally specified was superseded when the hero absorbed the chip, and the orphan has been deleted.
+- Below the meta row: the payment progress and amount, animated in lockstep with payment mutations by `OrderDetailClient`.
 
-## Action Bar
+## Action Surfaces
 
-The action bar is a Client Component. It reads `status`, `eligibility`, and `flags` from the server query and decides which affordances to render.
+The `OrderActionBar` component this work order originally specified was never built. The lifecycle affordances live in three Client Components that all read `status`, `eligibility` and `flags` from the server query: `OrderActionsCard` (desktop aside), `OrderMobileActionsCard` (mobile stack) and `OrderDetailStickyActionBar` (mobile sticky primary). Cancel and delete confirmations are `OrderCancelModal` and `OrderDeleteModal`; reactivate has no modal and is dispatched inline.
 
 ### Status matrix
 
-| Status                                                              | Primary                                              | Secondary affordance                                         | Overflow / menu actions                               |
-| ------------------------------------------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------ | ----------------------------------------------------- |
-| `OPEN`, `PARTIALLY_IN_TRANSIT`, `IN_TRANSIT`, `PARTIALLY_DELIVERED` | `Create delivery` (disabled, tooltip "Próximamente") | `Edit` → `/orders/[id]/edit` + adjacent overflow trigger     | `View store` · `Cancel` · `Delete`                    |
-| `COMPLETED`                                                         | `Create delivery` (disabled, tooltip "Próximamente") | `Edit` → `/orders/[id]/edit` + adjacent overflow trigger     | `View store` · `Cancel` · `Delete` (last two disabled) |
-| `CANCELLED`                                                         | `Reactivate`                                         | `More` button                                                | `View store` · `Delete` (enabled/disabled per eligibility) |
+| Status                                                              | Primary                                              | Secondary affordance                                     | Overflow / menu actions                                    |
+| ------------------------------------------------------------------- | ---------------------------------------------------- | -------------------------------------------------------- | ---------------------------------------------------------- |
+| `OPEN`, `PARTIALLY_IN_TRANSIT`, `IN_TRANSIT`, `PARTIALLY_DELIVERED` | `Create delivery` (disabled, tooltip "Próximamente") | `Edit` → `/orders/[id]/edit` + adjacent overflow trigger | `View store` · `Cancel` · `Delete`                         |
+| `COMPLETED`                                                         | `Create delivery` (disabled, tooltip "Próximamente") | `Edit` → `/orders/[id]/edit` + adjacent overflow trigger | `View store` · `Cancel` · `Delete` (last two disabled)     |
+| `CANCELLED`                                                         | `Reactivate`                                         | `More` button                                            | `View store` · `Delete` (enabled/disabled per eligibility) |
 
 When `eligibility.canCancel === false` or `eligibility.canDelete === false`, the item stays visible but is rendered disabled with the shared unlink-first tooltip.
 
@@ -195,7 +201,7 @@ When `eligibility.canCancel === false` or `eligibility.canDelete === false`, the
 
 ## Private Note Panel
 
-A separate Client Component (`OrderNoteForm`) for this slice. It mirrors `StoreNoteForm` patterns (`Textarea`, `maxLength = 2000`, helper copy, disabled save until the draft differs from persisted content) and persists to `Order.note`.
+A separate Client Component (`OrderPrivateNoteCard`, built on the shared `PrivateNoteCard` module) for this slice. It mirrors the store note patterns (`Textarea`, `maxLength = 2000`, helper copy, disabled save until the draft differs from persisted content) and persists to `Order.note`.
 
 Behavior (as implemented):
 
@@ -210,7 +216,7 @@ Behavior (as implemented):
 
 ## Payments Panel
 
-Two sub-components: `OrderPaymentSummaryCard` (the three KPIs plus the progress bar) and `OrderPaymentsPanel` (the list and add/delete interactions).
+One component, `OrderPaymentsAsideCard`, holds both the KPIs plus progress bar and the list with its add/delete interactions; it is rendered twice (sticky in the desktop aside, non-sticky and CTA-less in the mobile stack). The KPI block was never split into a separate `OrderPaymentSummaryCard`.
 
 ### Summary card
 
@@ -224,12 +230,12 @@ Two sub-components: `OrderPaymentSummaryCard` (the three KPIs plus the progress 
 
 - Empty state: `Banknote` icon, title "Aún no registras pagos" / "No payments yet", helper text, CTA `+ Registrar pago` / `+ Record payment`.
 - Populated state: list of payment rows ordered by `paymentDate DESC` (tiebreaker `createdAt DESC`). Each row shows amount, date, and a trailing delete icon button.
-- CTA `+ Registrar pago` toggles the add-payment form **inline** below the list at all breakpoints (no bottom sheet in the current implementation). When the form opens, `OrderPaymentsPanel` runs `scrollIntoView` on the form container (smooth, `block: "start"`) and applies `scroll-mt-24` so long payment lists do not leave the form below the fold.
+- On desktop the CTA `+ Registrar pago` toggles `OrderInlinePaymentForm` **inline** below the list inside `OrderPaymentsAsideCard`. On mobile the entry point is the sticky action bar, which opens `OrderPaymentMobileSheet` (a bottom sheet); the inline CTA is suppressed there via `showAddCta={false}`.
 - When `summary.remainingAmount === 0`, the CTA is hidden (WO-03 contract).
 
 ### Add payment form
 
-- Implemented as `OrderPaymentForm` using **React `useState`**, not `useActionState`. When **embedded** in the payments panel, the form does **not** repeat a “Registrar pago” / “Record payment” heading (the section header and CTA already provide context).
+- Implemented as `OrderInlinePaymentForm` using **React `useState`**, not `useActionState`. When **embedded** in the payments panel, the form does **not** repeat a “Registrar pago” / “Record payment” heading (the section header and CTA already provide context).
 - Fields: `amount` (money input, client validation against `remainingAmount`), `paymentDate` (date picker, default today, cannot be after today or before `order.orderDate` per server rules).
 - Submit calls `addPaymentAction` → `addOrderPayment`; returns `{ paidAmount, remainingAmount, paymentPercentage, payments }` on success for reconciliation.
 - Optimistic: the panel inserts a temporary row and recalculates summary, then reconciles or reverts on failure.
@@ -242,15 +248,16 @@ Two sub-components: `OrderPaymentSummaryCard` (the three KPIs plus the progress 
 
 ## Automatic History Panel
 
-- Rendered in the **right column** below `OrderPaymentsPanel`, as a **`SectionSurfaceCard`** titled with the localized “History” / “Historial” string (same card shell as the payments list for a consistent right-rail look).
-- Renders the `history` array ordered `createdAt DESC` (props: `initialHistory`, `locale`; no client state required for mutations).
+- Implemented as `OrderHistoryCard.tsx`, a **Server Component** wrapping a **`CollapsibleSubcard`** (`topAccent="cool"`, `defaultOpen={false}`, entry count as `meta`) whose eyebrow is an `Eyebrow variant="chip" tone="cool" icon={Clock3}` carrying the localized “History” / “Historial” string, matching the Productos subcard above it.
+- Rendered at the **bottom of the main column**, under Productos, and **desktop only** (`hidden lg:block` in `OrderDetailContent.tsx`): the mobile column stops at payments → note → actions and does not surface history at all.
+- Renders the `history` array ordered `createdAt DESC` (props: `history`, `locale`, `isCancelled`; no client state required for mutations). `isCancelled` dims only the body (`opacity-60`), leaving eyebrow, count and chevron at full opacity.
 - **Event types in schema:** `ORDER_CREATED`, `ORDER_CANCELLED`, `ORDER_REACTIVATED`, `STATUS_CHANGED`. The UI/i18n may still contain legacy keys for removed types; rows for those types no longer exist after the simplification migration. `STATUS_CHANGED` is reserved for delivery-driven status transitions (FRD-08) when wired.
 - Each row resolves display text from `orders.detail.history.events.{eventType}` where defined. **Read-only:** there is **no** delete control, modal, or `deleteOrderHistoryEntry` Server Action.
 - Empty state: section hidden; in practice there is at least an `ORDER_CREATED` row for existing orders.
 
 ## Cancel, Delete, and Reactivate Flows
 
-All three flows use `OrderDangerousActionModal`. The modal is a Client Component. Copy uses **next-intl** plus `humanReadableId`, `storeName`, and `flags.hasPayments` (payment-removal line); the Server Action re-validates live delivery links and order existence server-side (`BR-05-16` plus the shared eligibility rule).
+Cancel and delete each have their own Client Component modal, `OrderCancelModal` and `OrderDeleteModal`; the single shared `OrderDangerousActionModal` this work order specified was never built, and reactivate dispatches inline with no modal at all. Copy uses **next-intl** plus `humanReadableId`, `storeName`, and `flags.hasPayments` (payment-removal line); the Server Action re-validates live delivery links and order existence server-side (`BR-05-16` plus the shared eligibility rule).
 
 ### Cancel
 
@@ -274,11 +281,11 @@ All three flows use `OrderDangerousActionModal`. The modal is a Client Component
 
 ## Tooltip copy
 
-| Situation                                                       | ES                                                                                                     | EN                                                                                            |
-| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------- |
+| Situation                                                       | ES                                                                                                      | EN                                                                                            |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
 | Cancel blocked (items linked to delivery)                       | "Este pedido tiene items asociados a una entrega. Desasócialos desde la entrega para poder cancelarlo." | "This order has items linked to a delivery. Unlink them from the delivery before cancelling." |
 | Delete blocked (items linked to delivery)                       | "No se puede eliminar este pedido porque tiene items asociados a una entrega. Desasócialos primero."    | "This order can't be deleted because it has items linked to a delivery. Unlink them first."   |
-| Item-level remove blocked (in edit mode; referenced from WO-02) | "Este item está asociado a una entrega. Desasócialo desde la entrega para poder eliminarlo."           | "This item is linked to a delivery. Unlink it from the delivery before deleting it."          |
+| Item-level remove blocked (in edit mode; referenced from WO-02) | "Este item está asociado a una entrega. Desasócialo desde la entrega para poder eliminarlo."            | "This item is linked to a delivery. Unlink it from the delivery before deleting it."          |
 | `Create delivery` (until FRD-08)                                | "Próximamente: podrás crear entregas para este pedido."                                                 | "Coming soon: you'll be able to create deliveries for this order."                            |
 
 All copy lives in `src/i18n/locales/{locale}/orders.json` under the namespace `orders.detail.*`.
@@ -332,24 +339,24 @@ Where `.agents/rules/optimistic-client-updates.mdc` applies:
 
 Event names live under `POSTHOG_EVENTS.ORDER.*` in `src/lib/constants.ts`. **As implemented**, server `capture` calls mostly send `{ orderId }` (note, payment, cancel, delete, reactivate). The disabled **Create delivery** button includes **`{ orderId, status }`** via `posthogProps`. The **More** menu uses `posthogEvent={DETAIL_MORE_MENU_OPENED}` with `{ orderId }` on the chevron `Button`. `order_detail_more_menu_opened` is **not** fired from the placeholder `handleMoreToggle` path on mobile (that branch only calls `fetch("/api/noop")`).
 
-| Event constant                  | When it fires                                               |
-| ------------------------------- | ----------------------------------------------------------- |
-| `order_note_saved`              | `saveOrderNote` returns success with a non-null note        |
-| `order_note_deleted`            | `saveOrderNote` returns success with `note === null`        |
-| `order_payment_added`           | `addPayment` returns success                                |
-| `order_payment_deleted`         | `deletePayment` returns success                             |
-| `order_cancelled`               | `cancelOrder` returns success                               |
-| `order_deleted`                 | `deleteOrder` returns success                               |
-| `order_reactivated`             | `reactivateOrder` returns success                           |
-| `order_create_delivery_clicked` | User clicks `Create delivery`, including the disabled state |
+| Event constant                  | When it fires                                                           |
+| ------------------------------- | ----------------------------------------------------------------------- |
+| `order_note_saved`              | `saveOrderNote` returns success with a non-null note                    |
+| `order_note_deleted`            | `saveOrderNote` returns success with `note === null`                    |
+| `order_payment_added`           | `addPayment` returns success                                            |
+| `order_payment_deleted`         | `deletePayment` returns success                                         |
+| `order_cancelled`               | `cancelOrder` returns success                                           |
+| `order_deleted`                 | `deleteOrder` returns success                                           |
+| `order_reactivated`             | `reactivateOrder` returns success                                       |
+| `order_create_delivery_clicked` | User clicks `Create delivery`, including the disabled state             |
 | `order_view_store_clicked`      | User clicks the `View store` action inside the order-detail `More` menu |
-| `order_detail_more_menu_opened` | The `More` / chevron menu opens                             |
+| `order_detail_more_menu_opened` | The `More` / chevron menu opens                                         |
 
 ## Assumptions
 
 - `getOrderDetail` is the single source of the detail view; it lives in `src/lib/data/orders/orderQueries.ts` and is extended with `eligibility` and `flags` without extra joins (derived from items + payments already selected).
 - **`OrderHistoryEventType`** (after the simplification migration) is: `ORDER_CREATED`, `ORDER_CANCELLED`, `ORDER_REACTIVATED`, `STATUS_CHANGED`. Notes and payments do not emit history events.
-- `StoreNoteForm` provides the visual template but is not extracted to a shared abstraction. If a third consumer appears later, extract then.
+- The shared abstraction predicted here was extracted once a third consumer appeared: `src/components/modules/PrivateNoteCard.tsx` now backs `StoreNoteForm`, `OrderPrivateNoteCard` and `DeliveryPrivateNoteCard`.
 - `Create delivery` navigation target will land in FRD-08. Until then the affordance is disabled; analytics measure demand so the prioritization decision is informed.
 
 ## Unit Tests
@@ -368,7 +375,7 @@ Covered in `src/lib/orders/_tests/orderLifecycle.test.ts`.
 
 ### Destructive modal copy
 
-Copy is composed in `OrderDangerousActionModal` via **next-intl** keys (`detail.cancelModal.*`, `detail.deleteModal.*`), not a separate `buildDestructiveModalCopy` helper — no unit tests for that indirection.
+Copy is composed in `OrderCancelModal` / `OrderDeleteModal` via **next-intl** keys (`detail.cancelModal.*`, `detail.deleteModal.*`), not a separate `buildDestructiveModalCopy` helper — no unit tests for that indirection.
 
 ### `saveOrderNote` no-op / change detection
 

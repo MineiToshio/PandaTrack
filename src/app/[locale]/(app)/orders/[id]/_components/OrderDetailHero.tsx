@@ -4,6 +4,7 @@ import { AlertTriangle, ArrowUpRight, CircleCheck, Package, PackageCheck, Truck 
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import Eyebrow from "@/components/core/Eyebrow";
+import ProgressBar from "@/components/core/ProgressBar";
 import StoreAvatar from "@/components/core/StoreAvatar";
 import { useAnimatedNumber } from "@/hooks/useAnimatedNumber";
 import { cn } from "@/lib/styles";
@@ -133,17 +134,10 @@ export default function OrderDetailHero({
     isCancelled ? "text-text-secondary" : "text-text-title",
   );
 
-  // Transform-only fill (scaleX from the left, never animating `width`): the hook drives the
-  // value per frame and snaps under reduced-motion. The track clips the rounded ends, so the
-  // fill itself stays square-edged to avoid border-radius distortion when scaled.
-  const progressFillStyle: React.CSSProperties = {
-    transform: `scaleX(${Math.min(100, Math.max(0, animatedPct)) / 100})`,
-    transformOrigin: "left",
-    background:
-      completedUnpaid || isOverdue
-        ? "linear-gradient(90deg, var(--warning), var(--accent-warm))"
-        : "linear-gradient(90deg, var(--accent), var(--accent-warm))",
-  };
+  // The bar itself is `<ProgressBar>`; `useAnimatedNumber` drives its value per frame (and snaps
+  // under reduced-motion), so it opts out of the component's own CSS easing — two interpolations
+  // stacked would drift the fill away from the counter above it.
+  const progressTone = completedUnpaid || isOverdue ? "warning" : "accent";
 
   const isCreditAtStore = storeDebtMinor < 0;
   const debtLabel = isCreditAtStore
@@ -259,17 +253,26 @@ export default function OrderDetailHero({
                   total: formatAmountSymbolOnly(order.totalCost, order.currencyCode, locale),
                 })}
               </div>
-              <div
-                role="progressbar"
-                aria-valuenow={pctForDisplay}
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-label={t("detail.hero.allocatedPercentAria", { pct: pctForDisplay })}
-                className="mt-2 h-1 w-full overflow-hidden rounded-full"
-                style={{ background: "color-mix(in oklab, var(--text-primary) 8%, transparent)" }}
-              >
-                <span className="block h-full w-full" style={progressFillStyle} />
-              </div>
+              <ProgressBar
+                value={animatedPct}
+                valueNow={pctForDisplay}
+                transition={false}
+                tone={progressTone}
+                label={t("detail.hero.allocatedPercentAria", { pct: pctForDisplay })}
+                // The whole sentence, with both operands and the residual: "Ya pagaste X de Y.
+                // Falta Z." A percentage alone makes a screen reader user do the subtraction the
+                // sighted reader gets for free.
+                valueText={t("detail.payments.heroProgressSentence", {
+                  paid: formatAmountSymbolOnly(allocatedAmountMinor, order.currencyCode, locale),
+                  total: formatAmountSymbolOnly(order.totalCost, order.currencyCode, locale),
+                  remaining: formatAmountSymbolOnly(
+                    Math.max(0, order.totalCost - allocatedAmountMinor),
+                    order.currencyCode,
+                    locale,
+                  ),
+                })}
+                className="mt-2 w-full"
+              />
             </>
           ) : (
             // Nothing declared against THIS order yet. A debt link only makes sense when there is

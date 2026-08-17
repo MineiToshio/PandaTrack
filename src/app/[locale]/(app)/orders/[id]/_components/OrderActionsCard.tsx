@@ -28,6 +28,8 @@ type OrderActionsCardProps = {
   paidAmountMinor: number;
   currencyCode: string;
   hasPayments: boolean;
+  /** Threaded into `OrderCancelModal`, which only announces that marks are cleared when any exist. */
+  markedItemCount: number;
   locale: string;
   /** Products still eligible for a delivery; an empty list hides the quick-arrival action. */
   quickArrivalItems: QuickArrivalItem[];
@@ -52,6 +54,7 @@ export default function OrderActionsCard({
   paidAmountMinor,
   currencyCode,
   hasPayments,
+  markedItemCount,
   locale,
   quickArrivalItems,
   settledItemCount,
@@ -240,6 +243,7 @@ export default function OrderActionsCard({
         paidAmountMinor={paidAmountMinor}
         currencyCode={currencyCode}
         hasPayments={hasPayments}
+        markedItemCount={markedItemCount}
         onSuccess={() => {
           setModal(null);
           router.refresh();
@@ -257,8 +261,7 @@ export default function OrderActionsCard({
         <QuickArrivalModal
           isOpen={quickArrival.isOpen}
           onClose={quickArrival.close}
-          orderHumanReadableId={humanReadableId}
-          storeName={storeName}
+          subtitle={`${humanReadableId} · ${storeName}`}
           items={quickArrivalItems}
           settledItemCount={settledItemCount}
           baseCurrencyCode={baseCurrencyCode}

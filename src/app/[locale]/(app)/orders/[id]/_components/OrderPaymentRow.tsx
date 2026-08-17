@@ -82,7 +82,12 @@ export default function OrderPaymentRow({
       {/* Demo `.pay-row`: gap 12px · py 6px · font 14px. No inter-row border — payments
           read as a single block; the only visible separator is the one between the last
           payment and the totals row (rendered by the parent aside card). */}
-      <li className="flex items-start gap-3 py-1.5 text-[14px]">
+      {/* `py-2` on mobile, not the demo's 6px: the delete button below expands its hit area by
+          `inset:-8px`, so two rows' pseudo-elements need 16px between the button boxes or the
+          LATER row in the DOM takes the whole contested band and the row above it loses part of
+          its 44px. 6px padding left 12px. Desktop keeps the demo's 6px, where the expansion is
+          dropped by `md:before:inset-0`. */}
+      <li className="flex items-start gap-3 py-2 text-[14px] md:py-1.5">
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-3">
             <span className="text-text-muted font-mono text-[12px] tabular-nums">{dateLabel}</span>
@@ -94,12 +99,18 @@ export default function OrderPaymentRow({
           )}
         </div>
         <span className="text-text-title shrink-0 font-semibold tabular-nums">{amountLabel}</span>
-        {/* Demo `.pay-row .pay-delete`: 28×28 · rounded 6px · transparent bg · muted icon */}
+        {/* Demo `.pay-row .pay-delete`: 28×28 · rounded 6px · transparent bg · muted icon.
+            Tap target ≥44×44 on mobile via the `::before` pseudo, the same mechanism as
+            `IconButton` and the twin control in `StorePaymentRow`: padding inside a fixed `size-7`
+            box never grows the box, so `inset:-8px` expands the hit area outward to 44px instead.
+            Its only neighbour on the row is the non-interactive amount `<span>` (`gap-3`, 12px);
+            the vertical neighbour is the next row's own delete button, which is what the row's
+            `py-2` above is for. `md:before:inset-0` drops the extra area on desktop. */}
         <button
           type="button"
           onClick={() => setModalOpen(true)}
           aria-label={t("detail.payments.deleteLabelDetailed", { amount: amountLabel, date: dateLabel })}
-          className="text-text-muted hover:text-text-title focus-visible:ring-ring focus-visible:ring-offset-background grid size-7 shrink-0 cursor-pointer place-items-center rounded-md transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+          className="text-text-muted hover:text-text-title focus-visible:ring-ring focus-visible:ring-offset-background relative grid size-7 shrink-0 cursor-pointer place-items-center rounded-md transition-colors before:absolute before:[inset:-8px] before:content-[''] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none md:before:inset-0"
         >
           <X className="size-[13px]" aria-hidden />
         </button>

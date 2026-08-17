@@ -23,14 +23,15 @@ const params = { orderId: "order-1", userId: "user-1", amount: 1000, paymentDate
  * mocked on the top-level `prisma` object; everything `createStorePayment` itself does happens
  * inside the `tx` handed to the transaction callback, built with the shared store-payment fixture.
  */
-function setUpOrder(overrides: { currencyCode?: string; itemId?: string | null } = {}): void {
-  const { currencyCode = "USD", itemId = null } = overrides;
+function setUpOrder(overrides: { currencyCode?: string; itemId?: string | null; itemIds?: string[] } = {}): void {
+  const { currencyCode = "USD", itemId = null, itemIds } = overrides;
+  const items = itemIds ? itemIds.map((id) => ({ id })) : itemId ? [{ id: itemId }] : [];
   prismaMock.order.findFirst.mockResolvedValue({
     storeId: "store-1",
     currencyCode,
     exchangeRate: null,
     exchangeRateBaseCode: null,
-    items: itemId ? [{ id: itemId }] : [],
+    items,
   });
 }
 
@@ -76,7 +77,13 @@ describe("addOrderPayment", () => {
           {
             id: "alloc-1",
             amountMinor: 4000,
-            payment: { id: "payment-new", amount: 1000, paymentDate: PAYMENT_DATE, _count: { allocations: 1 } },
+            orderItemId: null,
+            payment: {
+              id: "payment-new",
+              amount: 1000,
+              paymentDate: PAYMENT_DATE,
+              allocations: [{ orderId: "order-1", amountMinor: 4000, orderItemId: null }],
+            },
           },
         ],
       },
@@ -88,12 +95,16 @@ describe("addOrderPayment", () => {
     expect(result).toMatchObject({ ok: true, paidAmount: 4000, remainingAmount: 6000, paymentPercentage: 40 });
   });
 
-  it("rejects a payment that exceeds the remaining balance without creating it", async () => {
+  it("rejects a payment that exceeds THIS ORDER's remaining balance without creating it", async () => {
+    // The store ceiling is deliberately left wide open (it is checked first, and it used to be
+    // collapsed into this same code, so this fixture proved nothing about the order ceiling until
+    // the two refusals were told apart). The store is owed 100000; only the order's own 2000 of
+    // remaining balance can refuse a payment of 5000.
     setUpOrder();
     const order = makeFixtureOrder({ id: "order-1", totalCost: 10000, allocatedAmountMinor: 8000 });
     const tx = makeCreateStorePaymentTx({
       orders: [order],
-      debtByCurrency: { USD: { committedMinor: 10000, paidMinor: 8000 } },
+      debtByCurrency: { USD: { committedMinor: 100000, paidMinor: 0 } },
     });
     runStorePaymentTx(prismaMock, tx);
 
@@ -159,6 +170,139 @@ describe("addOrderPayment", () => {
     });
   });
 
+  /**
+   * The breakdown write path. What the collector typed is what gets written, cent for cent, and
+   * the part of the payment they left unattributed is derived here rather than sent: it becomes ONE
+   * order-level line of the SAME payment, which is what keeps the order's books closing exactly
+   * while the products only carry what was actually declared for them.
+   */
+  describe("with a product breakdown", () => {
+    function setUpTwoProductOrder() {
+      setUpOrder({ itemIds: ["item-a", "item-b"] });
+      return makeCreateStorePaymentTx({
+        orders: [
+          makeFixtureOrder({
+            id: "order-1",
+            totalCost: 15000,
+            allocatedAmountMinor: 0,
+            items: [
+              { id: "item-a", unitPrice: 4000, quantity: 1 },
+              { id: "item-b", unitPrice: 6000, quantity: 1 },
+            ],
+          }),
+        ],
+        debtByCurrency: { USD: { committedMinor: 15000, paidMinor: 0 } },
+        cacheAfterWriteByOrderId: { "order-1": 7500 },
+        snapshotsByOrderId: { "order-1": { totalCost: 15000, allocatedAmountMinor: 7500 } },
+      });
+    }
+
+    it("writes the leftover as an order-level line of the same payment", async () => {
+      const tx = setUpTwoProductOrder();
+      runStorePaymentTx(prismaMock, tx);
+
+      const result = await addOrderPayment({
+        ...params,
+        amount: 7500,
+        allocations: [
+          { orderItemId: "item-a", amountMinor: 2000 },
+          { orderItemId: "item-b", amountMinor: 3000 },
+        ],
+      });
+
+      expect(result).toMatchObject({ ok: true });
+      const [{ data }] = tx.paymentAllocation.createMany.mock.calls[0] as [{ data: Array<Record<string, unknown>> }];
+      expect(data).toEqual([
+        expect.objectContaining({ orderId: "order-1", orderItemId: "item-a", amountMinor: 2000 }),
+        expect.objectContaining({ orderId: "order-1", orderItemId: "item-b", amountMinor: 3000 }),
+        expect.objectContaining({ orderId: "order-1", orderItemId: null, amountMinor: 2500 }),
+      ]);
+      expect(data.reduce((sum, line) => sum + (line.amountMinor as number), 0)).toBe(7500);
+    });
+
+    it("writes no leftover line when the breakdown covers the whole payment", async () => {
+      const tx = setUpTwoProductOrder();
+      runStorePaymentTx(prismaMock, tx);
+
+      const result = await addOrderPayment({
+        ...params,
+        amount: 7500,
+        allocations: [
+          { orderItemId: "item-a", amountMinor: 3000 },
+          { orderItemId: "item-b", amountMinor: 4500 },
+        ],
+      });
+
+      expect(result).toMatchObject({ ok: true });
+      const [{ data }] = tx.paymentAllocation.createMany.mock.calls[0] as [{ data: Array<Record<string, unknown>> }];
+      // A zero-amount third line would declare that nothing covers nothing, and the store mutation
+      // refuses it outright.
+      expect(data).toHaveLength(2);
+      expect(data.every((line) => line.amountMinor !== 0)).toBe(true);
+    });
+
+    it("refuses a breakdown that outruns the payment without writing anything", async () => {
+      const tx = setUpTwoProductOrder();
+      runStorePaymentTx(prismaMock, tx);
+
+      const result = await addOrderPayment({
+        ...params,
+        amount: 7500,
+        allocations: [
+          { orderItemId: "item-a", amountMinor: 4000 },
+          { orderItemId: "item-b", amountMinor: 6000 },
+        ],
+      });
+
+      expect(result).toMatchObject({ ok: false });
+      expect(tx.storePayment.create).not.toHaveBeenCalled();
+    });
+
+    /**
+     * The refusal names the PRODUCT, in both halves: its own code and the id of the line it is
+     * about. It used to collapse into `EXCEEDS_BALANCE` with the id dropped, which cost nothing
+     * while this door could only ever write one whole-order allocation; with a breakdown it would
+     * tell the collector their payment exceeds the ORDER's balance when what it exceeds is one
+     * product's price, and leave the form unable to point at which row.
+     */
+    it("refuses a line that outruns its own product's price, naming that product, without writing anything", async () => {
+      const tx = setUpTwoProductOrder();
+      runStorePaymentTx(prismaMock, tx);
+
+      const result = await addOrderPayment({
+        ...params,
+        amount: 7500,
+        allocations: [{ orderItemId: "item-a", amountMinor: 5000 }],
+      });
+
+      expect(result).toEqual({ ok: false, error: "EXCEEDS_ITEM_BASE", orderItemId: "item-a" });
+      expect(tx.storePayment.create).not.toHaveBeenCalled();
+    });
+
+    it("still names the single product of a one-product order when no breakdown is sent", async () => {
+      setUpOrder({ itemId: "item-1" });
+      const tx = makeCreateStorePaymentTx({
+        orders: [
+          makeFixtureOrder({
+            id: "order-1",
+            totalCost: 10000,
+            items: [{ id: "item-1", unitPrice: null, quantity: 1 }],
+          }),
+        ],
+        debtByCurrency: { USD: { committedMinor: 10000, paidMinor: 0 } },
+        cacheAfterWriteByOrderId: { "order-1": 1000 },
+        snapshotsByOrderId: { "order-1": { totalCost: 10000, allocatedAmountMinor: 1000 } },
+      });
+      runStorePaymentTx(prismaMock, tx);
+
+      await addOrderPayment({ ...params, allocations: [] });
+
+      expect(tx.paymentAllocation.createMany).toHaveBeenCalledWith({
+        data: [expect.objectContaining({ orderItemId: "item-1", amountMinor: 1000 })],
+      });
+    });
+  });
+
   it("retries once and succeeds when the first attempt hits a serialization failure (P2034)", async () => {
     setUpOrder();
     const order = makeFixtureOrder({ id: "order-1", totalCost: 10000 });
@@ -215,46 +359,92 @@ describe("addOrderPayment", () => {
     expect(result).toEqual({ ok: false, error: "ORDER_NOT_FOUND" });
     expect(prismaMock.$transaction).not.toHaveBeenCalled();
   });
+
+  /**
+   * #26 — the refusal keeps its own name.
+   *
+   * It used to be flattened into `EXCEEDS_BALANCE`, so the collector read "the amount exceeds the
+   * remaining balance of THIS ORDER" when the ceiling that actually stopped them was what they still
+   * owe the STORE across every order of it. Two different facts, two different next steps, and only
+   * the order-scoped one is fixable by editing this payment.
+   */
+  it("propagates STORE_DEBT_EXCEEDED instead of collapsing it into EXCEEDS_BALANCE", async () => {
+    setUpOrder();
+    const order = makeFixtureOrder({ id: "order-1", totalCost: 10000, allocatedAmountMinor: 0 });
+    const tx = makeCreateStorePaymentTx({
+      orders: [order],
+      // The store is owed 400 in this currency and the payment is 1000: the order's own balance
+      // (10000) has room for it, so only the store ceiling can refuse it.
+      debtByCurrency: { USD: { committedMinor: 10000, paidMinor: 9600 } },
+    });
+    runStorePaymentTx(prismaMock, tx);
+
+    const result = await addOrderPayment(params);
+
+    expect(result).toEqual({ ok: false, error: "STORE_DEBT_EXCEEDED" });
+    expect(tx.storePayment.create).not.toHaveBeenCalled();
+  });
 });
 
+/**
+ * D2 — the unit an order-scoped delete acts on is the pair (payment, order).
+ *
+ * This is the collector's ONLY correction path: allocations are immutable once written, so fixing a
+ * payment means deleting it and recording it again. Under the old rule ("the payment has exactly one
+ * allocation") a payment broken down across an order's products has three, so it would delete ONE of
+ * them and leave the `StorePayment` plus its siblings orphaned, with the transfer still half
+ * attached to the order the collector just detached it from.
+ */
 describe("deleteOrderPayment", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
+  /**
+   * `paymentAllocation.findMany` is called twice with different questions: once for this order's
+   * claim on the payment (scoped by `paymentId`), and once at the end by `listOrderPaymentRecords`
+   * for the order's whole ledger. Dispatched on the shape of `where`, not on call order.
+   */
   function makeDeleteTx(
     overrides: {
-      allocation?: {
-        id: string;
-        amountMinor: number;
-        payment: { id: string; amount: number; _count: { allocations: number } };
-      } | null;
+      /** This order's allocations on the targeted payment. */
+      claim?: Array<{ id: string }>;
+      /** How many allocations of that payment belong to some OTHER order. */
+      otherOrdersClaiming?: number;
       order?: { totalCost: number } | null;
       cacheAfterDeleteByOrderId?: Record<string, number>;
       remainingPayments?: unknown[];
     } = {},
   ) {
     const {
-      allocation = {
-        id: "alloc-1",
-        amountMinor: 1000,
-        payment: { id: "payment-1", amount: 1000, _count: { allocations: 1 } },
-      },
+      claim = [{ id: "alloc-1" }],
+      otherOrdersClaiming = 0,
       order = { totalCost: 10000 },
       cacheAfterDeleteByOrderId = { "order-1": 0 },
       remainingPayments = [],
     } = overrides;
     return {
       paymentAllocation: {
-        findFirst: vi.fn().mockResolvedValue(allocation),
-        delete: vi.fn().mockResolvedValue({}),
+        findMany: vi.fn().mockImplementation((args: { where: { paymentId?: string } }) => {
+          return Promise.resolve(args.where.paymentId ? claim : remainingPayments);
+        }),
+        // Dispatched on the `where`, not stubbed flat: `{ orderId: { not } }` asks "does any OTHER
+        // order claim this payment", while a query without it asks for the payment's total line
+        // count. A flat stub would answer both with the same number and make this fixture agree
+        // with any implementation, which is the shape of a decorative test.
+        count: vi.fn().mockImplementation((args: { where: { orderId?: { not?: string } } }) => {
+          if (args.where.orderId && typeof args.where.orderId === "object" && "not" in args.where.orderId) {
+            return Promise.resolve(otherOrdersClaiming);
+          }
+          return Promise.resolve(claim.length + otherOrdersClaiming);
+        }),
+        deleteMany: vi.fn().mockResolvedValue({ count: claim.length }),
         groupBy: vi.fn().mockResolvedValue(
           Object.entries(cacheAfterDeleteByOrderId).map(([orderId, sum]) => ({
             orderId,
             _sum: { amountMinor: sum },
           })),
         ),
-        findMany: vi.fn().mockResolvedValue(remainingPayments),
       },
       order: {
         findFirst: vi.fn().mockResolvedValue(order),
@@ -266,88 +456,85 @@ describe("deleteOrderPayment", () => {
     };
   }
 
-  it("returns NOT_FOUND when the allocation does not exist for this order/user", async () => {
-    const tx = makeDeleteTx({ allocation: null });
+  it("returns NOT_FOUND when this order has no claim on that payment", async () => {
+    const tx = makeDeleteTx({ claim: [] });
     runStorePaymentTx(prismaMock, tx);
 
-    const result = await deleteOrderPayment({ allocationId: "alloc-1", orderId: "order-1", userId: "user-1" });
+    const result = await deleteOrderPayment({ paymentId: "payment-1", orderId: "order-1", userId: "user-1" });
 
     expect(result).toEqual({ ok: false, error: "NOT_FOUND" });
     expect(tx.storePayment.delete).not.toHaveBeenCalled();
-    expect(tx.paymentAllocation.delete).not.toHaveBeenCalled();
+    expect(tx.paymentAllocation.deleteMany).not.toHaveBeenCalled();
   });
 
   it("deletes the whole payment when it was born 1:1 for this order (sole claim, full amount)", async () => {
-    const tx = makeDeleteTx({
-      allocation: {
-        id: "alloc-1",
-        amountMinor: 1000,
-        payment: { id: "payment-1", amount: 1000, _count: { allocations: 1 } },
-      },
-    });
+    const tx = makeDeleteTx({ claim: [{ id: "alloc-1" }], otherOrdersClaiming: 0 });
     runStorePaymentTx(prismaMock, tx);
 
-    const result = await deleteOrderPayment({ allocationId: "alloc-1", orderId: "order-1", userId: "user-1" });
+    const result = await deleteOrderPayment({ paymentId: "payment-1", orderId: "order-1", userId: "user-1" });
 
     expect(result).toMatchObject({ ok: true, deletedPayment: true });
     expect(tx.storePayment.delete).toHaveBeenCalledWith({ where: { id: "payment-1" } });
-    expect(tx.paymentAllocation.delete).not.toHaveBeenCalled();
+    expect(tx.paymentAllocation.deleteMany).not.toHaveBeenCalled();
   });
 
-  it("deletes the whole payment when its only remaining allocation is a partial claim (sole claim, partial amount)", async () => {
-    // The allocation being removed is the payment's ONLY one, but it only covers part of the
-    // payment's amount (an unclaimed remainder is riding along "on account"). The UI has no other
-    // door onto an allocation-less StorePayment from this screen, so it must still go with the
-    // allocation rather than being left stranded.
+  /**
+   * The case the old rule got wrong, and the reason D2 blocks everything downstream of it. Three
+   * lines, one order: 65.00 split 32.50 / 32.50 across two products plus nothing left over. Counting
+   * ALLOCATIONS says "not sole, keep the payment" and strands it.
+   */
+  it("deletes the whole payment when this order's claim is THREE lines and no other order claims it", async () => {
     const tx = makeDeleteTx({
-      allocation: {
-        id: "alloc-1",
-        amountMinor: 400,
-        payment: { id: "payment-1", amount: 1000, _count: { allocations: 1 } },
-      },
+      claim: [{ id: "alloc-1" }, { id: "alloc-2" }, { id: "alloc-3" }],
+      otherOrdersClaiming: 0,
     });
     runStorePaymentTx(prismaMock, tx);
 
-    const result = await deleteOrderPayment({ allocationId: "alloc-1", orderId: "order-1", userId: "user-1" });
+    const result = await deleteOrderPayment({ paymentId: "payment-1", orderId: "order-1", userId: "user-1" });
 
     expect(result).toMatchObject({ ok: true, deletedPayment: true });
     expect(tx.storePayment.delete).toHaveBeenCalledWith({ where: { id: "payment-1" } });
-    expect(tx.paymentAllocation.delete).not.toHaveBeenCalled();
+    // No sibling is left behind: the cascade on `PaymentAllocation.paymentId` takes all three.
+    expect(tx.paymentAllocation.deleteMany).not.toHaveBeenCalled();
+    expect(result).toMatchObject({ payments: [] });
   });
 
-  it("removes only this order's declaration when the payment is shared with other orders", async () => {
+  it("deletes the whole payment when its only claim is partial (unclaimed remainder rides along)", async () => {
+    // The claim is the payment's only one but covers just part of its amount. The UI has no other
+    // door onto an allocation-less StorePayment from this screen, so it must still go.
+    const tx = makeDeleteTx({ claim: [{ id: "alloc-1" }], otherOrdersClaiming: 0 });
+    runStorePaymentTx(prismaMock, tx);
+
+    const result = await deleteOrderPayment({ paymentId: "payment-1", orderId: "order-1", userId: "user-1" });
+
+    expect(result).toMatchObject({ ok: true, deletedPayment: true });
+    expect(tx.storePayment.delete).toHaveBeenCalledWith({ where: { id: "payment-1" } });
+  });
+
+  it("removes only this order's lines when the payment is shared with another order", async () => {
     const tx = makeDeleteTx({
-      allocation: {
-        id: "alloc-1",
-        amountMinor: 400,
-        payment: { id: "payment-1", amount: 1000, _count: { allocations: 2 } },
-      },
+      claim: [{ id: "alloc-1" }, { id: "alloc-2" }, { id: "alloc-3" }],
+      otherOrdersClaiming: 1,
     });
     runStorePaymentTx(prismaMock, tx);
 
-    const result = await deleteOrderPayment({ allocationId: "alloc-1", orderId: "order-1", userId: "user-1" });
+    const result = await deleteOrderPayment({ paymentId: "payment-1", orderId: "order-1", userId: "user-1" });
 
     expect(result).toMatchObject({ ok: true, deletedPayment: false });
-    expect(tx.paymentAllocation.delete).toHaveBeenCalledWith({ where: { id: "alloc-1" } });
+    // All three lines of THIS order, in one statement, and scoped so the other order's keep theirs.
+    expect(tx.paymentAllocation.deleteMany).toHaveBeenCalledWith({
+      where: { paymentId: "payment-1", orderId: "order-1", userId: "user-1" },
+    });
     expect(tx.storePayment.delete).not.toHaveBeenCalled();
   });
 
-  it("treats a full-amount allocation on an otherwise-shared payment as shared, not 1:1", async () => {
-    // Same amount as the payment, but the payment has more than one declaration: it is still
-    // sharing the payment with something else, so only the declaration should go.
-    const tx = makeDeleteTx({
-      allocation: {
-        id: "alloc-1",
-        amountMinor: 1000,
-        payment: { id: "payment-1", amount: 1000, _count: { allocations: 2 } },
-      },
-    });
+  it("treats a full-amount claim on an otherwise-shared payment as shared, not 1:1", async () => {
+    const tx = makeDeleteTx({ claim: [{ id: "alloc-1" }], otherOrdersClaiming: 2 });
     runStorePaymentTx(prismaMock, tx);
 
-    const result = await deleteOrderPayment({ allocationId: "alloc-1", orderId: "order-1", userId: "user-1" });
+    const result = await deleteOrderPayment({ paymentId: "payment-1", orderId: "order-1", userId: "user-1" });
 
     expect(result).toMatchObject({ ok: true, deletedPayment: false });
-    expect(tx.paymentAllocation.delete).toHaveBeenCalledWith({ where: { id: "alloc-1" } });
     expect(tx.storePayment.delete).not.toHaveBeenCalled();
   });
 });

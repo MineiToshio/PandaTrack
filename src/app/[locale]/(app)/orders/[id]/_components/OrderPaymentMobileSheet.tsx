@@ -4,7 +4,11 @@ import { useTranslations } from "next-intl";
 import { CircleDollarSign } from "lucide-react";
 import Modal from "@/components/modules/Modal/Modal";
 import { formatAmountSymbolOnly } from "@/lib/currency";
-import OrderInlinePaymentForm from "./OrderInlinePaymentForm";
+import OrderInlinePaymentForm, {
+  type OrderInlinePaymentOutcome,
+  type OrderInlinePaymentSubmission,
+} from "./OrderInlinePaymentForm";
+import type { BreakdownItem } from "@/lib/orders/orderPaymentBreakdown";
 
 type OrderPaymentMobileSheetProps = {
   isOpen: boolean;
@@ -14,7 +18,13 @@ type OrderPaymentMobileSheetProps = {
   remainingAmount: number;
   orderDate: Date;
   locale: string;
-  onSubmit: (amount: number, paymentDate: Date) => Promise<{ ok: boolean; error?: string }>;
+  /** The order's products, threaded into the payment form's breakdown panel. */
+  breakdownItems: BreakdownItem[];
+  /** The order's own total. The denominator of the breakdown's by-price percentage. */
+  totalCost: number;
+  /** Money already on this order naming no product. Named by the breakdown, never split. */
+  undetailedPaidMinor: number;
+  onSubmit: (submission: OrderInlinePaymentSubmission) => Promise<OrderInlinePaymentOutcome>;
 };
 
 export default function OrderPaymentMobileSheet({
@@ -24,6 +34,9 @@ export default function OrderPaymentMobileSheet({
   remainingAmount,
   orderDate,
   locale,
+  breakdownItems,
+  totalCost,
+  undetailedPaidMinor,
   onSubmit,
 }: OrderPaymentMobileSheetProps) {
   const t = useTranslations("orders");
@@ -39,37 +52,34 @@ export default function OrderPaymentMobileSheet({
       dismissible
     >
       <div className="space-y-4">
-        <div
-          className="rounded-xl border p-3 text-sm"
-          style={{
-            background: "color-mix(in oklch, var(--warning) 8%, var(--surface))",
-            borderColor: "color-mix(in oklch, var(--warning) 28%, transparent)",
-          }}
-        >
-          <div className="text-text-muted text-[11px] font-bold tracking-[0.06em] uppercase">
-            {t("detail.payments.saldoPendiente")}
-          </div>
-          <div className="text-warning mt-1 text-xl font-bold tabular-nums">
-            {formatAmountSymbolOnly(remainingAmount, currencyCode, locale)}
-          </div>
-        </div>
+        {/* One line, not a panel. The four-line amber box that used to sit here repeated the
+            balance that the "Todo · {amount}" chip and the submit button each already state. */}
+        <p className="text-text-secondary text-[13px]">
+          {t("detail.payments.mobileSubtitle", {
+            amount: formatAmountSymbolOnly(remainingAmount, currencyCode, locale),
+          })}
+        </p>
 
         <OrderInlinePaymentForm
           currencyCode={currencyCode}
           remainingAmount={remainingAmount}
           orderDate={orderDate}
           locale={locale}
+          // On a phone, focusing the amount field raises the keyboard over the quick-picks, which
+          // are the whole one-tap path. The field stays one tap away for whoever wants to type.
+          autoFocus={false}
+          items={breakdownItems}
+          orderTotalCostMinor={totalCost}
+          undetailedPaidMinor={undetailedPaidMinor}
           onCancel={onClose}
-          onSubmit={async (amount, date) => {
-            // Fire-and-forget (optimistic confirmation): close the sheet immediately so the
-            // user sees the hero amount + progress bar animate behind it. The parent's
-            // `handleAddPayment` owns the optimistic patch + rollback + error toast — by the
-            // time the server responds the sheet is gone, so any failure surfaces via toast
-            // instead of an inline error in this now-unmounted form.
-            void onSubmit(amount, date);
-            onClose();
-            return { ok: true };
-          }}
+          // Optimistic confirmation by default (the sheet is dismissed in the same tick and the
+          // coordinator's toast reports a refusal), with ONE exception the form owns: a breakdown
+          // draft keeps the sheet up until the server answers. It has to be that way round here in
+          // particular, because this surface is a `<Modal>` and the toast renders BEHIND it, so a
+          // sheet that closed on a refusal would take the whole hand-typed draft with it and a
+          // sheet that stayed open would show nothing at all.
+          onSubmit={onSubmit}
+          onSubmitted={onClose}
         />
       </div>
     </Modal>

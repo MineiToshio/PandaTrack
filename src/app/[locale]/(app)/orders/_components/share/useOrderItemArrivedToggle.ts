@@ -12,6 +12,13 @@ export type UseOrderItemArrivedToggleOptions = {
   lockedByDelivery: boolean;
   /** True when the order is cancelled: nothing about it can move any more. */
   lockedByCancellation: boolean;
+  /**
+   * Fired on EVERY transition of the optimistic state, the rollback included, so a row that needs
+   * to react to it cannot end up mirroring a state the hook has already put back. It is deliberately
+   * not the caller's `onClick`'s job to infer it: an inference made outside would miss the refusal
+   * path, which is the one that leaves the two out of step.
+   */
+  onStateChange?: (state: ItemDeliveryState) => void;
 };
 
 export type OrderItemArrivedToggle = {
@@ -45,20 +52,26 @@ export function useOrderItemArrivedToggle({
   initialState,
   lockedByDelivery,
   lockedByCancellation,
+  onStateChange,
 }: UseOrderItemArrivedToggleOptions): OrderItemArrivedToggle {
   const [state, setState] = useState<ItemDeliveryState>(initialState);
   const [isPending, startTransition] = useTransition();
 
   const canToggle = !lockedByDelivery && !lockedByCancellation;
 
+  const applyState = (next: ItemDeliveryState) => {
+    setState(next);
+    onStateChange?.(next);
+  };
+
   const toggle = () => {
     if (!canToggle) return;
     const target: ItemDeliveryState = state === "arrived_at_store" ? "open" : "arrived_at_store";
     const previous = state;
-    setState(target);
+    applyState(target);
     startTransition(async () => {
       const result = await setOrderItemArrivedAction(orderId, itemId, target === "arrived_at_store");
-      if (!result.ok) setState(previous);
+      if (!result.ok) applyState(previous);
     });
   };
 
