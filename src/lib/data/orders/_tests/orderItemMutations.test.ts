@@ -6,7 +6,15 @@ const { prismaMock } = vi.hoisted(() => ({
 
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 
-import { deriveItemizedTotal, reorderOrderItems, shouldShowDiscrepancyModal } from "../orderItemMutations";
+import {
+  deleteOrderItem,
+  deriveItemizedTotal,
+  reorderOrderItems,
+  setOrderItemsPaidDeclaredWithin,
+  shouldShowDiscrepancyModal,
+  replaceOrderItems,
+} from "../orderItemMutations";
+import type { Prisma } from "../../../../../generated/prisma/client";
 
 // Mirrors POSITION_SHIFT_OFFSET in orderItemMutations: phase 1 moves every reordered item above
 // the final 1..N range so the two-phase renumber never trips @@unique([orderId, position]).
@@ -176,5 +184,126 @@ describe("shouldShowDiscrepancyModal", () => {
     ];
     // itemizedTotal = 5000, totalCost = 6000 → show modal
     expect(shouldShowDiscrepancyModal(items, 6000)).toBe(true);
+  });
+});
+
+/** A transaction client with only the surface these three mutations reach for. */
+function makeItemTx(overrides: Record<string, unknown> = {}) {
+  return {
+    orderItem: {
+      count: vi.fn().mockResolvedValue(0),
+      updateMany: vi.fn().mockResolvedValue({ count: 0 }),
+      findMany: vi.fn().mockResolvedValue([]),
+      findFirst: vi.fn().mockResolvedValue(null),
+      delete: vi.fn().mockResolvedValue({}),
+      update: vi.fn().mockResolvedValue({}),
+      create: vi.fn().mockResolvedValue({}),
+      deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
+    },
+    paymentAllocation: { groupBy: vi.fn().mockResolvedValue([]), findFirst: vi.fn().mockResolvedValue(null) },
+    deliveryOrderItem: { findFirst: vi.fn().mockResolvedValue(null) },
+    storeProductType: { findMany: vi.fn().mockResolvedValue([]) },
+    ...overrides,
+  };
+}
+
+describe("setOrderItemsPaidDeclaredWithin", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  /**
+   * The shape ADR 0022 exists for. `updateMany({ where: { id: { in: ids }, userId } })` carrying one
+   * foreign id writes the OTHER rows and reports a short `count`: a batch declaration silently
+   * applied to a subset. Verifying ownership first is what makes the refusal safe to `return`,
+   * because at that point nothing has been written.
+   */
+  it("writes nothing at all when one id in the batch is not the collector's", async () => {
+    const tx = makeItemTx();
+    tx.orderItem.count.mockResolvedValue(2);
+
+    const result = await setOrderItemsPaidDeclaredWithin(
+      tx as unknown as Prisma.TransactionClient,
+      ["mine-1", "mine-2", "someone-elses"],
+      "user-1",
+      true,
+    );
+
+    expect(result).toEqual({ ok: false, error: "ITEM_NOT_FOUND" });
+    expect(tx.orderItem.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("counts ownership BEFORE it writes, never after", async () => {
+    const tx = makeItemTx();
+    tx.orderItem.count.mockResolvedValue(2);
+    tx.orderItem.updateMany.mockResolvedValue({ count: 2 });
+
+    await setOrderItemsPaidDeclaredWithin(tx as unknown as Prisma.TransactionClient, ["a", "b"], "user-1", true);
+
+    expect(tx.orderItem.count.mock.invocationCallOrder[0]).toBeLessThan(
+      tx.orderItem.updateMany.mock.invocationCallOrder[0],
+    );
+  });
+
+  it("clears the column when unmarking rather than writing a falsy timestamp", async () => {
+    const tx = makeItemTx();
+    tx.orderItem.count.mockResolvedValue(1);
+    tx.orderItem.updateMany.mockResolvedValue({ count: 1 });
+
+    await setOrderItemsPaidDeclaredWithin(tx as unknown as Prisma.TransactionClient, ["a"], "user-1", false);
+
+    expect(tx.orderItem.updateMany).toHaveBeenCalledWith({
+      where: { id: { in: ["a"] }, userId: "user-1" },
+      data: { paidDeclaredAt: null },
+    });
+  });
+});
+
+describe("paid-mark deletion guards", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  /**
+   * A mark writes no history entry (payments do not, and a mark is less than a payment), and the
+   * row that carries it is the only place it lives. Deleting that row would erase a statement only
+   * the collector could produce, with no trace anywhere. So removal is refused, exactly as it
+   * already is for an item that money names.
+   */
+  it("refuses to drop a marked item through replaceOrderItems, even with no money on it", async () => {
+    const tx = makeItemTx();
+    tx.orderItem.findMany.mockResolvedValue([
+      { id: "keep", paidDeclaredAt: null },
+      { id: "marked", paidDeclaredAt: new Date("2026-08-01T00:00:00.000Z") },
+    ]);
+
+    const result = await replaceOrderItems(tx as unknown as Prisma.TransactionClient, "order-1", "user-1", [
+      { id: "keep", name: "Nendoroid Miku", quantity: 1, unitPrice: null, productTypeKey: null, position: 1 },
+    ]);
+
+    expect(result).toEqual({ ok: false, error: "ITEM_HAS_PAID_MARK", detail: "marked" });
+    expect(tx.orderItem.deleteMany).not.toHaveBeenCalled();
+  });
+
+  it("refuses to delete a marked item through deleteOrderItem", async () => {
+    const tx = makeItemTx();
+    tx.orderItem.findFirst.mockResolvedValue({ id: "marked", paidDeclaredAt: new Date("2026-08-01T00:00:00.000Z") });
+    prismaMock.$transaction.mockImplementation(async (cb: (client: unknown) => unknown) => cb(tx));
+
+    const result = await deleteOrderItem("marked", "order-1", "user-1");
+
+    expect(result).toEqual({ ok: false, error: "ITEM_HAS_PAID_MARK" });
+    expect(tx.orderItem.delete).not.toHaveBeenCalled();
+  });
+
+  it("still deletes an unmarked item", async () => {
+    const tx = makeItemTx();
+    tx.orderItem.findFirst.mockResolvedValue({ id: "plain", paidDeclaredAt: null });
+    prismaMock.$transaction.mockImplementation(async (cb: (client: unknown) => unknown) => cb(tx));
+
+    const result = await deleteOrderItem("plain", "order-1", "user-1");
+
+    expect(result).toEqual({ ok: true });
+    expect(tx.orderItem.delete).toHaveBeenCalledWith({ where: { id: "plain" } });
   });
 });

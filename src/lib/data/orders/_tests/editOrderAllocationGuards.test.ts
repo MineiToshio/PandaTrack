@@ -90,7 +90,7 @@ describe("replaceOrderItems allocation guards", () => {
     const tx = {
       storeProductType: { findMany: vi.fn().mockResolvedValue([]) },
       orderItem: {
-        findMany: vi.fn().mockResolvedValue([{ id: "existing-item" }]),
+        findMany: vi.fn().mockResolvedValue([{ id: "existing-item", paidDeclaredAt: null }]),
         deleteMany: vi.fn(),
         updateMany: vi.fn(),
         create: vi.fn(),
@@ -115,7 +115,7 @@ describe("replaceOrderItems allocation guards", () => {
     const tx = {
       storeProductType: { findMany: vi.fn().mockResolvedValue([]) },
       orderItem: {
-        findMany: vi.fn().mockResolvedValue([{ id: "item-1" }]),
+        findMany: vi.fn().mockResolvedValue([{ id: "item-1", paidDeclaredAt: null }]),
         deleteMany: vi.fn(),
         updateMany: vi.fn(),
         create: vi.fn(),
@@ -140,7 +140,7 @@ describe("replaceOrderItems allocation guards", () => {
     const tx = {
       storeProductType: { findMany: vi.fn().mockResolvedValue([]) },
       orderItem: {
-        findMany: vi.fn().mockResolvedValue([{ id: "item-1" }]),
+        findMany: vi.fn().mockResolvedValue([{ id: "item-1", paidDeclaredAt: null }]),
         deleteMany: vi.fn(),
         updateMany: vi.fn().mockResolvedValue({ count: 0 }),
         create: vi.fn(),

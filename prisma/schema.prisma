@@ -580,6 +580,11 @@ model OrderItem {
   productTypeKey     String?
   position           Int
   deliveryState      OrderItemDeliveryState @default(NONE)
+  /// The collector's own claim that this product is paid, with no amount committed. NEVER written by
+  /// a derivation: only an explicit user action sets or clears it, and it moves no money figure
+  /// anywhere (no allocation, no order balance, no store debt, no reminder). `null` = unmarked.
+  /// An instant rather than a calendar day: "when did I mark this" is the question it answers.
+  paidDeclaredAt     DateTime?
   createdAt          DateTime               @default(now())
   updatedAt          DateTime               @updatedAt
   order              Order                  @relation(fields: [orderId], references: [id], onDelete: Cascade)
@@ -660,8 +665,12 @@ model PaymentAllocation {
   /// Minor units of the parent payment's currency, always >= 0. Zero is only meaningful together
   /// with `settlesTarget`, which declares the target covered without naming an amount.
   amountMinor   Int          @default(0)
-  /// "Settled in full" declaration. Works without a price, so an item or order with no known cost
-  /// can still be marked covered by this payment.
+  /// DEPRECATED, read-tolerant / write-strict. "Settled in full" declaration, without an amount.
+  /// No writer has existed since the `20260808215744` migration backfilled every legacy row to
+  /// `false`, and `createStorePayment` now refuses `true` outright: an amount-less declaration is
+  /// `OrderItem.paidDeclaredAt`, which is editable and does not leave a phantom 0.00 row in an
+  /// order's payment history. Reads still honor a `true` row so one arriving out of band renders as
+  /// "Saldado" rather than as that phantom.
   settlesTarget Boolean      @default(false)
   createdAt     DateTime     @default(now())
   payment       StorePayment @relation(fields: [paymentId], references: [id], onDelete: Cascade)

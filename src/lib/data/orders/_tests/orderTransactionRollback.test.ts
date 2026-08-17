@@ -199,7 +199,7 @@ describe("editOrder transaction integrity", () => {
     const tx = makeFakeTx();
     tx.storeProductType.findMany.mockResolvedValue([{ key: "not-in-catalog" }]);
     // One existing product is absent from the submitted list, so the replace would delete it...
-    tx.orderItem.findMany.mockResolvedValue([{ id: "existing-item" }]);
+    tx.orderItem.findMany.mockResolvedValue([{ id: "existing-item", paidDeclaredAt: null }]);
     // ...but it is linked to a live delivery, which blocks the whole edit.
     tx.deliveryOrderItem.findFirst.mockResolvedValue({ deliveryId: "dlv-1", orderItemId: "existing-item" });
     const transaction = runInTx(tx);
@@ -234,7 +234,7 @@ describe("replaceOrderItems transaction integrity", () => {
   it("refuses an invalid category before deleting the products it would have removed", async () => {
     const tx = makeFakeTx();
     // An existing product absent from the submitted list would be deleted by the replace.
-    tx.orderItem.findMany.mockResolvedValue([{ id: "existing-item" }]);
+    tx.orderItem.findMany.mockResolvedValue([{ id: "existing-item", paidDeclaredAt: null }]);
 
     const result = await replaceOrderItems(asTransactionClient(tx), "order-1", "user-1", [
       { name: "Gojo figure", quantity: 1, position: 1, productTypeKey: "not-in-catalog" },
@@ -252,7 +252,7 @@ describe("replaceOrderItems transaction integrity", () => {
   it("keeps the live-delivery guard ahead of the delete too", async () => {
     const tx = makeFakeTx();
     tx.storeProductType.findMany.mockResolvedValue([{ key: "known" }]);
-    tx.orderItem.findMany.mockResolvedValue([{ id: "existing-item" }]);
+    tx.orderItem.findMany.mockResolvedValue([{ id: "existing-item", paidDeclaredAt: null }]);
     tx.deliveryOrderItem.findFirst.mockResolvedValue({ deliveryId: "dlv-1", orderItemId: "existing-item" });
 
     const result = await replaceOrderItems(asTransactionClient(tx), "order-1", "user-1", [

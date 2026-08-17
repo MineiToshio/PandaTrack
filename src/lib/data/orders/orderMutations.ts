@@ -31,6 +31,9 @@ type EditOrderResult =
         // drop below what is already declared against it.
         | "ITEM_HAS_ALLOCATION"
         | "ITEM_PRICE_BELOW_ALLOCATED"
+        // An item the collector marked as paid cannot be removed either: the mark writes no
+        // history entry, so deleting the row would erase the claim without a trace.
+        | "ITEM_HAS_PAID_MARK"
         // Total can't be lowered below what is already declared as paid — collectors must delete
         // payments first if they want to bring the total down past that.
         | "TOTAL_BELOW_PAID";
@@ -326,6 +329,11 @@ export async function cancelOrder(
         where: { id: orderId },
         data: { allocatedAmountMinor: 0 },
       });
+      // The collector just unlinked every peso that was covering this order, so a product still
+      // reading "Saldado · marcado" would be claiming a coverage nothing funds — and `reactivateOrder`
+      // would bring the order back full of those claims with zero money behind them. The `lost`
+      // branch keeps its allocations, so by the same logic it keeps its marks.
+      await tx.orderItem.updateMany({ where: { orderId, userId }, data: { paidDeclaredAt: null } });
     }
 
     await appendOrderHistoryEntry({
@@ -479,35 +487,59 @@ export async function deleteOrder(orderId: string, userId: string): Promise<Dele
       return { ok: false, error: "HAS_LIVE_DELIVERY_LINKS" };
     }
 
-    // Money declared against a disappearing order. A payment raised for this order alone (its only
-    // declaration, covering its whole amount) goes with it: keeping it would leave an unexplained
-    // payment nobody can attribute. A payment shared with other orders survives and loses only its
-    // slice here, because it is still explaining those.
+    // Money declared against a disappearing order. A payment raised for this order alone, whose
+    // declarations cover its whole amount, goes with it: keeping it would leave an unexplained
+    // payment nobody can attribute, still counting against the store's debt in
+    // `getStoreDebtByCurrency` (which sums `StorePayment.amount`, not allocations). A payment shared
+    // with other orders survives and loses only its slice here, because it is still explaining those.
+    //
+    // Counted PER PAYMENT rather than per allocation: a payment broken down across this order's
+    // products has N+1 declarations, so the old "exactly one declaration, and its amount equals the
+    // payment's" test matched nothing and every such payment survived as an orphan. This is the same
+    // rule generalized, with the single-line case as its N=1.
     const allocations = await tx.paymentAllocation.findMany({
       where: { orderId, userId },
-      select: {
-        id: true,
-        amountMinor: true,
-        payment: { select: { id: true, amount: true, _count: { select: { allocations: true } } } },
-      },
+      select: { amountMinor: true, paymentId: true, payment: { select: { amount: true } } },
     });
 
-    const paymentIdsToDelete = allocations
-      .filter(
-        (allocation) =>
-          allocation.payment._count.allocations === 1 && allocation.amountMinor === allocation.payment.amount,
-      )
-      .map((allocation) => allocation.payment.id);
+    const touchedPaymentIds = [...new Set(allocations.map((allocation) => allocation.paymentId))];
+    const claimedByThisOrder = new Map<string, number>();
+    const paymentTotalById = new Map<string, number>();
+    for (const allocation of allocations) {
+      claimedByThisOrder.set(
+        allocation.paymentId,
+        (claimedByThisOrder.get(allocation.paymentId) ?? 0) + allocation.amountMinor,
+      );
+      paymentTotalById.set(allocation.paymentId, allocation.payment.amount);
+    }
+
+    const otherOrdersClaims =
+      touchedPaymentIds.length > 0
+        ? await tx.paymentAllocation.findMany({
+            where: { paymentId: { in: touchedPaymentIds }, userId, orderId: { not: orderId } },
+            select: { paymentId: true, orderId: true },
+          })
+        : [];
+    const paymentIdsWithOtherClaims = new Set(otherOrdersClaims.map((allocation) => allocation.paymentId));
+
+    // A payment with a partial claim and no other order deliberately SURVIVES, unassigned, unlike in
+    // `deleteOrderPayment`. There the collector says "this money never existed"; here they say "this
+    // order never existed", and the transfer did happen. It stays reachable and deletable from the
+    // store detail.
+    const paymentIdsToDelete = touchedPaymentIds.filter(
+      (paymentId) =>
+        !paymentIdsWithOtherClaims.has(paymentId) &&
+        claimedByThisOrder.get(paymentId) === paymentTotalById.get(paymentId),
+    );
 
     if (paymentIdsToDelete.length > 0) {
-      // Defensive: a payment reaching here has exactly one declaration, on this order, so no other
-      // order's cache can move. Collected anyway so a future shape change cannot silently strand it.
-      const collateralOrderIds = (
-        await tx.paymentAllocation.findMany({
-          where: { paymentId: { in: paymentIdsToDelete }, userId, orderId: { not: orderId } },
-          select: { orderId: true },
-        })
-      ).map((allocation) => allocation.orderId);
+      // Defensive and provably empty: a payment reaching here has no declaration outside this order,
+      // so no other order's cache can move. Derived from the read above rather than re-queried, and
+      // kept so a future shape change cannot silently strand it.
+      const deletedIds = new Set(paymentIdsToDelete);
+      const collateralOrderIds = otherOrdersClaims
+        .filter((allocation) => deletedIds.has(allocation.paymentId))
+        .map((allocation) => allocation.orderId);
 
       await tx.storePayment.deleteMany({ where: { id: { in: paymentIdsToDelete }, userId } });
       await recalculateOrderAllocationCache(tx, collateralOrderIds, userId);

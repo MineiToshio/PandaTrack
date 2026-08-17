@@ -25,6 +25,9 @@ function makeTx({ orderExists = true, hasLiveDeliveryLink = false }: TxOverrides
     paymentAllocation: {
       deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
     },
+    orderItem: {
+      updateMany: vi.fn().mockResolvedValue({ count: 0 }),
+    },
     orderHistory: {
       create: vi.fn().mockResolvedValue({ id: "history-1" }),
     },
@@ -101,5 +104,41 @@ describe("cancelOrder", () => {
     expect(result).toEqual({ ok: false, error: "HAS_LIVE_DELIVERY_LINKS" });
     expect(tx.order.update).not.toHaveBeenCalled();
     expect(tx.paymentAllocation.deleteMany).not.toHaveBeenCalled();
+  });
+});
+
+describe("cancelOrder and the coverage axis", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  /**
+   * "El dinero queda a favor" means the collector is UNLINKING every peso that was covering this
+   * order. A product still claiming "Saldado · marcado" would then be asserting a coverage nothing
+   * funds, and `reactivateOrder` would bring the order back full of those claims with zero money
+   * behind them. So the marks go with the allocations.
+   */
+  it("clears every paid mark on the credit branch, in the same transaction as the allocations", async () => {
+    const tx = makeTx();
+    runWith(tx);
+
+    await cancelOrder("order-1", "user-1", null, "credit");
+
+    expect(tx.orderItem.updateMany).toHaveBeenCalledWith({
+      where: { orderId: "order-1", userId: "user-1" },
+      data: { paidDeclaredAt: null },
+    });
+  });
+
+  it("keeps every paid mark on the lost branch, by the same logic", async () => {
+    // `lost` keeps the allocations pinned to the cancelled order, which is what makes the money
+    // readable as sunk. The coverage they fund stays readable with them.
+    const tx = makeTx();
+    runWith(tx);
+
+    await cancelOrder("order-1", "user-1", null, "lost");
+
+    expect(tx.paymentAllocation.deleteMany).not.toHaveBeenCalled();
+    expect(tx.orderItem.updateMany).not.toHaveBeenCalled();
   });
 });

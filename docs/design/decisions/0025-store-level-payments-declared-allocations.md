@@ -53,6 +53,19 @@ declaration.**
    is opt-in end to end: a payment can be created with zero allocations (money the store is holding,
    undeclared), and a pedido can carry zero allocated money while its collector-recorded total cost
    is still unknown or still being negotiated.
+
+   > **Partially superseded (2026-08-14) by
+   > [ADR 0026](0026-declared-product-payment-coverage.md).** Only the `settlesTarget` sentence
+   > above is affected; the rest of this point stands unchanged, including that declaring is opt-in
+   > end to end. The amount-less "saldado" declaration no longer lives on the allocation: it lives
+   > on the product, as `OrderItem.paidDeclaredAt`, because an allocation's declaration cannot be
+   > edited after its payment is created, cannot reach the allocations that already exist, and left
+   > a phantom `S/ 0.00` row in the order's payment history. `settlesTarget` is now **write-strict
+   > and read-tolerant**: `createStorePayment` refuses `true` (`SETTLES_TARGET_UNSUPPORTED`) and a
+   > static guard forbids new writers, while every existing read branch is kept on purpose so a row
+   > arriving out of band still renders as "Saldado". Read ADR 0026 for the reasoning and for the
+   > invariant that keeps the new mark out of every money figure.
+
 3. **The amount actually paid is capped at the store's debt, never at an order's balance.** A
    payment larger than `Σ committed (non-cancelled orders) − Σ already paid` for that store/currency
    pair is refused (`STORE_DEBT_EXCEEDED`), computed inside the same transaction that writes the
@@ -81,6 +94,24 @@ declaration.**
    unpaid filter, the `payment-asc` sort, the per-row progress bar, and the "Impago" pill that
    implied every pedido's payment state was fully known. A pedido with no allocation and an unknown
    total is not "unpaid" in any meaningful sense; it is undeclared.
+
+   **Amendment, 2026-08-11 — what this point does and does not forbid.** Read as "the list says
+   nothing about money," this point produced a real defect: `FR-05-35` had required a visible unpaid
+   signal on the list since this ADR shipped, only the detail ever implemented it, and 16 completed
+   pedidos carrying 1,780.65 of real debt stayed invisible behind a green "Completado". What is
+   retired here is the **percentage axis** — the paid/partial/unpaid four-way filter, `payment-asc`,
+   the per-row progress bar, and the "Impago" pill, all of which asserted a _ratio_ the data cannot
+   state. A **binary** "this pedido's own total is above what has been assigned to it" is a
+   different claim and remains a fact: one comparison between two stored columns. So the list now
+   carries a `Saldo pendiente` chip on completed pedidos (`FR-05-35a`) and a "Solo con saldo
+   pendiente" filter (`FR-05-47`), neither of which restores a percentage, a bar, or a
+   partial-payment state. The residual tension this point names is real and is deliberately accepted
+   at that narrowed scope: on a `COMPLETED` pedido with a recorded total, "nothing was ever declared
+   against it" and "money is genuinely still owed" still read the same. The difference from the
+   retired pill is that the pedido is finished, so there is no later moment at which the collector
+   was going to declare it, and a signal the collector can dismiss by opening the pedido beats an
+   unpaid balance nobody can find.
+
 6. **`Order.paidAmountMinor` / `Order.paymentPercent` are frozen, not migrated away.** They keep
    their columns and their `@default(0)`, are marked `DEPRECATED` in the schema, and nothing reads
    or writes them anymore (`Order.allocatedAmountMinor` is the new denormalized cache, kept in sync
@@ -97,6 +128,18 @@ declaration.**
    single allocation covering the whole amount (narrowed to the order's own item when it has
    exactly one); deleting removes that allocation, and the underlying `StorePayment` only when
    nothing else claims it (a shared payment survives with the other orders' declarations intact).
+
+   > **Partially superseded (2026-08-15) by
+   > [ADR 0028](0028-order-scoped-payment-breakdown.md).** Two sentences above are now false, and
+   > the rest of this point stands. (a) The signatures are **not** exact anymore: `addOrderPayment`
+   > takes the breakdown's product lines, and it propagates `orderItemId` back out on a refusal so
+   > the form can mark the line the server named; `addPaymentAction` widened its result the same
+   > way. The NAMES are unchanged, and so is the reason for keeping the door. (b) A payment through
+   > this door no longer raises "a single allocation": with a breakdown it writes up to **N+1** —
+   > one per named product plus one order-level line for whatever the split did not place. What
+   > deleting does is unchanged in intent and restated in `BR-05-23`: the unit is the TRANSFER, so a
+   > delete takes this order's whole claim (every one of those lines) and leaves a payment shared
+   > with other orders alive with theirs.
 8. **No payment history entries.** Payment mutations do not write `OrderHistory` rows, matching the
    pre-existing product decision that payments are not part of the automatic history feed (unchanged
    by this ADR; noted here because it is easy to assume a new money model implies new audit rows).
@@ -184,6 +227,9 @@ the store-group level or move the sort into SQL.
 
 ## References
 
+- `docs/design/decisions/0026-declared-product-payment-coverage.md` (partially supersedes Decision
+  point 2: the amount-less "saldado" declaration moved from `PaymentAllocation.settlesTarget` to
+  `OrderItem.paidDeclaredAt`, and the flag became write-strict / read-tolerant)
 - `docs/product/prd-02-collector-app/frd-05-order-payment-shipment/frd-05-order-payment-shipment.md`
   (`FR-05-17`…`FR-05-20`, `FR-05-31`, `FR-05-41`…, `BR-05-10`, `BR-05-15`…`BR-05-17`, `BR-05-19`…)
 - `docs/product/prd-02-collector-app/frd-06-dashboard/frd-06-dashboard.md` (`BR-06-04`, `BR-06-08`,
