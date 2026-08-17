@@ -46,6 +46,17 @@ export type ExtractionContext = {
 export type ProviderUsage = {
   inputTokens: number;
   outputTokens: number;
+  /**
+   * Reasoning tokens the provider reported, when it reported any.
+   *
+   * Diagnostic only, and deliberately NOT added into `computeCostMicroUsd`: on this model the
+   * reasoning tokens are counted inside `candidatesTokenCount`, so adding them would bill them
+   * twice. It is recorded because it is the single field that separates "the model reasoned until
+   * the ceiling" from "the model wrote a genuinely enormous order", which the output total alone
+   * cannot distinguish.
+   */
+  thoughtsTokens?: number | null;
+  totalTokens?: number | null;
 };
 
 /** The provider's raw JSON candidate plus the token counts billing is based on. */
@@ -115,21 +126,54 @@ export class ProviderTransportError extends Error {
 }
 
 /**
- * Non-retryable provider failure: a 4xx, an empty body, or a body that claimed JSON and was not.
- * Google bills a response it produced even when that response is unusable, so this error carries
- * the reported token usage whenever the provider saw it.
+ * What kind of non-retryable provider failure this is, independent of any HTTP status.
+ *
+ * The kind exists because retryability was previously inferred from the status alone, and three of
+ * these five failures never carry one: a truncated, empty, or non-JSON body is a `200` the provider
+ * answered and billed. Inferring from the status therefore classified them as transport failures and
+ * told the collector to try again in a minute, which for a deterministic failure means paying for
+ * the same refusal repeatedly. The kind states the answer instead of deriving it from a field that
+ * is absent.
+ *
+ * - `rejected`: a 4xx. The API refused what we sent; a defect of ours that repeats until code changes.
+ * - `truncated`: the answer hit the output ceiling and is cut off mid-document.
+ * - `empty`: a body with no text at all.
+ * - `not-json`: a body that claimed JSON and did not parse.
+ * - `unexpected`: anything else thrown by the SDK.
+ */
+export const PROVIDER_REQUEST_ERROR_KINDS = ["rejected", "truncated", "empty", "not-json", "unexpected"] as const;
+export type ProviderRequestErrorKind = (typeof PROVIDER_REQUEST_ERROR_KINDS)[number];
+
+/**
+ * Non-retryable provider failure: a 4xx, an empty body, a truncated body, or a body that claimed
+ * JSON and was not. Google bills a response it produced even when that response is unusable, so this
+ * error carries the reported token usage whenever the provider saw it.
  */
 export class ProviderRequestError extends Error {
   readonly code: string;
+  readonly kind: ProviderRequestErrorKind;
   readonly status: number | null;
   readonly usage: ProviderUsage | null;
+  /**
+   * Shape-only counts about the answer the provider produced, for the failures where that shape is
+   * the whole diagnosis. Never carries content: see `countPartialResponseShape`.
+   */
+  readonly shape: ProviderResponseShape | null;
 
-  constructor(options: { code: string; status?: number | null; usage?: ProviderUsage | null }) {
+  constructor(options: {
+    code: string;
+    kind: ProviderRequestErrorKind;
+    status?: number | null;
+    usage?: ProviderUsage | null;
+    shape?: ProviderResponseShape | null;
+  }) {
     super(buildSanitizedMessage(options.code, options.status ?? null));
     this.name = "ProviderRequestError";
     this.code = options.code;
+    this.kind = options.kind;
     this.status = options.status ?? null;
     this.usage = options.usage ?? null;
+    this.shape = options.shape ?? null;
   }
 }
 
@@ -143,7 +187,32 @@ export class ProviderRequestError extends Error {
  * the same submission may well succeed on the next attempt.
  */
 export function isProviderRequestRejected(error: unknown): boolean {
-  return error instanceof ProviderRequestError && error.status !== null && error.status < HTTP_SERVER_ERROR_STATUS_MIN;
+  return error instanceof ProviderRequestError && error.kind === "rejected";
+}
+
+/**
+ * True when the provider's answer was cut off at the output ceiling.
+ *
+ * Separated from every other failure because it is the only one with a remedy the collector can
+ * actually apply. It is not a transport hiccup (retrying repeats it, at full price) and not a defect
+ * they should be told we are fixing (the request was well formed and the model answered): the answer
+ * simply did not fit. What resolves it is a smaller submission, and the copy must say so.
+ */
+export function isProviderResponseTruncated(error: unknown): boolean {
+  return error instanceof ProviderRequestError && error.kind === "truncated";
+}
+
+/** Shape-only census of a model answer. Counts of schema KEY names; never any value it carried. */
+export type ProviderResponseShape = {
+  partialChars: number;
+  groupsEmitted: number;
+  productsEmitted: number;
+  paymentsEmitted: number;
+};
+
+/** Shape counts attached to a failed provider call, when the provider produced a body at all. */
+export function readProviderErrorShape(error: unknown): ProviderResponseShape | null {
+  return error instanceof ProviderRequestError ? error.shape : null;
 }
 
 /** Token usage attached to a failed provider call, when the provider reported any. */

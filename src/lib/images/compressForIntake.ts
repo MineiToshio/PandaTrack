@@ -2,11 +2,13 @@
 
 import {
   INTAKE_JPEG_QUALITY,
-  INTAKE_SEGMENT_OVERLAP_RATIO,
-  INTAKE_TARGET_MAX_HEIGHT,
   INTAKE_TARGET_MAX_WIDTH,
   INTAKE_WEBP_QUALITY,
+  INTAKE_WEBP_QUALITY_LADDER,
+  MAX_IMAGE_FILE_BYTES,
+  MAX_SUBMISSION_TOTAL_BYTES,
 } from "@/lib/imageIntake/constants";
+import { planIntakeSegments, type IntakeSegmentPlan } from "@/lib/imageIntake/segmentPlan";
 import { encodeCanvasToBlob, supportsWebpEncoding, type SupportedEncodedImageType } from "./canvasEncoding";
 
 /**
@@ -33,6 +35,14 @@ export type CompressedImageSegment = {
 
 export type CompressForIntakeResult = {
   segments: CompressedImageSegment[];
+  /**
+   * What the source decoded to, before any normalisation.
+   *
+   * Reported because the decode already happened here and nothing else in the flow has these
+   * numbers: the segments carry prepared dimensions, and a photo refused for its prepared size can
+   * only be explained to its owner in terms of the photo they actually attached.
+   */
+  source: { width: number; height: number };
 };
 
 function loadImageElement(src: string): Promise<HTMLImageElement> {
@@ -77,45 +87,16 @@ async function loadDrawableSource(source: Blob): Promise<DrawableSource> {
   };
 }
 
-type SegmentPlan = {
-  sourceY: number;
-  sourceHeight: number;
-};
-
 /**
- * Computes vertical split points, in scaled (post width-normalisation) coordinates, for an image
- * taller than the target cap. Segment count is derived first from `ceil(scaledHeight / cap)`, and
- * segment height is then solved backwards from that count so the segments evenly cover the whole
- * image with exactly `INTAKE_SEGMENT_OVERLAP_RATIO` overlap between consecutive segments. Fixing
- * the count first (rather than fixing segment height at the cap and letting the count fall out of
- * a naive stride) keeps the count minimal: a 4800px scaled image at a 2400px cap needs exactly
- * two segments, not three, because the extra 10% overlap budget would otherwise push a
- * fixed-height stride past the end of the image.
+ * Picks the encoder type/quality pair for one canvas encode, using real (not assumed) WebP support.
+ *
+ * `webpQuality` is the rung of `INTAKE_WEBP_QUALITY_LADDER` this pass is encoding at. The JPEG
+ * fallback keeps its own fixed quality: it exists for engines without a WebP encoder, and the ladder
+ * was measured against WebP, so its rungs say nothing about what JPEG would produce.
  */
-function planSegments(scaledHeight: number): SegmentPlan[] {
-  if (scaledHeight <= INTAKE_TARGET_MAX_HEIGHT) {
-    return [{ sourceY: 0, sourceHeight: scaledHeight }];
-  }
-
-  const segmentCount = Math.ceil(scaledHeight / INTAKE_TARGET_MAX_HEIGHT);
-  const strideFactor = 1 - INTAKE_SEGMENT_OVERLAP_RATIO;
-  const segmentHeight = scaledHeight / (1 + (segmentCount - 1) * strideFactor);
-  const stride = segmentHeight * strideFactor;
-
-  const plans: SegmentPlan[] = [];
-  for (let index = 0; index < segmentCount; index += 1) {
-    const isLast = index === segmentCount - 1;
-    const sourceY = isLast ? scaledHeight - segmentHeight : index * stride;
-    plans.push({ sourceY, sourceHeight: segmentHeight });
-  }
-
-  return plans;
-}
-
-/** Picks the encoder type/quality pair for one canvas encode, using real (not assumed) WebP support. */
-async function encodeCanvas(canvas: HTMLCanvasElement): Promise<{ blob: Blob; mimeType: string }> {
+async function encodeCanvas(canvas: HTMLCanvasElement, webpQuality: number): Promise<{ blob: Blob; mimeType: string }> {
   const preferredType: SupportedEncodedImageType = supportsWebpEncoding() ? "image/webp" : "image/jpeg";
-  const quality = preferredType === "image/webp" ? INTAKE_WEBP_QUALITY : INTAKE_JPEG_QUALITY;
+  const quality = preferredType === "image/webp" ? webpQuality : INTAKE_JPEG_QUALITY;
   return encodeCanvasToBlob(canvas, preferredType, quality, INTAKE_JPEG_QUALITY);
 }
 
@@ -130,7 +111,8 @@ async function encodeSegment(
   sourceWidth: number,
   targetWidth: number,
   scale: number,
-  plan: SegmentPlan,
+  plan: IntakeSegmentPlan,
+  webpQuality: number,
 ): Promise<CompressedImageSegment> {
   const canvas = document.createElement("canvas");
   const segmentHeight = Math.round(plan.sourceHeight);
@@ -154,7 +136,7 @@ async function encodeSegment(
     segmentHeight,
   );
 
-  const { blob, mimeType } = await encodeCanvas(canvas);
+  const { blob, mimeType } = await encodeCanvas(canvas, webpQuality);
   // Per-segment size is not compared against the source: the source was never split, so there is
   // no meaningful per-segment byte baseline to flag against.
   return { blob, mimeType, width: targetWidth, height: segmentHeight, recompressedLarger: false };
@@ -176,21 +158,25 @@ async function encodeSegment(
  * `CompressedImageSegment.recompressedLarger` for the purely informational flag this produces
  * instead.
  */
-export async function compressForIntake(source: File | Blob): Promise<CompressForIntakeResult> {
-  const decoded = await loadDrawableSource(source);
+export async function compressForIntake(
+  sourceFile: File | Blob,
+  webpQuality: number = INTAKE_WEBP_QUALITY,
+): Promise<CompressForIntakeResult> {
+  const decoded = await loadDrawableSource(sourceFile);
 
   try {
     const targetWidth = Math.min(decoded.width, INTAKE_TARGET_MAX_WIDTH);
     const scale = targetWidth / decoded.width;
     const scaledHeight = decoded.height * scale;
+    const source = { width: decoded.width, height: decoded.height };
 
-    const plans = planSegments(scaledHeight);
+    const plans = planIntakeSegments(scaledHeight);
 
     if (plans.length > 1) {
       const segments = await Promise.all(
-        plans.map((plan) => encodeSegment(decoded.drawable, decoded.width, targetWidth, scale, plan)),
+        plans.map((plan) => encodeSegment(decoded.drawable, decoded.width, targetWidth, scale, plan, webpQuality)),
       );
-      return { segments };
+      return { segments, source };
     }
 
     const height = Math.round(scaledHeight);
@@ -205,7 +191,7 @@ export async function compressForIntake(source: File | Blob): Promise<CompressFo
 
     context.drawImage(decoded.drawable, 0, 0, decoded.width, decoded.height, 0, 0, targetWidth, height);
 
-    const { blob, mimeType } = await encodeCanvas(canvas);
+    const { blob, mimeType } = await encodeCanvas(canvas, webpQuality);
 
     return {
       segments: [
@@ -214,11 +200,120 @@ export async function compressForIntake(source: File | Blob): Promise<CompressFo
           mimeType,
           width: targetWidth,
           height,
-          recompressedLarger: blob.size >= source.size,
+          recompressedLarger: blob.size >= sourceFile.size,
         },
       ],
+      source,
     };
   } finally {
     decoded.dispose();
   }
+}
+
+/**
+ * How many source photos are decoded at once by {@link compressBatchForIntake}.
+ *
+ * Preparation is what makes an upload small, so nothing upstream bounds the size of what arrives
+ * here: a batch is up to `MAX_IMAGES_PER_SUBMISSION` full-resolution screenshots. Decoding is the
+ * expensive step and it is expensive in pixels, not in file bytes (a lossless screenshot is small on
+ * disk and enormous once decoded), so preparing the whole batch at once would hold every decoded
+ * bitmap in memory simultaneously and can take a phone's tab down. A small pool keeps peak memory
+ * proportional to the pool rather than to the batch, while still overlapping the decode of the next
+ * photo with the encode of the current one.
+ */
+const INTAKE_COMPRESSION_CONCURRENCY = 3;
+
+/**
+ * Prepares a whole batch of source photos, in order, with bounded concurrency.
+ *
+ * Returns results positionally aligned with `sourceFiles`: the order of the photos is what the
+ * extraction reads as the order of the conversation, so it must survive the pool.
+ */
+export async function compressBatchForIntake(
+  sourceFiles: readonly (File | Blob)[],
+  webpQuality: number = INTAKE_WEBP_QUALITY,
+): Promise<CompressForIntakeResult[]> {
+  const results = new Array<CompressForIntakeResult>(sourceFiles.length);
+  let nextIndex = 0;
+
+  async function runWorker(): Promise<void> {
+    while (nextIndex < sourceFiles.length) {
+      const index = nextIndex;
+      nextIndex += 1;
+      results[index] = await compressForIntake(sourceFiles[index], webpQuality);
+    }
+  }
+
+  const workerCount = Math.min(INTAKE_COMPRESSION_CONCURRENCY, sourceFiles.length);
+  await Promise.all(Array.from({ length: workerCount }, runWorker));
+
+  return results;
+}
+
+/** A whole submission, prepared and known to fit (or known not to) in a single request. */
+export type PreparedIntakeSubmission = {
+  results: CompressForIntakeResult[];
+  /** The ladder rung the returned bytes were encoded at. */
+  webpQuality: number;
+  /** True when a rung below the default was needed to fit the submission in one request. */
+  usedFallbackQuality: boolean;
+  /** Total bytes of every segment across every photo, as returned. */
+  totalBytes: number;
+  /**
+   * False when even the ladder's floor did not fit. The bytes are still returned, at the floor, so
+   * the caller can report the real figure and say how many photos would have fit rather than
+   * refusing with a rule and no number.
+   */
+  fits: boolean;
+};
+
+/** Whether a prepared submission clears both byte ceilings the upload is judged against. */
+function submissionFits(results: CompressForIntakeResult[]): { fits: boolean; totalBytes: number } {
+  const segments = results.flatMap((result) => result.segments);
+  const totalBytes = segments.reduce((sum, segment) => sum + segment.blob.size, 0);
+  const fits = totalBytes <= MAX_SUBMISSION_TOTAL_BYTES && segments.every((s) => s.blob.size <= MAX_IMAGE_FILE_BYTES);
+  return { fits, totalBytes };
+}
+
+/**
+ * Prepares a whole submission and, when it does not fit in one request, prepares it again at a
+ * lower encode quality until it does.
+ *
+ * The retry exists because there is no other way out. Extraction is a SINGLE pass over the images as
+ * one ordered conversation (`FR-11-20`), so a submission too large for one request cannot be split
+ * across several without splitting the conversation with it: a payment read in the twelfth image
+ * belongs to the order opened in the third, and two independent reads would produce two drafts that
+ * neither the model nor the review screen can reconcile, at twice the provider cost. Sending less
+ * information is therefore strictly better than sending it in pieces.
+ *
+ * What gets given up is chosen, not incidental. Dimensions are held fixed at every rung, so the
+ * measurement that actually governs text recognition never moves; only WebP quality drops, and on
+ * a text screenshot that costs almost nothing because flat regions hold few bits to surrender. The
+ * submissions that reach the ladder at all are the photographic ones, which is exactly where the
+ * bits are and exactly what the model is not reading. See `INTAKE_WEBP_QUALITY_LADDER`.
+ *
+ * Each rung re-decodes from source rather than re-encoding a cached canvas. Holding every decoded
+ * bitmap of a batch in memory to avoid a second decode is the same memory hazard
+ * `compressBatchForIntake` bounds on purpose, and this path is only reached by submissions whose
+ * alternative is being refused outright, where a few extra seconds is the cheaper price.
+ */
+export async function prepareSubmissionForIntake(
+  sourceFiles: readonly (File | Blob)[],
+): Promise<PreparedIntakeSubmission> {
+  const [firstRung, ...lowerRungs] = INTAKE_WEBP_QUALITY_LADDER;
+  let webpQuality: number = firstRung;
+  let results = await compressBatchForIntake(sourceFiles, webpQuality);
+  let { fits, totalBytes } = submissionFits(results);
+
+  for (const rung of lowerRungs) {
+    if (fits) break;
+    webpQuality = rung;
+    results = await compressBatchForIntake(sourceFiles, rung);
+    ({ fits, totalBytes } = submissionFits(results));
+  }
+
+  // When no rung fit, the floor's bytes are still what gets returned: the caller reports the real
+  // total from them, so a collector who then trims the batch is trimming against a true figure
+  // rather than guessing by how much they are over.
+  return { results, webpQuality, usedFallbackQuality: webpQuality !== INTAKE_WEBP_QUALITY, totalBytes, fits };
 }
