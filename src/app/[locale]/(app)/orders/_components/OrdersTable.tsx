@@ -7,12 +7,16 @@ import StoreAvatar from "@/components/core/StoreAvatar";
 import { getStoreProductTypeIcon } from "@/lib/catalog/storeProductTypeIcons";
 import { formatAmountWithSymbol } from "@/lib/currency";
 import { formatDomainDate } from "@/lib/domainDate";
-import { isOrderOverdue, resolveOrderArrivalDueDate } from "@/lib/orders/orderDerivedState";
-import { formatArrivalWindow } from "@/lib/arrivalWindow";
+import { isOrderArrivalObserved, isOrderOverdue, resolveOrderArrivalDueDate } from "@/lib/orders/orderDerivedState";
+import { formatArrivalWindow, getOverdueDays } from "@/lib/arrivalWindow";
 import { ROUTES } from "@/lib/constants";
 import { cn } from "@/lib/styles";
 import StoreTombstoneNotice from "./share/StoreTombstoneNotice";
-import { describeOrderListChip, describeOverdueDays, getOrderListChipToneClassName } from "./share/orderListStatusChip";
+import {
+  describeOrderListBalanceChip,
+  describeOrderListChip,
+  getOrderListChipToneClassName,
+} from "./share/orderListStatusChip";
 import { resolveStoreTombstone } from "@/lib/store/storeTombstone";
 import type { OrdersListPageItem } from "@/lib/data/orders/orderQueries";
 import OrderItemStateChip from "./share/OrderItemStateChip";
@@ -73,15 +77,19 @@ export default function OrdersTable({
 
       <ul role="rowgroup" className="flex flex-col">
         {orders.map((order) => {
+          // Every product already observed reaching the store: the order's own arrival prediction
+          // is answered, so it is neither late nor still arriving. See `isOrderArrivalObserved`.
+          const arrivalObserved = isOrderArrivalObserved(order.items);
           const overdue = isOrderOverdue(
             {
               expectedDeliveryFrom: order.expectedDeliveryFrom,
               expectedDeliveryTo: order.expectedDeliveryTo,
               status: order.status,
+              items: order.items,
             },
             today,
           );
-          const overdueDays = overdue ? describeOverdueDays(resolveOrderArrivalDueDate(order), today) : 0;
+          const overdueDays = overdue ? getOverdueDays(resolveOrderArrivalDueDate(order), today) : 0;
           const arrivalWindow = formatArrivalWindow(order.expectedDeliveryFrom, order.expectedDeliveryTo, locale);
           const chip = describeOrderListChip({
             status: order.status,
@@ -91,6 +99,11 @@ export default function OrdersTable({
             overdueDays,
           });
           const ChipIcon = chip.icon;
+          const balanceChip = describeOrderListBalanceChip({
+            status: order.status,
+            hasUnpaidBalance: order.hasUnpaidBalance,
+          });
+          const BalanceChipIcon = balanceChip?.icon;
           const isCompletedOrCancelled = order.status === "COMPLETED" || order.status === "CANCELLED";
           const isExpanded = expandedIds.has(order.id);
           const detailHref = `/${locale}${ROUTES.orders}/${order.id}?returnTo=${encodeURIComponent(returnTo)}`;
@@ -156,12 +169,22 @@ export default function OrdersTable({
                       <p
                         className={cn(
                           "truncate [font-size:12px] tabular-nums",
-                          overdue ? "[color:var(--warning)]" : "[color:var(--text-secondary)]",
+                          // `--warning-chip-text`, not `--warning`: the raw status token is a chip
+                          // FILL and lands at 2.46:1 on `--surface` in light. See
+                          // `docs/design/visual-foundations.md` § Status color as text.
+                          overdue ? "[color:var(--warning-chip-text)]" : "[color:var(--text-secondary)]",
                         )}
                       >
-                        {overdue
-                          ? t("table.arrivalExpected", { window: arrivalWindow })
-                          : t("table.arrivalArrives", { window: arrivalWindow })}
+                        {/* Three readings, not two. Without the first one, suppressing the delay
+                            left this line saying "llega 12 jun" about a June window in August,
+                            which is a future tense over a past date: a worse sentence than the one
+                            it replaced. The window is dropped here for the same reason it is
+                            dropped on the "Por tienda" row (see `ArrivalMeta`). */}
+                        {arrivalObserved
+                          ? t("table.arrivalResolved")
+                          : overdue
+                            ? t("table.arrivalExpected", { window: arrivalWindow })
+                            : t("table.arrivalArrives", { window: arrivalWindow })}
                       </p>
                     </>
                   )}
@@ -187,6 +210,17 @@ export default function OrdersTable({
                   <ChipIcon width={12} height={12} aria-hidden="true" />
                   {t(chip.labelKey, chip.labelVars)}
                 </span>
+                {balanceChip && BalanceChipIcon && (
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] px-2.5 py-1 text-[12px] [font-weight:var(--font-weight-medium)] whitespace-nowrap [border:1px_solid]",
+                      getOrderListChipToneClassName(balanceChip.toneKey),
+                    )}
+                  >
+                    <BalanceChipIcon width={12} height={12} aria-hidden="true" />
+                    {t(balanceChip.labelKey)}
+                  </span>
+                )}
               </div>
 
               <p className="pointer-events-none relative text-right [font-size:var(--text-body)] [font-weight:var(--font-weight-medium)] [color:var(--text-primary)] tabular-nums">

@@ -11,14 +11,15 @@ export type ItemDeliveryDescriptor = {
   labelKey: string;
 };
 
+/** Label on `--{status}-chip-text`, fill and border on the raw token — see `orderListStatusChip`. */
 const TONE_CLASSES: Record<ItemDeliveryTone, string> = {
   neutral:
     "[color:var(--text-secondary)] [background:color-mix(in_oklch,var(--text-primary)_6%,transparent)] [border:1px_solid_color-mix(in_oklch,var(--text-primary)_14%,transparent)]",
-  info: "[color:var(--info)] [background:color-mix(in_oklch,var(--info)_10%,transparent)] [border:1px_solid_color-mix(in_oklch,var(--info)_24%,transparent)]",
+  info: "[color:var(--info-chip-text)] [background:color-mix(in_oklch,var(--info)_10%,transparent)] [border:1px_solid_color-mix(in_oklch,var(--info)_24%,transparent)]",
   warning:
-    "[color:var(--warning)] [background:color-mix(in_oklch,var(--warning)_10%,transparent)] [border:1px_solid_color-mix(in_oklch,var(--warning)_24%,transparent)]",
+    "[color:var(--warning-chip-text)] [background:color-mix(in_oklch,var(--warning)_10%,transparent)] [border:1px_solid_color-mix(in_oklch,var(--warning)_24%,transparent)]",
   success:
-    "[color:var(--success)] [background:color-mix(in_oklch,var(--success)_10%,transparent)] [border:1px_solid_color-mix(in_oklch,var(--success)_24%,transparent)]",
+    "[color:var(--success-chip-text)] [background:color-mix(in_oklch,var(--success)_10%,transparent)] [border:1px_solid_color-mix(in_oklch,var(--success)_24%,transparent)]",
 };
 
 export function getItemDeliveryStateToneClassName(tone: ItemDeliveryTone): string {

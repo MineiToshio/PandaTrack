@@ -110,6 +110,65 @@ describe("OrderItemStateChip", () => {
     expect(container.firstElementChild?.className).toContain("pointer-events-auto");
   });
 
+  it("leaves wrapping to the caller: a pinned pill overflows where nothing else can give up width", () => {
+    // A wrapped pill is a two-line blob and looks like a defect, but pinning it here fixes one
+    // caller and breaks another: `StorePendingProductCard` has a truncating product name to absorb
+    // the width and pins the chip itself, while `OrderCard`'s chip sits alone in a `minmax(0,1fr)`
+    // column and, pinned, overflowed 40px under the quantity column at 320px. Measured both ways.
+    renderChip();
+    expect(screen.getByRole("button").className).not.toContain("whitespace-nowrap");
+  });
+
+  describe('labelDisplay="exceptional"', () => {
+    it("drops the words below md while the item sits in the list's default state", () => {
+      renderChip({ labelDisplay: "exceptional" });
+
+      // The text stays in the DOM (it is what a pointer user sees from `md` up); only the phone
+      // loses it, because there the label restates the group header 131px at a time.
+      expect(screen.getByText("Pendiente en tienda").className).toContain("hidden md:inline");
+    });
+
+    it("keeps the words whenever the state deviates, because the deviation is the news", () => {
+      renderChip({ labelDisplay: "exceptional", initialState: "arrived_at_store" });
+
+      expect(screen.getByText("Listo en tienda").className).not.toContain("hidden");
+    });
+
+    it("shows the words again from md up, where the row has room for them", () => {
+      renderChip({ labelDisplay: "exceptional" });
+
+      const className = screen.getByRole("button").className;
+      expect(className).toContain("md:size-auto");
+      expect(className).toContain("md:px-1.5");
+    });
+
+    it("still reaches 44×44 without its label: 18px box + 13px of overlay a side", () => {
+      // Losing the text takes the pill from 131px wide to 22px, which no `inset-x-0` overlay can
+      // rescue — it grows nothing horizontally. The box is pinned square and the overlay grows
+      // both axes: 18 + 2 × 13 = 44. Verified against the rendered geometry at 320/375/430/767px.
+      renderChip({ labelDisplay: "exceptional" });
+
+      const className = screen.getByRole("button").className;
+      expect(className).toContain("size-[18px]");
+      expect(className).toContain("after:[inset:-13px]");
+    });
+
+    it("is still the control, not a label: nothing is unreachable once the words are gone", () => {
+      renderChip({ labelDisplay: "exceptional" });
+
+      // The whole point of dropping only the TEXT. The button, its accessible name (the ACTION)
+      // and the toggle survive, so a phone can still flip a product to "listo en tienda".
+      expect(screen.getByRole("button", { name: "Marcar como listo en tienda" })).toBeTruthy();
+    });
+
+    it("leaves every other surface alone: the default keeps the full pill", () => {
+      renderChip();
+
+      expect(screen.getByText("Pendiente en tienda").className).not.toContain("hidden");
+      expect(screen.getByRole("button").className).not.toContain("size-[18px]");
+    });
+  });
+
   it("grows its tap area with an overlay instead of padding, so the pill keeps the row's density", () => {
     renderChip();
     const className = screen.getByRole("button").className;

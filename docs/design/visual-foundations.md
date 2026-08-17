@@ -168,6 +168,25 @@ color: var(--success-chip-text); /* light: dedicated chip-text alias; dark: the 
 
 In light mode the base status color does not reach 4.5:1 on a 14% chip, so each status has a darker `--{status}-chip-text` alias for light; in dark the chip text is the base status token. These aliases are also shared across all palettes.
 
+##### Status color as text
+
+**`--{status}-chip-text` is the status TEXT token. The `-chip-` in its name records the first thing that needed it, not the only thing allowed to use it.** Any status-coloured string — a chip label, a line of copy in a dense row, an inline note — takes the alias. The base token is a fill and a border colour, and against `--surface` in the light theme it is nowhere near AA as text:
+
+| pair (light, on `--surface`) | ratio      |
+| ---------------------------- | ---------- |
+| `--warning`                  | **2.46:1** |
+| `--warning-chip-text`        | 8.42:1     |
+| `--info`                     | **3.83:1** |
+| `--info-chip-text`           | 8.06:1     |
+
+Dark needs no alias for the same reason it never did — the base tokens land above 10:1 there, which is why `globals.css` collapses each alias to its base under the dark theme.
+
+**The suite now catches the TOKEN, and still cannot catch the CONTRAST.** Both halves of this trap were walked into on the same feature ([ADR 0030](decisions/0030-arrival-window-shown-at-declared-granularity.md)): once with `--info` and once with `--warning`, and flipping the shipped line back to the raw token left all 3183 tests green. `design-token-guard`'s third scan closes that: it fails on `[color:var(--{warning,info,success,destructive})]` anywhere under `src/**/*.{ts,tsx}`, with a **zero budget** against an explicit per-file map of the pre-existing debt (46 files, 100 hits at the time of writing). The map is exact and self-verifying — a new hit in a listed file fails as loudly as one in a fresh file, a fixed file must be lowered or removed, and an entry whose file is gone fails rather than rotting into a rubber stamp — so the number can only go down.
+
+What it does NOT do is compute a ratio. It knows which token is the text one; it cannot tell you whether a new colour pairing is readable, and it says nothing about a status colour applied through `style={{ color: … }}` or a CSS file. **Measure before you pair, and add the measurement to the entry if you exempt something.** The `-chip-` in the alias name is the only thing standing between a status colour and a 2.5:1 label.
+
+**A chip does not exempt itself by carrying its own wash.** A 12% fill of the same hue lifts nothing: the orders list ran raw labels on their own washes at 2.23:1 (`--warning`), 3.33:1 (`--info`) and 3.14:1 (`--success`), against 7.62 / 7.00 / 6.13 with the alias. Tone and label colour are separate decisions — `warning`-toned is a statement about the tone, never a licence for the raw token on the label.
+
 #### Focus and state layers
 
 | Token / state  | Recipe                                                                                                                                                                                       |
@@ -194,7 +213,7 @@ There is **no categorical palette** in the system (see [ADR 0004](decisions/0004
 
 ### Chart series colors
 
-Charts do ship: the dashboard's "Tendencias" section renders four line charts (see [interface-patterns.md § 15](interface-patterns.md)), and the collection zone renders donuts and bars. They take their series colors from the **existing semantic tokens** — `--accent`, `--accent-cool`, `--warning`, `--success` — and introduce no `--chart-*` set.
+Charts do ship: the dashboard's "Tendencias" section renders four line charts (see [interface-patterns.md § 16](interface-patterns.md)), and the collection zone renders donuts and bars. They take their series colors from the **existing semantic tokens** — `--accent`, `--accent-cool`, `--warning`, `--success` — and introduce no `--chart-*` set.
 
 In the **trend charts**, nothing here is a category:
 
