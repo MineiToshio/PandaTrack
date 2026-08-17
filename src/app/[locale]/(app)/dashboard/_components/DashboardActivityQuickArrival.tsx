@@ -59,8 +59,7 @@ export default function DashboardActivityQuickArrival({
       <QuickArrivalModal
         isOpen={quickArrival.isOpen}
         onClose={quickArrival.close}
-        orderHumanReadableId={humanReadableId}
-        storeName={storeName}
+        subtitle={`${humanReadableId} · ${storeName}`}
         items={items}
         baseCurrencyCode={baseCurrencyCode}
         locale={locale}

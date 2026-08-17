@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { needsFxReconciliation } from "@/lib/fx/reconciliation";
 import { getCollectorPreferencesSnapshot } from "@/lib/data/user-settings/userSettingsQueries";
+import { getTodayStart } from "@/lib/data/dashboard/dashboardPeriods";
 import { OrderItemDeliveryState, type DeliveryStatus, type OrderStatus } from "../../../../generated/prisma/client";
 import type { DeliveryListSort } from "@/lib/deliveries/deliveryListSort";
 import { DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS } from "@/lib/constants";
@@ -40,12 +41,6 @@ export type DeliverySourceOrder = {
   storeName: string;
   /** Lets a caller refuse to attach a delivery to a cancelled order server-side. */
   status: OrderStatus;
-};
-
-export type DeliveryStub = {
-  id: string;
-  humanReadableId: string;
-  deliveryDate: Date;
 };
 
 export async function getStoresWithEligibleProducts(userId: string): Promise<EligibleStore[]> {
@@ -100,17 +95,6 @@ export async function getDeliverySourceOrder(orderId: string, userId: string): P
     storeName: order.store.name,
     status: order.status,
   };
-}
-
-export async function getDeliveryStubById(deliveryId: string, userId: string): Promise<DeliveryStub | null> {
-  return prisma.delivery.findFirst({
-    where: { id: deliveryId, userId },
-    select: {
-      id: true,
-      humanReadableId: true,
-      deliveryDate: true,
-    },
-  });
 }
 
 /**
@@ -222,6 +206,8 @@ export type DeliveriesListPageFilters = {
   /** Shipping date (deliveryDate) range. */
   shippedFrom?: Date;
   shippedTo?: Date;
+  /** The collector's IANA timezone, so `overdueOnly` resolves the same civil day as the row chip. */
+  timeZone?: string | null;
   sort?: DeliveryListSort;
   page: number;
   pageSize: number;
@@ -243,10 +229,7 @@ function resolveDeliveryOrderBy(sort: DeliveryListSort) {
     case "recent":
       return [{ deliveryDate: "desc" as const }, DELIVERY_ID_TIEBREAKER];
     case "eta-asc":
-      return [
-        { expectedArrivalFrom: { sort: "asc" as const, nulls: "last" as const } },
-        DELIVERY_ID_TIEBREAKER,
-      ];
+      return [{ expectedArrivalFrom: { sort: "asc" as const, nulls: "last" as const } }, DELIVERY_ID_TIEBREAKER];
     case "store-asc":
       return [{ store: { name: "asc" as const } }, DELIVERY_ID_TIEBREAKER];
     case "store-desc":
@@ -271,6 +254,7 @@ export async function getDeliveriesList(
     arrivalTo,
     shippedFrom,
     shippedTo,
+    timeZone,
     sort = "oldest",
     page,
     pageSize: requestedPageSize,
@@ -279,7 +263,11 @@ export async function getDeliveriesList(
   const pageSize = (PAGE_SIZE_OPTIONS as readonly number[]).includes(requestedPageSize)
     ? requestedPageSize
     : DEFAULT_PAGE_SIZE;
-  const now = new Date();
+  // The collector's civil day at UTC midnight, never a wall-clock instant. `expectedArrivalTo` is a
+  // calendar day stored at UTC midnight, so a raw `new Date()` made the "Atrasados" toggle pick up a
+  // delivery due TOMORROW from 19:00 in Lima — and it would then disagree with the row chip on the
+  // very same page, which resolves the same question from the same value.
+  const now = getTodayStart(new Date(), timeZone);
 
   const baseWhere: Record<string, unknown> = {
     userId,

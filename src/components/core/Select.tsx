@@ -38,6 +38,12 @@ export type SelectControlledProps = {
   renderOption?: (option: SelectOption) => ReactNode;
   renderValue?: (option: SelectOption) => ReactNode;
   className?: string;
+  /**
+   * Accessible name for the trigger, for callers whose selected-value text alone doesn't say what
+   * the control is (e.g. a bare "Por pedido" / "Por tienda" reads as a value, not as "grouped by").
+   * Optional: a trigger whose visible text already names the field doesn't need it.
+   */
+  "aria-label"?: string;
   children?: never;
   showChevron?: never;
 };
@@ -186,6 +192,7 @@ function ControlledSelect({
   renderOption,
   renderValue,
   className,
+  "aria-label": ariaLabel,
 }: SelectControlledProps) {
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
@@ -365,6 +372,17 @@ function ControlledSelect({
         never overflow the viewport (the listbox is `left-0` with no horizontal flip logic) nor be
         clipped by an `overflow-hidden` ancestor.
 
+        Grouped options additionally stack each `SelectGroup.heading` (rendered with its *own*
+        typography — mono, eyebrow size, uppercase, tracked — not the option font) plus the
+        horizontal chrome it actually sits inside once open: the listbox's own `p-[space-1]` plus
+        the heading span's `px-[space-3]`. Options are measured against the *trigger's* chrome
+        (its `SIZE_CLASSES` padding) because that is what the selected option renders inside; a
+        heading never appears in the trigger, only in the listbox, so it must be measured against
+        the listbox's chrome instead — otherwise a heading longer than every option (e.g. "Agrupar
+        por" over "Pedidos"/"Tiendas") wraps to two lines in the open listbox even though the
+        longest *option* fits fine. The resulting floor is effectively
+        `max(longest option + trigger chrome, longest heading + listbox chrome)`.
+
         Inert wherever the caller sets an explicit width (`w-full`, `w-[4.5rem]`, `w-[150px]`),
         since a definite width wins over intrinsic sizing.
       */}
@@ -374,6 +392,20 @@ function ControlledSelect({
             {option.label}
           </span>
         ))}
+        {isGrouped(options) &&
+          options.map((group, idx) => (
+            <span
+              key={`sizer-heading-${idx}`}
+              data-testid="select-width-sizer-heading"
+              className={cn(
+                "block px-[calc(var(--space-1)+var(--space-3))] py-[var(--space-1)] whitespace-nowrap",
+                "[font-family:var(--font-mono)] [font-size:var(--text-eyebrow)]",
+                "[letter-spacing:var(--text-eyebrow--letter-spacing)] uppercase",
+              )}
+            >
+              {group.heading}
+            </span>
+          ))}
       </div>
 
       <button
@@ -385,6 +417,7 @@ function ControlledSelect({
         aria-expanded={open}
         aria-controls={listboxId}
         aria-activedescendant={activeDescendant}
+        aria-label={ariaLabel}
         aria-required={required ? "true" : undefined}
         aria-invalid={hasError ? "true" : undefined}
         aria-describedby={ariaDescribedBy}
@@ -432,7 +465,12 @@ function ControlledSelect({
                 }
               }}
               className={cn(
-                "rounded-sm p-0.5",
+                // 44×44 touch box below `md`, back to the 18px desktop box from `md` up. Written
+                // as a box on both sides (never padding inside a pinned box) and never as a
+                // `::before`: the chevron 4px away would lose the contested band to it.
+                // `size="sm"` (a 32px trigger) has no `onClear` consumer; if one appears, the
+                // touch box has to come off the trigger's own height, not this class.
+                "grid size-11 place-items-center rounded-sm md:size-[18px]",
                 "[color:var(--text-muted)] hover:[color:var(--text-primary)]",
                 "transition-colors [transition-duration:var(--motion-fast)]",
                 "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1",
@@ -456,6 +494,10 @@ function ControlledSelect({
               className={cn(
                 "transition-transform [transition-duration:var(--motion-fast)] [transition-timing-function:var(--ease-emphasis)]",
                 open && "rotate-180",
+                // Decoration, not a control: the trigger button underneath already opens the
+                // list. Below `md` it steps aside so the clear's 44px box is the only thing in
+                // the cluster; the placeholder state (no clear) still shows it at every width.
+                selectedOption && onClear && "hidden md:block",
               )}
             />
           )}
@@ -476,8 +518,8 @@ function ControlledSelect({
             "bg-[var(--surface-elevated)] [border:1px_solid_var(--border)]",
             "[box-shadow:var(--elevation-2)]",
             // 17rem clears seven 38px rows plus padding, so none of the app's sort menus scroll. A row is
-          // 38px (body line-height 22 + py-2), not the 36 the estimate below assumed.
-          "max-h-[17rem] overflow-y-auto p-[var(--space-1)] outline-none",
+            // 38px (body line-height 22 + py-2), not the 36 the estimate below assumed.
+            "max-h-[17rem] overflow-y-auto p-[var(--space-1)] outline-none",
           )}
         >
           {flat.length === 0 && (
@@ -493,7 +535,7 @@ function ControlledSelect({
                 <li key={group.heading} role="presentation">
                   <span
                     className={cn(
-                      "block px-[var(--space-3)] py-[var(--space-1)]",
+                      "block px-[var(--space-3)] py-[var(--space-1)] whitespace-nowrap",
                       "[font-family:var(--font-mono)] [font-size:var(--text-eyebrow)]",
                       "[letter-spacing:var(--text-eyebrow--letter-spacing)] uppercase",
                       "[color:var(--text-muted)]",

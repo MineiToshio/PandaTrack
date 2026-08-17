@@ -9,6 +9,7 @@ import {
 } from "@google/genai";
 import * as Sentry from "@sentry/nextjs";
 import { IMAGE_INTAKE_MAX_OUTPUT_TOKENS } from "./constants";
+import { countPartialResponseShape } from "./diagnostics";
 import { buildSystemPrompt } from "./prompt";
 import {
   HTTP_SERVER_ERROR_STATUS_MIN,
@@ -326,7 +327,12 @@ function classifyProviderError(error: unknown, usage: ProviderUsage | null): Err
     // report that the feature is dead. The sanitized error is what gets reported, never the SDK's
     // own `ApiError`, whose message serializes the provider's response body and can echo text the
     // model read out of a source image.
-    const rejection = new ProviderRequestError({ code: "GEMINI_REQUEST_REJECTED", status: error.status, usage });
+    const rejection = new ProviderRequestError({
+      code: "GEMINI_REQUEST_REJECTED",
+      kind: "rejected",
+      status: error.status,
+      usage,
+    });
     Sentry.captureException(rejection, {
       tags: { feature: "imageIntake", action: "generateDraft", providerStatus: String(error.status) },
     });
@@ -340,7 +346,7 @@ function classifyProviderError(error: unknown, usage: ProviderUsage | null): Err
   // Anything left is unexpected (an SDK bug, a programming error here): report it, then hand the
   // engine a non-retryable error with no provider-supplied text in its message.
   Sentry.captureException(error, { tags: { feature: "imageIntake", action: "generateDraft" } });
-  return new ProviderRequestError({ code: "GEMINI_UNEXPECTED_ERROR", usage });
+  return new ProviderRequestError({ code: "GEMINI_UNEXPECTED_ERROR", kind: "unexpected", usage });
 }
 
 let cachedClient: GoogleGenAI | null = null;
@@ -396,6 +402,9 @@ export class GeminiExtractionProvider implements ExtractionProvider {
     const usage: ProviderUsage = {
       inputTokens: response.usageMetadata?.promptTokenCount ?? 0,
       outputTokens: response.usageMetadata?.candidatesTokenCount ?? 0,
+      // Recorded for diagnosis only, never added to the cost: see `ProviderUsage.thoughtsTokens`.
+      thoughtsTokens: response.usageMetadata?.thoughtsTokenCount ?? null,
+      totalTokens: response.usageMetadata?.totalTokenCount ?? null,
     };
 
     // A response cut short at the output ceiling is billable and structurally unusable: whatever
@@ -403,12 +412,17 @@ export class GeminiExtractionProvider implements ExtractionProvider {
     // at, so it can never be mistaken for a valid draft, and it is a request error rather than a
     // transport one so the engine does not retry it at full price.
     if (response.candidates?.[0]?.finishReason === FinishReason.MAX_TOKENS) {
-      throw new ProviderRequestError({ code: "GEMINI_RESPONSE_TRUNCATED", usage });
+      // The partial body is measured, never kept. Its shape (how many groups, products and payments
+      // the model got through before running out of room) is what tells a genuinely enormous order
+      // apart from a model that repeated itself, and neither is visible from the token total alone.
+      // See `countPartialResponseShape` for why counting schema key names carries no content.
+      const shape = countPartialResponseShape(response.text ?? "");
+      throw new ProviderRequestError({ code: "GEMINI_RESPONSE_TRUNCATED", kind: "truncated", usage, shape });
     }
 
     const rawText = response.text;
     if (!rawText) {
-      throw new ProviderRequestError({ code: "GEMINI_EMPTY_RESPONSE", usage });
+      throw new ProviderRequestError({ code: "GEMINI_EMPTY_RESPONSE", kind: "empty", usage });
     }
 
     let raw: unknown;
@@ -417,7 +431,12 @@ export class GeminiExtractionProvider implements ExtractionProvider {
     } catch {
       // A response that claims application/json but fails to parse is a malformed model
       // response, not a transport failure: the engine must not retry this.
-      throw new ProviderRequestError({ code: "GEMINI_RESPONSE_NOT_JSON", usage });
+      throw new ProviderRequestError({
+        code: "GEMINI_RESPONSE_NOT_JSON",
+        kind: "not-json",
+        usage,
+        shape: countPartialResponseShape(rawText),
+      });
     }
 
     return { raw, usage };

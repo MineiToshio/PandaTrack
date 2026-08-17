@@ -60,6 +60,7 @@ function renderPanel(): { surface: HTMLElement; dropzone: HTMLElement } {
       onSubmit={vi.fn()}
       remainingPhotos={17}
       overflowExcess={null}
+      hasUnreadablePhotos={false}
       showFirstTimeExplainer={false}
     />,
   );
@@ -290,6 +291,7 @@ describe("IntakeUploadPanel paste door", () => {
         onSubmit={vi.fn()}
         remainingPhotos={17}
         overflowExcess={null}
+        hasUnreadablePhotos={false}
         showFirstTimeExplainer={false}
       />,
     );

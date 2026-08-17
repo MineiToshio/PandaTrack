@@ -1,4 +1,5 @@
 import { POSTHOG_EVENTS } from "@/lib/constants";
+import { addUtcDays, utcMidnightToday } from "@/test/domainDateFixtures";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
@@ -83,11 +84,25 @@ describe("markDeliveredAction", () => {
 
   it("rejects a receivedDate in the future", async () => {
     getSessionMock.mockResolvedValue(AUTHENTICATED_SESSION);
-    const futureDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const futureDate = addUtcDays(utcMidnightToday(), 1);
 
     const result = await markDeliveredAction(VALID_DELIVERY_ID, futureDate);
 
     expect(result).toEqual({ ok: false, error: "RECEIVED_DATE_IN_FUTURE" });
+    expect(markDeliveryDeliveredMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects a receivedDate that did not go through toDomainDate", async () => {
+    // The regression: `MarkDeliveredModal` used to hand the picker's LOCAL-midnight `Date` straight
+    // to this action, and a `Date` crosses the Server Action boundary as its exact instant, so the
+    // row landed at 05:00Z from Lima instead of 00:00Z. Two `delivery.receivedDate` rows in the
+    // collection were written that way before the schema started refusing.
+    getSessionMock.mockResolvedValue(AUTHENTICATED_SESSION);
+    const localMidnightInLima = new Date("2026-01-01T05:00:00.000Z");
+
+    const result = await markDeliveredAction(VALID_DELIVERY_ID, localMidnightInLima);
+
+    expect(result).toEqual({ ok: false, error: "DATE_NOT_UTC_MIDNIGHT" });
     expect(markDeliveryDeliveredMock).not.toHaveBeenCalled();
   });
 

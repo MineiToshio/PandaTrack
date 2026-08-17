@@ -1,5 +1,5 @@
 /**
- * Data-region skeleton for the orders list — the 7-column table (desktop) / cards (mobile) +
+ * Data-region skeleton for the orders list — the 6-column table (desktop) / cards (mobile) +
  * pagination only. The chrome (title, toolbar, chips) renders instantly at the page level and is
  * NOT part of this skeleton; only the data region suspends. Consumed by the data `<Suspense>`
  * fallback in `page.tsx`.
@@ -13,7 +13,6 @@ type OrderListLoadingSkeletonProps = {
   headerProducts: string;
   headerStatus: string;
   headerTotal: string;
-  headerProgress: string;
   /** Number of skeleton rows / cards. Defaults: 6 desktop, 4 mobile (matches the demo). */
   desktopRows?: number;
   mobileRows?: number;
@@ -24,7 +23,7 @@ type OrderListLoadingSkeletonProps = {
 const SKEL = "skeleton rounded-[6px]";
 
 const TABLE_GRID =
-  "grid items-center gap-3 [grid-template-columns:40px_minmax(0,1.6fr)_minmax(0,0.9fr)_minmax(0,1fr)_minmax(0,0.9fr)_minmax(0,1.1fr)_24px]";
+  "grid items-center gap-3 [grid-template-columns:40px_minmax(0,1.6fr)_minmax(0,0.9fr)_minmax(0,1.2fr)_minmax(0,1fr)_24px]";
 
 const HEADER_CELL =
   "[font-size:var(--text-caption)] [font-weight:var(--font-weight-semibold)] [color:var(--text-secondary)]";
@@ -35,7 +34,6 @@ export default function OrderListLoadingSkeleton({
   headerProducts,
   headerStatus,
   headerTotal,
-  headerProgress,
   desktopRows = 6,
   mobileRows = 4,
 }: OrderListLoadingSkeletonProps) {
@@ -60,7 +58,6 @@ export default function OrderListLoadingSkeleton({
             <span className={`text-center ${HEADER_CELL}`}>{headerProducts}</span>
             <span className={`text-center ${HEADER_CELL}`}>{headerStatus}</span>
             <span className={`text-right ${HEADER_CELL}`}>{headerTotal}</span>
-            <span className={`text-center ${HEADER_CELL}`}>{headerProgress}</span>
             <span aria-hidden />
           </div>
           <ul role="rowgroup" className="m-0 list-none p-0">
@@ -82,10 +79,6 @@ export default function OrderListLoadingSkeleton({
                   aria-hidden
                 />
                 <span className={`${SKEL} justify-self-end`} style={{ height: 13, width: 70 }} aria-hidden />
-                <div className="flex items-center gap-2 justify-self-start">
-                  <span className={SKEL} style={{ height: 6, width: 60, borderRadius: 999 }} aria-hidden />
-                  <span className={SKEL} style={{ width: 36, height: 11 }} aria-hidden />
-                </div>
                 <span
                   className={`${SKEL} justify-self-end`}
                   style={{ width: 18, height: 18, borderRadius: 4 }}
@@ -115,7 +108,6 @@ export default function OrderListLoadingSkeleton({
                 </div>
               </div>
               <span className={SKEL} style={{ height: 22, width: 140, borderRadius: 999 }} aria-hidden />
-              <span className={SKEL} style={{ height: 6, width: "100%", borderRadius: 999 }} aria-hidden />
               <div className="flex items-center justify-between">
                 <span className={SKEL} style={{ height: 11, width: 100 }} aria-hidden />
                 <span className={SKEL} style={{ height: 13, width: 80 }} aria-hidden />

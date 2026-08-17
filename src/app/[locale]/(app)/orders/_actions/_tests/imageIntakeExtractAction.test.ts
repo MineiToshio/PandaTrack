@@ -178,16 +178,47 @@ describe("extractOrderFromImagesAction", () => {
     expect(extractMock).not.toHaveBeenCalled();
   });
 
-  it("maps an upload validation failure to its own code", async () => {
+  it("maps an upload validation failure to its own code, carrying the offending position", async () => {
     validateUploadedImagesMock.mockResolvedValue({
       ok: false,
-      error: { code: "unsupported-format", index: 0 },
+      error: { code: "unsupported-format", index: 0, measured: null },
     });
 
     const result = await extractOrderFromImagesAction(buildFormData());
 
-    expect(result).toEqual({ ok: false, code: "unsupported-format" });
+    expect(result).toEqual({ ok: false, code: "unsupported-format", imageIndex: 0 });
     expect(extractMock).not.toHaveBeenCalled();
+  });
+
+  it("carries the position and the measurement of an image refused for its dimensions", async () => {
+    // What the screen needs to say "Photo 2 is 1080 x 108 px" instead of "one of the photos is too
+    // small or too large": without these three fields the message can only restate the rule.
+    validateUploadedImagesMock.mockResolvedValue({
+      ok: false,
+      error: { code: "image-too-small", index: 1, measured: { width: 1080, height: 108 } },
+    });
+
+    const result = await extractOrderFromImagesAction(buildFormData());
+
+    expect(result).toEqual({
+      ok: false,
+      code: "image-too-small",
+      imageIndex: 1,
+      imageWidth: 1080,
+      imageHeight: 108,
+    });
+    expect(extractMock).not.toHaveBeenCalled();
+  });
+
+  it("reports a submission-level refusal with no position, since no single photo caused it", async () => {
+    validateUploadedImagesMock.mockResolvedValue({
+      ok: false,
+      error: { code: "too-many-images", index: null, measured: null },
+    });
+
+    const result = await extractOrderFromImagesAction(buildFormData());
+
+    expect(result).toEqual({ ok: false, code: "too-many-images" });
   });
 
   it.each([
@@ -211,7 +242,7 @@ describe("extractOrderFromImagesAction", () => {
     const { ProviderRequestError } = await import("@/lib/imageIntake/extractionEngine");
     extractMock.mockResolvedValue({
       status: "provider-error",
-      error: new ProviderRequestError({ code: "GEMINI_REQUEST_REJECTED", status: 400 }),
+      error: new ProviderRequestError({ code: "GEMINI_REQUEST_REJECTED", kind: "rejected", status: 400 }),
     });
 
     const result = await extractOrderFromImagesAction(buildFormData());
@@ -223,6 +254,66 @@ describe("extractOrderFromImagesAction", () => {
       .map((call) => call[0])
       .find((event) => event.event === "image_intake_failed");
     expect(failureEvent?.properties.failure_code).toBe("provider-rejected");
+  });
+
+  it("reports a truncated answer as response-too-long, not as a failure worth retrying", async () => {
+    const { ProviderRequestError } = await import("@/lib/imageIntake/extractionEngine");
+    // The regression. A response cut off at the output ceiling carries no HTTP status, and
+    // retryability used to be inferred from that status alone, so it fell through to
+    // `provider-error`: "try again in a minute". It is deterministic, so the collector retried and
+    // paid for the same refusal again. It must arrive as its own code, whose copy states the real
+    // remedy (send fewer photos).
+    extractMock.mockResolvedValue({
+      status: "provider-error",
+      error: new ProviderRequestError({
+        code: "GEMINI_RESPONSE_TRUNCATED",
+        kind: "truncated",
+        usage: { inputTokens: 2240, outputTokens: 32000 },
+        shape: { partialChars: 91000, groupsEmitted: 1, productsEmitted: 412, paymentsEmitted: 0 },
+      }),
+    });
+
+    const result = await extractOrderFromImagesAction(buildFormData());
+
+    expect(result).toEqual({ ok: false, code: "response-too-long" });
+  });
+
+  it("records the truncation diagnosis, which nothing else can reconstruct afterwards", async () => {
+    const { ProviderRequestError } = await import("@/lib/imageIntake/extractionEngine");
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    extractMock.mockResolvedValue({
+      status: "provider-error",
+      error: new ProviderRequestError({
+        code: "GEMINI_RESPONSE_TRUNCATED",
+        kind: "truncated",
+        usage: { inputTokens: 2240, outputTokens: 32000, thoughtsTokens: 31000, totalTokens: 34240 },
+        shape: { partialChars: 91000, groupsEmitted: 1, productsEmitted: 412, paymentsEmitted: 0 },
+      }),
+    });
+
+    await extractOrderFromImagesAction(buildFormData());
+
+    const line = warn.mock.calls.map((call) => String(call[0])).find((text) => text.includes("[image-intake]"));
+    expect(line).toBeDefined();
+    // The three figures that separate a genuinely enormous order from a looping model from a
+    // reasoning blow-up. Without them the ledger only says a request failed.
+    expect(line).toContain("outputTokens=32000");
+    expect(line).toContain("thoughtsTokens=31000");
+    expect(line).toContain("productsEmitted=412");
+    expect(line).toContain("reportedAs=response-too-long");
+    warn.mockRestore();
+  });
+
+  it("still tells a plain provider outage to try again, so the honest retry is not lost", async () => {
+    const { ProviderTransportError } = await import("@/lib/imageIntake/extractionEngine");
+    extractMock.mockResolvedValue({
+      status: "provider-error",
+      error: new ProviderTransportError({ reason: "server-error", status: 503 }),
+    });
+
+    const result = await extractOrderFromImagesAction(buildFormData());
+
+    expect(result).toEqual({ ok: false, code: "provider-error" });
   });
 
   it("keeps a retryable transport failure on the generic provider code", async () => {

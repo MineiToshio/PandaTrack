@@ -17,11 +17,33 @@ import { formatDomainDate } from "@/lib/domainDate";
 import { fetchTodayRate } from "@/lib/fx/exchangeRates";
 import { MAX_PAYMENTS_PER_ORDER } from "@/lib/imageIntake/constants";
 import type { ImageIntakeDraft } from "@/lib/imageIntake/draftSchema";
+import {
+  buildIntakeBreakdownPayload,
+  flattenDraftToBreakdownItems,
+  resolveIntakeBreakdownContext,
+  resolveIntakeBreakdownSaveBlock,
+  resolveTodayUtcIso,
+  type IntakePaymentRow,
+  type IntakeSaveBlockReason,
+} from "@/lib/imageIntake/intakeBreakdown";
+import type { IntakeBreakdownPayload } from "@/lib/imageIntake/intakeBreakdownContract";
 import { findProductsNeedingReferenceSheet, formatReferenceHost } from "@/lib/imageIntake/referenceProductNaming";
 import { parseDecimalToMinorUnits } from "@/lib/money/parseDecimalToMinorUnits";
+import {
+  createBreakdownState,
+  deriveBreakdown,
+  hasBreakdownDraft,
+  offersBreakdown,
+  recomputeBreakdown,
+  type BreakdownContext,
+  type BreakdownDerived,
+  type BreakdownItem,
+  type BreakdownPanelState,
+} from "@/lib/orders/orderPaymentBreakdown";
 import { exchangeRateSchema } from "@/lib/orders/orderValidation";
 import { cn } from "@/lib/styles";
 import FxRateAttribution from "../../../_components/share/FxRateAttribution";
+import OrderPaymentBreakdownPanel from "../../../_components/share/OrderPaymentBreakdownPanel";
 import {
   ORDER_SECTION_CARD_CLASS,
   ORDER_SECTION_COMPACT_BODY_CLASS,
@@ -45,7 +67,7 @@ export type IntakeReviewScreenProps = {
    * Receives the reviewed draft plus the rate that converts its currency into the base currency,
    * or `null` when the order is already in the base currency or the collector left the field empty.
    */
-  onSave: (draft: ImageIntakeDraft, exchangeRate: number | null) => void;
+  onSave: (draft: ImageIntakeDraft, exchangeRate: number | null, breakdown: IntakeBreakdownPayload | undefined) => void;
   /**
    * Called with the draft as currently shown on screen, edits included: whatever the collector
    * confirmed or corrected here (store match, dates, amounts, group splits) is what the manual
@@ -135,6 +157,131 @@ function sumProductPrices(draft: ImageIntakeDraft): number | null {
 }
 
 /**
+ * Fills the chat's silence about a total with the one number this screen can state as a fact: what
+ * the priced rows already add up to (`BR-11-23`: the model reads, the server computes, and this
+ * screen is the same authority). Only when the chat gave no total at all AND every product already
+ * carries a price, matching `sumProductPrices`'s own refusal to guess at a partial sum. The result
+ * carries `source: "assumed"` on the wire, the same convention-filled bucket the base-currency
+ * fallback already uses, so the save path and the doubt count treat it exactly like any other value
+ * the collector should double-check before it accepts it; which sentence the collector actually
+ * reads is decided separately, by `resolveTotalCostProvenance`.
+ */
+function withDerivedTotal(draft: ImageIntakeDraft): ImageIntakeDraft {
+  if (draft.totalCost.value !== null) return draft;
+  const derivedSum = sumProductPrices(draft);
+  if (derivedSum === null) return draft;
+  return { ...draft, totalCost: { value: derivedSum, source: "assumed" } };
+}
+
+/**
+ * The provenance the total's own row renders, computed from the draft as it arrived rather than
+ * from `resolveProvenanceState` directly: a derived total is neither read from the chat nor a
+ * server guess filled in by convention, it is a fact this screen computed from rows the collector
+ * can already see, and it must say so instead of reusing the generic "asumido" copy.
+ */
+function resolveTotalCostProvenance(rawDraft: ImageIntakeDraft): ProvenanceState {
+  if (rawDraft.totalCost.value !== null) {
+    return resolveProvenanceState(rawDraft.totalCost);
+  }
+  return sumProductPrices(rawDraft) !== null ? "derived" : "missing";
+}
+
+/** One payment row of the screen, with everything the split panel needs to render and to be read. */
+type IntakeBreakdownRow = {
+  row: IntakePaymentRow;
+  ctx: BreakdownContext;
+  state: BreakdownPanelState;
+  derived: BreakdownDerived;
+};
+
+/** Stable empty result, so a draft that offers no breakdown does not remount every panel-less row. */
+const EMPTY_BREAKDOWN_ROWS: IntakeBreakdownRow[] = [];
+
+/**
+ * Resolves every payment row IN ORDER, because row k splits against what the rows above it left
+ * behind: their ceilings for the products they named, and the order's balance minus their FULL
+ * amounts, declared or not (`BR-11-24`).
+ *
+ * Each row's stored draft is re-run through `recomputeBreakdown` before it is handed on, so the
+ * rows below it see what the collector's declaration actually amounts to under the CURRENT prices
+ * rather than under the ones it was written against.
+ */
+function resolveIntakeBreakdownRows(input: {
+  items: BreakdownItem[];
+  payments: ImageIntakeDraft["payments"];
+  states: Record<number, BreakdownPanelState>;
+  totalCostMinor: number;
+  currencyCode: string;
+}): IntakeBreakdownRow[] {
+  const { items, payments, states, totalCostMinor, currencyCode } = input;
+  const resolved: IntakeBreakdownRow[] = [];
+
+  for (const [paymentIndex, payment] of payments.entries()) {
+    const amountMinor = payment.amount.value ?? 0;
+    const stored = states[paymentIndex] ?? createBreakdownState(items);
+    const ctx = resolveIntakeBreakdownContext({
+      items,
+      rows: [...resolved.map((entry) => entry.row), { amountMinor, breakdown: stored }],
+      paymentIndex,
+      totalCostMinor,
+      currencyCode,
+    });
+    const state = recomputeBreakdown(stored, ctx);
+    resolved.push({
+      row: { amountMinor, breakdown: state },
+      ctx,
+      state,
+      derived: deriveBreakdown(state, ctx, currencyCode),
+    });
+  }
+
+  return resolved;
+}
+
+/**
+ * Shifts an index-keyed map the same way the payment array just shifted when row `index` was
+ * removed. Shared by the raw amount text and the breakdown drafts, which are keyed the same way and
+ * would otherwise drift apart.
+ */
+function reindexAfterRemoval<T>(current: Record<number, T>, index: number): Record<number, T> {
+  const next: Record<number, T> = {};
+  for (const [key, value] of Object.entries(current)) {
+    const keyIndex = Number(key);
+    if (keyIndex < index) next[keyIndex] = value;
+    else if (keyIndex > index) next[keyIndex - 1] = value;
+  }
+  return next;
+}
+
+/**
+ * Every field this screen can refuse to save on, before ever calling the action.
+ *
+ * The three draft-level ones are what `saveOrderFromDraftAction` itself requires. The two payment
+ * families are the narrow gate a breakdown buys (§`FR-11-104`): they are TEMPLATE keys, one per
+ * payment row, which is why the container lookup below is a function and `fieldErrors` a `Map`
+ * rather than the exhaustive `Record` this used to be.
+ */
+type RequiredIntakeFieldKey = "store" | "orderDate" | "total" | `payment-amount-${number}` | `payment-date-${number}`;
+
+/**
+ * The draft's own required fields still missing, in the screen's visual order (store, then order
+ * date, then total), which is also the order the caller scrolls through on save: the first key
+ * returned is the first field the collector sees.
+ *
+ * Deliberately excludes the delivery window: `orderCreateSchema` declares
+ * `expectedDeliveryFrom`/`expectedDeliveryTo` nullable and optional, so an empty window is a legal
+ * order, not something the save step refuses. Currency is excluded too, its `<Select>` control has
+ * no empty option, so a collector cannot leave it blank through the screen itself.
+ */
+function findMissingRequiredIntakeFields(draft: ImageIntakeDraft): RequiredIntakeFieldKey[] {
+  const missing: RequiredIntakeFieldKey[] = [];
+  if (draft.store.matchedStoreId === null) missing.push("store");
+  if (draft.orderDate.value === null) missing.push("orderDate");
+  if (draft.totalCost.value === null) missing.push("total");
+  return missing;
+}
+
+/**
  * Where the first nameless product is, or `null`.
  *
  * The position is the point: the order write refuses a blank name for the whole draft, and telling
@@ -184,6 +331,47 @@ function parseExchangeRateInput(raw: string): { ok: true; value: number | null }
 }
 
 /**
+ * The element each required-field error scrolls and focuses. Store has no single control across
+ * its three shapes (a combobox, a candidate list, an inline creation form), so its section carries
+ * this id on its own root instead; order date and total already have it on their `Input` itself.
+ */
+function requiredFieldContainerId(fieldKey: RequiredIntakeFieldKey): string {
+  if (fieldKey === "store") return "intake-store-field";
+  if (fieldKey === "orderDate") return "intake-order-date";
+  if (fieldKey === "total") return "intake-total";
+  // The payment keys are already the id minus the screen prefix, one per row.
+  return `intake-${fieldKey}`;
+}
+
+/** The row a payment-level field key belongs to, and which of its two controls it names. */
+function paymentFieldKey(control: "amount" | "date", index: number): RequiredIntakeFieldKey {
+  return control === "amount" ? `payment-amount-${index}` : `payment-date-${index}`;
+}
+
+/**
+ * Brings the first invalid field into view and focuses it, on the same treatment `StoreForm`'s own
+ * first-error scroll already uses for this app's sticky header: `block: "center"` rather than a
+ * fixed scroll-margin offset, so the field lands clear of the header without this screen needing to
+ * know its height.
+ *
+ * `scrollIntoView` does not exist in the jsdom environment the unit tests run under, so it is
+ * called defensively; the tests assert the focus half of this behaviour instead, which jsdom can
+ * observe.
+ */
+function scrollToFirstIntakeError(fieldKey: RequiredIntakeFieldKey) {
+  const container = document.getElementById(requiredFieldContainerId(fieldKey));
+  if (!container) return;
+  if (typeof container.scrollIntoView === "function") {
+    container.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+  const focusable =
+    container instanceof HTMLInputElement || container instanceof HTMLSelectElement
+      ? container
+      : container.querySelector<HTMLElement>("input, select, button, [tabindex]");
+  focusable?.focus({ preventScroll: true });
+}
+
+/**
  * The single unskippable screen between an extraction and a saved order.
  *
  * It is built as a document rather than a form on purpose: values that were genuinely read render
@@ -205,18 +393,40 @@ export default function IntakeReviewScreen({
 }: IntakeReviewScreenProps) {
   const t = useTranslations("imageIntake.review");
   const tOrders = useTranslations("orders");
+  const tErrors = useTranslations("imageIntake.errors");
   const locale = useLocale();
 
-  const [draft, setDraft] = useState<ImageIntakeDraft>(initialDraft);
+  // Not memoized: cheap to recompute (one pass over the products), and only ever consulted by the
+  // two lazy state initializers below, which React only calls once, on mount. `initialDraft` itself
+  // is left untouched, so `provenance` below can still tell a genuinely derived total apart from one
+  // the chat actually stated.
+  const seededInitialDraft = withDerivedTotal(initialDraft);
+
+  const [draft, setDraft] = useState<ImageIntakeDraft>(seededInitialDraft);
   /** The row a blocked save is about, so the screen can open its group and name it. */
   const [blankNameAt, setBlankNameAt] = useState<{ groupIndex: number; position: number } | null>(null);
   /** Groups reporting a price field whose text the money parser cannot read. */
   const [groupsWithInvalidPrice, setGroupsWithInvalidPrice] = useState<ReadonlySet<number>>(() => new Set());
+  /**
+   * Field-level save-blocking errors, keyed by `RequiredIntakeFieldKey`. Follows the repository's
+   * three-part error pattern (destructive label, `error` on the control, message with `role="alert"`)
+   * and clears per-field the moment the collector edits that field, never on a keystroke elsewhere.
+   */
+  const [fieldErrors, setFieldErrors] = useState<ReadonlyMap<RequiredIntakeFieldKey, string>>(() => new Map());
   const [totalInput, setTotalInput] = useState(() =>
-    initialDraft.totalCost.value !== null
-      ? formatCentsForInput(initialDraft.totalCost.value, initialDraft.currency.value ?? NO_CURRENCY_CODE)
+    seededInitialDraft.totalCost.value !== null
+      ? formatCentsForInput(seededInitialDraft.totalCost.value, seededInitialDraft.currency.value ?? NO_CURRENCY_CODE)
       : "",
   );
+
+  const clearFieldError = (key: RequiredIntakeFieldKey) => {
+    setFieldErrors((current) => {
+      if (!current.has(key)) return current;
+      const next = new Map(current);
+      next.delete(key);
+      return next;
+    });
+  };
 
   // Computed once from the draft as it arrived. Editing an assumed value must not turn its control
   // into plain text mid-keystroke, so provenance is a property of what the extraction produced, not
@@ -225,7 +435,7 @@ export default function IntakeReviewScreen({
     () => ({
       orderDate: resolveProvenanceState(initialDraft.orderDate),
       currency: resolveProvenanceState(initialDraft.currency),
-      totalCost: resolveProvenanceState(initialDraft.totalCost),
+      totalCost: resolveTotalCostProvenance(initialDraft),
       // A draft with no `delivery` block at all is the same situation as one whose window came back
       // empty: nothing was found, so the window is `missing` and therefore a control (FR-11-51).
       deliveryFrom: initialDraft.delivery
@@ -350,15 +560,33 @@ export default function IntakeReviewScreen({
 
   const handleStoreChange = (storeId: string | null) => {
     setDraft((current) => ({ ...current, store: { ...current.store, matchedStoreId: storeId } }));
+    clearFieldError("store");
   };
 
   const handleGroupApply = (groupIndex: number, updatedGroup: ImageIntakeDraft["groups"][number]) => {
     // The alert must not outlive the problem: it goes as soon as every row has a name again.
     setBlankNameAt((current) => (current === null ? null : null));
-    setDraft((current) => ({
-      ...current,
-      groups: current.groups.map((group, index) => (index === groupIndex ? updatedGroup : group)),
-    }));
+    const nextDraft = {
+      ...draft,
+      groups: draft.groups.map((group, index) => (index === groupIndex ? updatedGroup : group)),
+    };
+    setDraft(nextDraft);
+
+    /*
+      The ONE predicate that invalidates every breakdown draft on the screen: the COUNT of flattened
+      products changed.
+
+      Splitting, merging, adding and removing all move it (+N-1, -N+1, ±1); correcting a name or a
+      price does not (0). And the count is the only thing this screen can actually see, because all
+      five gestures arrive here as one replaced group, so "what changed" is not answerable from
+      outside. Keying on the sequence of NAMES instead would delete the collector's typed lines for
+      fixing a typo, which is exactly the distinction `FR-11-51a` already draws between an inline
+      correction and a split/merge.
+    */
+    if (flattenDraftToBreakdownItems(nextDraft).length === flattenDraftToBreakdownItems(draft).length) return;
+    // Only say so when there was something to lose: a panel nobody typed into needs no apology.
+    setWasBreakdownCleared(Object.values(breakdownStates).some(hasBreakdownDraft));
+    setBreakdownStates({});
   };
 
   const handleOrderDateChange = (value: string) => {
@@ -368,6 +596,7 @@ export default function IntakeReviewScreen({
       ...current,
       orderDate: value ? { value, source: "read" } : { value: null, source: null },
     }));
+    clearFieldError("orderDate");
   };
 
   const handleCurrencyChange = (value: string) => {
@@ -381,6 +610,7 @@ export default function IntakeReviewScreen({
       ...current,
       totalCost: minorUnits === null ? { value: null, source: null } : { value: minorUnits, source: "read" },
     }));
+    clearFieldError("total");
   };
 
   const handleDeliveryRangeChange = (from: Date | null, to: Date | null) => {
@@ -400,6 +630,69 @@ export default function IntakeReviewScreen({
 
   /** Raw text typed into a payment amount, by row index. Same reason as the order total's own input. */
   const [paymentAmountInputs, setPaymentAmountInputs] = useState<Record<number, string>>({});
+
+  /**
+   * One breakdown draft per payment row, by row index. Absent means the collector has not touched
+   * that row's panel, which is the same thing as an empty draft and is treated as one below.
+   */
+  const [breakdownStates, setBreakdownStates] = useState<Record<number, BreakdownPanelState>>({});
+  /** Whether a structural product change just wiped the drafts, so the screen can say so. */
+  const [wasBreakdownCleared, setWasBreakdownCleared] = useState(false);
+
+  /**
+   * The draft's products as the split panel sees them, rebuilt from the draft on every edit.
+   *
+   * That rebuild IS the recalculation rule of `FR-11-103`: correcting a price upstairs changes the
+   * weights, so every unpinned line is split again through the same door a tick goes through. Lines
+   * the collector typed into are pinned and no recalculation reaches them (I-2).
+   */
+  const breakdownItems = useMemo(() => flattenDraftToBreakdownItems(draft), [draft]);
+  const offersAnyBreakdown = offersBreakdown(breakdownItems);
+
+  /**
+   * Every payment row's context, state and derived view, resolved IN ORDER because row k splits
+   * against what rows 0..k-1 left behind: their ceilings for the products they named, and the
+   * order's balance minus their FULL amounts, declared or not (`BR-11-24`).
+   */
+  // Not memoized, unlike `breakdownItems` above: no compiler in this build would absorb the cost
+  // instead (`next.config.ts` carries no `experimental.reactCompiler`, and the lint plugin that
+  // ships with `eslint-config-next` bails on a manual `useMemo` here with "Existing memoization
+  // could not be preserved", so hand-memoizing would trade a real lint error for a re-render this
+  // screen can afford). `MAX_PAYMENTS_PER_ORDER` bounds the loop at 60 rows, each a handful of
+  // arithmetic passes over the draft's own products, so recomputing it on every unrelated keystroke
+  // is cheap relative to the render it happens inside of.
+  const breakdownRows = offersAnyBreakdown
+    ? resolveIntakeBreakdownRows({
+        items: breakdownItems,
+        payments: draft.payments,
+        states: breakdownStates,
+        totalCostMinor: draft.totalCost.value ?? 0,
+        currencyCode,
+      })
+    : EMPTY_BREAKDOWN_ROWS;
+
+  const handleBreakdownChange = (index: number, next: BreakdownPanelState) => {
+    setWasBreakdownCleared(false);
+    setBreakdownStates((current) => ({ ...current, [index]: next }));
+    clearFieldError(paymentFieldKey("amount", index));
+    clearFieldError(paymentFieldKey("date", index));
+  };
+
+  /** The sentence a blocked payment row carries, one literal key per reason so the guard sees them. */
+  function breakdownBlockMessage(reason: IntakeSaveBlockReason): string {
+    switch (reason) {
+      case "needsAmount":
+        return t("payments.breakdownNeedsAmount");
+      case "needsDate":
+        return t("payments.breakdownNeedsDate");
+      case "dateInFuture":
+        return t("payments.breakdownDateInFuture");
+      case "dateTooEarly":
+        return t("payments.breakdownDateTooEarly");
+      case "exceedsBalance":
+        return t("payments.breakdownExceedsBalance");
+    }
+  }
 
   function paymentAmountInput(index: number, amount: number | null): string {
     const typed = paymentAmountInputs[index];
@@ -422,10 +715,12 @@ export default function IntakeReviewScreen({
     patchPayment(index, {
       amount: minorUnits === null ? { value: null, source: null } : { value: minorUnits, source: "read" },
     });
+    clearFieldError(paymentFieldKey("amount", index));
   };
 
   const handlePaymentDateChange = (index: number, value: string) => {
     patchPayment(index, { paidAt: value ? { value, source: "read" } : { value: null, source: null } });
+    clearFieldError(paymentFieldKey("date", index));
   };
 
   /**
@@ -450,15 +745,10 @@ export default function IntakeReviewScreen({
     }));
     // Reindex the raw-text overrides the same way the array itself just shifted, so a later row's
     // in-progress typed text (not yet a valid amount) stays attached to the row it belongs to.
-    setPaymentAmountInputs((current) => {
-      const next: Record<number, string> = {};
-      for (const [key, value] of Object.entries(current)) {
-        const keyIndex = Number(key);
-        if (keyIndex < index) next[keyIndex] = value;
-        else if (keyIndex > index) next[keyIndex - 1] = value;
-      }
-      return next;
-    });
+    setPaymentAmountInputs((current) => reindexAfterRemoval(current, index));
+    // The breakdown drafts are keyed by row index too, so they shift with the array exactly the
+    // same way. Leaving them unshifted would hand row k+1's typed lines to row k.
+    setBreakdownStates((current) => reindexAfterRemoval(current, index));
   };
 
   const handleExchangeRateChange = (value: string) => {
@@ -477,6 +767,30 @@ export default function IntakeReviewScreen({
   };
 
   const handleSave = () => {
+    // Store, order date, and total are the fields `saveOrderFromDraftAction` refuses to save
+    // without; catching them here, before the round trip, is what turns a server error the
+    // collector only ever saw as a top-level banner into a marked field they can fix in place. All
+    // three are computed together and marked together, then the collector is taken to the first one
+    // in the screen's own visual order (store, then order date, then total).
+    const missingRequired = findMissingRequiredIntakeFields(draft);
+    if (missingRequired.length > 0) {
+      const nextFieldErrors = new Map<RequiredIntakeFieldKey, string>();
+      for (const key of missingRequired) {
+        nextFieldErrors.set(
+          key,
+          key === "store"
+            ? tErrors("saveStoreRequired")
+            : key === "orderDate"
+              ? tErrors("saveOrderDateRequired")
+              : tErrors("saveTotalRequired"),
+        );
+      }
+      setFieldErrors(nextFieldErrors);
+      scrollToFirstIntakeError(missingRequired[0]);
+      return;
+    }
+    setFieldErrors(new Map());
+
     // The order write refuses a product with no name, and it refuses the whole draft over it. That
     // is a correct rule enforced in the wrong place for a person to act on, so it is caught here,
     // beside the field, rather than coming back as "we could not save this".
@@ -491,8 +805,37 @@ export default function IntakeReviewScreen({
     if (groupsWithInvalidPrice.size > 0) {
       return;
     }
+
+    /*
+      The one gate a breakdown buys, and it is deliberately narrow (`FR-11-104`).
+
+      A payment row the server refuses is normally dropped in silence and mentioned in a toast after
+      the navigation, which is the right trade for two fields the collector can retype. It stops
+      being the right trade once the row carries up to N hand-typed lines, so a row WITH a breakdown
+      has to be complete and legal before anything is written; a row without one keeps `FR-11-52b`
+      untouched and is still dropped server-side.
+    */
+    const saveBlock = resolveIntakeBreakdownSaveBlock({
+      rows: draft.payments.map((payment, index) => ({
+        amountMinor: payment.amount.value ?? 0,
+        paidAtIso: payment.paidAt.value,
+        hasBreakdown: breakdownRows[index] !== undefined && hasBreakdownDraft(breakdownRows[index].state),
+      })),
+      totalCostMinor: draft.totalCost.value,
+      orderDateIso: draft.orderDate.value,
+      todayIso: resolveTodayUtcIso(),
+    });
+    if (saveBlock !== null) {
+      const control = saveBlock.reason === "needsAmount" || saveBlock.reason === "exceedsBalance" ? "amount" : "date";
+      const key = paymentFieldKey(control, saveBlock.paymentIndex);
+      setFieldErrors(new Map([[key, breakdownBlockMessage(saveBlock.reason)]]));
+      scrollToFirstIntakeError(key);
+      return;
+    }
+
+    const breakdown = buildIntakeBreakdownPayload(breakdownRows.map((entry) => entry.row));
     if (!needsExchangeRate) {
-      onSave(draft, null);
+      onSave(draft, null, breakdown);
       return;
     }
     const parsed = parseExchangeRateInput(exchangeRateInput);
@@ -500,7 +843,7 @@ export default function IntakeReviewScreen({
       setExchangeRateError(t("fx.invalid"));
       return;
     }
-    onSave(draft, parsed.value);
+    onSave(draft, parsed.value, breakdown);
   };
 
   // Both action bars below call these, never their own copy of the logic: the two are one control
@@ -583,7 +926,12 @@ export default function IntakeReviewScreen({
             creating an order by hand should be where they last saw it.
           */}
           <div className="grid items-start gap-4 md:grid-cols-2">
-            <StoreResolutionSection store={draft.store} options={storeOptions} onChange={handleStoreChange} />
+            <StoreResolutionSection
+              store={draft.store}
+              options={storeOptions}
+              onChange={handleStoreChange}
+              error={Boolean(fieldErrors.get("store"))}
+            />
 
             <ProvenanceValue
               id="intake-currency"
@@ -612,16 +960,23 @@ export default function IntakeReviewScreen({
               label={t("fields.orderDate")}
               state={provenance.orderDate}
               markerLabel={t(provenance.orderDate === "assumed" ? "provenance.assumed" : "provenance.missing")}
+              error={Boolean(fieldErrors.get("orderDate"))}
+              // The error message replaces the hint in the same slot: `Input` already renders it
+              // (with `role="alert"` and `aria-invalid`) when `error` is a string, so this component
+              // is not asked to render it a second time.
               hint={
-                provenance.orderDate === "read"
+                fieldErrors.get("orderDate")
                   ? undefined
-                  : t(provenance.orderDate === "assumed" ? "provenance.assumedHint" : "provenance.missingHint")
+                  : provenance.orderDate === "read"
+                    ? undefined
+                    : t(provenance.orderDate === "assumed" ? "provenance.assumedHint" : "provenance.missingHint")
               }
               control={({ id }) => (
                 <Input
                   id={id}
                   type="date"
                   value={draft.orderDate.value ?? ""}
+                  error={fieldErrors.get("orderDate")}
                   onChange={(event) => handleOrderDateChange(event.target.value)}
                 />
               )}
@@ -653,7 +1008,10 @@ export default function IntakeReviewScreen({
                     up with the one beside it whether or not that one carries a chip. */}
                 <label
                   htmlFor="intake-exchange-rate"
-                  className="flex min-h-[1.625rem] items-center text-[13px] font-medium [color:var(--text-secondary)]"
+                  className={cn(
+                    "flex min-h-[1.625rem] items-center text-[13px] font-medium",
+                    exchangeRateError ? "[color:var(--destructive)]" : "[color:var(--text-secondary)]",
+                  )}
                 >
                   {t("fx.label", { from: currencyCode, to: baseCurrencyCode })}
                 </label>
@@ -794,8 +1152,25 @@ export default function IntakeReviewScreen({
               id="intake-total"
               label={t("fields.total")}
               state={provenance.totalCost}
-              markerLabel={t(provenance.totalCost === "assumed" ? "provenance.assumed" : "provenance.missing")}
-              hint={provenance.totalCost === "read" ? undefined : t("provenance.totalHint")}
+              markerLabel={
+                provenance.totalCost === "assumed"
+                  ? t("provenance.assumed")
+                  : provenance.totalCost === "derived"
+                    ? t("provenance.derived")
+                    : t("provenance.missing")
+              }
+              error={Boolean(fieldErrors.get("total"))}
+              // The error message replaces the hint in the same slot, same reasoning as the order
+              // date field above.
+              hint={
+                fieldErrors.get("total")
+                  ? undefined
+                  : provenance.totalCost === "read"
+                    ? undefined
+                    : provenance.totalCost === "derived"
+                      ? t("provenance.totalDerivedHint", { count: countProducts(initialDraft) })
+                      : t("provenance.totalHint")
+              }
               control={({ id }) => (
                 <Input
                   id={id}
@@ -803,6 +1178,7 @@ export default function IntakeReviewScreen({
                   inputMode="decimal"
                   value={totalInput}
                   suffix={currencyCode}
+                  error={fieldErrors.get("total")}
                   onChange={(event) => handleTotalChange(event.target.value)}
                 />
               )}
@@ -841,6 +1217,15 @@ export default function IntakeReviewScreen({
           </h3>
         </header>
         <div className={ORDER_SECTION_COMPACT_BODY_CLASS}>
+          {/* Said once for the whole section, because the change wipes every row at once. It is not
+              an error: nothing is blocked, and the products the collector just restructured are the
+              reason the old lines no longer point anywhere. */}
+          {wasBreakdownCleared && (
+            <p className="text-[12px] [color:var(--text-muted)]" role="status">
+              {t("payments.breakdownCleared")}
+            </p>
+          )}
+
           {draft.payments.length === 0 ? (
             <p className="text-[13px] [color:var(--text-muted)]">{t("payments.empty")}</p>
           ) : (
@@ -854,6 +1239,9 @@ export default function IntakeReviewScreen({
                 // Frozen at arrival, like every other attribute. See `paymentProvenance`.
                 const amountState = paymentProvenance[index]?.amount ?? "missing";
                 const dateState = paymentProvenance[index]?.paidAt ?? "missing";
+                const amountError = fieldErrors.get(paymentFieldKey("amount", index));
+                const dateError = fieldErrors.get(paymentFieldKey("date", index));
+                const breakdownRow = breakdownRows[index];
                 return (
                   // Keyed by position: the date is editable, so keying on it would remount the field.
                   <li key={index} className="relative grid gap-4 pr-8 md:grid-cols-2 md:pr-9">
@@ -862,8 +1250,9 @@ export default function IntakeReviewScreen({
                       label={t("payments.amountLabel", { position: index + 1 })}
                       state={amountState}
                       markerLabel={t(amountState === "assumed" ? "provenance.assumed" : "provenance.missing")}
+                      error={Boolean(amountError)}
                       hint={
-                        amountState === "read"
+                        amountError || amountState === "read"
                           ? undefined
                           : t(amountState === "assumed" ? "provenance.assumedHint" : "provenance.missingHint")
                       }
@@ -874,6 +1263,7 @@ export default function IntakeReviewScreen({
                           inputMode="decimal"
                           suffix={currencyCode}
                           value={paymentAmountInput(index, payment.amount.value)}
+                          error={amountError}
                           onChange={(event) => handlePaymentAmountChange(index, event.target.value)}
                         />
                       )}
@@ -883,8 +1273,9 @@ export default function IntakeReviewScreen({
                       label={t("payments.dateLabel")}
                       state={dateState}
                       markerLabel={t(dateState === "assumed" ? "provenance.assumed" : "provenance.missing")}
+                      error={Boolean(dateError)}
                       hint={
-                        dateState === "read"
+                        dateError || dateState === "read"
                           ? undefined
                           : t(dateState === "assumed" ? "provenance.assumedHint" : "provenance.missingHint")
                       }
@@ -893,15 +1284,54 @@ export default function IntakeReviewScreen({
                           id={id}
                           type="date"
                           value={payment.paidAt.value ?? ""}
+                          error={dateError}
                           onChange={(event) => handlePaymentDateChange(index, event.target.value)}
                         />
                       )}
                     />
+
+                    {/* The split, under both fields and spanning the row on desktop: the amount has
+                        to exist before splitting it means anything, and it is above. On mobile the
+                        row is one column already, so this simply follows the date. */}
+                    {breakdownRow !== undefined && (
+                      <div className="md:col-span-2">
+                        <OrderPaymentBreakdownPanel
+                          // Unique per payment row: several panels are mounted at once here, and a
+                          // shared id namespace would cross every `aria-controls` and
+                          // `aria-describedby` on the section.
+                          instanceId={`intake-payment-${index}`}
+                          // Row 0 splits against the whole order (nothing has been declared yet);
+                          // from row 1 on, the denominator is what the rows above left unpaid, so
+                          // the printed percentage has to name that instead.
+                          percentBasis={index === 0 ? "order" : "remaining"}
+                          state={breakdownRow.state}
+                          onStateChange={(next) => handleBreakdownChange(index, next)}
+                          ctx={breakdownRow.ctx}
+                          derived={breakdownRow.derived}
+                          // No pool exists here: the order has not been written, so nothing has been
+                          // paid against it. The row above that left money undeclared says so in its
+                          // own foot, three centimetres up the same screen.
+                          undetailedPaidMinor={0}
+                          currencyCode={currencyCode}
+                          locale={locale}
+                          disabled={isSaving}
+                          // The server answers after the order exists and the screen is gone, so
+                          // there is no inline refusal to paint here. The save gate stands in.
+                          refusedItemId={null}
+                        />
+                      </div>
+                    )}
                     <button
                       type="button"
                       onClick={() => handleRemovePayment(index)}
                       aria-label={t("payments.removeLabel", { position: index + 1 })}
-                      className="absolute top-0 right-0 grid size-7 shrink-0 cursor-pointer place-items-center rounded-md [color:var(--text-muted)] transition-colors hover:[color:var(--text-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:[outline-color:var(--focus-ring)]"
+                      // Tap target ≥44×44 on mobile via the `::before` pseudo (same mechanism as
+                      // `IconButton`): padding inside a fixed `size-7` box never grows the box, so
+                      // `inset:-8px` on 28px expands the hit area outward to 44 instead. No other
+                      // control is within 8px: the row reserves `pr-8` for this button, and the
+                      // payment rows are `gap-[var(--space-4)]` apart vertically.
+                      // `md:before:inset-0` drops the extra area on desktop.
+                      className="absolute top-0 right-0 grid size-7 shrink-0 cursor-pointer place-items-center rounded-md [color:var(--text-muted)] transition-colors before:absolute before:[inset:-8px] before:content-[''] hover:[color:var(--text-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:[outline-color:var(--focus-ring)] md:before:inset-0"
                     >
                       <X size={14} aria-hidden="true" />
                     </button>

@@ -20,7 +20,13 @@ export type DashboardUpcomingPaymentsZoneProps = {
 
 const UPCOMING_PAYMENTS_TITLE_ID = "dashboard-upcoming-payments-title";
 
-/** "Próximos pagos": per-order outstanding + due date, sorted by due date. */
+/**
+ * "Próximos pagos": per-order outstanding + due date, sorted by due date.
+ *
+ * Each row's chip states a fact about its own date (`dueState`, resolved in the aggregation layer),
+ * never about its position in the list. Delivered pedidos that still owe money are excluded
+ * upstream and reachable through the orders list "Con saldo pendiente" filter instead.
+ */
 export default async function DashboardUpcomingPaymentsZone({ data, locale }: DashboardUpcomingPaymentsZoneProps) {
   const t = await getTranslations({ locale, namespace: "dashboard" });
   const payments = data.cashObligations.upcomingPayments.slice(0, DASHBOARD_ACTIVITY_LIST_LIMIT);
@@ -55,16 +61,21 @@ export default async function DashboardUpcomingPaymentsZone({ data, locale }: Da
     <DashboardZoneCard {...cardProps}>
       <div className="flex flex-1 flex-col">
         <ul role="list" className="flex flex-col">
-          {payments.map((payment, index) => {
+          {payments.map((payment) => {
             const amount =
               payment.baseOutstandingMinor != null && data.baseCurrencyCode
                 ? formatAmountSymbolOnly(payment.baseOutstandingMinor, data.baseCurrencyCode, locale)
                 : formatAmountSymbolOnly(payment.outstandingMinor, payment.currencyCode, locale);
-            const isSoonest = index === 0;
-            const chipLabel = isSoonest
-              ? t("upcomingPayments.dueSoon")
-              : t("upcomingPayments.dueOn", { date: formatDomainShortDate(payment.dueDate, locale) });
-            const ChipIcon = isSoonest ? CalendarClock : Calendar;
+            const dueDateLabel = formatDomainShortDate(payment.dueDate, locale);
+            const chipLabel =
+              payment.dueState === "overdue"
+                ? t("upcomingPayments.overdueOn", { date: dueDateLabel })
+                : payment.dueState === "soon"
+                  ? t("upcomingPayments.dueSoonOn", { date: dueDateLabel })
+                  : t("upcomingPayments.dueOn", { date: dueDateLabel });
+            const ChipIcon =
+              payment.dueState === "overdue" ? AlarmClock : payment.dueState === "soon" ? CalendarClock : Calendar;
+            const chipVariant = payment.dueState === "scheduled" ? "info" : "warning";
             const detailHref = `/${locale}${ROUTES.orders}/${payment.orderId}?returnTo=${encodeURIComponent(ROUTES.dashboard)}`;
 
             return (
@@ -104,11 +115,7 @@ export default async function DashboardUpcomingPaymentsZone({ data, locale }: Da
                     <span className="[font-size:13.5px] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)] tabular-nums">
                       {amount}
                     </span>
-                    <Chip
-                      variant={isSoonest ? "warning" : "info"}
-                      size="sm"
-                      icon={<ChipIcon width={12} height={12} aria-hidden="true" />}
-                    >
+                    <Chip variant={chipVariant} size="sm" icon={<ChipIcon width={12} height={12} aria-hidden="true" />}>
                       {chipLabel}
                     </Chip>
                   </div>

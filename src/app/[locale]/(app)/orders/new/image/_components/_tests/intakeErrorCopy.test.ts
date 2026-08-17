@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 import enImageIntake from "@/i18n/locales/en/imageIntake.json";
 import esImageIntake from "@/i18n/locales/es/imageIntake.json";
-import { extractErrorMessageKey } from "../intakeErrorCopy";
+import { MAX_IMAGE_FILE_BYTES } from "@/lib/imageIntake/constants";
+import {
+  dimensionIssueMessage,
+  extractErrorMessageKey,
+  fileTooLargeMessage,
+  serverDimensionMessage,
+} from "../intakeErrorCopy";
 
 type ErrorCopy = Record<string, string>;
 
@@ -57,6 +63,66 @@ describe("intake error copy", () => {
     // The retryable sibling keeps its retry, because for a 5xx or a timeout the retry is honest.
     expect(extractErrorMessageKey("provider-error")).toBe("providerError");
     expect(esErrors.providerError).toContain("Inténtalo de nuevo");
+  });
+
+  it("gives a wide crop and a small photo separate sentences, each with its own remedy", () => {
+    const wide = dimensionIssueMessage(
+      { code: "source-too-wide", width: 3000, height: 300, minSourceHeight: 556 },
+      "Foto 2 (recorte.png)",
+    );
+    const small = dimensionIssueMessage(
+      { code: "source-too-small", width: 150, height: 150, minDimension: 200 },
+      "Foto 1 (miniatura.png)",
+    );
+
+    expect(wide.messageKey).toBe("photoTooWide");
+    expect(wide.values).toEqual({ photo: "Foto 2 (recorte.png)", width: 3000, height: 300, minHeight: 556 });
+    expect(small.messageKey).toBe("photoTooSmall");
+
+    // Each sentence names the photo, quotes the measurement, and ends on something to do. Anything
+    // less and the collector is back to guessing which of twenty screenshots is the problem.
+    for (const message of [esErrors.photoTooWide, enErrors.photoTooWide]) {
+      expect(message).toContain("{photo}");
+      expect(message).toContain("{width}");
+      expect(message).toContain("{height}");
+      expect(message).toContain("{minHeight}");
+    }
+    expect(esErrors.photoTooWide).toContain("Recorta menos");
+    expect(enErrors.photoTooWide).toContain("Crop less");
+    expect(esErrors.photoTooSmall).toContain("Usa una captura más grande");
+    expect(enErrors.photoTooSmall).toContain("Use a larger screenshot");
+
+    // The two causes never share a sentence again: no message may hedge between small and large the
+    // way the one it replaced did ("demasiado pequeña o demasiado grande para leerla").
+    for (const message of [esErrors.photoTooSmall, esErrors.photoTooWide, esErrors.imageTooSmall]) {
+      expect(message).not.toMatch(/pequeña o .*grande|grande o .*pequeña/);
+    }
+    expect(esErrors.photoTooWide).not.toContain("pequeña");
+    expect(enErrors.photoTooWide).not.toContain("too small");
+  });
+
+  it("quotes a photo's real weight against the ceiling instead of naming no photo at all", () => {
+    const message = fileTooLargeMessage("Foto 3 (captura.png)", 4.2 * 1024 * 1024);
+
+    expect(message.messageKey).toBe("photoTooHeavy");
+    expect(message.values).toEqual({ photo: "Foto 3 (captura.png)", size: 4.2, maxSize: 2 });
+    expect(MAX_IMAGE_FILE_BYTES / (1024 * 1024)).toBe(2);
+    expect(esErrors.photoTooHeavy).toContain("{size}");
+    expect(esErrors.photoTooHeavy).toContain("{maxSize}");
+  });
+
+  it("resolves a server dimension refusal to the same two sentences, with the server's measurement", () => {
+    expect(serverDimensionMessage("image-too-small", "Foto 1", 1080, 108)).toEqual({
+      messageKey: "photoTooSmall",
+      values: { photo: "Foto 1", width: 1080, height: 108, minDimension: 200 },
+    });
+    expect(serverDimensionMessage("image-too-large", "Foto 1", 5000, 9000).messageKey).toBe("photoTooLarge");
+
+    // And the codes still have a fallback sentence for the case where no position came back.
+    expect(extractErrorMessageKey("image-too-small")).toBe("imageTooSmall");
+    expect(extractErrorMessageKey("image-too-large")).toBe("imageTooLarge");
+    expect(esErrors.imageTooSmall).toContain("{minDimension}");
+    expect(enErrors.imageTooLarge).toContain("{maxWidth}");
   });
 
   it("leaves the attachments reminder to the banner, which already states it once", () => {

@@ -4,6 +4,7 @@ import { AlertTriangle, Ban, CheckCircle, PackageCheck, Truck } from "lucide-rea
 import { useTranslations } from "next-intl";
 import CodeCopyButton from "@/components/core/CodeCopyButton";
 import Eyebrow from "@/components/core/Eyebrow";
+import ProgressBar from "@/components/core/ProgressBar";
 import StatusChip from "@/components/core/StatusChip";
 import StoreAvatar from "@/components/core/StoreAvatar";
 import { cn } from "@/lib/styles";
@@ -32,6 +33,13 @@ type DeliveryDetailHeroProps = {
   receivedDate: Date | null;
   baseCurrencyCode: string | null;
   locale: string;
+  /**
+   * The collector's civil day at UTC midnight, resolved on the SERVER from `User.timezone`. The
+   * expected-arrival endpoints it is compared against are calendar days stored at UTC midnight, so a
+   * wall-clock `new Date()` read this hero as late from 19:00 in Lima. Deriving it here would also
+   * desynchronise hydration.
+   */
+  today: Date;
 };
 
 const MS_PER_DAY = 86_400_000;
@@ -65,9 +73,9 @@ export default function DeliveryDetailHero({
   receivedDate,
   baseCurrencyCode,
   locale,
+  today,
 }: DeliveryDetailHeroProps) {
   const t = useTranslations("deliveries");
-  const today = new Date();
 
   const isDelivered = status === "DELIVERED";
   const isCancelled = status === "CANCELLED";
@@ -217,26 +225,13 @@ export default function DeliveryDetailHero({
               {t("detail.hero.shippedOn", { date: formatDate(delivery.deliveryDate, locale) })}
             </div>
             {progressPct != null && (
-              <div
-                role="progressbar"
-                aria-valuenow={progressPct}
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-label={t("detail.hero.progressAria", { pct: progressPct })}
-                className="mt-4 h-1 w-full overflow-hidden rounded-full"
-                style={{ background: "color-mix(in oklab, var(--text-primary) 8%, transparent)" }}
-              >
-                <span
-                  className="block h-full rounded-full"
-                  style={{
-                    width: `${progressPct}%`,
-                    background:
-                      overdueDays > 0
-                        ? "linear-gradient(90deg, var(--warning), var(--accent-warm))"
-                        : "linear-gradient(90deg, var(--accent), var(--accent-warm))",
-                  }}
-                />
-              </div>
+              <ProgressBar
+                value={progressPct}
+                tone={overdueDays > 0 ? "warning" : "accent"}
+                label={t("detail.hero.progressAria", { pct: progressPct })}
+                valueText={t("detail.hero.progressValueText", { pct: progressPct })}
+                className="mt-4 w-full"
+              />
             )}
             <div
               className={cn(

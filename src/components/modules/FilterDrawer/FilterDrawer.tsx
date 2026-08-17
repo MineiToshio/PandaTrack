@@ -332,10 +332,16 @@ export default function FilterDrawer({
               return (
                 <Chip key={val} variant="accent">
                   {displayLabel}
+                  {/*
+                    Removable-chip contract (`docs/design/interface-patterns.md` §12): 44×44 box
+                    below `md`, its negative margins matching `Chip size="md"`'s own `px-[9px]
+                    py-[3px]`, then back to the 16px desktop box. Never a `::before` — the drawer
+                    stacks these chips at `gap-1.5`, so an expansion would cross into the row above.
+                  */}
                   <button
                     type="button"
                     onClick={() => removeAutocompleteValue(section.id, val)}
-                    className="cursor-pointer rounded p-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:[outline-color:var(--focus-ring)]"
+                    className="-my-[3px] -mr-[9px] grid size-11 cursor-pointer place-items-center rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:[outline-color:var(--focus-ring)] md:m-0 md:size-[16px]"
                     aria-label={`Remove ${displayLabel}`}
                   >
                     <X size={12} aria-hidden />

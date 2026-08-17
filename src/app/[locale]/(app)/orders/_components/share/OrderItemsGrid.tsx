@@ -120,10 +120,21 @@ function OrderItemRow({
     >
       {/* Drag handle */}
       <td className="px-[3px] py-[2px] text-center align-middle">
+        {/*
+          Row-control geometry (`docs/design/interface-patterns.md` §12, "A dense grid is fixed by
+          its row pitch"). This grid never renders below 768px — its callers swap in
+          `OrderItemsMobileList` there — so its touch band is the 768-1023px tablet range and the
+          spreadsheet density returns at `lg`. In that band the handle and the delete are real
+          44×44 boxes, which relaxes the row pitch to ~48px as a consequence. They are NOT
+          `::before` expansions: the nearest neighbour is the same control one row down, two
+          expansions would overlap, and by paint order the lower row would take the contested
+          band — an edge tap would reorder or delete the wrong product. Boxes in flow cannot
+          overlap, so resizing is the only fix that cannot mis-target.
+        */}
         <button
           type="button"
           aria-label={t("itemDragLabel")}
-          className="inline-flex cursor-grab [color:var(--text-muted)] opacity-35 transition-opacity hover:opacity-70 active:cursor-grabbing"
+          className="grid size-11 cursor-grab place-items-center [color:var(--text-muted)] opacity-35 transition-opacity hover:opacity-70 active:cursor-grabbing lg:inline-flex lg:size-[14px]"
           {...attributes}
           {...listeners}
         >
@@ -236,7 +247,7 @@ function OrderItemRow({
             type="button"
             aria-label={`${t("itemDeleteLabel")} ${index + 1}`}
             onClick={() => onDelete(row.rowId)}
-            className="inline-flex items-center rounded p-1 [color:var(--text-muted)] transition-colors hover:[color:var(--destructive)] focus-visible:[box-shadow:0_0_0_2px_var(--focus-ring)] focus-visible:outline-none"
+            className="grid size-11 place-items-center rounded [color:var(--text-muted)] transition-colors hover:[color:var(--destructive)] focus-visible:[box-shadow:0_0_0_2px_var(--focus-ring)] focus-visible:outline-none lg:inline-flex lg:size-[21px]"
           >
             <X size={13} aria-hidden />
           </button>
@@ -454,7 +465,8 @@ export default function OrderItemsGrid({
         <table role="grid" aria-label={t("itemsSectionTitle")} className="w-full border-separate border-spacing-0">
           <thead>
             <tr>
-              <th scope="col" className="w-6 [border-bottom:1px_solid_var(--border)]" />
+              {/* Handle column: 50px in the touch band (44px target + the cell's 2×3px), 24px from `lg`. */}
+              <th scope="col" className="w-[50px] [border-bottom:1px_solid_var(--border)] lg:w-6" />
               <th scope="col" className={cn(headerCellClass, "text-left")}>
                 {t("itemNameLabel")}
               </th>

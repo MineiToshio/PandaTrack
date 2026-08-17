@@ -372,8 +372,9 @@ form has no such problem, because a field looks like a field.
 
 What is lost is the claim that only the guessed values are touchable. What is kept, and is what the
 header's count was always really about, is that only the guessed values are **marked**: an assumed
-or missing value carries `asumido` / `falta` beside its label through `<ProvenanceValue>`, and a
-read value carries nothing.
+or missing value carries `asumido` / `falta` beside its label through `<ProvenanceValue>`, a value
+this screen derived on its own (today, only a total summed from priced products, `FR-11-58b`) carries
+`calculado`, and a read value carries nothing.
 
 The marker alone was not enough. Everything on this screen came out of a photo, so "asumido" read as
 a synonym for the whole feature rather than as a distinction, and the group chips named a verdict
@@ -409,9 +410,79 @@ save, and it is deliberately not part of the header's doubt count: it is derived
 rather than read from the chat, and the count has to keep matching what looks interactive. A stated
 shipping cost is added before the comparison, and a draft with any unpriced row raises nothing.
 
+**Total derived from the products** (`FR-11-58b`). `ProvenanceValue` grew a fourth state past
+`read`/`assumed`/`missing`: `derived`, marked with its own word ("calculado") and its own icon
+(`Calculator`, the same one `OrderEditForm`'s "Calcular total" affordance already uses), never the
+generic "asumido" chip. It applies to exactly one field today, the order total, and only when the
+chat gave none and every product in the draft already carries a price; `withDerivedTotal` computes
+the sum once, from the draft as it arrived, and prefills both the input and the field's frozen
+provenance with it. A partially priced draft, or one with no products at all, is left exactly as the
+extraction produced it: the gap is what the rows already show, and a partial sum is not a fact worth
+stating (`BR-11-02`). The figure stays fully editable and is never recomputed as the collector edits
+a product's price afterward, the same freeze every other marked field on this screen already
+follows; the mismatch banner above is what catches a total that has gone stale against a later price
+edit, since it recomputes the products' live sum on every render while the total field does not.
+
+**Required-field validation before save** (`FR-11-58c`). Store, order date, and total are what
+`saveOrderFromDraftAction` refuses to save without. `handleSave` now checks all three before ever
+calling `onSave`, using the app's standard three-part field-error treatment (destructive label,
+`error`/`aria-invalid` on the control, a `role="alert"` message replacing the field's hint) and
+scrolls to the first invalid one in the screen's own visual order (store, then order date, then
+total) with `block: "center"`, the same treatment `StoreForm`'s own first-error scroll already uses
+for this app's sticky header. `StoreResolutionSection` carries the scroll target
+(`#intake-store-field`) on the root of all three of its shapes, since none of them has one control in
+common; its "creating" shape has no single field to red-border at all, so it surfaces the message on
+its own instead. An error clears the moment the collector edits that field again, independent of any
+other error still showing. Delivery is deliberately never validated this way: `orderCreateSchema`
+declares its window nullable and optional, so leaving it empty is a legal order. The top-level
+failure banner (`ImageIntakeScreen`, "No pudimos continuar") is untouched and keeps its original job:
+it is driven only by an extraction failure or a genuine `saveOrderFromDraftAction` failure (an
+unauthorized session, a store that vanished between review and save, a server error), never by this
+local check, since a draft caught here never reaches `onSave` at all.
+
 **Payments** (`FR-11-51c`). Each payment renders as an amount and a date field through the same
 `<ProvenanceValue>` as every other attribute, so an amount the model filled in by convention carries
 its marker instead of looking exactly like one it read.
+
+**The payment breakdown, one per payment row** (`FR-11-103`, `FR-11-104`,
+[ADR 0029](../../../design/decisions/0029-declaring-allocations-against-an-order-that-does-not-exist-yet.md)).
+`OrderPaymentBreakdownPanel` is the order detail's own panel, moved to
+`orders/_components/share/` and consumed here verbatim: same folded disclosure, same by-price and
+equal-parts modes, same "Saldado" chip, same foot. It sits **inside the payment row's own `<li>`,
+under both fields**, as a third grid child with `md:col-span-2` on a pointer and as the next block in
+the column below 768px. Under, not beside: the amount has to exist before splitting it means
+anything, and the amount is above. The row already reserves `pr-8` for its own remove control, which
+is absolutely positioned top-right, so the panel never comes within 8px of it.
+
+No desktop variant is built. The panel keeps its single `grid-cols-[auto_1fr_auto_92px]` row layout,
+justified on the detail by two narrow columns (~300px aside, ~327px sheet); here the useful width is
+~600px and the name column simply stretches. Roomy, not broken, and the alternative is a second
+layout for the third consumer of a component that has just shipped.
+
+Two things differ from the detail, and both are consequences of the order not existing yet:
+
+- **The undetailed-pool strip is suppressed** (`undetailedPaidMinor={0}`). Its two sentences ("Ya
+  pagaste X a este pedido sin decir a qué producto", "Por eso no sabemos cuánto le falta a cada
+  producto") are both false here: nothing has been paid, and the row that left money undeclared is
+  three centimetres up the same screen with its own foot saying "Sin desglosar S/ X". Repeating it as
+  a pool would be a second, past-tense accounting of a figure visible in the present.
+- **The budget line names its own base.** Row 0 prints "% del pedido" exactly as the detail does; from
+  row 1 it prints "% de lo que falta", because its denominator is what the rows above left unpaid.
+  The prop that chooses between them (`percentBasis`) touches copy only.
+
+There is no inline refusal marking here (`refusedItemId={null}`): the server answers after the order
+exists and this screen is gone, so `FR-11-104`'s pre-save gate stands in for it. A row the gate
+refuses is marked and focused exactly like the three required draft fields above
+(`intake-payment-date-N` / `intake-payment-amount-N`), with no banner. A structural change to the
+products (split, merge, add, remove) clears every breakdown draft on the screen and says so once, at
+the top of the Pagos section; correcting a name or a price does not, and instead re-runs the split
+over the lines nobody typed into.
+
+Each panel carries its own `aria-live` region and its own set of DOM ids, namespaced by
+`instanceId="intake-payment-N"`. Two regions rather than one is correct: each only speaks when its
+own panel changes, and the collector works one row at a time. The debounce on that announcement is
+what has to survive, though: without it, typing a price up in Productos would fire one announcement
+per keystroke in **every** open panel.
 
 The reference link exists for the case where the buyer never typed a name, only a URL. It is shown so
 the collector can see what they are naming; the host alone is shown because a marketplace URL is
@@ -535,6 +606,7 @@ All from [components.md](../../../design/components.md) unless marked new.
 | `ItemTypePicker`                          | The per-product (and per-collapsed-group) category picker, in `chip` appearance and `adaptive` presentation: literally the manual item grid's own component, so `FR-11-93` holds at every width. It delegates to `MobilePicker` below 768px |
 | `ImageCropper`                            | Not used: intake never crops, it compresses                                                                                                                                                                                                 |
 | `Tooltip`                                 | Not used on mobile-critical affordances                                                                                                                                                                                                     |
+| `OrderPaymentBreakdownPanel` / `OrderPaymentBreakdownRow` | The per-payment-row product breakdown, shared verbatim with the order detail from `orders/_components/share/`. Takes `instanceId` (several panels are mounted at once here) and `percentBasis` |
 
 **Genuinely new reusable components** flagged for a `docs/design/` entry once they exist in
 `src/components/` (the component inventory guard keeps
@@ -746,6 +818,13 @@ The word is always **foto**. Never "extracción", "crédito", or "token".
 | Blank product name           | El producto 3 se quedó sin nombre. Escríbele uno para poder guardar el pedido.                                                                                                                                                         |
 | Totals mismatch              | Los productos no suman el total · Los productos suman S/ 480.00 y el total del pedido dice S/ 110.00. Guardamos el total tal como está: revisa cuál de los dos es el correcto.                                                         |
 | Shipping cost                | Costo de envío · Lo leímos del chat, pero se guarda recién cuando registres la entrega.                                                                                                                                                |
+| Breakdown cleared            | Cambiaste los productos, así que quitamos el desglose de los pagos. Vuelve a marcarlos.                                                                                                                                                |
+| Breakdown, missing amount    | Ponle importe a este pago para poder guardar su desglose.                                                                                                                                                                              |
+| Breakdown, missing date      | Ponle fecha a este pago para poder guardar su desglose.                                                                                                                                                                                |
+| Breakdown, date too early    | La fecha del pago no puede ser anterior a la del pedido.                                                                                                                                                                               |
+| Breakdown, date in future    | La fecha del pago no puede ser futura.                                                                                                                                                                                                 |
+| Breakdown, over the balance  | Con los pagos anteriores, este pago supera el total del pedido. Ajusta los importes.                                                                                                                                                   |
+| Breakdown lost on save       | No pudimos registrar 1 pago con desglose. Anótalo en el pedido con su desglose.                                                                                                                                                        |
 | Product ceiling              | Son demasiados productos para un pedido. El chat pide 240 y un pedido admite 200. Únelos en un solo producto o divide la compra en dos pedidos.                                                                                        |
 | No order found               | No encontramos ningún pedido en esas fotos. Suele pasar cuando la foto es solo del producto: necesitamos ver la conversación o el recibo, donde salgan los productos y los montos. Quita la foto que no corresponde y prueba con otra. |
 | Multiple orders              | Esas fotos parecen de varias compras distintas. Cada pedido se sube por separado, aunque tenga varios productos. Quita las fotos que sobran y deja solo las de una compra.                                                             |
@@ -769,12 +848,26 @@ product being inside a live delivery can block the operation.
 
 ### 6.5 Upload errors
 
-| Cause              | es                                                             |
-| ------------------ | -------------------------------------------------------------- |
-| Too many images    | Son muchas fotos para una sola subida. Envía hasta 20 por vez. |
-| File too large     | Una de las fotos es demasiado grande. El máximo es 2 MB.       |
-| Unsupported format | Solo se aceptan imágenes PNG, JPEG y WebP.                     |
-| Unreadable file    | No se pudo leer la foto. Prueba con otro archivo.              |
+| Cause                     | es                                                                                                        |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Too many images           | Son muchas fotos para una sola subida. Envía hasta 20 por vez.                                            |
+| Prepared photo too large  | Una de las fotos sigue pesando demasiado después de optimizarla. Recórtala o divídela en dos capturas.    |
+| Prepared batch too large  | Incluso optimizadas, estas fotos no entran en un solo envío. Envía las primeras {count} e inténtalo de nuevo. |
+| Unsupported format        | Solo se aceptan imágenes PNG, JPEG y WebP.                                                                |
+| Unreadable file           | No se pudo leer la foto. Prueba con otro archivo.                                                         |
+
+The two weight rows say "después de optimizarla" because that is the only stage they can fire at.
+The photo a collector attaches is never refused for its own byte size (`FR-11-17c`): a
+full-resolution screenshot weighs several megabytes, its owner cannot change that, and preparation
+reduces it by about an order of magnitude before anything is uploaded. Copy telling that collector
+to find a lighter capture asks for something they cannot do, about a limit that was never theirs.
+
+The batch row ends in a count, not in a ceiling. It only appears once the quality ladder
+(`FR-11-19a`) has already failed to make the batch fit, so at that point the collector's only move
+is to send fewer photos, and `{count}` tells them exactly how many go through instead of leaving
+them to remove one, retry, remove another, and retry again (`FR-11-19b`). The generic
+"quita algunas" wording it replaced is kept only as the fallback for the case where not even the
+first photo fits on its own.
 
 ### 6.5b Reading failures
 
@@ -784,6 +877,7 @@ and the copy is never allowed to offer one that cannot.
 | Cause                               | es                                                                                                                                                             |
 | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Provider unavailable (5xx, timeout) | No pudimos leer las fotos en este momento. Inténtalo de nuevo en un minuto.                                                                                    |
+| Answer cut off at the output ceiling | La lectura se hizo demasiado larga y se cortó. Envía menos fotos por vez, o registra el pedido a mano.                                                        |
 | Provider rejected the request (4xx) | Hubo un problema al leer las fotos. No se soluciona reintentando: ya estamos avisados y lo vamos a arreglar. Mientras tanto puedes registrar el pedido a mano. |
 
 The second one owns the failure ("hubo un problema", not "tus fotos"), states plainly that
@@ -849,6 +943,18 @@ and the accessibility rule:
   not trap focus or overlay the last actionable row (hence the reserved bottom padding).
 - **Group collapse** uses a real disclosure pattern with `aria-expanded`; "Ver los 50" states
   the count so the control is meaningful out of context.
+- **One payment breakdown panel per payment row means one `aria-live` region per row**, and that is
+  correct rather than a duplication: each speaks only when its own panel changes, and the collector
+  works one row at a time. What must survive is the debounce on that announcement — without it,
+  typing a price up in Productos fires one announcement per keystroke in every open panel. Every id
+  each panel and its rows mint is namespaced by `instanceId`, so `aria-controls`, `aria-expanded` and
+  every `aria-describedby` resolve inside their own row
+  ([ADR 0029](../../../design/decisions/0029-declaring-allocations-against-an-order-that-does-not-exist-yet.md)).
+- **"Marcar todos" is a `<button>` with a visible word, never a tri-state checkbox.** There is no
+  indeterminate state to announce here, and a button says what it does.
+- **A payment row the save gate refuses** is marked and focused through the same three-part treatment
+  as the required draft fields (destructive label, `error`/`aria-invalid` on the control, a
+  `role="alert"` message replacing the hint), and the message clears when that field is edited.
 - **The disambiguator** is a radiogroup with no preselection, with an accessible group label
   carrying the question, and targets of at least 44px per option.
 - **The processing screen** announces step transitions politely, so a screen-reader user knows

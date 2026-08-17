@@ -180,7 +180,8 @@
   "upcomingPayments": {
     "eyebrow": "Próximos pagos",
     "title": "Lo que toca pagar",
-    "dueSoon": "vence pronto",
+    "dueSoonOn": "vence pronto, {date}",
+    "overdueOn": "vencido {date}",
     "dueOn": "vence {date}",
     "seeOrders": "Ver pedidos",
     "rowLabel": "{store}, pedido {code}, saldo {amount}",

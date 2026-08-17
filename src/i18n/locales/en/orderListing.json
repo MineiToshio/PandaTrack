@@ -38,7 +38,6 @@
     "storePlaceholder": "All stores",
     "productTypeLabel": "Product type",
     "statusLabel": "Order status",
-    "paymentLabel": "Payment status",
     "dateLabel": "Order date",
     "dateFromLabel": "From",
     "dateToLabel": "To",
@@ -48,6 +47,9 @@
     "deliveryOverdueLabel": "Due to arrive",
     "deliveryLateLabel": "Overdue delivery",
     "deliveryQuickHelper": "Due to arrive: in-window or overdue. Overdue delivery: only past-due and not arrived.",
+    "paymentLabel": "Payment",
+    "withBalanceLabel": "Only with an outstanding balance",
+    "withBalanceHelper": "Orders whose total is above what has been assigned. Cancelled orders are excluded.",
     "fxLabel": "Exchange rate",
     "fxPendingLabel": "Only with pending update",
     "fxPendingHelper": "Orders that need their exchange rate refreshed.",
@@ -69,15 +71,19 @@
     "newest": "Newest",
     "oldest": "Oldest",
     "storeAZ": "Store A–Z",
-    "paymentAsc": "% Paid: lowest",
     "totalDesc": "Total: highest",
-    "storeZA": "Store Z–A"
+    "storeZA": "Store Z–A",
+    "arrivalAsc": "Soonest arrival",
+    "compactAriaLabel": "Sort by: {value}"
   },
   "payment": {
-    "paid": "Paid",
-    "partial": "Partial",
-    "unpaid": "Unpaid",
-    "overdue": "Overdue"
+    "paid": "Paid"
+  },
+  "view": {
+    "ariaLabel": "Group by",
+    "order": "Orders",
+    "store": "Stores",
+    "compactAriaLabel": "Group by: {value}"
   },
   "statusFilter": {
     "active": "Active",
@@ -97,6 +103,7 @@
     "deliveryRange": "Delivery: {from} – {to}",
     "deliveryOverdue": "Due to arrive",
     "deliveryLate": "Overdue delivery",
+    "withBalance": "With an outstanding balance",
     "remove": "Remove filter {label}"
   },
   "status": {
@@ -115,12 +122,14 @@
     "openDetail": "Open detail",
     "paymentPercentage": "{pct}% paid",
     "paymentBarLabel": "Payment progress",
+    "paymentBarValueText": "{paid} paid of {total}, {pct} percent",
     "delivery": "{from} – {to}",
     "deliveryFrom": "From {from}",
     "deliveryTo": "Until {to}",
+    "outstandingBalance": "Outstanding balance",
     "overdue": "Overdue",
     "overdueDays": "Overdue {days}d",
-    "unpaid": "Unpaid",
+    "overdueMonths": "Overdue {months, plural, one {# month} other {# months}}",
     "itemsSectionTitle": "Order items",
     "itemQuantity": "× {quantity}",
     "itemDelivery": {
@@ -135,9 +144,76 @@
     "headerProducts": "Products",
     "headerStatus": "Status",
     "headerTotal": "Total",
-    "headerProgress": "% Paid",
     "arrivalArrives": "arrives {window}",
-    "arrivalExpected": "expected {window}"
+    "arrivalExpected": "expected {window}",
+    "arrivalResolved": "already at the store"
+  },
+  "storeView": {
+    "orderSummary": "{orders} {orders, plural, one {open order} other {open orders}} · {products} {products, plural, one {pending product} other {pending products}}",
+    "search": {
+      "label": "Search stores or products",
+      "placeholder": "Store or product (Amazon, Nendoroid…)"
+    },
+    "debtAmount": "You owe {amount}",
+    "creditAmount": "Credit {amount}",
+    "registerPayment": "Register payment",
+    "registerPaymentDisabledHint": "No outstanding balance with this store",
+    "viewStore": "View store",
+    "columnProduct": "Product",
+    "columnPrice": "Price",
+    "columnState": "Status",
+    "columnPaid": "Paid",
+    "selection": {
+      "enter": "Select",
+      "exit": "Cancel selection",
+      "selectAll": "Select all",
+      "selectAllAriaLabel": "Select every pending product from {store}",
+      "itemAriaLabel": "Select {name}",
+      "notSelectable": "On its way in another delivery. It cannot be marked from here.",
+      "count": "{count, plural, one {# product} other {# products}} from {orders, plural, one {# order} other {# orders}}",
+      "countSingleOrder": "{count, plural, one {# product selected} other {# products selected}}",
+      "liveStatus": "{count, plural, =0 {No products selected} one {# product selected} other {# products selected}} from {store}",
+      "barAriaLabel": "Actions for the selected products from {store}",
+      "clear": "Cancel",
+      "ineligibleRow": "No longer available",
+      "storeArrivalAriaLabel": "Log the arrival of the selected products from {store}"
+    },
+    "arrival": {
+      "arrives": "Arrives {window}",
+      "resolvedAtStore": "Already at the store",
+      "resolvedInTransit": "Already on its way",
+      "noDate": "No estimated date",
+      "overdue": "Overdue",
+      "overdueDays": "Overdue {days, plural, one {# day} other {# days}}",
+      "overdueMonths": "Overdue {months, plural, one {# month} other {# months}}"
+    },
+    "addPrice": "Add price",
+    "settled": "Settled",
+    "empty": {
+      "title": "No pending products",
+      "description": "You have no products on the way from any store right now."
+    },
+    "noResults": {
+      "title": "No results",
+      "description": "No store or pending product matches your search.",
+      "cta": "Clear search"
+    },
+    "paidMark": {
+      "mark": "Mark as paid",
+      "marked": "Settled · marked",
+      "proven": "Settled",
+      "markAria": "Mark {name} as paid",
+      "unmarkAria": "Remove the paid mark from {name}",
+      "markedHint": "You marked it as paid. It changes no amounts and no reminders.",
+      "error": "The product could not be marked. Please try again.",
+      "reload": "That product is gone. Please reload the page."
+    },
+    "undetailed": {
+      "title": "Paid to the order, not itemized by product",
+      "hint": "This money is assigned to the order, not to any one product.",
+      "trigger": "Not itemized · {count}",
+      "triggerAria": "Not itemized: {count, plural, one {# order} other {# orders}} from {store}"
+    }
   },
   "empty": {
     "noOrders": {

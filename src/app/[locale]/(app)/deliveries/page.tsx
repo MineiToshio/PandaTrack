@@ -6,6 +6,8 @@ import { buildPageMetadata } from "@/lib/seo";
 import { getSession } from "@/lib/auth/auth-server";
 import { prisma } from "@/lib/prisma";
 import { getDeliveriesList, getDeliveryStoreOptions } from "@/lib/data/deliveries/deliveryQueries";
+import { getCollectorPreferencesSnapshot } from "@/lib/data/user-settings/userSettingsQueries";
+import { getTodayStart } from "@/lib/data/dashboard/dashboardPeriods";
 import { domainDateToIsoString } from "@/lib/domainDate";
 import { DEFAULT_PAGE_SIZE, POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 import {
@@ -256,6 +258,8 @@ async function DeliveriesTableSection({
   basePath: string;
   resetHref: string;
 }) {
+  const preferences = await getCollectorPreferencesSnapshot(userId);
+
   const listing = await getDeliveriesList(userId, {
     nameQuery: parsed.nameQuery,
     statuses: parsed.statuses.length > 0 ? parsed.statuses : undefined,
@@ -266,12 +270,16 @@ async function DeliveriesTableSection({
     arrivalTo: parsed.arrivalTo,
     shippedFrom: parsed.shippedFrom,
     shippedTo: parsed.shippedTo,
+    timeZone: preferences?.timezone,
     sort: parsed.sort,
     page: parsed.page,
     pageSize: parsed.perPage,
   });
 
-  const today = new Date();
+  // The collector's CIVIL day, not a wall-clock instant: every overdue comparison on this page is
+  // against midnight-UTC domain dates, and `new Date()` read as "atrasado" from 19:00 in Lima. The
+  // same value feeds the SQL filter above, so the chip and the "Atrasados" filter cannot disagree.
+  const today = getTodayStart(new Date(), preferences?.timezone);
   const currentListUrl = buildListUrl(basePath, rawParams, listing.page);
   const buildPaginationHref = (targetPage: number) => buildListUrl(basePath, rawParams, targetPage);
   const buildPerPageHref = (size: number) => buildPerPageUrl(basePath, rawParams, size);

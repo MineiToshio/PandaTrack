@@ -3890,6 +3890,9 @@
         <a href="#s7-order-detail-delete-modal" data-screen="s7-order-detail-delete-modal">Order detail delete modal</a>
         <a href="#s7-order-detail-cancel-modal" data-screen="s7-order-detail-cancel-modal">Order detail cancel modal</a>
         <a href="#s7-order-detail-pay-modal" data-screen="s7-order-detail-pay-modal">Order detail pay modal</a>
+        <a href="#s7-store-payment-sheet" data-screen="s7-store-payment-sheet">Store payment sheet</a>
+        <a href="#s7-store-payment-sheet-allocation" data-screen="s7-store-payment-sheet-allocation">Store payment sheet allocation</a>
+        <a href="#s7-store-payment-sheet-states" data-screen="s7-store-payment-sheet-states">Store payment sheet states</a>
         <a href="#s7-order-create-step-1" data-screen="s7-order-create-step-1">Order create step 1</a>
         <a href="#s7-order-create-step-2" data-screen="s7-order-create-step-2">Order create step 2</a>
         <a href="#s7-order-create-step-3" data-screen="s7-order-create-step-3">Order create step 3</a>
@@ -4809,15 +4812,20 @@
           </div>
         </div>
 
-        <!-- Row 5: COMPLETED / saldo pendiente -->
+        <!-- Row 5: COMPLETED / saldo pendiente.
+             FR-05-35a (2026-08-11): a completed pedido that still owes money carries a SECOND
+             "Saldo pendiente" chip beside its status chip, on the row and on the mobile card.
+             Without it the row reads as a lone green "Completo" and the debt is invisible.
+             NOTE: the `col-progress` cell below is legacy — ADR 0025 retired the per-order
+             percentage and the shipped list has no such column. The chip is what replaced it. -->
         <div class="order-row" data-expandable data-target="s7-order-detail-completed-unpaid" style="view-transition-name:order-pt-000101;opacity:0.75;">
           <div class="store-avatar s32">D</div>
           <div class="col-store"><strong>Disk Union Shinjuku</strong><small>3 nov 25</small><span class="arrival">llega 15&#8211;22 may</span></div>
           <div class="col-product"><span class="count num">5</span> productos</div>
-          <div class="col-status"><span class="chip success"><i data-lucide="package-check"></i> Completo</span></div>
+          <div class="col-status" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;"><span class="chip success"><i data-lucide="package-check"></i> Completo</span><span class="chip warning"><i data-lucide="alert-triangle"></i> Saldo pendiente</span></div>
           <div class="col-total num">¥18.400</div>
           <div class="col-progress"><div style="width:60px;height:3px;background:color-mix(in oklch,var(--text-primary) 8%,transparent);border-radius:999px;overflow:hidden;"><span style="display:block;height:100%;width:80%;background:var(--warning);"></span></div><small class="num">80%</small></div>
-          <div class="mobile-extra"><div style="display:flex;gap:8px;align-items:center;"><span class="chip success"><i data-lucide="package-check"></i> Completo</span><span class="text-muted" style="font-size:12px;">5 productos · ¥18.400 · 80%</span></div></div>
+          <div class="mobile-extra"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><span class="chip success"><i data-lucide="package-check"></i> Completo</span><span class="chip warning"><i data-lucide="alert-triangle"></i> Saldo pendiente</span><span class="text-muted" style="font-size:12px;">5 productos · ¥18.400</span></div></div>
           <button class="expand-toggle" type="button" aria-label="Ver productos" data-expand-btn><i data-lucide="chevron-down"></i></button>
           <div class="order-items">
             <div class="order-items-inner">
@@ -5680,15 +5688,129 @@
                   <select id="pif-currency" class="input" aria-label="Moneda"><option selected>USD</option><option>EUR</option><option>JPY</option></select>
                 </div>
               </div>
-              <!-- Quick-picks alineados con mobile (S7-A.7): cálculo sobre saldo pendiente. -->
+              <!-- Quick-picks (F1, 2026-08-14): "Todo" primero (536 de 626 pagos cubrieron el saldo entero);
+                   los de porcentaje muestran el porcentaje, no el monto (tres montos no entran en 320px). -->
               <div style="display:flex;gap:6px;align-items:center;margin-bottom:12px;">
-                <button type="button" class="filter-pill" style="font-size:11px;padding:3px 9px;min-height:0;">Saldo pendiente ($496)</button>
-                <button type="button" class="filter-pill" style="font-size:11px;padding:3px 9px;min-height:0;">Mitad ($248)</button>
+                <button type="button" class="filter-pill" aria-pressed="true" style="font-size:11px;padding:3px 9px;min-height:0;">Todo &middot; $496</button>
+                <button type="button" class="filter-pill" aria-pressed="false" style="font-size:11px;padding:3px 9px;min-height:0;">50%</button>
+                <button type="button" class="filter-pill" aria-pressed="false" style="font-size:11px;padding:3px 9px;min-height:0;">20%</button>
               </div>
 
+              <!-- Fecha plegada mientras siga valiendo hoy (F1). Se despliega con "Cambiar" o cuando el
+                   formulario rechaza la fecha que tiene, y ya no vuelve a plegarse. -->
+              <div id="pif-date-region" style="margin-bottom:10px;display:flex;gap:8px;align-items:center;font-size:13px;">
+                <span style="color:var(--text-secondary);">Hoy, 9 may</span>
+                <span style="color:var(--text-muted);" aria-hidden="true">&middot;</span>
+                <button type="button" aria-expanded="false" aria-controls="pif-date-region" style="background:none;border:0;padding:0;color:var(--accent);cursor:pointer;">Cambiar</button>
+              </div>
+
+              <!-- Desglose entre productos (2026-08-15, FR-05-52..54, ADR 0028).
+                   Va DESPUES de la fecha (el monto tiene que existir antes de que repartirlo
+                   signifique algo) y ANTES del submit. Cerrado por defecto siempre: 536 de 626 pagos
+                   pagaron el saldo entero de una. Aqui se dibuja ABIERTO para mostrar la anatomia.
+                   La regla que gobierna cada cifra: el presupuesto se nombra UNA vez, arriba, y
+                   ninguna fila imprime una cifra derivada del pago. Un techo por fila es correcto
+                   linea a linea y falso en agregado (con el borrador vacio cada fila mostraria el
+                   pago entero, o sea N veces el dinero que existe). Ver ADR 0027, I-1b. -->
               <div style="margin-bottom:10px;">
-                <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;" for="pif-date">Fecha</label>
-                <input id="pif-date" class="input" type="date" value="2026-05-09" aria-label="Fecha del pago" />
+                <button type="button" aria-expanded="true" aria-controls="pif-breakdown" style="display:flex;align-items:center;gap:6px;width:100%;min-height:40px;padding:8px;background:none;border:0;border-radius:8px;color:var(--text-secondary);font-size:13px;text-align:left;cursor:pointer;">
+                  <i data-lucide="chevron-down" style="width:14px;height:14px;flex-shrink:0;"></i>
+                  <span>Desglose &middot; 3 de 7 productos &middot; $154,80</span>
+                </button>
+
+                <section id="pif-breakdown" style="margin-top:8px;padding:10px;background:var(--surface-elevated);border:1px solid var(--border);border-radius:var(--radius-md);">
+                  <p style="font-size:12px;line-height:17px;color:var(--text-secondary);margin:0;">Marca los productos que cubre este pago. Se reparte entre los marcados y puedes ajustar cada l&iacute;nea.</p>
+
+                  <!-- Tira del pozo: el dinero de nivel pedido se NOMBRA, nunca se reparte hacia
+                       atras (ADR 0026 &sect;6). Hoy la llevan los 8 de 8 pedidos que ven este panel. -->
+                  <div style="margin-top:8px;padding:8px;border-radius:var(--radius-md);background:color-mix(in oklch, var(--info) 8%, transparent);font-size:12px;line-height:17px;color:var(--text-secondary);">
+                    <p style="margin:0;">Ya pagaste $744,00 a este pedido sin decir a qu&eacute; producto.</p>
+                    <p style="margin:4px 0 0;">Por eso no sabemos cu&aacute;nto le falta a cada producto: t&uacute; decides cu&aacute;nto asignas de este pago.</p>
+                    <p style="margin:4px 0 0;color:var(--text-muted);">Para desglosar un pago anterior, elim&iacute;nalo en la lista de arriba y vuelve a anotarlo con el desglose.</p>
+                  </div>
+
+                  <!-- LA unica cifra viva, y vive FUERA del listado para no entrar en la suma que
+                       I-1b acota. El porcentaje dice "del pedido" y nunca "del saldo": mide el pago
+                       contra el total, mientras los quick-picks de arriba lo miden contra el saldo. -->
+                  <p class="num" style="margin:10px 0 0;font-size:13px;font-weight:600;color:var(--text-primary);">Por repartir $341,20 &middot; 40 % del pedido</p>
+
+                  <div role="group" aria-label="C&oacute;mo repartir" style="display:flex;gap:6px;margin-top:6px;">
+                    <button type="button" class="filter-pill" aria-pressed="true" style="font-size:12px;padding:4px 10px;min-height:0;">Por precio</button>
+                    <button type="button" class="filter-pill" aria-pressed="false" style="font-size:12px;padding:4px 10px;min-height:0;">Partes iguales</button>
+                  </div>
+                  <p style="margin:4px 0 0;font-size:12px;color:var(--text-muted);">Cada producto recibe el mismo porcentaje de su precio.</p>
+
+                  <!-- Una fila: [casilla] [nombre + hechos estaticos] [Max.] [monto].
+                       Un solo layout para los dos breakpoints: el aside de escritorio mide ~300px y
+                       la hoja movil ~327px, asi que no hay ancho donde una variante de dos columnas
+                       sea otro diseno. Solo cambian la altura de fila y el max-height del listado. -->
+                  <ul role="list" aria-label="Productos de este pedido" style="list-style:none;margin:6px 0 0;padding:0;max-height:340px;overflow-y:auto;">
+                    <li style="border-left:2px solid transparent;padding:0 2px 0 8px;">
+                      <div style="display:grid;grid-template-columns:auto 1fr auto 92px;align-items:center;gap:8px;min-height:52px;">
+                        <input type="checkbox" checked aria-label="Incluir NGE OST Vol. 2 en el desglose" />
+                        <div style="min-width:0;">
+                          <p style="margin:0;font-size:13px;line-height:18px;color:var(--text-primary);">NGE OST Vol. 2</p>
+                          <p class="num" style="margin:0;font-size:11px;line-height:16px;color:var(--text-muted);">$280,00</p>
+                        </div>
+                        <button type="button" aria-label="Asignar $280,00 a NGE OST Vol. 2" style="padding:4px 8px;font-size:11px;border:1px solid var(--border);border-radius:6px;background:none;color:var(--text-secondary);cursor:pointer;">M&aacute;x.</button>
+                        <input class="input num" style="height:40px;padding:0 10px;text-align:right;font-size:14px;" value="112.00" aria-label="Monto para NGE OST Vol. 2" />
+                      </div>
+                    </li>
+                    <li style="border-left:2px solid transparent;padding:0 2px 0 8px;">
+                      <div style="display:grid;grid-template-columns:auto 1fr auto 92px;align-items:center;gap:8px;min-height:52px;">
+                        <input type="checkbox" checked aria-label="Incluir Berserk Vol. 41 en el desglose" />
+                        <div style="min-width:0;">
+                          <p style="margin:0;font-size:13px;line-height:18px;color:var(--text-primary);">Berserk Vol. 41</p>
+                          <p class="num" style="margin:0;font-size:11px;line-height:16px;color:var(--text-muted);">$18,00</p>
+                        </div>
+                        <button type="button" aria-label="Asignar $18,00 a Berserk Vol. 41" style="padding:4px 8px;font-size:11px;border:1px solid var(--border);border-radius:6px;background:none;color:var(--text-secondary);cursor:pointer;">M&aacute;x.</button>
+                        <input class="input num" style="height:40px;padding:0 10px;text-align:right;font-size:14px;" value="7.20" aria-label="Monto para Berserk Vol. 41" />
+                      </div>
+                    </li>
+                    <li style="border-left:2px solid transparent;padding:0 2px 0 8px;">
+                      <div style="display:grid;grid-template-columns:auto 1fr auto 92px;align-items:center;gap:8px;min-height:52px;">
+                        <input type="checkbox" checked aria-label="Incluir Nendoroid Asuka Langley en el desglose" />
+                        <div style="min-width:0;">
+                          <p style="margin:0;font-size:13px;line-height:18px;color:var(--text-primary);">Nendoroid Asuka Langley</p>
+                          <p class="num" style="margin:0;font-size:11px;line-height:16px;color:var(--text-muted);">$89,00 &middot; $10,00 asignados</p>
+                        </div>
+                        <button type="button" aria-label="Asignar $79,00 a Nendoroid Asuka Langley" style="padding:4px 8px;font-size:11px;border:1px solid var(--border);border-radius:6px;background:none;color:var(--text-secondary);cursor:pointer;">M&aacute;x.</button>
+                        <input class="input num" style="height:40px;padding:0 10px;text-align:right;font-size:14px;" value="35.60" aria-label="Monto para Nendoroid Asuka Langley" />
+                      </div>
+                    </li>
+                    <!-- Producto ya cubierto por su propio precio: chip y NADA mas. Ni casilla ni
+                         campo: una casilla marcada que solo puede producir una linea de 0 es la
+                         mentira que esta omision evita (E5, I-6). -->
+                    <li style="border-left:2px solid transparent;padding:0 2px 0 8px;">
+                      <div style="display:grid;grid-template-columns:auto 1fr auto 92px;align-items:center;gap:8px;min-height:52px;">
+                        <span aria-hidden="true" style="display:inline-block;width:16px;"></span>
+                        <div style="min-width:0;">
+                          <p style="margin:0;font-size:13px;line-height:18px;color:var(--text-muted);">Evangelion Funko Pop! Rei #02</p>
+                        </div>
+                        <span style="grid-column:span 2;justify-self:end;padding:2px 8px;border-radius:999px;font-size:11px;color:var(--success-chip-text);background:color-mix(in oklch, var(--success) 10%, transparent);border:1px solid color-mix(in oklch, var(--success) 22%, transparent);">Saldado</span>
+                      </div>
+                    </li>
+                  </ul>
+
+                  <!-- Las tres lineas de explicacion del residual imprimen la MISMA cifra, asi que
+                       solo una puede aparecer: por precio el residual tiene la forma cerrada de
+                       BR-05-24 y aqui es entera del primer termino (Sigma precios 387,00 < total
+                       1.240,00), asi que la explica footResidualUnpriced. footCapped es la
+                       explicacion de PARTES IGUALES, donde el tope de cada linea si es el motivo.
+                       Y ninguna linea esta fijada: los tres importes dibujados son el reparto por
+                       precio puro (40 % de cada precio), que es incompatible con un "fijado". -->
+                  <!-- Pie: DOS renglones y DOS ecuaciones distintas. El primero habla de este PAGO
+                       y se mueve con el borrador; el segundo habla de este PEDIDO y no se mueve
+                       nunca, porque el 100 % del pago cae sobre el pedido lo repartas o no. -->
+                  <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:12px;">
+                    <p class="num" style="margin:0;color:var(--text-secondary);">Desglosado $154,80 de $496,00 &middot; Sin desglosar $341,20</p>
+                    <p style="margin:2px 0 0;color:var(--text-muted);">$341,20 no corresponden a ning&uacute;n producto: el total del pedido es mayor que la suma de los precios.</p>
+                    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding-top:2px;">
+                      <p style="margin:0;color:var(--text-secondary);">Este pedido queda saldado</p>
+                      <button type="button" aria-label="Limpiar el desglose" style="background:none;border:0;padding:4px 6px;color:var(--accent);cursor:pointer;">Limpiar</button>
+                    </div>
+                  </div>
+                </section>
               </div>
 
               <div style="margin-bottom:14px;">
@@ -5696,7 +5818,7 @@
                 <textarea id="pif-note" class="input" rows="2" style="resize:none;font-size:13px;" placeholder="Ej.: Pago final, transferencia SEPA…" aria-label="Nota del pago"></textarea>
               </div>
 
-              <button class="btn accent full"><i data-lucide="circle-dollar-sign"></i> Guardar pago</button>
+              <button class="btn accent full"><i data-lucide="circle-dollar-sign"></i> Registrar $496,00</button>
             </div>
           </div>
 
@@ -5776,7 +5898,9 @@
                     <button type="button" aria-label="Limpiar selección" style="background:none;border:none;padding:2px;color:var(--text-muted);cursor:pointer;flex-shrink:0;display:flex;"><i data-lucide="x" style="width:13px;height:13px;"></i></button>
                   </div>
                   <!-- CTA inline "Crear nueva tienda" — paridad con mobile picker + implementación
-                       real OrderStoreSelect.tsx que lo expone al pie del dropdown abierto.
+                       real StoreCombobox (createAction), envuelto por OrderStoreField.tsx, que lo
+                       expone al pie del dropdown abierto. (El antiguo OrderStoreSelect.tsx que
+                       cumplía este rol fue absorbido por StoreCombobox y eliminado.)
                        Real route: /{locale}/stores/new?returnTo=order-create.
                        Al success el CreateStoreForm redirige a /{locale}/pedidos/nuevo?store={id}
                        con autoselect. Ver FRD-05 WO-04 + el FDD de FRD-05 (creación de pedido). -->
@@ -7114,7 +7238,7 @@
   <div class="app-shell" style="--sidebar-width:0px;">
     <div class="app-content" style="padding:0 0 calc(64px + env(safe-area-inset-bottom));">
 
-      <!-- Topbar (static shell): hamburger + título — matches ContentHeader.tsx.
+      <!-- Topbar (static shell): hamburger + título — matches src/components/modules/Header.tsx.
            Page actions (filter trigger, Nuevo) viven en page content, NO en el header. -->
       <div class="app-topbar" style="padding:0 12px 0 8px;gap:6px;position:sticky;top:0;z-index:20;">
         <div class="app-topbar-left" style="min-width:0;gap:6px;">
@@ -7285,7 +7409,7 @@
   <div class="app-shell" style="--sidebar-width:0px;">
     <div class="app-content" style="padding:0 0 calc(76px + env(safe-area-inset-bottom));">
 
-      <!-- Topbar (static shell): hamburger + breadcrumb + ORD code — matches ContentHeader.tsx.
+      <!-- Topbar (static shell): hamburger + breadcrumb + ORD code — matches src/components/modules/Header.tsx.
            No back-arrow (back-link lives in page content). No ⋯ (secondary actions live in inline cards). -->
       <div class="app-topbar" style="padding:0 12px 0 8px;gap:6px;position:sticky;top:0;z-index:20;">
         <div class="app-topbar-left" style="min-width:0;gap:6px;">
@@ -7452,7 +7576,7 @@
   <div class="app-shell" style="--sidebar-width:0px;">
     <div class="app-content" style="padding:0 0 calc(76px + env(safe-area-inset-bottom));">
 
-      <!-- Topbar (static shell): hamburger + breadcrumb — matches ContentHeader.tsx.
+      <!-- Topbar (static shell): hamburger + breadcrumb — matches src/components/modules/Header.tsx.
            No X cancelar (cancel/back lives as back-link in page content). -->
       <div class="app-topbar" style="padding:0 12px 0 8px;gap:6px;position:sticky;top:0;z-index:20;">
         <div class="app-topbar-left" style="min-width:0;gap:6px;">
@@ -7576,7 +7700,7 @@
   <div class="app-shell" style="--sidebar-width:0px;">
     <div class="app-content" style="padding:0 0 calc(76px + env(safe-area-inset-bottom));">
 
-      <!-- Topbar (static shell): hamburger + breadcrumb chain — matches ContentHeader.tsx.
+      <!-- Topbar (static shell): hamburger + breadcrumb chain — matches src/components/modules/Header.tsx.
            Breadcrumb shows parent context (Pedidos > ORD-XXX). Title shows current page. -->
       <div class="app-topbar" style="padding:0 12px 0 8px;gap:6px;position:sticky;top:0;z-index:20;">
         <div class="app-topbar-left" style="min-width:0;gap:6px;">
@@ -8114,7 +8238,7 @@
 <section id="s7-orders-list-loading-mobile" class="screen" aria-labelledby="s7-orders-list-loading-mobile-title">
   <div class="app-shell" style="--sidebar-width:0px;">
     <div class="app-content" style="padding:0 0 calc(64px + env(safe-area-inset-bottom));">
-      <!-- Topbar (static shell): hamburger + título — matches ContentHeader.tsx -->
+      <!-- Topbar (static shell): hamburger + título — matches src/components/modules/Header.tsx -->
       <div class="app-topbar" style="padding:0 12px 0 8px;gap:6px;">
         <div class="app-topbar-left" style="min-width:0;gap:6px;">
           <button class="topbar-iconbtn" type="button" aria-label="Abrir menú" style="width:36px;height:36px;flex-shrink:0;"><i data-lucide="menu"></i></button>
@@ -8172,7 +8296,7 @@
 <section id="s7-orders-list-empty-initial-mobile" class="screen" aria-labelledby="s7-orders-list-empty-initial-mobile-title">
   <div class="app-shell" style="--sidebar-width:0px;">
     <div class="app-content" style="padding:0 0 calc(64px + env(safe-area-inset-bottom));display:flex;flex-direction:column;">
-      <!-- Topbar (static shell): hamburger + título — matches ContentHeader.tsx -->
+      <!-- Topbar (static shell): hamburger + título — matches src/components/modules/Header.tsx -->
       <div class="app-topbar" style="padding:0 12px 0 8px;gap:6px;">
         <div class="app-topbar-left" style="min-width:0;gap:6px;">
           <button class="topbar-iconbtn" type="button" aria-label="Abrir menú" style="width:36px;height:36px;flex-shrink:0;"><i data-lucide="menu"></i></button>
@@ -8197,7 +8321,7 @@
 <section id="s7-orders-list-empty-filtered-mobile" class="screen" aria-labelledby="s7-orders-list-empty-filtered-mobile-title">
   <div class="app-shell" style="--sidebar-width:0px;">
     <div class="app-content" style="padding:0 0 calc(64px + env(safe-area-inset-bottom));display:flex;flex-direction:column;">
-      <!-- Topbar (static shell): hamburger + título — matches ContentHeader.tsx -->
+      <!-- Topbar (static shell): hamburger + título — matches src/components/modules/Header.tsx -->
       <div class="app-topbar" style="padding:0 12px 0 8px;gap:6px;">
         <div class="app-topbar-left" style="min-width:0;gap:6px;">
           <button class="topbar-iconbtn" type="button" aria-label="Abrir menú" style="width:36px;height:36px;flex-shrink:0;"><i data-lucide="menu"></i></button>
@@ -8311,7 +8435,7 @@
 <section id="s7-order-detail-overdue-mobile" class="screen" aria-labelledby="s7-order-detail-overdue-mobile-title">
   <div class="app-shell" style="--sidebar-width:0px;">
     <div class="app-content" style="padding:0 0 calc(76px + env(safe-area-inset-bottom));">
-      <!-- Topbar (static shell): hamburger + breadcrumb + ORD code — matches ContentHeader.tsx -->
+      <!-- Topbar (static shell): hamburger + breadcrumb + ORD code — matches src/components/modules/Header.tsx -->
       <div class="app-topbar" style="padding:0 12px 0 8px;gap:6px;">
         <div class="app-topbar-left" style="min-width:0;gap:6px;">
           <button class="topbar-iconbtn" type="button" aria-label="Abrir menú" style="width:36px;height:36px;flex-shrink:0;"><i data-lucide="menu"></i></button>
@@ -8413,7 +8537,7 @@
 <section id="s7-order-detail-cancelled-mobile" class="screen" aria-labelledby="s7-order-detail-cancelled-mobile-title">
   <div class="app-shell" style="--sidebar-width:0px;">
     <div class="app-content" style="padding:0 0 calc(76px + env(safe-area-inset-bottom));">
-      <!-- Topbar (static shell): hamburger + breadcrumb + ORD code — matches ContentHeader.tsx -->
+      <!-- Topbar (static shell): hamburger + breadcrumb + ORD code — matches src/components/modules/Header.tsx -->
       <div class="app-topbar" style="padding:0 12px 0 8px;gap:6px;">
         <div class="app-topbar-left" style="min-width:0;gap:6px;">
           <button class="topbar-iconbtn" type="button" aria-label="Abrir menú" style="width:36px;height:36px;flex-shrink:0;"><i data-lucide="menu"></i></button>
@@ -8483,7 +8607,7 @@
 <section id="s7-order-detail-completed-unpaid-mobile" class="screen" aria-labelledby="s7-order-detail-completed-unpaid-mobile-title">
   <div class="app-shell" style="--sidebar-width:0px;">
     <div class="app-content" style="padding:0 0 calc(76px + env(safe-area-inset-bottom));">
-      <!-- Topbar (static shell): hamburger + breadcrumb + ORD code — matches ContentHeader.tsx -->
+      <!-- Topbar (static shell): hamburger + breadcrumb + ORD code — matches src/components/modules/Header.tsx -->
       <div class="app-topbar" style="padding:0 12px 0 8px;gap:6px;">
         <div class="app-topbar-left" style="min-width:0;gap:6px;">
           <button class="topbar-iconbtn" type="button" aria-label="Abrir menú" style="width:36px;height:36px;flex-shrink:0;"><i data-lucide="menu"></i></button>
@@ -8614,10 +8738,9 @@
         <button class="topbar-iconbtn" type="button" aria-label="Cerrar"><i data-lucide="x"></i></button>
       </div>
       <div class="s7-mob-sheet-body">
-        <div style="padding:12px 14px;background:color-mix(in oklch,var(--warning) 8%,var(--surface));border:1px solid color-mix(in oklch,var(--warning) 28%,transparent);border-radius:10px;margin-bottom:14px;">
-          <div style="font-size:12px;color:var(--text-secondary);">Saldo pendiente</div>
-          <div style="font-size:22px;font-weight:600;color:var(--warning);font-variant-numeric:tabular-nums;margin-top:2px;">$496,00 USD</div>
-        </div>
+        <!-- F1: la caja ámbar de cuatro líneas se sustituye por una línea. El chip "Todo" y el botón
+             ya decían el saldo dos veces cada uno. -->
+        <p style="font-size:13px;color:var(--text-secondary);margin-bottom:14px;">Falta $496,00 de este pedido.</p>
         <div class="field">
           <label class="field-label" for="s7m-pay-amount">Monto <span style="color:var(--destructive);">*</span></label>
           <div style="position:relative;">
@@ -8626,8 +8749,9 @@
           </div>
           <!-- Quick-picks: 2 chips canónicos (S7-A.7 alineado desktop+mobile). Cálculo sobre saldo pendiente. -->
           <p class="card-helper" style="margin-top:6px;display:flex;gap:6px;align-items:center;">
-            <button type="button" class="filter-pill" style="font-size:10px;padding:2px 8px;min-height:0;">Saldo pendiente ($496)</button>
-            <button type="button" class="filter-pill" style="font-size:10px;padding:2px 8px;min-height:0;">Mitad ($248)</button>
+            <button type="button" class="filter-pill" aria-pressed="true" style="font-size:10px;padding:2px 8px;min-height:0;">Todo &middot; $496</button>
+            <button type="button" class="filter-pill" aria-pressed="false" style="font-size:10px;padding:2px 8px;min-height:0;">50%</button>
+            <button type="button" class="filter-pill" aria-pressed="false" style="font-size:10px;padding:2px 8px;min-height:0;">20%</button>
           </p>
         </div>
         <div class="field">
@@ -8641,7 +8765,7 @@
       </div>
       <div class="s7-mob-sheet-footer">
         <button type="button" class="btn ghost" style="flex:0 0 96px;justify-content:center;">Cancelar</button>
-        <button type="button" class="btn primary" style="flex:1;justify-content:center;"><i data-lucide="check"></i> Guardar pago</button>
+        <button type="button" class="btn primary" style="flex:1;justify-content:center;"><i data-lucide="check"></i> Registrar $496,00</button>
       </div>
     </div>
   </div>
@@ -8733,7 +8857,7 @@
 <section id="s7-order-create-step-2-mobile" class="screen" aria-labelledby="s7-order-create-step-2-mobile-title">
   <div class="app-shell" style="--sidebar-width:0px;">
     <div class="app-content" style="padding:0 0 calc(76px + env(safe-area-inset-bottom));">
-      <!-- Topbar (static shell): canonical hamburger + breadcrumb — matches ContentHeader.tsx -->
+      <!-- Topbar (static shell): canonical hamburger + breadcrumb — matches src/components/modules/Header.tsx -->
       <div class="app-topbar" style="padding:0 12px 0 8px;gap:6px;">
         <div class="app-topbar-left" style="min-width:0;gap:6px;">
           <button class="topbar-iconbtn" type="button" aria-label="Abrir menú" style="width:36px;height:36px;flex-shrink:0;"><i data-lucide="menu"></i></button>
@@ -8819,7 +8943,7 @@
 <section id="s7-order-create-step-3-mobile" class="screen" aria-labelledby="s7-order-create-step-3-mobile-title">
   <div class="app-shell" style="--sidebar-width:0px;">
     <div class="app-content" style="padding:0 0 calc(76px + env(safe-area-inset-bottom));">
-      <!-- Topbar (static shell): canonical hamburger + breadcrumb — matches ContentHeader.tsx -->
+      <!-- Topbar (static shell): canonical hamburger + breadcrumb — matches src/components/modules/Header.tsx -->
       <div class="app-topbar" style="padding:0 12px 0 8px;gap:6px;">
         <div class="app-topbar-left" style="min-width:0;gap:6px;">
           <button class="topbar-iconbtn" type="button" aria-label="Abrir menú" style="width:36px;height:36px;flex-shrink:0;"><i data-lucide="menu"></i></button>
@@ -9715,6 +9839,274 @@
 <!-- ═══════════════════════════════════════════════════════════════
      S8 AJUSTES — DESKTOP · CUENTA (tab activo)
      ═══════════════════════════════════════════════════════════════ -->
+
+<!-- ─── S7-SP-A: HOJA DE PAGO A TIENDA · PANEL PAGO (por defecto) ─── -->
+<section id="s7-store-payment-sheet" class="screen" aria-labelledby="s7-sp-title">
+  <div class="app-shell" style="pointer-events:none;user-select:none;opacity:0.3;">
+    <aside class="app-sidebar" aria-label="Navegación principal">
+      <div class="app-sidebar-brand"><div class="demo-brand-mark">P</div>PandaTrack</div>
+      <a href="#dashboard" class="app-nav-link"><i data-lucide="layout-dashboard"></i>Hoy</a>
+      <a href="#orders" class="app-nav-link is-active"><i data-lucide="package"></i>Pedidos</a>
+      <a href="#deliveries" class="app-nav-link"><i data-lucide="truck"></i>Entregas</a>
+      <a href="#stores" class="app-nav-link"><i data-lucide="store"></i>Tiendas</a>
+      <a href="#settings" class="app-nav-link"><i data-lucide="settings"></i>Ajustes</a>
+    </aside>
+    <div class="app-content">
+      <div class="app-topbar">
+        <div class="app-topbar-left"><p class="app-topbar-title">Pedidos · Por tienda</p></div>
+        <div class="app-topbar-right"><span class="app-lang-toggle">ES</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="m01-overlay" role="dialog" aria-modal="true" aria-labelledby="s7-sp-title">
+    <div class="m01-modal-base m01b-modal" style="max-width:768px;">
+      <div class="m01b-header">
+        <div class="m01b-icon-circle tone-default" aria-hidden="true"><i data-lucide="wallet"></i></div>
+        <div class="m01b-header-text">
+          <div class="m01b-header-row">
+            <h2 class="m01b-title" id="s7-sp-title">Registrar pago a Pop Dealer</h2>
+            <button class="m01b-close" aria-label="Cerrar"><i data-lucide="x"></i></button>
+          </div>
+          <p class="m01b-subtitle">El pago queda a cuenta de la tienda</p>
+        </div>
+      </div>
+      <div class="m01b-body">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;border-radius:12px;background:var(--surface-elevated);border:1px solid var(--border);margin-bottom:16px;">
+          <span style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);">Deuda</span>
+          <span style="font-size:13px;font-weight:500;font-variant-numeric:tabular-nums;color:var(--text-primary);">Debes S/ 1,240.00 PEN</span>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+          <div class="field" style="margin:0;">
+            <label class="field-label" for="s7-sp-amount">Monto <span style="color:var(--destructive);">*</span></label>
+            <input id="s7-sp-amount" class="input" type="text" inputmode="decimal" value="500.00" />
+          </div>
+          <div class="field" style="margin:0;">
+            <label class="field-label" for="s7-sp-date">Fecha <span style="color:var(--destructive);">*</span></label>
+            <button id="s7-sp-date" class="input" type="button" style="text-align:left;display:flex;align-items:center;justify-content:space-between;">9 ago 2026<i data-lucide="calendar"></i></button>
+          </div>
+        </div>
+
+        <div class="field" style="margin-bottom:16px;">
+          <label class="field-label" for="s7-sp-note">Nota <span style="font-weight:400;color:var(--text-muted);font-size:11px;">Opcional</span></label>
+          <textarea id="s7-sp-note" class="input" rows="2" placeholder="Opcional"></textarea>
+        </div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:52px;padding:8px 12px;border:1px solid var(--border);border-radius:12px;">
+          <div style="min-width:0;">
+            <p style="margin:0;font-size:12.5px;font-weight:500;color:var(--text-secondary);">¿A qué va este pago? <span style="font-weight:400;font-size:11px;color:var(--text-muted);">Opcional</span></p>
+            <!-- The recap counts the two axes separately and never adds them: the money lines, then the amount-less marks. A payment carrying only marks is still a valid "a cuenta" payment. -->
+            <p style="margin:0;font-size:11.5px;color:var(--text-muted);font-variant-numeric:tabular-nums;">1 línea · S/ 90.00 PEN · 1 producto marcado</p>
+          </div>
+          <a href="#s7-store-payment-sheet-allocation" class="btn secondary" data-screen-link="s7-store-payment-sheet-allocation">Asignar</a>
+        </div>
+      </div>
+      <div class="m01b-footer">
+        <button class="btn ghost">Cancelar</button>
+        <button class="btn primary"><i data-lucide="check"></i> Registrar pago</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── S7-SP-B: HOJA DE PAGO A TIENDA · PANEL ASIGNACIÓN ─── -->
+<section id="s7-store-payment-sheet-allocation" class="screen" aria-labelledby="s7-sp-alloc-title">
+  <div class="app-shell" style="pointer-events:none;user-select:none;opacity:0.3;">
+    <aside class="app-sidebar" aria-label="Navegación principal">
+      <div class="app-sidebar-brand"><div class="demo-brand-mark">P</div>PandaTrack</div>
+      <a href="#dashboard" class="app-nav-link"><i data-lucide="layout-dashboard"></i>Hoy</a>
+      <a href="#orders" class="app-nav-link is-active"><i data-lucide="package"></i>Pedidos</a>
+      <a href="#deliveries" class="app-nav-link"><i data-lucide="truck"></i>Entregas</a>
+      <a href="#stores" class="app-nav-link"><i data-lucide="store"></i>Tiendas</a>
+      <a href="#settings" class="app-nav-link"><i data-lucide="settings"></i>Ajustes</a>
+    </aside>
+    <div class="app-content">
+      <div class="app-topbar">
+        <div class="app-topbar-left"><p class="app-topbar-title">Pedidos · Por tienda</p></div>
+        <div class="app-topbar-right"><span class="app-lang-toggle">ES</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="m01-overlay" role="dialog" aria-modal="true" aria-labelledby="s7-sp-alloc-title">
+    <div class="m01-modal-base m01b-modal" style="max-width:768px;">
+      <div class="m01b-header">
+        <div class="m01b-icon-circle tone-default" aria-hidden="true"><i data-lucide="wallet"></i></div>
+        <div class="m01b-header-text">
+          <div class="m01b-header-row">
+            <h2 class="m01b-title" id="s7-sp-alloc-title">Registrar pago a Pop Dealer</h2>
+            <button class="m01b-close" aria-label="Cerrar"><i data-lucide="x"></i></button>
+          </div>
+          <p class="m01b-subtitle">El pago queda a cuenta de la tienda</p>
+        </div>
+      </div>
+      <div class="m01b-body" style="display:flex;flex-direction:column;overflow-y:hidden;min-height:0;">
+        <!-- flex-shrink:0 is load-bearing: the list below is flex:1 (basis 0) and absorbs none of
+             any overflow, and this strip's own min-height replaces the automatic content minimum,
+             so without it the strip is clamped to 36px while its wrapped content is 59px tall. -->
+        <div style="display:flex;flex-wrap:wrap;flex-shrink:0;align-items:center;justify-content:space-between;gap:8px;min-height:36px;margin-bottom:12px;">
+          <p style="margin:0;font-size:12.5px;font-weight:500;font-variant-numeric:tabular-nums;color:var(--text-primary);">S/ 500.00 PEN · 9 ago 2026</p>
+          <a href="#s7-store-payment-sheet" class="btn ghost" data-screen-link="s7-store-payment-sheet">Editar monto o fecha</a>
+        </div>
+
+        <!-- The bar itself is NOT a live region: its figures change on every keystroke in any of
+             the rows below, and it carries buttons. The announcement is the debounced, text-only
+             sr-only region that follows it. -->
+        <div style="display:flex;flex-wrap:wrap;flex-shrink:0;align-items:center;justify-content:space-between;gap:8px;min-height:28px;margin-bottom:8px;font-size:12px;">
+          <span style="color:var(--text-secondary);font-variant-numeric:tabular-nums;">Asignado S/ 90.00 PEN de S/ 500.00 PEN · Sin asignar S/ 410.00 PEN</span>
+          <button class="btn ghost" aria-label="Quitar todas las asignaciones">Limpiar</button>
+        </div>
+        <span role="status" aria-live="polite" class="sr-only" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;">Asignado S/ 90.00 PEN de S/ 500.00 PEN · Sin asignar S/ 410.00 PEN</span>
+
+        <div style="display:grid;grid-template-columns:1fr 120px 140px;gap:12px;padding:0 12px 4px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);">
+          <span>Producto <span style="font-family:inherit;letter-spacing:normal;text-transform:none;">Pedidos más recientes primero</span></span>
+          <span style="text-align:right;">Falta</span>
+          <span style="text-align:right;">Este pago</span>
+        </div>
+
+        <div style="margin:0 -24px;flex:1;min-height:0;overflow-y:auto;">
+          <ul style="list-style:none;margin:0;padding:0;">
+          <li style="display:grid;grid-template-columns:1fr 120px 140px;gap:12px;align-items:center;min-height:52px;padding:6px 12px;margin:0 -24px;border-left:2px solid transparent;">
+            <div style="min-width:0;">
+              <p style="font-size:13px;line-height:18px;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:0;">Monkey D. Luffy #2217 (Premium 5'', Gum-Gum)</p>
+              <p style="font-size:11px;line-height:16px;color:var(--text-muted);font-variant-numeric:tabular-nums;margin:0;">ORD-20260730-01</p>
+            </div>
+            <div style="display:flex;justify-content:flex-end;"><button type="button" style="display:inline-flex;align-items:center;gap:4px;justify-content:flex-end;width:100%;border:0;background:transparent;padding:4px 6px;border-radius:6px;font-size:12px;color:var(--text-secondary);font-variant-numeric:tabular-nums;cursor:pointer;">Falta S/ 90.00 PEN<i data-lucide="chevron-right" style="width:12px;height:12px;"></i></button></div>
+            <input class="input" style="height:40px;width:100%;padding:0 10px;text-align:right;font-variant-numeric:tabular-nums;border:1px solid var(--border-strong);background:var(--surface-elevated);border-radius:var(--radius-md, 10px);color:var(--text-primary);font-size:14px;" value="90.00" placeholder="0.00" aria-label="Monto para Monkey D. Luffy #2217 (Premium 5'', Gum-Gum)" />
+          </li>
+          <li style="display:grid;grid-template-columns:1fr 120px 140px;gap:12px;align-items:center;min-height:52px;padding:6px 12px;margin:0 -24px;border-left:2px solid transparent;">
+            <div style="min-width:0;">
+              <p style="font-size:13px;line-height:18px;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:0;">Roronoa Zoro #2218 (Premium 5'')</p>
+              <p style="font-size:11px;line-height:16px;color:var(--text-muted);font-variant-numeric:tabular-nums;margin:0;">ORD-20260730-01</p>
+            </div>
+            <div style="display:flex;justify-content:flex-end;"><button type="button" style="display:inline-flex;align-items:center;gap:4px;justify-content:flex-end;width:100%;border:0;background:transparent;padding:4px 6px;border-radius:6px;font-size:12px;color:var(--text-secondary);font-variant-numeric:tabular-nums;cursor:pointer;">Falta S/ 120.00 PEN<i data-lucide="chevron-right" style="width:12px;height:12px;"></i></button></div>
+            <input class="input" style="height:40px;width:100%;padding:0 10px;text-align:right;font-variant-numeric:tabular-nums;border:1px solid var(--border-strong);background:var(--surface-elevated);border-radius:var(--radius-md, 10px);color:var(--text-primary);font-size:14px;" value="" placeholder="0.00" aria-label="Monto para Roronoa Zoro #2218 (Premium 5'')" />
+          </li>
+          <li style="display:grid;grid-template-columns:1fr 120px 140px;gap:12px;align-items:center;min-height:52px;padding:6px 12px;margin:0 -24px;border-left:2px solid transparent;">
+            <div style="min-width:0;">
+              <p style="font-size:13px;line-height:18px;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:0;">Resto del pedido</p>
+              <p style="font-size:11px;line-height:16px;color:var(--text-muted);font-variant-numeric:tabular-nums;margin:0;">ORD-20260730-01</p>
+            </div>
+            <div style="display:flex;justify-content:flex-end;"><button type="button" style="display:inline-flex;align-items:center;gap:4px;justify-content:flex-end;width:100%;border:0;background:transparent;padding:4px 6px;border-radius:6px;font-size:12px;color:var(--text-secondary);font-variant-numeric:tabular-nums;cursor:pointer;">Falta S/ 18.00 PEN<i data-lucide="chevron-right" style="width:12px;height:12px;"></i></button></div>
+            <input class="input" style="height:40px;width:100%;padding:0 10px;text-align:right;font-variant-numeric:tabular-nums;border:1px solid var(--border-strong);background:var(--surface-elevated);border-radius:var(--radius-md, 10px);color:var(--text-primary);font-size:14px;" value="" placeholder="0.00" aria-label="Monto para Resto del pedido" />
+          </li>
+          <li style="display:grid;grid-template-columns:1fr 120px 140px;gap:12px;align-items:center;min-height:52px;padding:6px 12px;margin:0 -24px;border-left:2px solid transparent;">
+            <div style="min-width:0;">
+              <p style="font-size:13px;line-height:18px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:0;">Nami Grandista Nero</p>
+              <p style="font-size:11px;line-height:16px;color:var(--text-muted);font-variant-numeric:tabular-nums;margin:0;">ORD-20260712-02</p>
+            </div>
+            <div style="display:flex;justify-content:flex-end;"><span style="display:inline-flex;align-items:center;padding:2px 8px;border-radius:999px;font-size:12px;background:color-mix(in oklch, var(--success) 10%, transparent);border:1px solid color-mix(in oklch, var(--success) 22%, transparent);color:var(--success-chip-text);">Saldado</span></div>
+            <input class="input" disabled style="height:40px;width:100%;padding:0 10px;text-align:right;font-variant-numeric:tabular-nums;border:1px solid var(--border);background:var(--surface-elevated);border-radius:var(--radius-md, 10px);color:var(--text-muted);font-size:14px;pointer-events:none;" value="" placeholder="0.00" aria-label="Monto para Nami Grandista Nero" />
+          </li>
+          <li style="display:grid;grid-template-columns:1fr 120px 140px;gap:12px;align-items:center;min-height:52px;padding:6px 12px;margin:0 -24px;border-left:2px solid transparent;">
+            <div style="min-width:0;">
+              <p style="font-size:13px;line-height:18px;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:0;">Set de acrílicos (sin precio unitario)</p>
+              <p style="font-size:11px;line-height:16px;color:var(--text-muted);font-variant-numeric:tabular-nums;margin:0;">ORD-20260712-02</p>
+            </div>
+            <div style="display:flex;justify-content:flex-end;"><!-- No price on record, so there is no number to offer: declaring it covered is the best answer available here, and it is the ONLY line where the sheet offers the mark. Under md this cell folds onto the reference line, where the amount input sits less than 2N away, so the 44px target is bought by resizing the BOX (min-height), never with an overlay that would cover that input. --><button type="button" aria-pressed="false" aria-label="Marcar Set de acrílicos (sin precio unitario) como pagado, sin asignarle monto" style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:999px;font-size:12px;background:transparent;border:1px solid var(--border);color:var(--text-secondary);cursor:pointer;">Marcar pagado</button></div>
+            <input class="input" style="height:40px;width:100%;padding:0 10px;text-align:right;font-variant-numeric:tabular-nums;border:1px solid var(--border-strong);background:var(--surface-elevated);border-radius:var(--radius-md, 10px);color:var(--text-primary);font-size:14px;" value="" placeholder="0.00" aria-label="Monto para Set de acrílicos (sin precio unitario)" />
+          </li>
+          <li style="display:grid;grid-template-columns:1fr 120px 140px;gap:12px;align-items:center;min-height:52px;padding:6px 12px;margin:0 -24px;border-left:2px solid transparent;">
+            <div style="min-width:0;">
+              <p style="font-size:13px;line-height:18px;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:0;">Sanji Ichiban Kuji A</p>
+              <p style="font-size:11px;line-height:16px;color:var(--text-muted);font-variant-numeric:tabular-nums;margin:0;">ORD-20260625-01<!-- The mark as a consultable STATE on the line the collector is reading while they pay. Real text, not a colour, so it survives into the row's accessible name. The "Falta" control and the amount input are unchanged: a mark never makes a line read-only. --> <span style="color:var(--success-chip-text);">· marcado</span></p>
+            </div>
+            <div style="display:flex;justify-content:flex-end;"><button type="button" style="display:inline-flex;align-items:center;gap:4px;justify-content:flex-end;width:100%;border:0;background:transparent;padding:4px 6px;border-radius:6px;font-size:12px;color:var(--text-secondary);font-variant-numeric:tabular-nums;cursor:pointer;">Falta S/ 145.00 PEN<i data-lucide="chevron-right" style="width:12px;height:12px;"></i></button></div>
+            <input class="input" style="height:40px;width:100%;padding:0 10px;text-align:right;font-variant-numeric:tabular-nums;border:1px solid var(--border-strong);background:var(--surface-elevated);border-radius:var(--radius-md, 10px);color:var(--text-primary);font-size:14px;" value="" placeholder="0.00" aria-label="Monto para Sanji Ichiban Kuji A" />
+          </li>
+          </ul>
+        </div>
+      </div>
+      <div class="m01b-footer" style="justify-content:space-between;">
+        <a href="#s7-store-payment-sheet" class="btn ghost" data-screen-link="s7-store-payment-sheet"><i data-lucide="arrow-left"></i> Volver al pago</a>
+        <span style="display:flex;gap:8px;">
+          <button class="btn secondary">Cancelar</button>
+          <button class="btn primary"><i data-lucide="check"></i> Registrar pago</button>
+        </span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── S7-SP-C: HOJA DE PAGO A TIENDA · ESTADOS DE LA LISTA ─── -->
+<section id="s7-store-payment-sheet-states" class="screen" aria-labelledby="s7-sp-states-title">
+  <div class="app-shell" style="pointer-events:none;user-select:none;opacity:0.3;">
+    <aside class="app-sidebar" aria-label="Navegación principal">
+      <div class="app-sidebar-brand"><div class="demo-brand-mark">P</div>PandaTrack</div>
+      <a href="#dashboard" class="app-nav-link"><i data-lucide="layout-dashboard"></i>Hoy</a>
+      <a href="#orders" class="app-nav-link is-active"><i data-lucide="package"></i>Pedidos</a>
+      <a href="#deliveries" class="app-nav-link"><i data-lucide="truck"></i>Entregas</a>
+      <a href="#stores" class="app-nav-link"><i data-lucide="store"></i>Tiendas</a>
+      <a href="#settings" class="app-nav-link"><i data-lucide="settings"></i>Ajustes</a>
+    </aside>
+    <div class="app-content">
+      <div class="app-topbar">
+        <div class="app-topbar-left"><p class="app-topbar-title">Pedidos · Por tienda</p></div>
+        <div class="app-topbar-right"><span class="app-lang-toggle">ES</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="m01-overlay" role="dialog" aria-modal="true" aria-labelledby="s7-sp-states-title">
+    <div class="m01-modal-base m01b-modal" style="max-width:768px;">
+      <div class="m01b-header">
+        <div class="m01b-icon-circle tone-default" aria-hidden="true"><i data-lucide="wallet"></i></div>
+        <div class="m01b-header-text">
+          <div class="m01b-header-row">
+            <h2 class="m01b-title" id="s7-sp-states-title">Registrar pago a Pop Dealer</h2>
+            <button class="m01b-close" aria-label="Cerrar"><i data-lucide="x"></i></button>
+          </div>
+          <p class="m01b-subtitle">Panel de asignación · avisos de la hoja y estados de carga, vacío y error</p>
+        </div>
+      </div>
+      <div class="m01b-body">
+        <p style="margin:0 0 8px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);">Líneas caídas bajo el borrador (role="alert", CTA cerrado)</p>
+        <div role="alert" style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px;margin-bottom:16px;border-radius:8px;font-size:12.5px;color:var(--destructive-chip-text);background:color-mix(in oklch,var(--destructive) 8%,transparent);border:1px solid color-mix(in oklch,var(--destructive) 28%,transparent);">
+          <span>Ya no puedes asignar S/ 40.00: esas líneas se quedaron sin saldo mientras escribías. Revisa el reparto antes de registrar el pago.</span>
+          <button class="btn ghost">Quitar esas líneas</button>
+        </div>
+        <p style="margin:0 0 8px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);">Lista sin refrescar (role="status", reintento que conserva las filas)</p>
+        <div role="status" style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px;margin-bottom:16px;border-radius:8px;font-size:12.5px;color:var(--text-secondary);background:var(--surface);border:1px solid var(--border);">
+          <span>No pudimos actualizar tus pedidos. Estos son los últimos datos que recibimos.</span>
+          <button class="btn ghost">Reintentar</button>
+        </div>
+        <p style="margin:0 0 8px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);">Cargando (altura reservada, aria-busy)</p>
+        <div style="min-height:156px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;border:1px dashed var(--border);border-radius:12px;margin-bottom:16px;">
+          <div style="display:grid;grid-template-columns:1fr 120px 140px;gap:12px;align-items:center;min-height:52px;padding:6px 12px;width:100%;">
+            <span style="display:flex;flex-direction:column;gap:6px;"><span style="height:12px;width:60%;border-radius:4px;background:var(--surface-elevated);"></span><span style="height:10px;width:30%;border-radius:4px;background:var(--surface-elevated);"></span></span>
+            <span style="height:12px;border-radius:4px;background:var(--surface-elevated);"></span>
+            <span style="height:36px;border-radius:6px;background:var(--surface-elevated);"></span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 120px 140px;gap:12px;align-items:center;min-height:52px;padding:6px 12px;width:100%;">
+            <span style="display:flex;flex-direction:column;gap:6px;"><span style="height:12px;width:60%;border-radius:4px;background:var(--surface-elevated);"></span><span style="height:10px;width:30%;border-radius:4px;background:var(--surface-elevated);"></span></span>
+            <span style="height:12px;border-radius:4px;background:var(--surface-elevated);"></span>
+            <span style="height:36px;border-radius:6px;background:var(--surface-elevated);"></span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 120px 140px;gap:12px;align-items:center;min-height:52px;padding:6px 12px;width:100%;">
+            <span style="display:flex;flex-direction:column;gap:6px;"><span style="height:12px;width:60%;border-radius:4px;background:var(--surface-elevated);"></span><span style="height:10px;width:30%;border-radius:4px;background:var(--surface-elevated);"></span></span>
+            <span style="height:12px;border-radius:4px;background:var(--surface-elevated);"></span>
+            <span style="height:36px;border-radius:6px;background:var(--surface-elevated);"></span>
+          </div>
+        </div>
+        <p style="margin:0 0 8px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);">Vacío</p>
+        <div style="min-height:156px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;border:1px dashed var(--border);border-radius:12px;margin-bottom:16px;">
+          <i data-lucide="package-open" style="width:24px;height:24px;color:var(--text-muted);"></i>
+          <p style="margin:0;font-size:12.5px;color:var(--text-secondary);">No tienes pedidos con saldo en esta moneda.</p>
+          <p style="margin:0;font-size:11.5px;color:var(--text-muted);">El pago se registrará a cuenta de la tienda.</p>
+        </div>
+        <p style="margin:0 0 8px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);">Error de carga</p>
+        <div style="min-height:156px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;border:1px dashed var(--border);border-radius:12px;margin-bottom:16px;">
+          <p style="margin:0;font-size:12.5px;color:var(--text-secondary);">No pudimos cargar tus pedidos.</p>
+          <button class="btn secondary">Reintentar</button>
+        </div>
+      </div>
+      <div class="m01b-footer">
+        <button class="btn ghost">Cancelar</button>
+        <button class="btn primary" disabled style="opacity:0.55;cursor:not-allowed;"><i data-lucide="check"></i> Registrar pago</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+
 </main>
 
 
@@ -10088,6 +10480,9 @@
     's7-order-detail-delete-modal':      'S7 · Detalle · Modal eliminar',
     's7-order-detail-cancel-modal':      'S7 · Detalle · Modal cancelar',
     's7-order-detail-pay-modal':         'S7 · Detalle · Anotar pago (inline)',
+    's7-store-payment-sheet':            'S7 · Pago a tienda · Panel Pago',
+    's7-store-payment-sheet-allocation': 'S7 · Pago a tienda · Panel Asignación',
+    's7-store-payment-sheet-states':     'S7 · Pago a tienda · Estados de la lista',
     's7-order-create-step-1':            'S7 · Crear · Paso 1 Tienda',
     's7-order-create-step-2':            'S7 · Crear · Paso 2 Fechas',
     's7-order-create-step-3':            'S7 · Crear · Paso 3 Items',
@@ -10370,7 +10765,10 @@
       title: 'Filtrar pedidos',
       sections: [
         { name: 'Estado del pedido', type: 'pills', options: ['Abierto','Parcialmente en camino','En camino','Llegó parcialmente','Completo','Cancelado'], selected: ['Parcialmente en camino'] },
-        { name: 'Pago', type: 'pills', options: ['Sin pagar','Pago parcial','Pagado','Atrasado'], selected: [] },
+        // FR-05-47 (2026-08-11): the four-way payment-state filter was retired by ADR 0025 (a
+        // per-order percentage stopped being a fact). What replaced it is one binary switch, and it
+        // lives here in the drawer rather than in the toolbar, which is at its width budget.
+        { name: 'Pago', type: 'switches', options: [['Solo con saldo pendiente', false]] },
         { name: 'Tienda', type: 'pills-search', placeholder: 'Buscar tienda…', options: ['Mercado MX','Surugaya','AmiAmi','HMV Japan','CDJapan','eBay JP','Akiba Records','Toy Plaza'], selected: ['Mercado MX'] },
         { name: 'Categorías de producto', type: 'icon-pills', options: [['shapes','Figures'],['disc','Vinyl'],['book-open','Manga'],['sparkles','Anime'],['gallery-thumbnails','Cards'],['package','Plush']], selected: ['Vinyl'] },
         { name: 'Rango de fechas (pedido)', type: 'date-range' },

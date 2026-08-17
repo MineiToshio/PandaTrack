@@ -1,11 +1,35 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildOrderListFilterUrl,
   DEFAULT_ACTIVE_STATUSES,
+  DEFAULT_ORDER_LIST_VIEW,
   hasOnlyDefaultActiveFilters,
   isDefaultActiveStatusSet,
   parseOrderListingParams,
+  parseStoreViewQuery,
+  resolveOrderListView,
 } from "../orderListingParams";
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
+import { ORDER_LIST_SORT_VALUES } from "@/lib/orders/orderListSort";
+import type { OrderListActiveFilters } from "../orderListingParams";
+
+const BASE_FILTERS: OrderListActiveFilters = {
+  nameQuery: undefined,
+  productTypeKeys: [],
+  storeId: undefined,
+  statuses: [],
+  fxPendingOnly: false,
+  sort: "recent",
+  appliedDefaultStatuses: false,
+  dateFromIso: undefined,
+  dateToIso: undefined,
+  deliveryFromIso: undefined,
+  deliveryToIso: undefined,
+  deliveryOverdueOnly: false,
+  deliveryLateOnly: false,
+  withBalanceOnly: false,
+  perPage: DEFAULT_PAGE_SIZE,
+};
 
 describe("parseOrderListingParams", () => {
   it("leaves statuses empty when no status param is present (defaults live in the nav href)", () => {
@@ -78,6 +102,53 @@ describe("parseOrderListingParams", () => {
     expect(parseOrderListingParams({ perPage: "0" }).perPage).toBe(DEFAULT_PAGE_SIZE);
     expect(parseOrderListingParams({ perPage: "abc" }).perPage).toBe(DEFAULT_PAGE_SIZE);
   });
+
+  it("drops the retired payment-asc sort value and falls back to the default", () => {
+    expect(parseOrderListingParams({ sort: "payment-asc" }).sort).toBe("recent");
+    expect(ORDER_LIST_SORT_VALUES).not.toContain("payment-asc");
+  });
+
+  it("silently ignores an unknown ?payment= param (paid/partial/unpaid filtering was retired)", () => {
+    // parseOrderListingParams no longer has a `paymentStates` field at all — this just proves a
+    // legacy `?payment=paid` in a bookmarked URL cannot throw or leak into any other field.
+    expect(() => parseOrderListingParams({ payment: "paid" })).not.toThrow();
+  });
+});
+
+describe("resolveOrderListView", () => {
+  it("prefers an explicit ?view= over the cookie", () => {
+    expect(resolveOrderListView("store", "order")).toBe("store");
+    expect(resolveOrderListView("order", "store")).toBe("order");
+  });
+
+  it("falls back to the cookie when no ?view= is present", () => {
+    expect(resolveOrderListView(undefined, "store")).toBe("store");
+  });
+
+  it("falls back to the hard default when both are missing or invalid", () => {
+    expect(resolveOrderListView(undefined, undefined)).toBe(DEFAULT_ORDER_LIST_VIEW);
+    expect(resolveOrderListView("bogus", "also-bogus")).toBe(DEFAULT_ORDER_LIST_VIEW);
+    expect(resolveOrderListView(["store"], undefined)).toBe("store");
+  });
+});
+
+describe("parseStoreViewQuery", () => {
+  it("trims the store view's own search text", () => {
+    expect(parseStoreViewQuery("  nendoroid  ")).toBe("nendoroid");
+    expect(parseStoreViewQuery(["amazon"])).toBe("amazon");
+  });
+
+  it("treats a missing or blank value as no search", () => {
+    expect(parseStoreViewQuery(undefined)).toBeUndefined();
+    expect(parseStoreViewQuery("   ")).toBeUndefined();
+  });
+
+  it("is independent from the order view's ?q=", () => {
+    const parsed = parseOrderListingParams({ q: "order text", sq: "store text" });
+
+    expect(parsed.nameQuery).toBe("order text");
+    expect(parseStoreViewQuery("store text")).toBe("store text");
+  });
 });
 
 describe("isDefaultActiveStatusSet", () => {
@@ -106,7 +177,6 @@ describe("hasOnlyDefaultActiveFilters", () => {
         productTypeKeys: [],
         storeId: undefined,
         statuses: DEFAULT_ACTIVE_STATUSES,
-        paymentStates: [],
         fxPendingOnly: false,
         sort: "recent",
         appliedDefaultStatuses: false,
@@ -116,6 +186,7 @@ describe("hasOnlyDefaultActiveFilters", () => {
         deliveryToIso: undefined,
         deliveryOverdueOnly: false,
         deliveryLateOnly: false,
+        withBalanceOnly: false,
         perPage: DEFAULT_PAGE_SIZE,
       }),
     ).toBe(true);
@@ -128,7 +199,6 @@ describe("hasOnlyDefaultActiveFilters", () => {
         productTypeKeys: [],
         storeId: undefined,
         statuses: DEFAULT_ACTIVE_STATUSES,
-        paymentStates: [],
         fxPendingOnly: false,
         sort: "recent",
         appliedDefaultStatuses: false,
@@ -138,8 +208,46 @@ describe("hasOnlyDefaultActiveFilters", () => {
         deliveryToIso: undefined,
         deliveryOverdueOnly: false,
         deliveryLateOnly: false,
+        withBalanceOnly: false,
         perPage: DEFAULT_PAGE_SIZE,
       }),
+    ).toBe(false);
+  });
+});
+
+/**
+ * The door back to the pedidos ADR 0025 made unfindable: the paid/partial/unpaid filter it retired
+ * was a percentage question, this one is the binary "still owes money" question.
+ */
+describe("con saldo pendiente filter", () => {
+  it("parses ?balance=true", () => {
+    expect(parseOrderListingParams({ balance: "true" }).withBalanceOnly).toBe(true);
+    expect(parseOrderListingParams({ balance: "1" }).withBalanceOnly).toBe(true);
+  });
+
+  it("defaults to off and ignores a junk value", () => {
+    expect(parseOrderListingParams({}).withBalanceOnly).toBe(false);
+    expect(parseOrderListingParams({ balance: "yes" }).withBalanceOnly).toBe(false);
+  });
+
+  it("round-trips through the filter URL builder alongside a status", () => {
+    const url = buildOrderListFilterUrl("/es/orders", BASE_FILTERS, {
+      withBalanceOnly: true,
+      statuses: ["COMPLETED"],
+    });
+    // The pair that answers the collector's actual question: delivered, and still owing.
+    expect(url).toContain("balance=true");
+    expect(url).toContain("status=COMPLETED");
+    expect(parseOrderListingParams({ balance: "true", status: "COMPLETED" })).toMatchObject({
+      withBalanceOnly: true,
+      statuses: ["COMPLETED"],
+    });
+  });
+
+  it("counts as a resettable filter", () => {
+    expect(hasOnlyDefaultActiveFilters({ ...BASE_FILTERS, statuses: DEFAULT_ACTIVE_STATUSES })).toBe(true);
+    expect(
+      hasOnlyDefaultActiveFilters({ ...BASE_FILTERS, statuses: DEFAULT_ACTIVE_STATUSES, withBalanceOnly: true }),
     ).toBe(false);
   });
 });

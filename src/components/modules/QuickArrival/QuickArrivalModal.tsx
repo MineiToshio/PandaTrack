@@ -11,19 +11,29 @@ import Select from "@/components/core/Select";
 import Modal from "@/components/modules/Modal/Modal";
 import { ALLOWED_COLLECTOR_BASE_CURRENCY_CODES } from "@/lib/catalog/collectorCountries";
 import { isValidNonNegativeDecimal, isValidRate, sanitizeDecimalInput, sanitizeRateInput } from "@/lib/decimalInput";
+import { toDomainDate } from "@/lib/domainDate";
 import { cn } from "@/lib/styles";
 import type { QuickArrivalSubmitInput } from "./useQuickArrival";
 
 export type QuickArrivalItem = {
   id: string;
   name: string;
+  /**
+   * Source order code (`PED-*`), set only when the selection can span more than one order (the
+   * store-scoped arrival). Absent on the per-order launchers, where every product shares the order
+   * already named in the subtitle and repeating it would be noise.
+   */
+  orderLabel?: string;
 };
 
 export type QuickArrivalModalProps = {
   isOpen: boolean;
   onClose: () => void;
-  orderHumanReadableId: string;
-  storeName: string;
+  /**
+   * Dialog subtitle, composed by the caller because the scope differs: the per-order launchers say
+   * "PED-001 · AmiAmi", the store-scoped one says "AmiAmi · 3 productos de 2 pedidos".
+   */
+  subtitle: string;
   /** Products still eligible for a delivery (NONE or ARRIVED_AT_STORE). Never empty when open. */
   items: QuickArrivalItem[];
   /**
@@ -32,6 +42,16 @@ export type QuickArrivalModalProps = {
    * explaining the sixth, which reads as the modal having lost it.
    */
   settledItemCount?: number;
+  /**
+   * Keeps the count and the full list on screen even for a single product.
+   *
+   * The per-order launchers preselect every eligible product themselves, so with one product the
+   * list is a checkbox the collector has no reason to touch and the sentence naming the product
+   * says strictly more. A store-scoped selection is the opposite: the collector picked exactly
+   * these rows by hand, and the confirmation's job is to echo that selection back, whatever its
+   * size. Without this, a one-product selection silently drops to a different contract.
+   */
+  alwaysListItems?: boolean;
   baseCurrencyCode: string | null;
   locale: string;
   /** Optimistic Confirmation: fire-and-forget, the coordinator owns the toast and the refresh. */
@@ -43,16 +63,32 @@ function startOfToday(): Date {
   return new Date(now.getFullYear(), now.getMonth(), now.getDate());
 }
 
-function toIsoDate(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-}
+type QuickArrivalItemGroup = { orderLabel: string | null; items: QuickArrivalItem[] };
 
-/** Domain dates travel as UTC-midnight instants; the picker emits local midnight. */
-function toDomainDate(date: Date): Date {
-  return new Date(`${toIsoDate(date)}T00:00:00.000Z`);
+/**
+ * Buckets the products by source order, preserving the caller's order in both dimensions. Returns a
+ * single unlabelled bucket whenever the selection does not actually span more than one order, so
+ * the per-order launchers keep the flat list they have always rendered.
+ */
+function groupItemsByOrder(items: QuickArrivalItem[]): QuickArrivalItemGroup[] {
+  const distinctLabels = new Set(
+    items.map((item) => item.orderLabel).filter((label): label is string => Boolean(label)),
+  );
+  if (distinctLabels.size < 2) return [{ orderLabel: null, items }];
+
+  const groups: QuickArrivalItemGroup[] = [];
+  const byLabel = new Map<string, QuickArrivalItemGroup>();
+  for (const item of items) {
+    const label = item.orderLabel ?? "";
+    let group = byLabel.get(label);
+    if (!group) {
+      group = { orderLabel: label, items: [] };
+      byLabel.set(label, group);
+      groups.push(group);
+    }
+    group.items.push(item);
+  }
+  return groups;
 }
 
 /**
@@ -70,10 +106,10 @@ function toDomainDate(date: Date): Date {
 export default function QuickArrivalModal({
   isOpen,
   onClose,
-  orderHumanReadableId,
-  storeName,
+  subtitle,
   items,
   settledItemCount = 0,
+  alwaysListItems = false,
   baseCurrencyCode,
   locale,
   onSubmit,
@@ -81,7 +117,7 @@ export default function QuickArrivalModal({
   const t = useTranslations("orders");
   const tCurrencies = useTranslations("orders.currencies");
 
-  const isSingleItem = items.length === 1;
+  const isSingleItem = items.length === 1 && !alwaysListItems;
 
   // The state tracks what the collector UNCHECKED, not what is checked: "everything arrived" is
   // then the natural empty state, and the live selection is always derived from the products that
@@ -190,6 +226,8 @@ export default function QuickArrivalModal({
   ]);
 
   const selectedCount = selectedIds.length;
+  const itemGroups = useMemo(() => groupItemsByOrder(items), [items]);
+  const spansSeveralOrders = itemGroups.length > 1;
   const summaryLabel = useMemo(
     () => (showShippingDetails ? t("detail.quickArrival.shipping.hide") : t("detail.quickArrival.shipping.show")),
     [showShippingDetails, t],
@@ -200,12 +238,17 @@ export default function QuickArrivalModal({
       isOpen={isOpen}
       onClose={handleClose}
       title={t("detail.quickArrival.title")}
-      subtitle={`${orderHumanReadableId} · ${storeName}`}
+      subtitle={subtitle}
       icon={<PackageCheck />}
       tone="success"
       size="md"
       primaryAction={{
-        label: t("detail.quickArrival.confirm"),
+        // Whenever the picker is on screen the collector can change what gets logged, so the
+        // button has to declare the quantity it is about to write. A single-product arrival has
+        // no picker and already names the product, so the count would only repeat it.
+        label: isSingleItem
+          ? t("detail.quickArrival.confirm")
+          : t("detail.quickArrival.confirmCount", { count: selectedCount }),
         onClick: handleConfirm,
         variant: "success",
       }}
@@ -239,21 +282,50 @@ export default function QuickArrivalModal({
                 {t("detail.quickArrival.settledNotListed", { count: settledItemCount })}
               </p>
             )}
-            <ul className="max-h-56 space-y-1 overflow-y-auto rounded-xl p-1.5 [background:var(--surface-elevated)] [border:1px_solid_var(--border)]">
-              {items.map((item) => (
-                <li key={item.id}>
-                  <div className="rounded-lg px-2 py-1.5 hover:[background:color-mix(in_oklch,var(--accent)_6%,transparent)]">
-                    <Checkbox
-                      id={`quick-arrival-item-${item.id}`}
-                      checked={selectedIds.includes(item.id)}
-                      onChange={() => handleToggleItem(item.id)}
-                      label={item.name}
-                      size="sm"
-                    />
+            {spansSeveralOrders && (
+              <p className="text-[11.5px] [color:var(--text-muted)]">
+                {t("detail.quickArrival.multiOrderNotice", { count: items.length })}
+              </p>
+            )}
+            <div className="max-h-56 space-y-2 overflow-y-auto rounded-xl p-1.5 [background:var(--surface-elevated)] [border:1px_solid_var(--border)]">
+              {itemGroups.map((group, groupIndex) => {
+                const groupHeadingId = `quick-arrival-order-${groupIndex}`;
+                const list = (
+                  <ul className="space-y-1">
+                    {group.items.map((item) => (
+                      <li key={item.id}>
+                        <div className="rounded-lg px-2 py-1.5 hover:[background:color-mix(in_oklch,var(--accent)_6%,transparent)]">
+                          <Checkbox
+                            id={`quick-arrival-item-${item.id}`}
+                            checked={selectedIds.includes(item.id)}
+                            onChange={() => handleToggleItem(item.id)}
+                            label={item.name}
+                            size="sm"
+                          />
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                );
+
+                if (!group.orderLabel) return <div key={groupHeadingId}>{list}</div>;
+
+                // `role="group"` + `aria-labelledby` rather than a per-checkbox aria-label: the
+                // product name has to stay the checkbox's visible label, so the order code can
+                // only reach assistive tech as group context around it.
+                return (
+                  <div key={groupHeadingId} role="group" aria-labelledby={groupHeadingId}>
+                    <p
+                      id={groupHeadingId}
+                      className="px-2 pt-1 pb-0.5 text-[11.5px] font-medium [color:var(--text-muted)]"
+                    >
+                      {t("detail.quickArrival.orderGroupLabel", { code: group.orderLabel })}
+                    </p>
+                    {list}
                   </div>
-                </li>
-              ))}
-            </ul>
+                );
+              })}
+            </div>
             {errors.items ? (
               <FieldErrorMsg>{errors.items}</FieldErrorMsg>
             ) : (

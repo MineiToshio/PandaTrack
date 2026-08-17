@@ -9,6 +9,7 @@ const CLEANUP_SCRIPT = path.join(REPO_ROOT, "scripts/e2e-db-cleanup.ts");
 interface CleanupRequest {
   orderIds?: readonly string[];
   storeSlugs?: readonly string[];
+  storeNamePrefix?: string;
   deliveryIds?: readonly string[];
   pushEndpointPrefix?: string;
 }
@@ -42,6 +43,18 @@ export async function deleteStoresBySlug(slugs: readonly string[]): Promise<void
   const candidates = slugs.filter(Boolean);
   if (candidates.length === 0) return;
   await runCleanup({ storeSlugs: candidates });
+}
+
+/**
+ * Direct-DB backstop for a store whose slug the spec may never have learned: the slug is only
+ * readable once the create wizard's redirect lands, so a failure before that would otherwise leave
+ * a public store behind in the collector's own data. Give it a run-unique fixture name prefix
+ * (name + timestamp) so it can never match anything but this run's own store. Cascades exactly like
+ * {@link deleteStoresBySlug}. Call from `test.afterAll`.
+ */
+export async function deleteStoresByNamePrefix(prefix: string): Promise<void> {
+  if (!prefix) return;
+  await runCleanup({ storeNamePrefix: prefix });
 }
 
 /**

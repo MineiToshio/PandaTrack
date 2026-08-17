@@ -17,6 +17,13 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
+// The screen raises a toast when the save skips a payment. These suites render it outside the app
+// shell that owns the provider, so the hook is stubbed rather than the provider mounted: none of
+// them exercises the toast itself.
+vi.mock("@/contexts/ToastContext", () => ({
+  useToast: () => ({ addToast: vi.fn(), removeToast: vi.fn() }),
+}));
+
 vi.mock("posthog-js", () => ({ default: { capture: vi.fn() } }));
 
 vi.mock("@/lib/auth/auth-client", () => ({
@@ -38,13 +45,23 @@ vi.mock("@/lib/pwa/shareStash", async (importOriginal) => {
  * observable: it is the only property of a segment that survives into the FormData unchanged.
  */
 vi.mock("@/lib/images/compressForIntake", () => ({
-  compressForIntake: vi.fn().mockImplementation(async (file: File) => ({
+  prepareSubmissionForIntake: vi.fn().mockImplementation(async (files: File[]) => {
+    const results =
+    files.map((file) => ({
     segments: [{ blob: new Blob([file.name]), mimeType: `image/png;name=${file.name.replace(".png", "")}` }],
-  })),
-}));
-
-vi.mock("@/lib/imageIntake/clientPrecheck", () => ({
-  precheckIntakeSubmission: () => ({ ok: true as const }),
+    source: { width: 1179, height: 2556 },
+    }));
+    const totalBytes = results.flatMap((r) => r.segments).reduce((sum, s) => sum + s.blob.size, 0);
+    return {
+      results,
+      totalBytes,
+      webpQuality: 0.85,
+      usedFallbackQuality: false,
+      // Derived, never hardcoded: a suite that stubs an oversized prepared segment needs
+      // the stub to agree with it rather than to claim the submission fits.
+      fits: totalBytes <= 3.5 * 1024 * 1024,
+    };
+  }),
 }));
 
 vi.mock("@/lib/imageIntake/manualPrefillStash", () => ({ writeManualPrefillStash: vi.fn() }));

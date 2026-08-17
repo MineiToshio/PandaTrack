@@ -109,11 +109,11 @@ The private note field is not part of this form. It is inline-editable from the 
 
 ### Store selector
 
-- Uses the route-local `OrderStoreSelect` component, which follows the core `SearchableSelect` pattern (`src/components/core/SearchableSelect.tsx`)
+- Uses the route-local `OrderStoreField` component (`src/app/[locale]/(app)/orders/_components/share/OrderStoreField.tsx`), a thin wrapper that maps the order's store list onto the shared `StoreCombobox` module (`src/components/modules/StoreCombobox/`) and adds the country/currency meta line. **Supersedes the earlier route-local `OrderStoreSelect`**, which cloned the core `SearchableSelect` markup by hand; it was consolidated into the shared `StoreCombobox` (store avatars, mobile `MobilePicker` sheet, and the create escape hatch all live there now) and the unused clone has been deleted.
 - All stores are loaded server-side at page render and passed as props; the selector filters locally (sufficient for MVP volume)
-- A **"+ Create store"** option always appears at the bottom of the dropdown list
-- When the search input has text and no results match, the option reads **"+ Create [typed name]"**
-- Both options redirect to `/stores/new?returnTo=order-create` (query value is the shared app constant `RETURN_TO_ORDER_CREATE` in `src/lib/constants.ts`, same as the settings banner — param name matches `AUTH_RETURN_TO_PARAM` / `returnTo`); the typed-name variant also appends `&name={value}` to prefill the store name field
+- A **"+ Create store"** option always appears at the bottom of the dropdown list (and at the foot of the mobile picker sheet), passed to `StoreCombobox` as its `createAction`
+- When no store is selected, a `notFoundQuestion` helper line ("¿No encontrás tu tienda?") renders below the field with the same create link, so the escape hatch is reachable without opening the list
+- The create link points at `/stores/new?returnTo=order-create` (query value is the shared app constant `RETURN_TO_ORDER_CREATE` in `src/lib/constants.ts`, same as the settings banner — param name matches `AUTH_RETURN_TO_PARAM` / `returnTo`). The link is a fixed label; the earlier **"+ Create [typed name]"** variant that appended `&name={value}` to prefill the store name is **not** implemented
 - After the store is created, the store creation flow redirects to `/orders/new?store={id}`, which preselects the new store in the selector
 
 ### Empty state (no stores in the system)
@@ -223,13 +223,12 @@ Behavior notes:
 - The handler requires `ctrlKey && shiftKey && !metaKey && !altKey` for the core shortcuts — so `Cmd + Shift + key` (Mac) or `Ctrl + Alt + Shift + key` combos are **not** hijacked, preserving every native browser/OS chord that layers on top of `Shift`.
 - `Cmd/Ctrl + Backspace` (clear input to start of line on macOS) is **not** hijacked. All other native text-editing shortcuts (`Cmd/Ctrl + A`, `Cmd/Ctrl + Z`, `Shift + arrows` selection, etc.) are left untouched.
 
-**Discoverability — keyboard shortcut help:** a small `Keyboard` icon (from `lucide-react`) is placed immediately to the right of the **"Artículos" section heading** in the form, matching the inline-tooltip pattern already used by the currency and exchange-rate labels. Hovering or keyboard-focusing the icon opens a tooltip listing every shortcut in `<kbd>`-styled rows, rendered via the shared `Tooltip` component. The standalone React component lives at `src/app/[locale]/(app)/orders/_components/share/OrderItemsShortcutsHelp.tsx`.
+**Discoverability — keyboard shortcut help (not shipped):** the shortcuts above are implemented and active (the handler lives in `OrderItemsGrid.tsx`), but the form currently ships **no visible affordance that advertises them**. An earlier `OrderItemsShortcutsHelp` component put a `Keyboard` icon next to the "Artículos" section heading, opening a `Tooltip` that listed every shortcut in `<kbd>`-styled rows; it was dropped from the form and the orphaned component plus its `orders.form.itemsShortcuts*` copy keys have now been deleted rather than left unreferenced in the tree.
 
-- **Placement rationale:** the affordance is co-located with the section title because that is where the user's eye lands first when scanning the form, and it mirrors the existing currency/exchange-rate tooltip pattern — consistent with the rest of the form. An earlier placement next to the "Agregar artículo" footer button was rejected: it anchored discovery too close to the end of the scroll region, making the icon easy to miss on long orders and inconsistent with every other hint tooltip in this page.
-- **Mobile:** the entire help affordance is hidden via `hidden md:inline-flex` on breakpoints below `md`. Grid shortcuts require a physical keyboard, so touch-only devices (phones) don't get the icon. Tablets hitting the `md` breakpoint with a paired keyboard still see it.
-- **OS-aware key labels:** `Ctrl` and `Shift` are labeled identically on every OS (the physical keycap legend matches on Mac and Windows keyboards), so no detection is needed for the core shortcuts. The only OS-dependent label is the `Alt` key for the reorder shortcut, which renders as **"Option"** on macOS-family devices (Mac, iPad, iPhone, iPod) and as **"Alt"** on Windows / Linux. Detection lives in a local `useIsMac()` hook using a lazy `useState` initializer that reads `navigator.userAgent` and `navigator.platform`, defaulting to `false` on SSR to avoid hydration mismatches.
-- **Accessibility:** the trigger is a real `<button>` (inherited from `Tooltip`), reachable via `Tab`, labelled by `sr-only` text (`orders.form.itemsShortcutsHelpLabel`), and the tooltip panel is associated via `aria-describedby`. `Escape` closes the panel when opened via keyboard focus.
-- Content copy lives under `orders.form.itemsShortcuts*` in both Spanish and English translation catalogs.
+- **Consequence:** the shortcuts are power-user-only until a discoverability affordance is reintroduced. Nothing about the shortcut behavior changed — only the hint that surfaces it.
+- **If it is reintroduced:** the original placement rationale still holds. Co-locate it with the section title (that is where the eye lands first when scanning the form, and it mirrors the currency / exchange-rate tooltip pattern). An earlier placement next to the "Agregar artículo" footer button was rejected for anchoring discovery too close to the end of the scroll region.
+- **If it is reintroduced — mobile:** hide the affordance below `md` (`hidden md:inline-flex`). Grid shortcuts require a physical keyboard, so phones don't need it; tablets at `md` with a paired keyboard still do.
+- **If it is reintroduced — OS-aware key labels:** `Ctrl` and `Shift` are labeled identically on every OS, so only the `Alt` key of the reorder shortcut needs detection, rendering as **"Option"** on macOS-family devices and **"Alt"** elsewhere. Any such detection must default to `false` on SSR to avoid a hydration mismatch.
 
 **Row minimum:** at least one item row is required before saving.
 
@@ -279,7 +278,7 @@ Does not apply to the create form.
 
 ### Page header
 
-Both routes use `BackNavLink` (`appearance="pill"`) in a `space-y-3` stack above `AppPageHero`:
+Both routes use `BackNavLink` (default `appearance="text"`) in a `space-y-3` stack above an inline page heading. The shared `AppPageHero` component this originally named was removed as dead code ([interface-patterns.md](../../../../../design/interface-patterns.md)); the structure below still applies:
 
 - **Create** — back → `/orders` · title (ES): "Nuevo pedido" · title (EN): "New order"
 - **Edit** — back → `/orders/[id]` · title (ES): "Editar pedido · [humanReadableId]" · title (EN): "Edit order · [humanReadableId]"

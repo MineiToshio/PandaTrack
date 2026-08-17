@@ -222,7 +222,7 @@ month (`FR-06-25`), a muted `role="status"` line sits under the header naming th
 > always keeping the final month. When the range spans more than one year, the axis prints the
 > year at the first tick and wherever the year changes, as a `<tspan>` under the month, and the
 > tooltip header carries the year too. The system-level rules behind all of this live in
-> [interface-patterns.md § 15](../../../design/interface-patterns.md); this section only records
+> [interface-patterns.md § 16](../../../design/interface-patterns.md); this section only records
 > that the Dashboard is their first consumer.
 
 The grid is `repeat(auto-fit, minmax(min(100%, 460px), 1fr))` with an `18px` gap: the column
@@ -251,10 +251,21 @@ three `.activity-pane`s (`FR-06-10`):
 
 **ZONA 4c · Próximos pagos** (`top-warning`, span-6). Eyebrow `alarm-clock · "Próximos pagos"`,
 title `"Lo que toca pagar"`. An itemized list of upcoming payments (`FR-06-18`): each row is a
-`StoreAvatar` · amount (`num`) · a due-date chip. The **nearest** payment carries a `warning`
-`"vence pronto"` chip (`calendar-clock`); the rest carry an `info` `"vence {fecha}"` chip
-(`calendar`). A single left-aligned `"Ver pedidos →"` link closes the zone — **no divider and no
-total footer**.
+`StoreAvatar` · amount (`num`) · a due-date chip. A single left-aligned `"Ver pedidos →"` link
+closes the zone — **no divider and no total footer**.
+
+**The chip describes the row's date, not the row's position** (`FR-06-18b`, revised 2026-08-11).
+Three states, each true on its own: `vencido {fecha}` (`warning`, `alarm-clock`) when the date is
+past, `vence pronto, {fecha}` (`warning`, `calendar-clock`) within the 30-day lookahead window
+"próximas llegadas" already uses, `vence {fecha}` (`info`, `calendar`) beyond it. The earlier rule
+gave the `warning` `"vence pronto"` chip to whatever sat at index 0, which is a statement about the
+sort order dressed as a statement about time: with the list sorted ascending, the top row is the
+oldest date, so the chip read "vence pronto" precisely when the payment was most overdue.
+
+**Delivered pedidos do not appear here** (`FR-06-18a`). They stay inside every obligation total on
+the zones above, because the money is still owed; they leave this list because a past arrival date
+sorts to the top and never leaves it. The widget was once observed rendering five rows, all five
+delivered pedidos from 2022. Their door is the orders list "Solo con saldo pendiente" filter.
 
 **ZONA 5 · Colección** (`s8-card-warm top-warm`, span-12). Eyebrow `boxes · "Tu colección"`,
 title `"El panorama completo"`, a `"Ver tiendas →"` link (`FR-06-11`, `FR-06-20`). Body:
@@ -362,7 +373,7 @@ components**; it must not fork or reinvent any of them.
 | Component                               | Tier   | Role in FRD-06                                                      |
 | --------------------------------------- | ------ | ------------------------------------------------------------------- |
 | `Sidebar`, `Header`                     | module | App shell chrome (PUSH sidebar, lang/theme topbar)                  |
-| `AppPageHero` / page-heading            | module | Greeting `<h1>` + base-currency meta                                |
+| (page heading)                          | n/a    | Greeting `<h1>` at the shared hero scale + base-currency meta, rendered inline; the shared `AppPageHero` component was removed as dead code |
 | `StatusChip`                            | core   | Budget/status chips, activity chips, status distribution (ADR 0002) |
 | `StoreAvatar`                           | core   | `s32` in activity/payment rows, `s24` in "tiendas top"              |
 | `MonoCode`                              | core   | `ORD-…` identifiers in activity/payment lists                       |
@@ -619,7 +630,7 @@ The dashboard shipped across [`BP-01 · WO-01…WO-06`](bp-01-dashboard-aggregat
 
 - **"Desembolsado este mes" and "Gasto por mes" now include delivery shipping cost**, not just order payments (`FR-06-07`, `FR-06-08`, `BR-06-04`, `BR-06-09`). The prototype's `S/ 1,290` figure predates this and reflects order payments only. Delivery cost is folded into the same total rather than drawn as a second series — plotting a typical shipping cost against a typical order total on one axis would be disproportionate.
 
-- **Tendencias ships four charts in a two-column grid, not three in a row** (`WO-04`, `FR-06-24`). The prototype's `.charts-grid` puts three charts side by side, which measured ~1.37:1 per plot: too cramped for a month-bucketed line, and it is what forced the type down in the first place. Two columns give ~478×220 ≈ 2.18:1, between Tufte's ~1.5:1 and Cleveland's banking-to-45° ~2.5:1. Two columns with three charts would leave a half-empty trailing row, and **stretching the trailing card full width was rejected**: an item that differs in size within a group reads as not belonging to it and as more important (NN/g's Gestalt similarity and visual-hierarchy principles), which would have been false of a third trend line. "Comprometido por mes" is an honest fourth metric, so the row closes evenly. The trailing-card rule is a house rule, recorded as one in [interface-patterns.md § 15](../../../design/interface-patterns.md). **Update the prototype, not the code.**
+- **Tendencias ships four charts in a two-column grid, not three in a row** (`WO-04`, `FR-06-24`). The prototype's `.charts-grid` puts three charts side by side, which measured ~1.37:1 per plot: too cramped for a month-bucketed line, and it is what forced the type down in the first place. Two columns give ~478×220 ≈ 2.18:1, between Tufte's ~1.5:1 and Cleveland's banking-to-45° ~2.5:1. Two columns with three charts would leave a half-empty trailing row, and **stretching the trailing card full width was rejected**: an item that differs in size within a group reads as not belonging to it and as more important (NN/g's Gestalt similarity and visual-hierarchy principles), which would have been false of a third trend line. "Comprometido por mes" is an honest fourth metric, so the row closes evenly. The trailing-card rule is a house rule, recorded as one in [interface-patterns.md § 16](../../../design/interface-patterns.md). **Update the prototype, not the code.**
 
 - **The charts render 1:1 against a measured container, not a fixed `600×220` viewBox** (`WO-04`). The prototype's fixed viewBox with `width:100%` scales the type along with the drawing; shipped, that produced 5.5px axis labels in the three-column grid and 5.0px on a phone. The component measures its container with a `ResizeObserver` and sets `viewBox="0 0 {measuredWidth} 220"`, and the axis font was raised 11px → 12px, the system floor for chart text. There is no CSS alternative (`vector-effect: non-scaling-size` is unimplemented everywhere), which is why every mainstream charting library measures. **Update the prototype, not the code.**
 

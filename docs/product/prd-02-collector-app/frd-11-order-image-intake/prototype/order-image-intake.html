@@ -493,6 +493,42 @@
   .totals-row { display: flex; justify-content: space-between; padding: 5px 2px; font-size: 13px; color: var(--text-secondary); }
   .totals-row.strong { font-weight: 700; color: var(--text-primary); font-size: 14.5px; }
 
+  /* Payment row + its breakdown panel (FR-11-103). The panel is the order detail's own, mounted
+     once per payment row, under both fields. */
+  .pay-row { position: relative; padding: 10px 0; border-top: 1px solid var(--border); }
+  .pay-fields { display: grid; gap: 10px; }
+  .pay-field .attr-label { display: block; font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }
+  .bd-toggle {
+    display: flex; align-items: center; gap: 6px; width: 100%;
+    margin-top: 8px; padding: 8px; border-radius: 8px;
+    border: 0; background: transparent; text-align: left;
+    font-size: 13px; color: var(--text-secondary); cursor: pointer;
+  }
+  .bd-panel {
+    margin-top: 8px; padding: 10px;
+    border-radius: 10px; border: 1px solid var(--border);
+    background: var(--surface-elevated);
+  }
+  .bd-intro { font-size: 12px; line-height: 17px; color: var(--text-secondary); }
+  .bd-budget { margin-top: 10px; font-size: 13px; font-weight: 600; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+  .bd-modes { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; }
+  .bd-modes .chip-row { display: flex; gap: 6px; }
+  .bd-caption { margin-top: 4px; font-size: 12px; color: var(--text-muted); }
+  .bd-list { margin-top: 6px; display: flex; flex-direction: column; }
+  .bd-line { display: grid; grid-template-columns: auto 1fr auto 92px; align-items: center; gap: 8px; min-height: 52px; }
+  .bd-line .bd-name { font-size: 13px; line-height: 18px; color: var(--text-primary); }
+  .bd-line .bd-fact { font-size: 11px; line-height: 16px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+  .bd-line.settled .bd-name { color: var(--text-muted); }
+  .bd-amount {
+    border: 1px solid var(--border); border-radius: 8px;
+    background: var(--surface); color: var(--text-primary);
+    padding: 6px 8px; font-size: 13px; text-align: right; font-variant-numeric: tabular-nums;
+  }
+  .bd-foot { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+  .bd-foot .row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  .bd-link { border: 0; background: transparent; padding: 4px 6px; color: var(--accent); font-size: 12px; cursor: pointer; }
+  @media (min-width: 768px) { .pay-fields { grid-template-columns: 1fr 1fr; } }
+
   .sticky-bar {
     position: absolute; left: 0; right: 0; bottom: 0; z-index: 10;
     display: flex; flex-direction: column; align-items: center; gap: 8px;
@@ -1044,8 +1080,117 @@
             <button class="btn ghost sm" type="button"><svg class="icon sm"><use href="#icon-layers"/></svg>Unir en uno</button>
           </div>
 
+          <div class="section-label">Pagos</div>
+
+          <!-- Row 0. The panel lives INSIDE the payment row, under both fields, because the amount
+               has to exist before splitting it means anything (FR-11-103). -->
+          <div class="pay-row">
+            <div class="pay-fields">
+              <div class="pay-field"><span class="attr-label">Pago 1</span><input class="input" type="text" value="150.00" readonly></div>
+              <div class="pay-field"><span class="attr-label">Fecha del pago</span><input class="input" type="text" value="2026-08-14" readonly></div>
+            </div>
+
+            <button class="bd-toggle" type="button" aria-expanded="true" aria-controls="proto-bd-0">
+              <svg class="icon sm"><use href="#icon-chevron-down"/></svg>
+              <span>Desglose · 2 de 3 productos · S/ 150.00</span>
+            </button>
+
+            <section class="bd-panel" id="proto-bd-0">
+              <p class="bd-intro">Marca los productos que cubre este pago. Se reparte entre los marcados y puedes ajustar cada línea.</p>
+
+              <!-- Row 0's base IS the order total, so the label is literal here. -->
+              <p class="bd-budget">Por repartir S/ 0.00 · 31 % del pedido</p>
+
+              <div class="bd-modes">
+                <div class="chip-row">
+                  <span class="chip info">Por precio</span>
+                  <span class="chip neutral">Partes iguales</span>
+                </div>
+                <button class="bd-link" type="button">Marcar todos</button>
+              </div>
+              <p class="bd-caption">Cada producto recibe el mismo porcentaje de su precio.</p>
+
+              <div class="bd-list">
+                <div class="bd-line">
+                  <input type="checkbox" checked aria-label="Incluir Gojo en el desglose">
+                  <div><div class="bd-name">Gojo</div><div class="bd-fact">S/ 90.00</div></div>
+                  <button class="bd-link" type="button">Máx.</button>
+                  <input class="bd-amount" type="text" value="90.00" readonly>
+                </div>
+                <div class="bd-line">
+                  <input type="checkbox" checked aria-label="Incluir Gojo (chase) en el desglose">
+                  <div><div class="bd-name">Gojo (chase)</div><div class="bd-fact">S/ 60.00</div></div>
+                  <button class="bd-link" type="button">Máx.</button>
+                  <input class="bd-amount" type="text" value="60.00" readonly>
+                </div>
+                <div class="bd-line">
+                  <input type="checkbox" aria-label="Incluir Kenshin, tomo A en el desglose">
+                  <div><div class="bd-name">Kenshin, tomo A</div><div class="bd-fact">S/ 65.00</div></div>
+                  <button class="bd-link" type="button">Máx.</button>
+                  <input class="bd-amount" type="text" value="" readonly>
+                </div>
+              </div>
+
+              <div class="bd-foot">
+                <p>Desglosado S/ 150.00 de S/ 150.00 · Sin desglosar S/ 0.00</p>
+                <div class="row"><span>Este pedido quedará debiendo S/ 330.00</span><button class="bd-link" type="button">Limpiar</button></div>
+              </div>
+            </section>
+          </div>
+
+          <!-- Row 1. Two things change and only two: a product row 0 covered outright is not offered
+               at all (E5), and the budget line names the remaining balance instead of the order. -->
+          <div class="pay-row">
+            <div class="pay-fields">
+              <div class="pay-field"><span class="attr-label">Pago 2</span><input class="input" type="text" value="100.00" readonly></div>
+              <div class="pay-field"><span class="attr-label">Fecha del pago</span><input class="input" type="text" value="2026-08-15" readonly></div>
+            </div>
+
+            <button class="bd-toggle" type="button" aria-expanded="true" aria-controls="proto-bd-1">
+              <svg class="icon sm"><use href="#icon-chevron-down"/></svg>
+              <span>Desglosar entre productos</span>
+            </button>
+
+            <section class="bd-panel" id="proto-bd-1">
+              <p class="bd-intro">Marca los productos que cubre este pago. Se reparte entre los marcados y puedes ajustar cada línea.</p>
+              <p class="bd-budget">Por repartir S/ 100.00 · 30 % de lo que falta</p>
+
+              <div class="bd-modes">
+                <div class="chip-row">
+                  <span class="chip info">Por precio</span>
+                  <span class="chip neutral">Partes iguales</span>
+                </div>
+                <button class="bd-link" type="button">Marcar todos</button>
+              </div>
+
+              <div class="bd-list">
+                <div class="bd-line settled">
+                  <span aria-hidden="true"></span>
+                  <div><div class="bd-name">Gojo</div></div>
+                  <span class="chip success" style="grid-column: span 2; justify-self: end;">Saldado</span>
+                </div>
+                <div class="bd-line settled">
+                  <span aria-hidden="true"></span>
+                  <div><div class="bd-name">Gojo (chase)</div></div>
+                  <span class="chip success" style="grid-column: span 2; justify-self: end;">Saldado</span>
+                </div>
+                <div class="bd-line">
+                  <input type="checkbox" aria-label="Incluir Kenshin, tomo A en el desglose">
+                  <div><div class="bd-name">Kenshin, tomo A</div><div class="bd-fact">S/ 65.00</div></div>
+                  <button class="bd-link" type="button">Máx.</button>
+                  <input class="bd-amount" type="text" value="" readonly>
+                </div>
+              </div>
+
+              <div class="bd-foot">
+                <p>Desglosado S/ 0.00 de S/ 100.00 · Sin desglosar S/ 100.00</p>
+                <div class="row"><span>Este pedido quedará debiendo S/ 230.00</span><button class="bd-link" type="button">Limpiar</button></div>
+              </div>
+            </section>
+          </div>
+
           <div class="totals">
-            <div class="totals-row"><span>Adelanto pagado</span><span class="num">S/ 150.00</span></div>
+            <div class="totals-row"><span>Adelanto pagado</span><span class="num">S/ 250.00</span></div>
             <div class="totals-row strong"><span>Total del pedido</span><span class="num">S/ 480.00</span></div>
           </div>
         </div>

@@ -19,7 +19,7 @@ When the user performs a mutation (add, update, delete, toggle, reorder):
 1. Snapshot the current local state before dispatching.
 2. Apply the optimistic change to local state (`useState`, `useReducer`, `useOptimistic`).
 3. Dispatch the Server Action in parallel.
-4. On success, reconcile local state with the canonical shape returned by the Server Action (the Server Action must return the updated shape the UI needs).
+4. On success, reconcile local state with the canonical shape returned by the Server Action (the Server Action must return the updated shape the UI needs). **Reconcile the derived figures too, not just the row.** When the optimistic delta was computed from a client-side guess the server re-derives (a status read inside the transaction, a classification, a rounding), replacing the row alone leaves the aggregate wrong for the rest of the session, and the later delete subtracts the server's smaller figure rather than the surplus.
 5. On failure, revert to the snapshot and surface the error with a toast and a retry affordance when applicable.
 
 The server write is always the authoritative source of truth. Optimistic UI never replaces server validation, authorization, or persistence.
@@ -81,6 +81,8 @@ Before merging a change that adds or modifies a client-side mutation:
 - [ ] Local state updates in parallel with the Server Action dispatch, not after its response.
 - [ ] The Server Action returns the shape needed to reconcile without a refetch.
 - [ ] A revert path exists for every failure branch the Server Action can produce.
+- [ ] Controls that need the server's answer to work (delete by id, share, open detail) are disabled on a row that is still a local stand-in. Acting on a `temp-*` id earns a `NOT_FOUND` the user reads as "it failed" for a write that in fact succeeded.
+- [ ] Any aggregate the client patches from a locally derived delta is re-derived from the Server Action's answer when the two can disagree.
 - [ ] The error surface is accessible (`role="alert"` / `aria-live="polite"`) and human-readable.
 - [ ] No `router.refresh()` or route-level refetch is used solely to update UI the client could have updated locally.
 - [ ] If the mutation is initiated from a modal / sheet: the surface closes **synchronously** on submit (no `await` before `onClose()`); the parent coordinator owns rollback + toast.

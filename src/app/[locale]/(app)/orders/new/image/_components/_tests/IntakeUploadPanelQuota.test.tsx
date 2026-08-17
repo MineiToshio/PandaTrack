@@ -32,6 +32,7 @@ function renderPanel(overrides: Partial<React.ComponentProps<typeof IntakeUpload
       onSubmit={vi.fn()}
       remainingPhotos={17}
       overflowExcess={null}
+      hasUnreadablePhotos={false}
       showFirstTimeExplainer={false}
       {...overrides}
     />,
@@ -91,6 +92,7 @@ describe("IntakeUploadPanel quota surfaces", () => {
         onSubmit={vi.fn()}
         remainingPhotos={20}
         overflowExcess={null}
+        hasUnreadablePhotos={false}
         showFirstTimeExplainer
       />,
     );

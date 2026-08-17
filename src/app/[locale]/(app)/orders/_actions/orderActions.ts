@@ -22,6 +22,26 @@ function parseItemsJson(raw: FormDataEntryValue | null): unknown[] {
   }
 }
 
+/**
+ * Reads the optional advance the collector says they already handed over when creating the order.
+ * Absent (or blank) means no advance, which is the common case; the date falls back to the order's
+ * own date so a form can ask for the amount alone. The schema decides whether what comes out is
+ * legal, so nothing here needs to refuse: an unparseable amount comes back as `null` and fails the
+ * schema like any other bad field.
+ */
+function parseInitialPayment(
+  formData: FormData,
+  currencyCode: string | undefined,
+): { amount: number | null; paymentDate: unknown } | undefined {
+  const amountRaw = formData.get("initialPaymentAmount");
+  if (typeof amountRaw !== "string" || amountRaw.trim() === "") return undefined;
+
+  const dateRaw = formData.get("initialPaymentDate");
+  const paymentDate = typeof dateRaw === "string" && dateRaw !== "" ? dateRaw : formData.get("orderDate");
+
+  return { amount: parseDecimalToMinorUnits(amountRaw, currencyCode), paymentDate };
+}
+
 export async function createOrderAction(
   _prev: OrderActionResult | null,
   formData: FormData,
@@ -68,6 +88,7 @@ export async function createOrderAction(
         ? parseDecimalToMinorUnits(totalCostRaw, currencyCode)
         : undefined,
     items,
+    initialPayment: parseInitialPayment(formData, currencyCode),
   };
 
   const parsed = orderCreateSchema.safeParse(raw);
@@ -84,6 +105,13 @@ export async function createOrderAction(
 
     const posthog = getPostHogClient();
     posthog.capture({ distinctId: userId, event: POSTHOG_EVENTS.ORDER.CREATED });
+    if (parsed.data.initialPayment) {
+      posthog.capture({
+        distinctId: userId,
+        event: POSTHOG_EVENTS.ORDER.CREATED_WITH_ADVANCE,
+        properties: { orderId: result.orderId },
+      });
+    }
     await posthog.shutdown();
 
     return { success: true, orderId: result.orderId };

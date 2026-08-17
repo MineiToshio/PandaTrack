@@ -263,12 +263,26 @@ export default function OrderCurrencyField({
             }}
           />
         )}
+        {/*
+          Trailing cluster — one touch target at a time (`docs/design/interface-patterns.md` §12).
+          This branch renders only from 768px (below that the field is a `MobilePicker` trigger),
+          so its touch band is 768-1023px and the compact geometry returns at `lg`, the width this
+          repo already treats as a precise pointer.
+
+          Both controls exist here, unlike in `StoreCombobox`, and 44 + 8 + 44 = 96px of cluster
+          would eat a third of the field on a tablet. So the toggle — which is `aria-hidden` and
+          `tabIndex={-1}` decoration duplicating the input's own click-to-open — steps aside while
+          a value is selected, leaving the clear alone with the 44px band. Empty state still shows
+          it, which is where the affordance actually has to say "this opens a list". The negative
+          margin is the wrapper's own `px-3`, so the touch band's cluster is the same 44px wide as
+          today's 17 + 8 + 19.
+        */}
         {selected && (
           <button
             type="button"
             onClick={handleClear}
             aria-label={t("currencyClearLabel")}
-            className="shrink-0 rounded p-0.5 [color:var(--text-muted)] hover:[color:var(--text-primary)] focus-visible:[box-shadow:0_0_0_2px_var(--focus-ring)] focus-visible:outline-none"
+            className="-mr-3 grid size-11 shrink-0 place-items-center rounded [color:var(--text-muted)] hover:[color:var(--text-primary)] focus-visible:[box-shadow:0_0_0_2px_var(--focus-ring)] focus-visible:outline-none lg:m-0 lg:size-[17px]"
           >
             <X size={13} aria-hidden />
           </button>
@@ -278,7 +292,10 @@ export default function OrderCurrencyField({
           tabIndex={-1}
           onClick={() => (open ? closeCombobox() : openCombobox())}
           aria-hidden
-          className="shrink-0 rounded p-0.5 [color:var(--text-muted)]"
+          className={cn(
+            "-mr-3 grid size-11 shrink-0 place-items-center rounded [color:var(--text-muted)] lg:m-0 lg:size-[19px]",
+            selected && "hidden lg:grid",
+          )}
         >
           <ChevronsUpDown size={15} aria-hidden />
         </button>

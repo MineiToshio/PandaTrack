@@ -183,3 +183,38 @@ Why not time-bound it (show only for recent cancellations): rejected on evidence
 misfire on precisely the migrated orders that motivated the change. A surface that appears and
 disappears on its own also invites a "why did it go" question, and the moment of loss is already
 surfaced where it happens by the keep/remove choice the cancel modal forces.
+
+## 8) Update (2026-08-08): re-expressed under store-level payments
+
+Store-level payments ([ADR 0025](../../../design/decisions/0025-store-level-payments-declared-allocations.md))
+moved money off the order (`OrderPayment`) and onto the store (`StorePayment` + a `PaymentAllocation`
+declaration per order/item). The **decision this document records is unchanged**: a cancelled order
+that keeps its declared money is sunk/lost; a cancelled order whose declared money is freed is not.
+Only the mechanics of "keep" vs "remove" changed, because there is no longer a payment row that
+belongs to the order to delete — the payment belongs to the store and may be declared against other
+orders too.
+
+**The two branches, re-expressed:**
+
+| §3.2/§4 name (2026-07-20) | Current name (`cancelOrder` `paymentsChoice`) | What actually happens now                                                                                                                                                                                                                                                                                                   |
+| ------------------------- | --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Keep** (was default)    | **`lost`**                                    | This order's `PaymentAllocation` rows are left exactly as they are, still pointing at the now-`CANCELLED` order. The underlying `StorePayment` is untouched (it was never deleted under either model). Reads as sunk/lost, same as before.                                                                                  |
+| **Remove**                | **`credit`** (now the default)                | This order's `PaymentAllocation` rows are deleted (`tx.paymentAllocation.deleteMany`) and `Order.allocatedAmountMinor` resets to `0`. The `StorePayment` itself **survives**, now with less (or no) declared coverage — exactly what a store credit is: money the store still holds, no longer pinned to a cancelled order. |
+
+The default flipped from "keep/safe" to **`credit`/default** (`OrderCancelModal.tsx`,
+`DEFAULT_PAYMENTS_CHOICE`) because most real cancellations are not a lost cause: they free the money
+to cover another order at the same store, which is now directly visible as that store's debt going
+back up (or its "a favor" shrinking) the moment the order cancels. This is a safe default under the
+new model in a way it was not under the old one: nothing is deleted, no row disappears, and
+reactivating the order cannot resurrect a payment because no payment was ever removed, only its
+declaration.
+
+`reactivateOrder` is unaffected either way: `lost` leaves the allocation in place, so it is already
+there after reactivation; `credit` leaves the `StorePayment` undeclared, exactly as if the collector
+had never declared it against this order, and the collector can re-declare it from the order detail
+or the store payment sheet after reactivating.
+
+`BR-05-15` / `BR-05-16` / `BR-05-17` in `frd-05-order-payment-shipment.md` and `BR-06-10` /
+`FR-06-23` in this FRD were rewritten in the same change to describe `lost` / `credit` directly; the
+§3.2/§4/§6 text above is left as written for provenance (it is what the owner actually signed off
+on) rather than rewritten to match the new names.

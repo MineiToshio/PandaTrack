@@ -18,11 +18,15 @@ import { getCollectorPreferencesSnapshot } from "@/lib/data/user-settings/userSe
 import { getImageIntakeQuotaSnapshot } from "@/lib/data/imageIntake/imageIntakeQuotaQueries";
 import { createImageIntakeSpendGuard } from "@/lib/data/imageIntake/spendGuard";
 import { applyBreakdown } from "@/lib/imageIntake/breakdown";
-import { MAX_PRODUCTS_PER_ORDER } from "@/lib/imageIntake/constants";
+import { IMAGE_INTAKE_MAX_OUTPUT_TOKENS, MAX_PRODUCTS_PER_ORDER } from "@/lib/imageIntake/constants";
+import { reportImageIntakeFailure } from "@/lib/imageIntake/diagnostics";
 import type { ImageIntakeDraft } from "@/lib/imageIntake/draftSchema";
 import {
   extract,
   isProviderRequestRejected,
+  isProviderResponseTruncated,
+  readProviderErrorShape,
+  readProviderErrorUsage,
   type ExtractionLocale,
   type ExtractionProductCategory,
   type ImageIntakeUsageRecord,
@@ -218,7 +222,16 @@ export async function extractOrderFromImagesAction(formData: FormData): Promise<
   const files = await readSubmittedFiles(formData);
   const validated = await validateUploadedImages(files);
   if (!validated.ok) {
-    return { ok: false, code: validated.error.code };
+    // The position and the measurement travel with the code. Without them the screen can only say
+    // "one of the photos", which is not something a collector holding twenty screenshots can act on.
+    return {
+      ok: false,
+      code: validated.error.code,
+      ...(validated.error.index !== null ? { imageIndex: validated.error.index } : {}),
+      ...(validated.error.measured
+        ? { imageWidth: validated.error.measured.width, imageHeight: validated.error.measured.height }
+        : {}),
+    };
   }
 
   const posthog = getPostHogClient();
@@ -282,19 +295,61 @@ export async function extractOrderFromImagesAction(formData: FormData): Promise<
           properties: { photo_count: imageCount },
         });
       }
-      // A provider 4xx gets its own code, in analytics as much as on screen: the API refused what
-      // we sent, so it repeats identically until someone changes the code, and counting it with
-      // the transport failures a retry can genuinely clear would hide exactly the failure that
-      // needs a person.
+      // The deterministic provider failures each get their own code, in analytics as much as on
+      // screen. Counting them with the transport failures a retry can genuinely clear would hide
+      // exactly the failures that need a person, and would answer both with copy inviting a retry
+      // that spends the same money to fail the same way.
+      // Read defensively, and not out of politeness to the type: everything below exists only to
+      // DESCRIBE a failure, so nothing below may be able to cause one. A throw while assembling a
+      // diagnostic would escape into the action's catch and turn an explained, typed refusal into a
+      // bare "server-error", destroying both the outcome and the very evidence it was recording.
+      const providerError = outcome.status === "provider-error" ? (outcome.error ?? null) : null;
+      const providerUsage = readProviderErrorUsage(providerError);
+      const providerShape = readProviderErrorShape(providerError);
+
       const failureCode: ImageIntakeExtractErrorCode =
-        outcome.status === "provider-error" && isProviderRequestRejected(outcome.error)
-          ? "provider-rejected"
-          : outcome.status;
+        providerError === null
+          ? outcome.status
+          : isProviderRequestRejected(providerError)
+            ? "provider-rejected"
+            : isProviderResponseTruncated(providerError)
+              ? "response-too-long"
+              : "provider-error";
+
+      // The one moment this failure can be explained. The images are discarded by design and the
+      // model's body is never stored, so anything not recorded here is gone for good.
+      if (providerError !== null) {
+        reportImageIntakeFailure({
+          stage: "provider",
+          code: providerError.message ?? "PROVIDER_ERROR",
+          reportedAs: failureCode,
+          model: modelId,
+          imageCount,
+          imageBytes: validated.images.reduce((sum, image) => sum + image.byteSize, 0),
+          promptTokens: providerUsage?.inputTokens ?? null,
+          outputTokens: providerUsage?.outputTokens ?? null,
+          thoughtsTokens: providerUsage?.thoughtsTokens ?? null,
+          totalTokens: providerUsage?.totalTokens ?? null,
+          maxOutputTokens: IMAGE_INTAKE_MAX_OUTPUT_TOKENS,
+          partialChars: providerShape?.partialChars ?? null,
+          groupsEmitted: providerShape?.groupsEmitted ?? null,
+          productsEmitted: providerShape?.productsEmitted ?? null,
+          paymentsEmitted: providerShape?.paymentsEmitted ?? null,
+        });
+      }
 
       posthog.capture({
         distinctId: userId,
         event: POSTHOG_EVENTS.IMAGE_INTAKE.EXTRACTION_FAILED,
-        properties: { photo_count: imageCount, failure_code: failureCode },
+        properties: {
+          photo_count: imageCount,
+          failure_code: failureCode,
+          // Aggregate figures only, never content: enough to see a truncation trend in analytics
+          // without opening Sentry.
+          provider_code: providerError?.message ?? null,
+          output_tokens: providerUsage?.outputTokens ?? null,
+          products_emitted: providerShape?.productsEmitted ?? null,
+        },
       });
 
       if (outcome.status === "quota-exceeded" || outcome.status === "daily-cap-exceeded") {
@@ -312,6 +367,22 @@ export async function extractOrderFromImagesAction(formData: FormData): Promise<
           remaining: outcome.remaining,
           renewalAtIso: quotaBefore.renewalAtIso,
         };
+      }
+
+      // A model answer that parsed but failed our schema is already captured with its full issue
+      // list by the extraction engine; this adds only the local line, so a failure being debugged is
+      // readable in the dev server output instead of only in Sentry.
+      if (outcome.status === "invalid-model-response") {
+        reportImageIntakeFailure({
+          stage: "validation",
+          code: "DRAFT_SCHEMA_REJECTED",
+          reportedAs: failureCode,
+          model: modelId,
+          imageCount,
+          imageBytes: validated.images.reduce((sum, image) => sum + image.byteSize, 0),
+          issueCount: outcome.error?.issues?.length ?? null,
+          captureToSentry: false,
+        });
       }
 
       return { ok: false, code: failureCode };

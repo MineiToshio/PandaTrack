@@ -30,6 +30,7 @@ const BASE_PROPS = {
   paidAmountMinor: 8000,
   currencyCode: "PEN",
   hasPayments: true,
+  markedItemCount: 0,
   locale: "es",
   baseCurrencyCode: "PEN",
 };

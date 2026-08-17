@@ -38,7 +38,6 @@
     "storePlaceholder": "Todas las tiendas",
     "productTypeLabel": "Tipo de producto",
     "statusLabel": "Estado del pedido",
-    "paymentLabel": "Estado de pago",
     "dateLabel": "Fecha del pedido",
     "dateFromLabel": "Desde",
     "dateToLabel": "Hasta",
@@ -48,6 +47,9 @@
     "deliveryOverdueLabel": "Por recibir",
     "deliveryLateLabel": "Entrega atrasada",
     "deliveryQuickHelper": "Por recibir: dentro de la ventana o vencidos. Entrega atrasada: solo vencidos y sin llegar.",
+    "paymentLabel": "Pago",
+    "withBalanceLabel": "Solo con saldo pendiente",
+    "withBalanceHelper": "Pedidos donde el total supera lo asignado. No incluye pedidos cancelados.",
     "fxLabel": "Tipo de cambio",
     "fxPendingLabel": "Solo con actualización pendiente",
     "fxPendingHelper": "Pedidos que necesitan refrescar el tipo de cambio.",
@@ -69,15 +71,19 @@
     "newest": "Más recientes",
     "oldest": "Más antiguas",
     "storeAZ": "Tienda A–Z",
-    "paymentAsc": "% Pago: menor",
     "totalDesc": "Total: mayor",
-    "storeZA": "Tienda Z–A"
+    "storeZA": "Tienda Z–A",
+    "arrivalAsc": "Llegada más próxima",
+    "compactAriaLabel": "Ordenar por: {value}"
   },
   "payment": {
-    "paid": "Pagado",
-    "partial": "Pago parcial",
-    "unpaid": "Impago",
-    "overdue": "Atrasado"
+    "paid": "Pagado"
+  },
+  "view": {
+    "ariaLabel": "Agrupar por",
+    "order": "Pedidos",
+    "store": "Tiendas",
+    "compactAriaLabel": "Agrupar por: {value}"
   },
   "statusFilter": {
     "active": "Activas",
@@ -97,6 +103,7 @@
     "deliveryRange": "Entrega: {from} – {to}",
     "deliveryOverdue": "Por recibir",
     "deliveryLate": "Entrega atrasada",
+    "withBalance": "Con saldo pendiente",
     "remove": "Quitar filtro {label}"
   },
   "status": {
@@ -115,12 +122,14 @@
     "openDetail": "Abrir detalle",
     "paymentPercentage": "{pct}% pagado",
     "paymentBarLabel": "Progreso de pago",
+    "paymentBarValueText": "{paid} pagados de {total}, {pct} por ciento",
     "delivery": "{from} – {to}",
     "deliveryFrom": "Desde {from}",
     "deliveryTo": "Hasta {to}",
+    "outstandingBalance": "Saldo pendiente",
     "overdue": "Atrasado",
     "overdueDays": "Atrasado {days}d",
-    "unpaid": "Impago",
+    "overdueMonths": "Atrasado {months, plural, one {# mes} other {# meses}}",
     "itemsSectionTitle": "Productos del pedido",
     "itemQuantity": "× {quantity}",
     "itemDelivery": {
@@ -135,9 +144,76 @@
     "headerProducts": "Productos",
     "headerStatus": "Estado",
     "headerTotal": "Total",
-    "headerProgress": "% Pago",
     "arrivalArrives": "llega {window}",
-    "arrivalExpected": "esperada {window}"
+    "arrivalExpected": "esperada {window}",
+    "arrivalResolved": "ya llegó a la tienda"
+  },
+  "storeView": {
+    "orderSummary": "{orders} {orders, plural, one {pedido abierto} other {pedidos abiertos}} · {products} {products, plural, one {producto pendiente} other {productos pendientes}}",
+    "search": {
+      "label": "Buscar tiendas o productos",
+      "placeholder": "Tienda o producto (Amazon, Nendoroid…)"
+    },
+    "debtAmount": "Debes {amount}",
+    "creditAmount": "A favor {amount}",
+    "registerPayment": "Registrar pago",
+    "registerPaymentDisabledHint": "Sin deuda pendiente con esta tienda",
+    "viewStore": "Ver tienda",
+    "columnProduct": "Producto",
+    "columnPrice": "Precio",
+    "columnState": "Estado",
+    "columnPaid": "Pagado",
+    "selection": {
+      "enter": "Seleccionar",
+      "exit": "Cancelar selección",
+      "selectAll": "Marcar todo",
+      "selectAllAriaLabel": "Seleccionar todos los productos pendientes de {store}",
+      "itemAriaLabel": "Seleccionar {name}",
+      "notSelectable": "En camino en otra entrega. No se puede marcar desde aquí.",
+      "count": "{count, plural, one {# producto} other {# productos}} de {orders, plural, one {# pedido} other {# pedidos}}",
+      "countSingleOrder": "{count, plural, one {# producto seleccionado} other {# productos seleccionados}}",
+      "liveStatus": "{count, plural, =0 {Sin productos seleccionados} one {# producto seleccionado} other {# productos seleccionados}} en {store}",
+      "barAriaLabel": "Acciones para los productos seleccionados de {store}",
+      "clear": "Cancelar",
+      "ineligibleRow": "Ya no disponible",
+      "storeArrivalAriaLabel": "Anotar la llegada de los productos seleccionados de {store}"
+    },
+    "arrival": {
+      "arrives": "Llega {window}",
+      "resolvedAtStore": "Ya llegó a la tienda",
+      "resolvedInTransit": "Ya está en camino",
+      "noDate": "Sin fecha estimada",
+      "overdue": "Atrasado",
+      "overdueDays": "Atrasado {days, plural, one {# día} other {# días}}",
+      "overdueMonths": "Atrasado {months, plural, one {# mes} other {# meses}}"
+    },
+    "addPrice": "Añadir precio",
+    "settled": "Saldado",
+    "empty": {
+      "title": "Sin productos pendientes",
+      "description": "No tienes productos por llegar de ninguna tienda en este momento."
+    },
+    "noResults": {
+      "title": "Sin resultados",
+      "description": "Ninguna tienda ni producto pendiente coincide con tu búsqueda.",
+      "cta": "Limpiar búsqueda"
+    },
+    "paidMark": {
+      "mark": "Marcar pagado",
+      "marked": "Saldado · marcado",
+      "proven": "Saldado",
+      "markAria": "Marcar {name} como pagado",
+      "unmarkAria": "Quitar la marca de pagado de {name}",
+      "markedHint": "Lo marcaste como pagado. No cambia montos ni recordatorios.",
+      "error": "No se pudo marcar el producto. Intenta de nuevo.",
+      "reload": "Ese producto ya no está. Recarga la página."
+    },
+    "undetailed": {
+      "title": "Pagado al pedido, sin desglosar por producto",
+      "hint": "Este dinero está asignado al pedido, no a un producto en particular.",
+      "trigger": "Sin desglosar · {count}",
+      "triggerAria": "Sin desglosar: {count, plural, one {# pedido} other {# pedidos}} de {store}"
+    }
   },
   "empty": {
     "noOrders": {

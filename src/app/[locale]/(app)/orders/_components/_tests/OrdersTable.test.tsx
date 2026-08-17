@@ -7,6 +7,9 @@ vi.mock("next-intl", () => ({
   useTranslations: () => (key: string, vars?: Record<string, unknown>) => {
     if (key === "table.arrivalArrives") return `llega ${vars?.window}`;
     if (key === "table.arrivalExpected") return `esperada ${vars?.window}`;
+    if (key === "table.arrivalResolved") return "ya llegó a la tienda";
+    if (key === "card.overdueDays") return `Atrasado ${vars?.days} días`;
+    if (key === "card.overdueMonths") return `Atrasado ${vars?.months} meses`;
     return key;
   },
 }));
@@ -125,6 +128,72 @@ describe("OrdersTable expected arrival column", () => {
     expect(screen.getByText("esperada 1 jul")).toBeInTheDocument();
   });
 
+  /**
+   * T10b — the order-level half of ADR 0030 §3 on the surface the collector reaches by clicking the
+   * row he reported: `ORD-20260509-02` holds one product, that product has been at Palmito Store
+   * since before its 12 jun window closed, and the row still read "Atrasado 2 meses" in amber.
+   *
+   * The two halves have to be asserted together. Suppressing the chip alone left the arrival line
+   * saying "llega 12 jun" in August, because "llega" was simply the `else` of "overdue" — a future
+   * tense over a past date, which is a worse sentence than the one being fixed.
+   */
+  it("neither flags nor re-promises an order whose every product is already at the store", () => {
+    renderTable(
+      makeOrder({
+        expectedDeliveryTo: new Date("2026-06-12T00:00:00.000Z"),
+        itemCount: 1,
+        items: [
+          {
+            id: "i1",
+            name: "Starter Deck EX ST-30",
+            quantity: 1,
+            productTypeKey: null,
+            unitPrice: null,
+            deliveryState: "arrived_at_store",
+          },
+        ],
+      }),
+    );
+
+    expect(screen.getByText("ya llegó a la tienda")).toBeInTheDocument();
+    expect(screen.queryByText(/Atrasado/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^llega/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^esperada/)).not.toBeInTheDocument();
+  });
+
+  it("keeps flagging an order that still has one product waiting", () => {
+    // The control. Without it the assertions above pass against a rule written with `some`, which
+    // would clear the flag on an order that is late about the five products still coming.
+    renderTable(
+      makeOrder({
+        expectedDeliveryTo: new Date("2026-06-12T00:00:00.000Z"),
+        itemCount: 2,
+        items: [
+          {
+            id: "i1",
+            name: "Ya está",
+            quantity: 1,
+            productTypeKey: null,
+            unitPrice: null,
+            deliveryState: "arrived_at_store",
+          },
+          {
+            id: "i2",
+            name: "Sigue esperando",
+            quantity: 1,
+            productTypeKey: null,
+            unitPrice: null,
+            deliveryState: "open",
+          },
+        ],
+      }),
+    );
+
+    expect(screen.getByText(/Atrasado/)).toBeInTheDocument();
+    expect(screen.getByText("esperada 12 jun")).toBeInTheDocument();
+    expect(screen.queryByText("ya llegó a la tienda")).not.toBeInTheDocument();
+  });
+
   it.each(["COMPLETED", "CANCELLED"] as const)("promises no arrival on a %s order", (status) => {
     renderTable(
       makeOrder({
@@ -184,7 +253,7 @@ describe("OrdersTable layout", () => {
     expect(separator?.className).toContain("[@media(min-width:1360px)]:inline");
   });
 
-  it("keeps the seven-track grid rather than spending a column on the arrival", () => {
+  it("keeps the six-track grid rather than spending a column on the arrival", () => {
     const { container } = renderTable(makeOrder({ expectedDeliveryTo: new Date("2026-08-15T00:00:00.000Z") }));
 
     const header = screen.getAllByRole("row")[0]!;
@@ -192,6 +261,35 @@ describe("OrdersTable layout", () => {
     expect(header.className).not.toContain("minmax(0,0.95fr)_minmax(0,0.95fr)");
     // Still rendered, just not in a column of its own.
     expect(within(container).getByText("llega 15 ago")).toBeInTheDocument();
+  });
+
+  /**
+   * The per-order "% paid" progress column and the "Impago" pill were retired with store-level
+   * payments (FRD-05 v5): the list no longer tracks a per-order paid ratio worth a column.
+   */
+  it("does not render a payment progress bar or an unpaid pill", () => {
+    renderTable(makeOrder({ hasUnpaidBalance: true, status: "COMPLETED" }));
+
+    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+    expect(screen.queryByText("card.unpaid")).not.toBeInTheDocument();
+  });
+
+  /**
+   * The binary balance signal `FR-05-35` asks for is a different thing from what ADR 0025 retired
+   * above: no ratio, no bar, and it never replaces the status chip.
+   */
+  it("flags a completed order that still owes money, beside its status chip", () => {
+    renderTable(makeOrder({ status: "COMPLETED", hasUnpaidBalance: true }));
+
+    expect(screen.getByText("card.outstandingBalance")).toBeInTheDocument();
+    expect(screen.getByText("status.COMPLETED")).toBeInTheDocument();
+  });
+
+  it("leaves a settled completed order with its status chip alone", () => {
+    renderTable(makeOrder({ status: "COMPLETED", hasUnpaidBalance: false }));
+
+    expect(screen.queryByText("card.outstandingBalance")).not.toBeInTheDocument();
+    expect(screen.getByText("status.COMPLETED")).toBeInTheDocument();
   });
 });
 

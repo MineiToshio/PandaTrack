@@ -1,0 +1,681 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { Store as StoreIcon } from "lucide-react";
+import posthog from "posthog-js";
+import Checkbox from "@/components/core/Checkbox";
+import EmptyState from "@/components/modules/EmptyState";
+import { useToast } from "@/contexts/ToastContext";
+import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
+import { formatAmountWithSymbol } from "@/lib/currency";
+import { isItemEligibleForDelivery } from "@/lib/orders/orderState";
+import { sortStoreGroups, type StoreViewSort } from "@/lib/orders/storeViewSort";
+import { cn } from "@/lib/styles";
+import { createStorePaymentAction } from "@/app/[locale]/(app)/_actions/storePaymentActions";
+import { storeArrivalAction } from "@/app/[locale]/(app)/_actions/storeArrivalAction";
+import type { PendingProductsByStoreGroup } from "@/lib/data/orders/pendingProductsByStoreQueries";
+import {
+  QuickArrivalModal,
+  type QuickArrivalItem,
+  type QuickArrivalSubmitInput,
+} from "@/components/modules/QuickArrival";
+import {
+  StorePaymentSheet,
+  useStorePaymentSheetOrders,
+  type StorePaymentSheetSubmitInput,
+  type StorePaymentSubmitOutcome,
+} from "@/components/modules/StorePaymentSheet";
+import StoreGroupHeader from "./StoreGroupHeader";
+import StoreGroupSelectionBar from "./StoreGroupSelectionBar";
+import StorePendingProductCard from "./StorePendingProductCard";
+import type { PaidDeclarationFailure } from "./share/useOrderItemPaidDeclaration";
+import StorePendingProductRow, {
+  STORE_PRODUCT_ROW_GRID,
+  STORE_PRODUCT_TILE_BOX,
+  STORE_PRODUCT_TILE_GAP,
+} from "./StorePendingProductRow";
+import { useStoreProductSelection } from "./useStoreProductSelection";
+
+type StoreGroupedViewProps = {
+  groups: PendingProductsByStoreGroup[];
+  locale: string;
+  returnTo: string;
+  /**
+   * The collector's base currency, forwarded from the page: the store-scoped arrival modal defaults
+   * the optional shipping cost with it and decides from it whether a rate has to be asked for.
+   */
+  baseCurrencyCode: string | null;
+  /**
+   * The active `?sort=` of this view. Needed on the client, not only on the server, because the
+   * optimistic patch removes products and every store ranking is an aggregate OVER those products:
+   * the group whose soonest arrival just left has a new sort key and has to move with it, or the
+   * whole list jumps the moment the server payload lands.
+   */
+  storeSort: StoreViewSort;
+  /**
+   * The collector's civil day at UTC midnight, resolved on the SERVER from `User.timezone`. Every
+   * arrival state in this view is a comparison against it, and computing it here instead would both
+   * mismatch the server render and compare a wall-clock instant against midnight-UTC domain dates.
+   */
+  today: Date;
+};
+
+/**
+ * Orders list "Por tienda" view: one collapsible card per store with its pending products. Each
+ * group's expand/collapse state is local to this component (a fresh `Set` per mount) — deliberately
+ * NOT `useListExpansion`, which is the shared multi-open state the classic per-order list already
+ * owns; sharing it here would let this view's toggles bleed into that one's "expand/collapse all".
+ * Groups default open: this view exists precisely to show every pending product at once (no
+ * pagination), so collapsing is an opt-out a collector reaches for once they know what they're
+ * hiding, not the default they land on.
+ *
+ * It coordinates the view's two mutations, both optimistically, and owns the rollback and the toast
+ * for each:
+ *
+ * - the **store payment** sheet, shared by every group's "Registrar pago" button (one sheet
+ *   instance, `activeStoreId` tracks which group it is currently open for). A success patches this
+ *   view's own copy of `groups`: the store's debt figure, and every pending product's
+ *   `allocatedMinor` for allocations that named a specific product. The sheet no longer emits
+ *   `settlesTarget`, so `settled` is never patched from here. A declaration line with no product
+ *   (money against the order's leftover, or "on account") has no single pending-product row to
+ *   attribute to in this view, so it only moves the debt figure — the row-level `allocatedMinor`
+ *   catches up on the next full page load, same as the classic per-order list already does for
+ *   order-level (non-declared) payments.
+ * - the **store-scoped arrival** (`FR-05-48` / `FR-08-38`): the products selected inside one group
+ *   leave the list, the group's `openOrdersCount` is recomputed from the survivors, an emptied
+ *   group is dropped, and the remaining groups are re-sorted. `debts` is deliberately untouched:
+ *   an arrival is not a payment, and `getStoreDebtByCurrency` counts `COMPLETED` orders as
+ *   committed, so nothing the delivery re-derives moves the figure either.
+ */
+export default function StoreGroupedView({
+  groups,
+  locale,
+  returnTo,
+  baseCurrencyCode,
+  storeSort,
+  today,
+}: StoreGroupedViewProps) {
+  const t = useTranslations("orderListing");
+  const tPayment = useTranslations("orders.detail.storePayment");
+  const tArrival = useTranslations("orders.detail.quickArrival");
+  const tActions = useTranslations("orders.detail.actions");
+  const router = useRouter();
+  const { addToast } = useToast();
+  const [collapsedStoreIds, setCollapsedStoreIds] = useState<Set<string>>(() => new Set());
+  const [groupsState, setGroupsState] = useState<PendingProductsByStoreGroup[]>(groups);
+  const [activeStoreId, setActiveStoreId] = useState<string | null>(null);
+  const [isArrivalOpen, setIsArrivalOpen] = useState(false);
+  /**
+   * Products the server named in `ineligibleProductIds` when it refused the last batch. Flagged in
+   * the list until the next server payload, instead of silently retrying with the eligible subset:
+   * quietly changing what an irreversible write covers is exactly what must not happen.
+   */
+  const [flaggedIneligibleIds, setFlaggedIneligibleIds] = useState<Set<string>>(() => new Set());
+  const sheet = useStorePaymentSheetOrders();
+  const selection = useStoreProductSelection();
+
+  // Reset local state whenever the server hands down a genuinely different `groups` list (a new
+  // navigation, a filter change) — never mid-flight of this view's own optimistic patch, which
+  // already applied its change locally before any server round-trip.
+  //
+  // `deliveryState` is part of the signature, and it has to be: the query calls anything
+  // not-yet-delivered "pending", so a product that moved to `IN_TRANSIT` in another tab keeps its
+  // id, its `allocatedMinor` and its `settled` — an identical signature — while becoming
+  // unselectable. Without the field the effect never fires, the tile stays live, and the whole
+  // batch is refused with nothing on screen explaining why.
+  const groupsSignature = groups
+    .map(
+      (group) =>
+        `${group.store.id}:${group.debts.map((debt) => `${debt.currencyCode}=${debt.debtMinor}`).join(",")}:${group.pendingProducts
+          .map(
+            (product) =>
+              `${product.itemId}=${product.allocatedMinor}=${product.paidDeclared}=${product.orderAllocatedAmountMinor}=${product.deliveryState}`,
+          )
+          .join(",")}`,
+    )
+    .join("|");
+  const lastServerSignatureRef = useRef(groupsSignature);
+  const pruneSelection = selection.prune;
+  useEffect(() => {
+    if (groupsSignature !== lastServerSignatureRef.current) {
+      lastServerSignatureRef.current = groupsSignature;
+      setGroupsState(groups);
+      setFlaggedIneligibleIds(new Set());
+      // The live selection is intersected with what the server now shows AND still allows. A marked
+      // product that vanished leaves no checkbox to clear, so keeping its id would make the batch
+      // fail on every retry with no way out on screen.
+      pruneSelection(groups);
+    }
+  }, [groupsSignature, groups, pruneSelection]);
+
+  const activeGroup = groupsState.find((group) => group.store.id === activeStoreId) ?? null;
+  const selectionStoreId = selection.selection?.storeId ?? null;
+  const selectionGroup = groupsState.find((group) => group.store.id === selectionStoreId) ?? null;
+  const selectedIds = selection.selection?.itemIds ?? null;
+  const selectedProducts = useMemo(
+    () =>
+      selectionGroup && selectedIds
+        ? selectionGroup.pendingProducts.filter((product) => selectedIds.has(product.itemId))
+        : [],
+    [selectionGroup, selectedIds],
+  );
+  const selectedOrderCount = new Set(selectedProducts.map((product) => product.orderId)).size;
+  const selectionSummary =
+    selectedOrderCount > 1
+      ? t("storeView.selection.count", { count: selectedProducts.length, orders: selectedOrderCount })
+      : t("storeView.selection.countSingleOrder", { count: selectedProducts.length });
+
+  const handleToggle = (storeId: string) => {
+    setCollapsedStoreIds((prev) => {
+      const next = new Set(prev);
+      const willCollapse = !next.has(storeId);
+      if (willCollapse) next.add(storeId);
+      else next.delete(storeId);
+      posthog.capture(
+        willCollapse ? POSTHOG_EVENTS.ORDER.LIST_STORE_GROUP_COLLAPSED : POSTHOG_EVENTS.ORDER.LIST_STORE_GROUP_EXPANDED,
+        { store_id: storeId },
+      );
+      return next;
+    });
+    // A hidden selection is a selection nobody can correct before confirming it.
+    selection.clearStore(storeId);
+  };
+
+  const handleOpenPayment = (storeId: string) => {
+    setActiveStoreId(storeId);
+    sheet.open(storeId, "orders_store_view");
+  };
+
+  /**
+   * `Escape` clears the selection, and it is bound to the group's own subtree rather than to the
+   * document on purpose: `Modal` already listens for `Escape` at document level, so a single press
+   * meant to dismiss the arrival dialog would otherwise also wipe the selection behind it — the
+   * 28 checkboxes the collector would then have to mark again. Dismissing the modal keeps the
+   * selection intact, which is what makes a second look at the dialog free.
+   */
+  const handleGroupKeyDown = (event: React.KeyboardEvent<HTMLElement>, storeId: string) => {
+    if (event.key !== "Escape") return;
+    if (selectionStoreId !== storeId) return;
+    selection.clear();
+  };
+
+  const eligibleIdsOf = useCallback(
+    (group: PendingProductsByStoreGroup) =>
+      group.pendingProducts
+        .filter((product) => isItemEligibleForDelivery(product.deliveryState))
+        .map((product) => product.itemId),
+    [],
+  );
+
+  const handleOpenArrival = () => {
+    if (!selectionGroup || selectedProducts.length === 0) return;
+    posthog.capture(POSTHOG_EVENTS.DELIVERY.QUICK_ARRIVAL_OPENED, {
+      store_id: selectionGroup.store.id,
+      source: "orders_store_view",
+      product_count: selectedProducts.length,
+      order_count: selectedOrderCount,
+    });
+    setIsArrivalOpen(true);
+  };
+
+  const arrivalItems: QuickArrivalItem[] = useMemo(
+    () =>
+      selectedProducts.map((product) => ({
+        id: product.itemId,
+        name: product.name,
+        orderLabel: product.orderHumanReadableId,
+      })),
+    [selectedProducts],
+  );
+
+  // The dialog only MOUNTS while there is still something to confirm, but the flag that opens it is
+  // independent of that condition — and every path that can empty the selection runs while the
+  // dialog is open (a resync whose prune finds nothing left, a refusal that names nothing). Left on
+  // its own the flag survives the unmount, so the NEXT product marked would re-open a filled-in
+  // dialog nobody asked for, with its primary one click from an irreversible write. The flag
+  // follows the selection down.
+  //
+  // Adjusted during render rather than from an effect: React re-runs this component before
+  // committing anything, so the dialog is never painted in the bad state, and the guard converges
+  // on the first pass (once the flag is down the branch cannot be taken again). An effect would
+  // both paint first and ask for the pattern the `set-state-in-effect` lint exists to prevent.
+  if (isArrivalOpen && (!selectionGroup || arrivalItems.length === 0)) setIsArrivalOpen(false);
+
+  const handleSubmitArrival = (input: QuickArrivalSubmitInput) => {
+    const group = selectionGroup;
+    if (!group) return;
+    const storeId = group.store.id;
+    const storeName = group.store.name;
+    const marked = new Set(input.productIds);
+    const previousGroups = groupsState;
+    const previousSelection = selection.selection;
+
+    const patched = sortStoreGroups(
+      previousGroups
+        .map((candidate) => {
+          if (candidate.store.id !== storeId) return candidate;
+          const remaining = candidate.pendingProducts.filter((product) => !marked.has(product.itemId));
+          return {
+            ...candidate,
+            pendingProducts: remaining,
+            // The query's own definition: one count per order that still contributes a pending
+            // product. Recomputed from the survivors rather than decremented, so an order losing
+            // two of its three products does not lose a count it should keep.
+            openOrdersCount: new Set(remaining.map((product) => product.orderId)).size,
+          };
+        })
+        // A group only exists while it has a pending product, exactly as the query builds it.
+        .filter((candidate) => candidate.pendingProducts.length > 0),
+      storeSort,
+    );
+
+    setGroupsState(patched);
+    setFlaggedIneligibleIds(new Set());
+    selection.clear();
+
+    // The store leaves the list with the arrival, taking its debt figure and its "Registrar pago"
+    // button with it (this view is a pending-product view, and it now has nothing pending). Said
+    // once, at the moment it happens, rather than left for the collector to notice was missing.
+    const groupIsGone = !patched.some((candidate) => candidate.store.id === storeId);
+    const owedAfter = groupIsGone
+      ? group.debts
+          .filter((debt) => debt.debtMinor > 0)
+          .map((debt) => formatAmountWithSymbol(debt.debtMinor, debt.currencyCode, locale))
+          .join(" · ")
+      : "";
+
+    void storeArrivalAction({ storeId, ...input }).then(
+      (result) => {
+        if (!result.ok) {
+          setGroupsState(previousGroups);
+          const namedIneligible = result.ineligibleProductIds ?? [];
+          // A stale selection handed back verbatim is a batch that fails on every retry, so it is
+          // only restored when the client can tell which tiles to drop first. `PRODUCT_NOT_ELIGIBLE`
+          // with no ids is the compare-and-swap race inside the mutation, which names nothing: the
+          // selection is dropped there and the copy says to reload, because guessing which product
+          // moved would be inventing the answer.
+          const blindStaleness = result.error === "PRODUCT_NOT_ELIGIBLE" && namedIneligible.length === 0;
+          if (previousSelection && !blindStaleness) {
+            const restored = { storeId: previousSelection.storeId, itemIds: new Set(previousSelection.itemIds) };
+            for (const id of namedIneligible) restored.itemIds.delete(id);
+            if (restored.itemIds.size > 0) selection.replace(restored);
+          }
+          if (namedIneligible.length > 0) {
+            setFlaggedIneligibleIds(new Set(namedIneligible));
+            addToast(tArrival("error.SOME_NOT_ELIGIBLE", { count: namedIneligible.length }), { variant: "error" });
+            return;
+          }
+          // `createDelivery` speaks per order, because an order row is what it read, and its copy
+          // says "this order is cancelled". Here the batch can span several orders of the store, so
+          // that sentence names nothing the collector can act on. The selection-scoped copy states
+          // the same fact AND what to do about it; every other code resolves the same either way.
+          const errorCode = result.error === "ORDER_CANCELLED" ? "SELECTION_ORDER_CANCELLED" : result.error;
+          const key = `error.${errorCode}` as const;
+          addToast(tArrival.has(key as never) ? tArrival(key as never) : tArrival("error.server_error"), {
+            variant: "error",
+          });
+          return;
+        }
+
+        addToast(
+          owedAfter
+            ? tArrival("toast.successStoreLeft", {
+                count: result.productCount,
+                store: storeName,
+                debt: owedAfter,
+              })
+            : tArrival("toast.success", { count: result.productCount }),
+          {
+            variant: "success",
+            action: {
+              label: tArrival("toast.viewDelivery"),
+              onClick: () => router.push(`/${locale}${ROUTES.deliveries}/${result.deliveryId}`),
+            },
+          },
+        );
+      },
+      () => {
+        // A REJECTED promise is not a refusal the server described, it is no answer at all. Same
+        // treatment as a refusal, and deliberately the SECOND argument of `then` rather than a
+        // chained `catch`, which would also swallow whatever the handler above throws and roll a
+        // delivery the server actually committed back off the screen.
+        setGroupsState(previousGroups);
+        if (previousSelection) selection.replace(previousSelection);
+        addToast(tArrival("error.server_error"), { variant: "error" });
+      },
+    );
+  };
+
+  const handleSubmitPayment = async (input: StorePaymentSheetSubmitInput): Promise<StorePaymentSubmitOutcome> => {
+    const storeId = activeStoreId;
+    if (!storeId) return { ok: true };
+
+    const previous = groupsState;
+    setGroupsState((prev) =>
+      prev.map((group) => {
+        if (group.store.id !== storeId) return group;
+        const amountByItemId = new Map<string, number>();
+        // Orders this payment puts money on WITHOUT naming a product. Their rows must stop printing
+        // a ratio in the same tick the money lands (`orderHasUndetailedMoney`, ADR 0028 §6): the
+        // product's item-level share becomes a floor the instant the order also holds unattributed
+        // money, and a patch that moved only `allocatedMinor` repainted exactly the percentage that
+        // rule suppresses, for as long as the round trip took.
+        const ordersGainingUndetailed = new Set<string>();
+        for (const allocation of input.allocations) {
+          if (!allocation.orderItemId) {
+            ordersGainingUndetailed.add(allocation.orderId);
+            continue;
+          }
+          amountByItemId.set(
+            allocation.orderItemId,
+            (amountByItemId.get(allocation.orderItemId) ?? 0) + allocation.amountMinor,
+          );
+        }
+        return {
+          ...group,
+          // Only `debtMinor` moves, and that is complete rather than partial: `StoreDebtEntry` is
+          // narrowed to `{ currencyCode, debtMinor }` at the query (`pendingProductsByStoreQueries`
+          // projects `StoreDebtRow` down to it), so there is no `paidMinor` here to fall out of
+          // step with it. The store detail keeps the full row precisely because it draws the pair.
+          debts: group.debts.map((debt) =>
+            debt.currencyCode === input.currencyCode ? { ...debt, debtMinor: debt.debtMinor - input.amount } : debt,
+          ),
+          pendingProducts: group.pendingProducts.map((product) => {
+            const delta = amountByItemId.get(product.itemId);
+            const gainsUndetailed = ordersGainingUndetailed.has(product.orderId);
+            if (delta === undefined && !gainsUndetailed) return product;
+            return {
+              ...product,
+              allocatedMinor: product.allocatedMinor + (delta ?? 0),
+              orderHasUndetailedMoney: product.orderHasUndetailedMoney || gainsUndetailed,
+            };
+          }),
+        };
+      }),
+    );
+
+    const pending = createStorePaymentAction({
+      storeId,
+      amount: input.amount,
+      paymentDate: input.paymentDate,
+      currencyCode: input.currencyCode,
+      note: input.note,
+      allocations: input.allocations,
+      declarePaidItemIds: input.declarePaidItemIds,
+    }).then(
+      (result): StorePaymentSubmitOutcome => {
+        // Every resolved mutation retires the sheet's cached order list, rollback included: the
+        // server's balances are no longer something this client can assert.
+        sheet.invalidate();
+        if (!result.ok) {
+          setGroupsState(previous);
+          const key = `error.${result.error}` as const;
+          addToast(tPayment.has(key as never) ? tPayment(key as never) : tPayment("error.server_error"), {
+            variant: "error",
+          });
+          return { ok: false, error: result.error, orderId: result.orderId, orderItemId: result.orderItemId };
+        }
+        addToast(tPayment("toastSuccess"), { variant: "success" });
+        return { ok: true };
+      },
+      (): StorePaymentSubmitOutcome => {
+        // A REJECTED promise (network drop, a 502 from the server-actions endpoint) is not a
+        // refusal the server described — it is no answer at all. Same treatment as a refusal: undo
+        // the optimistic patch, retire the cached order list, say so, and hand the sheet a
+        // well-formed outcome so it can reopen its own controls instead of freezing.
+        //
+        // Deliberately the SECOND argument of `then` rather than a chained `catch`: a `catch` after
+        // the handler above also catches whatever that handler throws, which would roll a payment
+        // the server actually committed back off the screen and toast it as failed.
+        //
+        // `unanswered` is what keeps that absorption from reading as a verdict on the draft: the
+        // sheet only ever sees a resolved outcome from here, and without the flag the one case that
+        // should be resent unchanged is the one whose CTA it shuts.
+        setGroupsState(previous);
+        sheet.invalidate();
+        addToast(tPayment("error.server_error"), { variant: "error" });
+        return { ok: false, error: "server_error", unanswered: true };
+      },
+    );
+
+    // Nothing declared: the sheet may close on the spot, because the toast fully describes what
+    // would be lost. With declarations the sheet waits, so a refusal can point at its own line.
+    if (input.allocations.length === 0) return { ok: true };
+    return pending;
+  };
+
+  /**
+   * The paid mark reverts itself optimistically; what the hook cannot do is tell the collector.
+   *
+   * A mark is a statement only they could produce, so one disappearing without a word would be a
+   * lie by omission. The sibling arrived-toggle reverts silently and is right to: its state is
+   * re-derivable from the delivery. This one is not.
+   */
+  const handlePaidMarkError = (failure: PaidDeclarationFailure) => {
+    addToast(failure === "ITEM_NOT_FOUND" ? t("storeView.paidMark.reload") : t("storeView.paidMark.error"), {
+      variant: "error",
+    });
+  };
+
+  if (groupsState.length === 0) {
+    // The server's own empty state lives in `orders/page.tsx` and the client can never reach it, so
+    // the last arrival logged from here would otherwise leave a blank column.
+    return (
+      <EmptyState
+        appearance="card"
+        headingAs="h2"
+        icon={<StoreIcon width={28} height={28} />}
+        iconTone="accent"
+        title={t("storeView.empty.title")}
+        subtitle={t("storeView.empty.description")}
+      />
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      {/*
+        A node of its own, never the toolbar container: `role="status"` implies `aria-atomic`, so a
+        live region wrapping the buttons would re-read their labels on every count change.
+      */}
+      <p className="sr-only" role="status">
+        {selectionGroup
+          ? t("storeView.selection.liveStatus", {
+              count: selectedProducts.length,
+              store: selectionGroup.store.name,
+            })
+          : ""}
+      </p>
+
+      {groupsState.map((group) => {
+        const isExpanded = !collapsedStoreIds.has(group.store.id);
+        const bodyId = `store-group-body-${group.store.id}`;
+        const isSelectingHere = selection.isSelecting(group.store.id);
+        const selectedHere = selection.idsFor(group.store.id);
+        const eligibleIds = eligibleIdsOf(group);
+        const selectedEligibleCount = eligibleIds.filter((id) => selectedHere.has(id)).length;
+        const masterChecked: boolean | "indeterminate" =
+          selectedEligibleCount === 0 ? false : selectedEligibleCount === eligibleIds.length ? true : "indeterminate";
+        const handleMaster = (checked: boolean) => selection.setAll(group.store.id, eligibleIds, checked);
+        const handleToggleProduct = (itemId: string, shiftKey: boolean) =>
+          selection.toggle(group.store.id, itemId, { shiftKey, eligibleIds });
+
+        return (
+          <section
+            key={group.store.id}
+            onKeyDown={(event) => handleGroupKeyDown(event, group.store.id)}
+            // No `overflow-hidden`: an ancestor that clips turns the card into a scrollport and
+            // kills the selection bar's `position: sticky`. Nothing here paints to the corners
+            // (the header carries no background and the body only a top border), so the rounding
+            // never depended on the clip.
+            className="rounded-[var(--radius-2xl)] [background:var(--surface-elevated)] [border:1px_solid_var(--border)]"
+          >
+            <StoreGroupHeader
+              store={group.store}
+              openOrdersCount={group.openOrdersCount}
+              pendingProductCount={group.pendingProducts.length}
+              debts={group.debts}
+              undetailedByOrder={group.undetailedByOrder}
+              locale={locale}
+              returnTo={returnTo}
+              isExpanded={isExpanded}
+              onToggleExpand={() => handleToggle(group.store.id)}
+              onRegisterPayment={() => handleOpenPayment(group.store.id)}
+            />
+
+            {isExpanded && (
+              <div id={bodyId} className="px-4 pb-3 [border-top:1px_solid_var(--border)] md:px-5 md:pb-4">
+                {/* Desktop: column headers + grid rows */}
+                <div className="hidden lg:block">
+                  <div
+                    className={cn(
+                      "grid items-center gap-3 pt-3 pb-1 [font-family:var(--font-mono)] [font-size:11px] [letter-spacing:0.06em] [color:var(--text-muted)] uppercase",
+                      STORE_PRODUCT_ROW_GRID,
+                    )}
+                  >
+                    {/* The master checkbox sits in a box the size of a row tile, with the row's own
+                        gap after it, so "Producto" stays over the product names instead of sliding
+                        left by the difference between a 16px checkbox and a 32px tile. */}
+                    <span className={cn("flex min-w-0 items-center", STORE_PRODUCT_TILE_GAP)}>
+                      <span className={cn("grid shrink-0 place-items-center", STORE_PRODUCT_TILE_BOX)}>
+                        <Checkbox
+                          checked={masterChecked}
+                          onChange={handleMaster}
+                          disabled={eligibleIds.length === 0}
+                          ariaLabel={t("storeView.selection.selectAllAriaLabel", { store: group.store.name })}
+                          size="sm"
+                        />
+                      </span>
+                      <span>{t("storeView.columnProduct")}</span>
+                    </span>
+                    <span className="text-right">{t("storeView.columnPrice")}</span>
+                    <span className="text-center">{t("storeView.columnState")}</span>
+                    <span className="text-right">{t("storeView.columnPaid")}</span>
+                  </div>
+                  <ul role="list" className="flex flex-col">
+                    {group.pendingProducts.map((product) => (
+                      <StorePendingProductRow
+                        key={product.itemId}
+                        product={product}
+                        locale={locale}
+                        returnTo={returnTo}
+                        isSelected={selectedHere.has(product.itemId)}
+                        isArmed={selectedEligibleCount > 0}
+                        isFlaggedIneligible={flaggedIneligibleIds.has(product.itemId)}
+                        today={today}
+                        onToggleSelect={handleToggleProduct}
+                        onPaidMarkError={handlePaidMarkError}
+                      />
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Mobile: an explicit entry strip (there is no hover to reveal a tile with) plus
+                    the two-line cards. */}
+                <div className="lg:hidden">
+                  <div className="flex items-center justify-between gap-3 pt-3">
+                    {isSelectingHere && eligibleIds.length > 0 ? (
+                      <Checkbox
+                        checked={masterChecked}
+                        onChange={handleMaster}
+                        label={t("storeView.selection.selectAll")}
+                        size="sm"
+                        // The label IS the target and a 16px box plus caption text renders about
+                        // 20px tall. Resized rather than expanded (`interface-patterns.md` §12):
+                        // this strip only exists on touch, so there is no compact end to drop to.
+                        className="min-h-11"
+                      />
+                    ) : (
+                      <span />
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => (isSelectingHere ? selection.clear() : selection.begin(group.store.id))}
+                      className="relative inline-flex min-h-9 items-center px-2 [font-size:var(--text-caption)] [font-weight:var(--font-weight-medium)] [color:var(--accent)] before:absolute before:[inset:-4px_0] before:content-[''] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:[outline-color:var(--focus-ring)]"
+                    >
+                      {isSelectingHere ? t("storeView.selection.exit") : t("storeView.selection.enter")}
+                    </button>
+                  </div>
+                  <ul role="list" className="flex flex-col">
+                    {group.pendingProducts.map((product) => (
+                      <StorePendingProductCard
+                        key={product.itemId}
+                        product={product}
+                        locale={locale}
+                        returnTo={returnTo}
+                        isSelectable={Boolean(isSelectingHere)}
+                        isSelected={selectedHere.has(product.itemId)}
+                        isFlaggedIneligible={flaggedIneligibleIds.has(product.itemId)}
+                        today={today}
+                        onToggleSelect={handleToggleProduct}
+                        onPaidMarkError={handlePaidMarkError}
+                      />
+                    ))}
+                  </ul>
+                </div>
+
+                {selectionStoreId === group.store.id && selectedProducts.length > 0 && (
+                  <StoreGroupSelectionBar
+                    summary={selectionSummary}
+                    ariaLabel={t("storeView.selection.barAriaLabel", { store: group.store.name })}
+                    confirmLabel={tActions("quickArrival")}
+                    confirmAriaLabel={t("storeView.selection.storeArrivalAriaLabel", { store: group.store.name })}
+                    clearLabel={t("storeView.selection.clear")}
+                    onConfirm={handleOpenArrival}
+                    onClear={selection.clear}
+                  />
+                )}
+              </div>
+            )}
+          </section>
+        );
+      })}
+
+      {isArrivalOpen && selectionGroup && arrivalItems.length > 0 && (
+        <QuickArrivalModal
+          isOpen={isArrivalOpen}
+          onClose={() => setIsArrivalOpen(false)}
+          // The store, and only the store. The count belongs to the dialog's own live sources (the
+          // "{n} de {total} seleccionados" line and the primary's label): a subtitle composed out
+          // here freezes the count the dialog opened with, because unchecking a row inside the
+          // dialog moves its internal state and never this view's selection — deliberately, since
+          // that isolation is what keeps an id from leaking back into the batch.
+          subtitle={selectionGroup.store.name}
+          items={arrivalItems}
+          // The collector hand-picked these rows, so the confirmation echoes the whole selection
+          // back whatever its size. The per-order launchers preselect everything themselves and
+          // keep their single-product sentence.
+          alwaysListItems
+          baseCurrencyCode={baseCurrencyCode}
+          locale={locale}
+          onSubmit={handleSubmitArrival}
+        />
+      )}
+
+      <StorePaymentSheet
+        // Keyed by store: remounts the sheet's internal draft state (currency, amount, note,
+        // allocations) whenever the active store changes, instead of relying on a `useState`
+        // initializer that only ever runs once. Without this, the sheet's first-ever open mounts
+        // with `debts=[]` (this view renders it unconditionally, before any store is active) and
+        // every later open of a different store keeps replaying the previous store's currency and
+        // draft — the sheet only reset on its own `handleClose`, never on switching targets.
+        key={activeStoreId ?? "none"}
+        isOpen={sheet.isOpen}
+        onClose={sheet.close}
+        storeId={activeStoreId ?? ""}
+        storeName={activeGroup?.store.name ?? ""}
+        debts={activeGroup?.debts ?? []}
+        orders={sheet.orders}
+        ordersLoading={sheet.isLoading}
+        ordersError={sheet.hasError}
+        ordersStale={sheet.isStale}
+        ordersRefreshing={sheet.isRefreshing}
+        onRetryOrders={sheet.retry}
+        locale={locale}
+        onSubmit={handleSubmitPayment}
+      />
+    </div>
+  );
+}

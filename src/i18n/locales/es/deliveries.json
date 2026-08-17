@@ -155,7 +155,8 @@
     "STORE_NOT_FOUND": "La tienda seleccionada no existe.",
     "NO_PRODUCTS_SELECTED": "Selecciona al menos un producto.",
     "PRODUCTS_FROM_DIFFERENT_STORE": "Todos los productos de una entrega deben venir de la tienda seleccionada.",
-    "PRODUCT_NOT_ELIGIBLE": "Uno o mas productos ya no son elegibles. Actualiza e intenta de nuevo."
+    "PRODUCT_NOT_ELIGIBLE": "Uno o mas productos ya no son elegibles. Actualiza e intenta de nuevo.",
+    "ORDER_CANCELLED": "Uno de los productos pertenece a un pedido cancelado. Quítalo de la selección y vuelve a intentarlo."
   },
   "detail": {
     "metaTitle": "Detalle de entrega",
@@ -178,7 +179,8 @@
       "costWithConversion": "costo de envío {cost} (≈ {converted} {base})",
       "costFxPending": "costo de envío {cost} · conversión pendiente",
       "chipFxPending": "Tipo de cambio pendiente",
-      "progressAria": "En tránsito, {pct}% de la ventana"
+      "progressAria": "En tránsito, {pct}% de la ventana",
+      "progressValueText": "En tránsito, {pct} por ciento de la ventana de llegada transcurrido"
     },
     "products": {
       "title": "Productos",

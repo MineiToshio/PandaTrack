@@ -12,8 +12,29 @@ export type OrderItemStateChipProps = {
   initialState: ItemDeliveryState;
   /** True when the order is cancelled: nothing about it moves any more. */
   lockedByCancellation: boolean;
+  /**
+   * `exceptional` drops the chip's TEXT below `md` while the item is in the state the surrounding
+   * list is already ABOUT, keeping it whenever the state deviates. Only the label goes: the control
+   * and its icon stay on every row, so nothing becomes unreachable. See the note on `isQuietLabel`.
+   */
+  labelDisplay?: "always" | "exceptional";
+  /**
+   * Notifies the row of the OPTIMISTIC state, rollback included. The chip owns that state (it owns
+   * the toggle), so a sibling reading `product.deliveryState` from the server would keep predicting
+   * an arrival about a product the collector has just put on the shelf. See `ArrivalMeta`.
+   */
+  onStateChange?: (state: ItemDeliveryState) => void;
 };
 
+/**
+ * No `whitespace-nowrap` here, deliberately. A pill that wraps renders as a two- or three-line blob
+ * with its own rounded corners, so it looks like a defect wherever the row has a neighbour that
+ * could give up the width instead — but whether one exists is the CALLER's fact, not this
+ * component's. `StorePendingProductCard` has one (the truncating product name) and therefore pins
+ * the chip with `shrink-0 whitespace-nowrap` on its wrapper; `OrderCard` does not — its chip sits
+ * alone in a `minmax(0,1fr)` grid column with a quantity column beside it, and at 320px a pinned
+ * chip overflows 40px UNDER that column instead of wrapping. Measured both ways at 320px.
+ */
 const CHIP_BASE = "inline-flex w-fit items-center gap-1 rounded-[var(--radius-pill)] px-1.5 [font-size:11px]";
 
 /**
@@ -37,6 +58,8 @@ export default function OrderItemStateChip({
   itemId,
   initialState,
   lockedByCancellation,
+  labelDisplay = "always",
+  onStateChange,
 }: OrderItemStateChipProps) {
   const t = useTranslations("orderListing");
   const tOrders = useTranslations("orders");
@@ -51,15 +74,25 @@ export default function OrderItemStateChip({
     initialState,
     lockedByDelivery,
     lockedByCancellation,
+    onStateChange,
   });
 
   const descriptor = describeItemDeliveryState(state);
   const StateIcon = descriptor.icon;
   const toneClass = getItemDeliveryStateToneClassName(descriptor.toneKey);
+
+  // `open` is the state a list of PENDING products is already about: 61 of the collector's 67
+  // pending products sit there, so on a phone the label repeats the group header ("28 productos
+  // pendientes") 131px at a time, on a line 254-364px wide. The deviation is the news, so the
+  // deviation keeps its words and the default keeps only its glyph. The button itself never goes:
+  // its accessible name is the ACTION ("Marcar como listo en tienda"), which states the current
+  // state by implication and is unchanged by any of this. From `md` up the text comes back, because
+  // from there the row has room and the label costs nobody anything.
+  const isQuietLabel = labelDisplay === "exceptional" && state === "open" && canToggle;
   const body = (
     <>
       <StateIcon width={10} height={10} aria-hidden />
-      {t(descriptor.labelKey)}
+      <span className={cn(isQuietLabel && "hidden md:inline")}>{t(descriptor.labelKey)}</span>
     </>
   );
 
@@ -102,7 +135,19 @@ export default function OrderItemStateChip({
           // The tap target is grown with a transparent overlay rather than with padding, because
           // padding on a chip that has a background makes the pill itself taller and the list row
           // was designed around this density. The pill stays 19px; the thing a thumb hits is 47px.
-          "relative after:absolute after:inset-x-0 after:-inset-y-3.5 after:content-['']",
+          //
+          // Without its text the pill collapses to whatever the 10px glyph occupies, so it is
+          // pinned to an 18px square instead — a round 18px dot that keeps the row's baseline
+          // exactly where the labelled 18.5px pill left it. 18 + 2 × 13 = 44 on both axes, which is
+          // why a single inset value is right here and a two-value one would be wrong: the
+          // two-value form in `docs/design/interface-patterns.md` §12 is for a box that is NOT
+          // square. Growing sideways takes nothing from anyone (to the chip's left is the product
+          // name, which is text), and it SHRINKS the band this overlay shares with the order link
+          // on the card's second line from the old 131px wide to 44px.
+          "relative after:absolute after:content-['']",
+          isQuietLabel
+            ? "size-[18px] justify-center px-0 after:[inset:-13px] md:size-auto md:px-1.5 md:after:[inset:-14px_0px]"
+            : "after:inset-x-0 after:-inset-y-3.5",
           isPending && "opacity-60",
         )}
       >

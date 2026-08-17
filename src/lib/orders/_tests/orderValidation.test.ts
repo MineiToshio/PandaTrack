@@ -6,7 +6,9 @@ import {
   orderPaymentCreateSchema,
   orderPaymentDeleteSchema,
   exchangeRateSchema,
+  storePaymentCreateSchema,
 } from "../orderValidation";
+import { addUtcDays, utcMidnightToday } from "@/test/domainDateFixtures";
 
 const VALID_CUID = "clxxxxxxxxxxxxxxxxxxxxxx0";
 
@@ -77,7 +79,7 @@ describe("orderItemRowSchema", () => {
 describe("orderCreateSchema exchangeRate validation", () => {
   const baseInput = {
     storeId: VALID_CUID,
-    orderDate: new Date(),
+    orderDate: utcMidnightToday(),
     currencyCode: "USD",
     totalCost: 10000,
   };
@@ -116,7 +118,7 @@ describe("orderCreateSchema exchangeRate validation", () => {
 describe("orderCreateSchema zero-decimal currency validation", () => {
   const clpInput = {
     storeId: VALID_CUID,
-    orderDate: new Date(),
+    orderDate: utcMidnightToday(),
     currencyCode: "CLP",
   };
 
@@ -148,7 +150,7 @@ describe("orderCreateSchema zero-decimal currency validation", () => {
   it("does not apply the whole-major rule to standard currencies", () => {
     const result = orderCreateSchema.safeParse({
       storeId: VALID_CUID,
-      orderDate: new Date(),
+      orderDate: utcMidnightToday(),
       currencyCode: "USD",
       totalCost: 4300050,
     });
@@ -158,11 +160,9 @@ describe("orderCreateSchema zero-decimal currency validation", () => {
 
 describe("orderPaymentCreateSchema", () => {
   const VALID_CUID = "clxxxxxxxxxxxxxxxxxxxxxx0";
-  const today = new Date();
-  const yesterday = new Date(today);
-  yesterday.setDate(today.getDate() - 1);
-  const tomorrow = new Date(today);
-  tomorrow.setDate(today.getDate() + 1);
+  const today = utcMidnightToday();
+  const yesterday = addUtcDays(today, -1);
+  const tomorrow = addUtcDays(today, 1);
 
   const validBase = { orderId: VALID_CUID, amount: 1000, paymentDate: yesterday };
 
@@ -209,20 +209,27 @@ describe("orderPaymentCreateSchema", () => {
 });
 
 describe("orderCancelSchema", () => {
-  it("defaults paymentsChoice to keep when omitted", () => {
+  it("defaults paymentsChoice to lost when omitted", () => {
     const result = orderCancelSchema.safeParse({ orderId: VALID_CUID });
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.paymentsChoice).toBe("keep");
+      expect(result.data.paymentsChoice).toBe("lost");
     }
   });
 
-  it("accepts an explicit remove choice", () => {
-    const result = orderCancelSchema.safeParse({ orderId: VALID_CUID, paymentsChoice: "remove" });
+  it("accepts an explicit credit choice", () => {
+    const result = orderCancelSchema.safeParse({ orderId: VALID_CUID, paymentsChoice: "credit" });
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.paymentsChoice).toBe("remove");
+      expect(result.data.paymentsChoice).toBe("credit");
     }
+  });
+
+  it("normalizes the per-order vocabulary the current cancel dialog still sends", () => {
+    const kept = orderCancelSchema.safeParse({ orderId: VALID_CUID, paymentsChoice: "keep" });
+    const removed = orderCancelSchema.safeParse({ orderId: VALID_CUID, paymentsChoice: "remove" });
+    expect(kept.success && kept.data.paymentsChoice).toBe("lost");
+    expect(removed.success && removed.data.paymentsChoice).toBe("credit");
   });
 
   it("rejects an unknown paymentsChoice value", () => {
@@ -246,9 +253,32 @@ describe("orderPaymentDeleteSchema", () => {
     expect(orderPaymentDeleteSchema.safeParse({ paymentId: VALID_CUID, orderId: VALID_CUID }).success).toBe(true);
   });
 
-  it("rejects non-cuid paymentId", () => {
+  /**
+   * The field was renamed from `allocationId` to `paymentId` when an order's ledger became one row
+   * per transfer. What must NOT ride along with that rename is a tightening to `cuid()`: 606 of the
+   * collector's 626 payments were carried over from the per-order ledger and keep a prefixed
+   * `mig_*` id of 29 characters. Tightening the shape would leave 96.8% of the payments impossible
+   * to delete, and deleting is the only way to correct a payment there is.
+   */
+  it("accepts the derived id a payment carried over from the per-order ledger has", () => {
     const result = orderPaymentDeleteSchema.safeParse({
-      paymentId: "bad-id",
+      paymentId: `mig_pay_${VALID_CUID}`,
+      orderId: VALID_CUID,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts a 29-character `mig_*` id, the real shape 606 of 626 payments carry", () => {
+    // Measured, not assumed. A `cuid()` rule accepts 25 characters starting with `c`, so this exact
+    // length and prefix is what a tightening would break.
+    const legacyId = `mig_${VALID_CUID}`;
+    expect(legacyId).toHaveLength(29);
+    expect(orderPaymentDeleteSchema.safeParse({ paymentId: legacyId, orderId: VALID_CUID }).success).toBe(true);
+  });
+
+  it("rejects an empty paymentId", () => {
+    const result = orderPaymentDeleteSchema.safeParse({
+      paymentId: "",
       orderId: VALID_CUID,
     });
     expect(result.success).toBe(false);
@@ -293,7 +323,7 @@ describe("exchangeRateSchema (shared canonical rate schema)", () => {
 describe("orderCreateSchema items bound", () => {
   const baseInput = {
     storeId: VALID_CUID,
-    orderDate: new Date(),
+    orderDate: utcMidnightToday(),
     currencyCode: "USD",
     totalCost: 10000,
   };
@@ -317,6 +347,67 @@ describe("orderCreateSchema items bound", () => {
     expect(result.success).toBe(false);
     if (!result.success) {
       expect(result.error.issues.map((e) => e.message)).toContain("TOO_MANY_ITEMS");
+    }
+  });
+});
+
+describe("domain dates must arrive at UTC midnight", () => {
+  // The bug, reproduced at the boundary where it entered. A picker's local-midnight `Date` survives
+  // the Server Action boundary as its exact instant, which from Lima (UTC-5) is that day at 05:00Z.
+  // `z.coerce.date()` waved it through, so three `store_payment` rows, two `order_payment` rows and
+  // two `delivery.receivedDate` rows landed five hours off every other domain date in the
+  // collection. The clients now call `toDomainDate`; this is the server refusing to store the skew
+  // if one of them ever forgets again.
+  const LOCAL_MIDNIGHT_IN_LIMA = new Date("2026-01-05T05:00:00.000Z");
+  const UTC_MIDNIGHT = new Date("2026-01-05T00:00:00.000Z");
+
+  it("orderPaymentCreateSchema refuses a paymentDate that is not UTC midnight", () => {
+    const result = orderPaymentCreateSchema.safeParse({
+      orderId: VALID_CUID,
+      amount: 1000,
+      paymentDate: LOCAL_MIDNIGHT_IN_LIMA,
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues.map((issue) => issue.message)).toContain("DATE_NOT_UTC_MIDNIGHT");
+    }
+  });
+
+  it("storePaymentCreateSchema refuses a paymentDate that is not UTC midnight", () => {
+    const result = storePaymentCreateSchema.safeParse({
+      storeId: VALID_CUID,
+      amount: 15000,
+      paymentDate: LOCAL_MIDNIGHT_IN_LIMA,
+      currencyCode: "PEN",
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues.map((issue) => issue.message)).toContain("DATE_NOT_UTC_MIDNIGHT");
+    }
+  });
+
+  it("storePaymentCreateSchema accepts the same calendar day once normalized", () => {
+    const result = storePaymentCreateSchema.safeParse({
+      storeId: VALID_CUID,
+      amount: 15000,
+      paymentDate: UTC_MIDNIGHT,
+      currencyCode: "PEN",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("still accepts the `yyyy-mm-dd` text the FormData routes send", () => {
+    // The order/delivery create+edit routes were never affected precisely because they send text,
+    // which coercion reads as UTC midnight. That must keep working unchanged.
+    const result = orderCreateSchema.safeParse({
+      storeId: VALID_CUID,
+      orderDate: "2026-01-05",
+      currencyCode: "USD",
+      totalCost: 10000,
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.orderDate.toISOString()).toBe("2026-01-05T00:00:00.000Z");
     }
   });
 });

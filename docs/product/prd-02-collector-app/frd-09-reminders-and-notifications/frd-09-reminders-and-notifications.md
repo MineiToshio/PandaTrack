@@ -7,7 +7,7 @@ status: ACTIVE
 parent: PRD-02
 children:
   - BP-01
-last_updated: 2026-07-22
+last_updated: 2026-08-08
 source_features: []
 implementation_status: PARTIALLY_IMPLEMENTED
 ---
@@ -116,7 +116,7 @@ As a collector, I want to turn reminders on or off and choose which kinds I get,
 - `BR-09-05`: The three reminder subjects reuse the domains' existing definitions of "due" and "arrived": a payment reminder targets a non-cancelled order with outstanding balance greater than zero whose expected date falls in the payment window; an arrival reminder targets a not-yet-arrived non-cancelled order or delivery whose expected arrival falls in the arrival window; an overdue reminder targets a not-yet-arrived non-cancelled order or delivery whose expected arrival reference date is already past.
 - `BR-09-06`: Cancelled orders and cancelled deliveries are never reminded on, matching how they are excluded from dashboard obligations and spend.
 - `BR-09-07`: Pruning an expired subscription is a normal lifecycle event. It must not raise a monitored error and must not abort the rest of the dispatch batch.
-- `BR-09-08`: A payment reminder is produced only when the order still has an outstanding balance (`outstanding > 0`). A fully paid order never triggers a payment reminder even if its expected date is inside the window.
+- `BR-09-08`: A payment reminder is produced only when the order still has an outstanding balance (`outstanding > 0`). A fully paid order never triggers a payment reminder even if its expected date is inside the window. **Note (2026-08-08, store-level payments):** "outstanding" reads `Order.allocatedAmountMinor` (the sum of the order's own `PaymentAllocation` rows) against `totalCost`, the transactionally-synced cache also used by the dashboard and the orders list — same semantics as before the payment model moved to the store, just a renamed source column (`reminderCandidateQueries.ts`).
 - `BR-09-09`: Only a store's rejection or removal (a transition to `StoreStatus.REJECTED`) notifies its creator. Approving a store never sends a notification, and neither does a store accumulating open reports: the public report notice is a derived read with no state transition behind it (PRD-02, FRD-04 `FR-04-43`).
 - `BR-09-10`: `STORE_REJECTED` delivery is event-triggered at the moment of the admin decision. It never runs through the daily dispatcher's due-soon/overdue batch or its thin candidate queries (`BR-09-04`, `BR-09-05`).
 - `BR-09-11`: The choice between the neutral and the sanction-toned `STORE_REJECTED` copy is driven entirely by the `Store.removalReason` value `WO-09`'s moderation action supplies. This FRD consumes that value; it does not classify rejection reasons itself.

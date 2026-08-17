@@ -16,6 +16,9 @@ type OrderDetailStickyActionBarProps = {
   status: OrderStatus;
   isOverdue: boolean;
   remainingAmount: number;
+  /** Sum of every payment declared against this order. Once positive, the primary CTA shifts
+      from "Anotar pago" (first payment) to "Saldar {remaining}" (continuing one already started). */
+  allocatedAmountMinor: number;
   currencyCode: string;
   hasUnpaidBalance: boolean;
   /** False once every product is in a delivery or already delivered — see `hasStickyBarActions`. */
@@ -54,6 +57,7 @@ export default function OrderDetailStickyActionBar({
   status,
   isOverdue,
   remainingAmount,
+  allocatedAmountMinor,
   currencyCode,
   hasUnpaidBalance,
   canCreateDelivery,
@@ -65,13 +69,15 @@ export default function OrderDetailStickyActionBar({
   const [isReactivating, setIsReactivating] = useState(false);
 
   const isCancelled = status === "CANCELLED";
-  const isCompleted = status === "COMPLETED";
-  const completedUnpaid = isCompleted && hasUnpaidBalance;
-  // Active + already fully paid → the "Anotar pago" button is meaningless. Hide it and
-  // promote "Crear entrega" to the full-width primary slot. The desktop aside already
-  // gates its own "Anotar pago" via `canAddPayment = !isCancelled && !isFullyPaid` —
-  // this brings the mobile sticky bar to parity.
-  const isFullyPaid = remainingAmount === 0;
+  // Fully allocated (nothing left to assign) → the payment button is meaningless. Hide it and
+  // promote "Crear entrega" to the full-width primary slot. The desktop aside already gates its
+  // own "Anotar pago" via `canAddPayment = !isCancelled && !isFullyPaid` — this brings the mobile
+  // sticky bar to parity.
+  const isFullyAllocated = remainingAmount === 0;
+  // Once something is already allocated, the natural verb shifts from "note a first payment" to
+  // "settle what's left" — regardless of order status (completed-and-unpaid used to be a special
+  // case here; it now falls out of this same rule since a completed order can still owe money).
+  const hasAllocation = allocatedAmountMinor > 0;
 
   async function handleReactivate() {
     setIsReactivating(true);
@@ -107,21 +113,8 @@ export default function OrderDetailStickyActionBar({
         {isReactivating ? "…" : t("detail.stickyBar.reactivate")}
       </button>
     );
-  } else if (completedUnpaid) {
-    content = (
-      <button
-        type="button"
-        onClick={onAnnotatePayment}
-        className={cn(primaryBtnClass, "w-full")}
-        data-ph-event={POSTHOG_EVENTS.ORDER.STICKY_BAR_PRIMARY_CLICKED}
-        data-ph-props={JSON.stringify({ orderId, action: "settle" })}
-      >
-        <CircleDollarSign className="size-4 shrink-0" aria-hidden />
-        {t("detail.stickyBar.settle", { amount: formatAmount(remainingAmount, currencyCode) })}
-      </button>
-    );
-  } else if (isFullyPaid) {
-    // Fully paid → drop the payment action; "Crear entrega" takes the full-width slot.
+  } else if (isFullyAllocated) {
+    // Fully allocated → drop the payment action; "Crear entrega" takes the full-width slot.
     // Use the long label ("Crear entrega") even on overdue, since the compact "Entrega"
     // is meant for the two-button layout where space is constrained.
     content = (
@@ -136,7 +129,11 @@ export default function OrderDetailStickyActionBar({
       </Link>
     );
   } else {
-    const primaryLabel = isOverdue ? t("detail.stickyBar.payRemaining") : t("detail.stickyBar.annotatePayment");
+    // "Saldar {X}" once something is already allocated (continuing a payment already started);
+    // plain "Anotar pago" while nothing has been declared against this order yet.
+    const primaryLabel = hasAllocation
+      ? t("detail.stickyBar.settle", { amount: formatAmount(remainingAmount, currencyCode) })
+      : t("detail.stickyBar.annotatePayment");
     const secondaryLabel = isOverdue ? t("detail.stickyBar.delivery") : t("detail.stickyBar.createDelivery");
     content = (
       <>
@@ -156,7 +153,7 @@ export default function OrderDetailStickyActionBar({
           onClick={onAnnotatePayment}
           className={primaryBtnClass}
           data-ph-event={POSTHOG_EVENTS.ORDER.STICKY_BAR_PRIMARY_CLICKED}
-          data-ph-props={JSON.stringify({ orderId, action: "annotate-payment" })}
+          data-ph-props={JSON.stringify({ orderId, action: hasAllocation ? "settle" : "annotate-payment" })}
           aria-keyshortcuts="P"
         >
           <CircleDollarSign className="size-4 shrink-0" aria-hidden />

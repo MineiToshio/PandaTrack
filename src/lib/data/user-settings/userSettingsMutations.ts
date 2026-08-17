@@ -75,6 +75,23 @@ async function applyCollectorPreferencesPatchWithin(
     throw nextState.error;
   }
 
+  const keys = hasProductTypes ? (patch.preferredProductTypeKeys ?? []) : [];
+
+  // Membership is a catalog-existence check (not a hardcoded union), so admin-authored types are
+  // selectable while typos still fail. Runs in the same tx as the write it guards, and deliberately
+  // BEFORE the first write of that tx (ADR 0022): this function may run inside a transaction the
+  // CALLER owns, where the `ZodError` thrown here is caught by `parseAndApplyCollectorPreferencesPatch`
+  // and relayed as `{ ok: false }`. A relayed refusal is a plain return in the caller's transaction,
+  // so with the check sitting after `tx.user.update` the scalar patch committed while the collector
+  // was told the save had failed. Do not move it back down next to the write it guards.
+  if (keys.length > 0) {
+    const existing = await listExistingStoreProductTypeKeys(keys, tx);
+    assertKnownProductTypeKeys(
+      keys,
+      existing.map((row) => row.key),
+    );
+  }
+
   if (hasScalar) {
     await tx.user.update({
       where: { id: userId },
@@ -83,16 +100,6 @@ async function applyCollectorPreferencesPatchWithin(
   }
 
   if (hasProductTypes) {
-    const keys = patch.preferredProductTypeKeys ?? [];
-    // Membership is a catalog-existence check (not a hardcoded union), so admin-authored types are
-    // selectable while typos still fail. Runs in the same tx as the write it guards.
-    if (keys.length > 0) {
-      const existing = await listExistingStoreProductTypeKeys(keys, tx);
-      assertKnownProductTypeKeys(
-        keys,
-        existing.map((row) => row.key),
-      );
-    }
     await tx.userPreferredProductType.deleteMany({ where: { userId } });
     if (keys.length > 0) {
       await tx.userPreferredProductType.createMany({
@@ -138,6 +145,12 @@ export async function applyCollectorPreferencesPatch(
  *
  * An optional transaction client is forwarded to `applyCollectorPreferencesPatch` so the patch can
  * participate in a wider transaction owned by the caller.
+ *
+ * Safe to relay `{ ok: false }` from inside that caller's transaction: every refusal this function
+ * can produce (parse, cross-field state, unknown product-type key) is decided before the patch
+ * issues its first write, so swallowing the `ZodError` here never converts a rolled-back refusal
+ * into a committed one (ADR 0022). Anything that is not a `ZodError` still propagates, and rolls the
+ * caller's transaction back as it should.
  */
 export async function parseAndApplyCollectorPreferencesPatch(
   userId: string,

@@ -268,4 +268,4 @@ S7-A.6 mantuvo Pagos collapsed por default. Re-evaluación con research (NN/g so
 - Brainstorm Ergonomics — Dialog Button Order: <https://www.brainstormergonomics.com/blog/dialog-button-order-design/>
 - ADR 0008 — Modal enhancement (canonical pattern): `../decisions/0008-modal-enhancement.md`
 - ADR 0010 — UI primitive libraries policy: `../decisions/0010-ui-primitive-libraries-policy.md`
-- `ContentHeader.tsx` (shell real): `src/app/[locale]/(app)/_components/AppLayout/ContentHeader.tsx`
+- `ContentHeader.tsx` (shell real en el momento de esta decisión): `src/app/[locale]/(app)/_components/AppLayout/ContentHeader.tsx`. **Archivo borrado después**: quedó sin importadores y el header que monta el shell es `src/components/modules/Header.tsx`. La decisión sigue vigente (el header del shell no admite acciones contextuales per-page); solo cambió el archivo donde vive.

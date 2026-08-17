@@ -158,8 +158,6 @@ Sets `metadataBase`, the `%s | PandaTrack` title template, and the default descr
 - `getOgFonts()`: loads all five font files (Zilla Slab Highlight 700, Roboto Condensed 400/700, Open Sans 400/600) from `@fontsource` → `public/fonts/` → Google Fonts. The fallback is all-or-nothing per tier: it advances to the next tier only when the current tier returns zero fonts. Returns `{ fonts, loaded }` where `loaded` has per-family booleans.
 - `getOgImageData(locale, namespace)`: loads OG copy keys `ogEyebrow`, `ogHeadline`, `ogSubline` from the given locale namespace (`"landing"`, `"terms"`, or `"privacy"`), plus fonts.
 - `OG_FONT_NAMES`: `{ logo: "Zilla Slab Highlight", title: "Roboto Condensed", body: "Open Sans" }`.
-- `getOgLogoFont()`: deprecated; kept for backward compatibility.
-- `LOGO_FONT_NAME`: exported alias for `OG_FONT_NAMES.logo`.
 - Exported types: `OgFontDescriptor`, `OgFontsResult`, `OgImageData`, `OgImageNamespace`.
 
 ### OG image template — `src/components/modules/OgImageTemplate.tsx`

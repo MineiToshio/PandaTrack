@@ -21,6 +21,12 @@ export type CheckboxProps = {
    * second visible `label` would duplicate it). Ignored when `label` is set.
    */
   ariaLabel?: string;
+  /**
+   * Id of a node that describes what this box is about, read after its name. For a row whose facts
+   * (a price, what is already paid on it) live in their own node beside the label, so the box
+   * announces "Kingdom 23, checkbox, S/ 40,50" instead of a bare name.
+   */
+  ariaDescribedById?: string;
   size?: CheckboxSize;
   className?: string;
 };
@@ -31,7 +37,10 @@ const SIZE_MAP: Record<CheckboxSize, { box: string; iconSize: number; text: stri
 };
 
 const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
-  ({ id, name, checked, onChange, disabled, loading, label, ariaLabel, size = "md", className }, ref) => {
+  (
+    { id, name, checked, onChange, disabled, loading, label, ariaLabel, ariaDescribedById, size = "md", className },
+    ref,
+  ) => {
     const { box, iconSize, text } = SIZE_MAP[size];
     const isIndeterminate = checked === "indeterminate";
     const isChecked = checked === true;
@@ -63,6 +72,7 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
             onChange={handleChange}
             disabled={disabled || loading}
             aria-label={!label && ariaLabel ? ariaLabel : undefined}
+            aria-describedby={ariaDescribedById}
             aria-checked={isIndeterminate ? "mixed" : isChecked}
             aria-busy={loading ? "true" : undefined}
             className="sr-only"

@@ -1,14 +1,15 @@
 "use client";
 
-import { AlertTriangle, CircleCheck, Package, PackageCheck, Truck } from "lucide-react";
+import { AlertTriangle, ArrowUpRight, CircleCheck, Package, PackageCheck, Truck } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import Eyebrow from "@/components/core/Eyebrow";
+import ProgressBar from "@/components/core/ProgressBar";
 import StoreAvatar from "@/components/core/StoreAvatar";
 import { useAnimatedNumber } from "@/hooks/useAnimatedNumber";
 import { cn } from "@/lib/styles";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
-import { formatAmountSymbolOnly, formatAmountWithSymbol } from "@/lib/currency";
+import { formatAmountSymbolOnly } from "@/lib/currency";
 import { formatDomainDate } from "@/lib/domainDate";
 import { resolveStoreTombstone } from "@/lib/store/storeTombstone";
 import type { OrderStatus, StoreRemovalReason, StoreStatus } from "../../../../../../../generated/prisma/client";
@@ -38,12 +39,16 @@ type OrderDetailHeroProps = {
     totalCost: number;
     status: OrderStatus;
   };
-  /** Live payment summary — refreshed on each add/delete payment so amount + progress animate. */
-  remainingAmount: number;
-  paymentPercentage: number;
+  /** Sum of every payment declared against this order (§ store-level payments). Live — refreshed
+      on each add/delete payment so the "Asignado X de Y" line + progress bar animate. */
+  allocatedAmountMinor: number;
   hasUnpaidBalance: boolean;
   isOverdue: boolean;
   overdueDays: number;
+  /** The store's debt in this order's currency, read server-side. Surfaced only while nothing is
+      allocated to THIS order yet, so a collector who hasn't logged a payment here still sees what
+      they already owe the store from other orders. Negative means the store owes them (credit). */
+  storeDebtMinor: number;
   locale: string;
 };
 
@@ -80,11 +85,11 @@ function StatusChipIcon({ status, className }: { status: OrderStatus; className?
 
 export default function OrderDetailHero({
   order,
-  remainingAmount,
-  paymentPercentage,
+  allocatedAmountMinor,
   hasUnpaidBalance,
   isOverdue,
   overdueDays,
+  storeDebtMinor,
   locale,
 }: OrderDetailHeroProps) {
   const t = useTranslations("orders");
@@ -101,49 +106,47 @@ export default function OrderDetailHero({
   const showOverdueChip = isOverdue && !isCancelled && !isCompleted;
   const showUnpaidChip = completedUnpaid;
 
-  // Hero layout — same shape for every active state (Sergio prefers consistent UX):
-  //  - Active → label "Saldo pendiente" + amount = remainingAmount + "de TOTAL" sub + progress + meta
-  //  - Cancelled → label "Total" + amount = totalCost (no progress/sub)
-  const showActiveLayout = !isCancelled;
-  const heroLabel = showActiveLayout ? t("detail.hero.saldoPendiente") : t("detail.hero.total");
-  const heroAmountMinor = showActiveLayout ? remainingAmount : order.totalCost;
-  const showSubAmount = showActiveLayout;
-  const showProgress = showActiveLayout;
+  // Store-level payments: the hero's main figure is always the order's TOTAL — a stable number
+  // that never moves as payments come and go. What sits below it depends on whether anything has
+  // been declared against THIS order yet:
+  //  - allocated > 0 → "Asignado X de Y" + a progress bar (allocated / total).
+  //  - allocated === 0 → no progress bar; instead a link into the store's own debt figure, since
+  //    the collector likely already owes the store from other orders.
+  // Neither line renders on a cancelled order, which keeps its own "Cancelado el {date}" meta line.
+  const hasAllocation = allocatedAmountMinor > 0;
+  const isFullyAllocated = order.totalCost > 0 && allocatedAmountMinor >= order.totalCost;
+  const showPaidInFullBadge = !isCancelled && isFullyAllocated;
 
-  // Counter-roll animation when amount + percentage change (after add/delete payment).
-  const animatedAmount = useAnimatedNumber(heroAmountMinor);
-  const animatedPct = useAnimatedNumber(paymentPercentage);
-  const pctRounded = Math.round(animatedPct);
-  const pctForDisplay = Math.round(paymentPercentage); // settled value for the meta copy
+  // Counter-roll animation when the allocated amount (and the percentage it drives) changes,
+  // after add/delete payment.
+  const animatedAllocated = useAnimatedNumber(allocatedAmountMinor);
+  const allocatedPct =
+    order.totalCost === 0 ? 0 : Math.min(100, Math.max(0, Math.floor((allocatedAmountMinor / order.totalCost) * 100)));
+  const animatedPct = useAnimatedNumber(allocatedPct);
+  const pctForDisplay = Math.round(allocatedPct); // settled value for the aria label
 
-  // Amount color: warning when there's an unpaid balance on a completed order, dimmed
-  // secondary on cancelled (matches demo `s7-order-detail-cancelled` which uses
-  // `color:var(--text-secondary)` on the hero amount), default text-title otherwise.
+  // Amount color: dimmed secondary on cancelled (matches demo `s7-order-detail-cancelled`, which
+  // uses `color:var(--text-secondary)` on the hero amount), default text-title otherwise. The
+  // total is a neutral, stable figure now, so it no longer takes a warning tint — that signal
+  // lives in the "Saldo pendiente" chip instead.
   const amountClass = cn(
     "tabular-nums font-bold leading-none tracking-[-0.03em] text-[clamp(32px,5vw,40px)]",
-    completedUnpaid ? "text-warning" : isCancelled ? "text-text-secondary" : "text-text-title",
+    isCancelled ? "text-text-secondary" : "text-text-title",
   );
 
-  // Fully-paid swap — replace the literal "$0.00" with a "Pago completado" status block.
-  // We gate on BOTH the settled value AND the animated value being at 0 so the counter
-  // animation can finish counting down to 0 before the swap happens (visually: $25 → $0 →
-  // morph to text). When the user is on an already-paid order at first paint, `animatedAmount`
-  // starts at 0 and we render the text immediately. If they later delete a payment and the
-  // balance comes back, `isFullyPaid` flips false and we go back to the number layout.
-  const isFullyPaid = showActiveLayout && remainingAmount === 0;
-  const showPaidStatus = isFullyPaid && Math.round(animatedAmount) === 0;
+  // The bar itself is `<ProgressBar>`; `useAnimatedNumber` drives its value per frame (and snaps
+  // under reduced-motion), so it opts out of the component's own CSS easing — two interpolations
+  // stacked would drift the fill away from the counter above it.
+  const progressTone = completedUnpaid || isOverdue ? "warning" : "accent";
 
-  // Transform-only fill (scaleX from the left, never animating `width`): the hook drives the
-  // value per frame and snaps under reduced-motion. The track clips the rounded ends, so the
-  // fill itself stays square-edged to avoid border-radius distortion when scaled.
-  const progressFillStyle: React.CSSProperties = {
-    transform: `scaleX(${Math.min(100, Math.max(0, animatedPct)) / 100})`,
-    transformOrigin: "left",
-    background:
-      completedUnpaid || isOverdue
-        ? "linear-gradient(90deg, var(--warning), var(--accent-warm))"
-        : "linear-gradient(90deg, var(--accent), var(--accent-warm))",
-  };
+  const isCreditAtStore = storeDebtMinor < 0;
+  const debtLabel = isCreditAtStore
+    ? t("detail.hero.storeCreditLink", {
+        amount: formatAmountSymbolOnly(Math.abs(storeDebtMinor), order.currencyCode, locale),
+      })
+    : t("detail.hero.storeDebtLink", {
+        amount: formatAmountSymbolOnly(storeDebtMinor, order.currencyCode, locale),
+      });
 
   // Meta line segments — order date is always present so the hero surfaces the same
   // "when was this ordered" anchor regardless of estimate (per Sergio). On narrow
@@ -200,6 +203,12 @@ export default function OrderDetailHero({
               <StatusChipIcon status={order.status} className="size-3.5" />
               {t(`detail.status.${order.status}`)}
             </span>
+            {showPaidInFullBadge && (
+              <span className="border-success/35 bg-success/15 text-success inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium">
+                <CircleCheck className="size-3.5" aria-hidden />
+                {t("detail.hero.paidInFull")}
+              </span>
+            )}
             {showOverdueChip && (
               <span className="border-warning/35 bg-warning/15 text-warning inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium">
                 <AlertTriangle className="size-3.5" aria-hidden />
@@ -229,68 +238,70 @@ export default function OrderDetailHero({
         {t("detail.hero.eyebrow")} · {order.currencyCode}
       </Eyebrow>
 
-      {/* Amount block — matches demo `.detail-hero-amount` + `.detail-hero-amount-sub`.
-          Fully-paid swap: when the saldo settles at 0 we replace `Saldo pendiente · $0.00`
-          with an icon + status text in `text-success` so the hero reads as a state, not a
-          dead "$0.00" value. The `de $TOTAL` sub line stays so the user still sees what
-          the total was. */}
+      {/* Amount block — the total is the stable headline figure; what changes underneath it is
+          the allocation state (see the block comment above `hasAllocation`). */}
       <div className="mt-3">
-        {showPaidStatus ? (
-          <div className="text-success flex items-center gap-2 leading-none">
-            <CircleCheck className="size-7 shrink-0" aria-hidden strokeWidth={2.25} />
-            <span className="text-[clamp(22px,3.5vw,28px)] font-bold tracking-[0.04em] uppercase">
-              {t("detail.hero.paidInFull")}
-            </span>
-          </div>
-        ) : (
-          <>
-            <div className="text-text-secondary text-[13px]">{heroLabel}</div>
-            <div className={amountClass}>
-              {/* Round the animated value so currency formatter receives an integer of minor units */}
-              {formatAmountSymbolOnly(Math.round(animatedAmount), order.currencyCode, locale)}
-            </div>
-          </>
-        )}
-        {showSubAmount && (
-          <div className="text-text-secondary mt-1 text-[14px] tabular-nums">
-            {t("detail.hero.totalDe", {
-              total: formatAmountWithSymbol(order.totalCost, order.currencyCode, locale),
-            })}
-          </div>
-        )}
+        <div className="text-text-secondary text-[13px]">{t("detail.hero.total")}</div>
+        <div className={amountClass}>{formatAmountSymbolOnly(order.totalCost, order.currencyCode, locale)}</div>
 
-        {showProgress && (
-          <div
-            role="progressbar"
-            aria-valuenow={pctForDisplay}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-label={t("detail.hero.paidPercent", { pct: pctForDisplay })}
-            className="mt-4 h-1 w-full overflow-hidden rounded-full"
-            style={{ background: "color-mix(in oklab, var(--text-primary) 8%, transparent)" }}
-          >
-            <span className="block h-full w-full" style={progressFillStyle} />
-          </div>
-        )}
+        {!isCancelled &&
+          (hasAllocation ? (
+            <>
+              <div className="text-text-secondary mt-1 text-[14px] tabular-nums">
+                {t("detail.hero.allocatedOfTotal", {
+                  allocated: formatAmountSymbolOnly(Math.round(animatedAllocated), order.currencyCode, locale),
+                  total: formatAmountSymbolOnly(order.totalCost, order.currencyCode, locale),
+                })}
+              </div>
+              <ProgressBar
+                value={animatedPct}
+                valueNow={pctForDisplay}
+                transition={false}
+                tone={progressTone}
+                label={t("detail.hero.allocatedPercentAria", { pct: pctForDisplay })}
+                // The whole sentence, with both operands and the residual: "Ya pagaste X de Y.
+                // Falta Z." A percentage alone makes a screen reader user do the subtraction the
+                // sighted reader gets for free.
+                valueText={t("detail.payments.heroProgressSentence", {
+                  paid: formatAmountSymbolOnly(allocatedAmountMinor, order.currencyCode, locale),
+                  total: formatAmountSymbolOnly(order.totalCost, order.currencyCode, locale),
+                  remaining: formatAmountSymbolOnly(
+                    Math.max(0, order.totalCost - allocatedAmountMinor),
+                    order.currencyCode,
+                    locale,
+                  ),
+                })}
+                className="mt-2 w-full"
+              />
+            </>
+          ) : (
+            // Nothing declared against THIS order yet. A debt link only makes sense when there is
+            // something to say: > 0 owed to the store, or < 0 (a credit, the existing "A favor"
+            // link). At exactly 0 the collector owes this store nothing at all, so the line is
+            // omitted entirely rather than rendering a "Deuda de la tienda: 0.00" link to nowhere.
+            storeDebtMinor !== 0 && (
+              <Link
+                href={storeHref}
+                className={cn(
+                  "mt-1 inline-flex items-center gap-1 text-[14px] font-medium hover:underline",
+                  isCreditAtStore ? "text-success" : "text-text-secondary",
+                )}
+              >
+                {debtLabel}
+                <ArrowUpRight className="size-3.5 shrink-0" aria-hidden />
+              </Link>
+            )
+          ))}
 
         {isCancelled ? (
-          <div className={cn("text-text-muted text-[12px] leading-snug", showProgress ? "mt-1.5" : "mt-3")}>
+          <div className="text-text-muted mt-3 text-[12px] leading-snug">
             {t("detail.hero.cancelledOn", { date: orderDateLabel })}
           </div>
         ) : (
           // Flex-wrap container with `gap-x-2` (~8px) reproduces the demo `·` rhythm while
           // letting each segment wrap as a unit. `aria-hidden` on the dot so screen readers
-          // hear three discrete phrases instead of a literal middle-dot character.
-          <div
-            className={cn(
-              "text-text-muted flex flex-wrap items-baseline gap-x-2 text-[12px] leading-snug",
-              showProgress ? "mt-1.5" : "mt-3",
-            )}
-          >
-            {/* Order: payment % → order date → estimated delivery. Payment % first so the
-                animated counter sits closest to the progress bar that drives it. */}
-            <span className="whitespace-nowrap">{t("detail.hero.metaPaidPct", { pct: pctRounded })}</span>
-            <span aria-hidden>·</span>
+          // hear discrete phrases instead of a literal middle-dot character.
+          <div className="text-text-muted mt-2 flex flex-wrap items-baseline gap-x-2 text-[12px] leading-snug">
             <span className="whitespace-nowrap">{t("detail.hero.metaOrdered", { date: orderDateLabel })}</span>
             {expectedToLabel && (
               <>

@@ -2,6 +2,7 @@ import { z } from "zod";
 import { isAllowedCollectorBaseCurrency } from "@/lib/catalog/collectorCountries";
 import { exchangeRateSchema } from "@/lib/orders/orderValidation";
 import { isWholeMajorAmount, isZeroDecimalCurrency } from "@/lib/currency";
+import { domainDateSchema } from "@/lib/domainDateSchema";
 
 const MAX_DELIVERY_COST = 999_999_999;
 const MAX_NOTE_LENGTH = 2000;
@@ -72,15 +73,14 @@ const zeroDecimalCostRefinement = (data: { currencyCode?: string; cost?: number 
 export const deliveryCreateSchema = z
   .object({
     storeId: z.string().cuid({ message: "INVALID_STORE_ID" }),
-    deliveryDate: z.coerce.date().refine((d) => d <= new Date(), { message: "DELIVERY_DATE_IN_FUTURE" }),
-    expectedArrivalFrom: z.coerce.date().nullable().optional(),
-    expectedArrivalTo: z.coerce.date().nullable().optional(),
+    deliveryDate: domainDateSchema.refine((d) => d <= new Date(), { message: "DELIVERY_DATE_IN_FUTURE" }),
+    expectedArrivalFrom: domainDateSchema.nullable().optional(),
+    expectedArrivalTo: domainDateSchema.nullable().optional(),
     /**
      * Present only on the quick-arrival path: the delivery is born DELIVERED instead of
      * IN_TRANSIT and skips the separate mark-delivered step. Absent on the wizard path.
      */
-    receivedDate: z.coerce
-      .date()
+    receivedDate: domainDateSchema
       .refine((d) => d <= new Date(), { message: "RECEIVED_DATE_IN_FUTURE" })
       .nullable()
       .optional(),
@@ -109,9 +109,42 @@ export const deliveryQuickArrivalSchema = z
       .array(z.string().cuid({ message: "INVALID_PRODUCT_ID" }))
       .min(1, { message: "NO_PRODUCTS_SELECTED" })
       .max(MAX_DELIVERY_PRODUCTS, { message: "TOO_MANY_PRODUCTS" }),
-    receivedDate: z.coerce.date().refine((d) => d <= new Date(), { message: "RECEIVED_DATE_IN_FUTURE" }),
-    shippedDate: z.coerce
-      .date()
+    receivedDate: domainDateSchema.refine((d) => d <= new Date(), { message: "RECEIVED_DATE_IN_FUTURE" }),
+    shippedDate: domainDateSchema
+      .refine((d) => d <= new Date(), { message: "DELIVERY_DATE_IN_FUTURE" })
+      .nullable()
+      .optional(),
+    cost: deliveryCostSchema,
+    currencyCode: currencyCodeSchema,
+    exchangeRate: exchangeRateSchema.nullable().optional(),
+  })
+  .superRefine((data, ctx) =>
+    receivedAfterShippedRefinement(
+      { deliveryDate: data.shippedDate ?? undefined, receivedDate: data.receivedDate },
+      ctx,
+    ),
+  )
+  .superRefine(zeroDecimalCostRefinement);
+
+/**
+ * Store-scoped arrival payload: the same one-step "ya me llegó" act as
+ * `deliveryQuickArrivalSchema`, but the selection is scoped to a store instead of a single order,
+ * so the products may come from several orders of that store (`FR-08-02`). Only the scope key
+ * changes; every other field, bound and refinement is deliberately identical, because the two
+ * payloads land on the same `createDelivery` transaction and must never drift apart.
+ *
+ * The client never gets to say which order each product belongs to: `createDelivery` re-reads
+ * every item and refuses anything that is not owned by the caller and not from `storeId`.
+ */
+export const deliveryStoreArrivalSchema = z
+  .object({
+    storeId: z.string().cuid({ message: "INVALID_STORE_ID" }),
+    productIds: z
+      .array(z.string().cuid({ message: "INVALID_PRODUCT_ID" }))
+      .min(1, { message: "NO_PRODUCTS_SELECTED" })
+      .max(MAX_DELIVERY_PRODUCTS, { message: "TOO_MANY_PRODUCTS" }),
+    receivedDate: domainDateSchema.refine((d) => d <= new Date(), { message: "RECEIVED_DATE_IN_FUTURE" }),
+    shippedDate: domainDateSchema
       .refine((d) => d <= new Date(), { message: "DELIVERY_DATE_IN_FUTURE" })
       .nullable()
       .optional(),
@@ -130,12 +163,9 @@ export const deliveryQuickArrivalSchema = z
 export const deliveryEditSchema = z
   .object({
     deliveryId: z.string().cuid({ message: "INVALID_DELIVERY_ID" }),
-    deliveryDate: z.coerce
-      .date()
-      .refine((d) => d <= new Date(), { message: "DELIVERY_DATE_IN_FUTURE" })
-      .optional(),
-    expectedArrivalFrom: z.coerce.date().nullable().optional(),
-    expectedArrivalTo: z.coerce.date().nullable().optional(),
+    deliveryDate: domainDateSchema.refine((d) => d <= new Date(), { message: "DELIVERY_DATE_IN_FUTURE" }).optional(),
+    expectedArrivalFrom: domainDateSchema.nullable().optional(),
+    expectedArrivalTo: domainDateSchema.nullable().optional(),
     cost: deliveryCostSchema.optional(),
     currencyCode: currencyCodeSchema.optional(),
     exchangeRate: exchangeRateSchema.nullable().optional(),
@@ -150,7 +180,7 @@ export const deliveryEditSchema = z
 
 export const deliveryMarkDeliveredSchema = z.object({
   deliveryId: z.string().cuid({ message: "INVALID_DELIVERY_ID" }),
-  receivedDate: z.coerce.date().refine((d) => d <= new Date(), { message: "RECEIVED_DATE_IN_FUTURE" }),
+  receivedDate: domainDateSchema.refine((d) => d <= new Date(), { message: "RECEIVED_DATE_IN_FUTURE" }),
 });
 
 export const deliveryReopenSchema = z.object({
@@ -172,6 +202,7 @@ export const deliveryNoteUpdateSchema = z.object({
 
 export type DeliveryCreateInput = z.infer<typeof deliveryCreateSchema>;
 export type DeliveryQuickArrivalInput = z.infer<typeof deliveryQuickArrivalSchema>;
+export type DeliveryStoreArrivalInput = z.infer<typeof deliveryStoreArrivalSchema>;
 export type DeliveryEditInput = z.infer<typeof deliveryEditSchema>;
 export type DeliveryMarkDeliveredInput = z.infer<typeof deliveryMarkDeliveredSchema>;
 export type DeliveryReopenInput = z.infer<typeof deliveryReopenSchema>;

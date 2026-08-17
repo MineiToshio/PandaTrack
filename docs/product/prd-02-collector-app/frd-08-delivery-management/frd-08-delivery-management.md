@@ -106,6 +106,14 @@ As a collector, I want to reopen, cancel, or edit a delivery when the store chan
 
   The resulting delivery is a normal, first-class `entrega`: it is created directly with status `DELIVERED`, its `receivedDate` set, its products moved to `DELIVERED`, and the source order status re-derived in the same transaction exactly as the wizard plus mark-delivered would. It can be opened, edited, reopened and deleted like any other delivery, which is also how a missing shipping cost is filled in later. The flow never runs on a cancelled order.
 
+- `FR-08-38`: The quick-arrival act of `FR-08-36` must also be available **scoped to a store** rather than to a single order, from the orders list "Por tienda" view (see [`FR-05-48`](../frd-05-order-payment-shipment/frd-05-order-payment-shipment.md)). The collector picks pending products of one store, which may belong to several of that store's orders, and confirms once. The flow reuses the same modal, the same defaults and the same write path as `FR-08-36`; only the scope key changes (store instead of order), and two things are added to the confirmation because the selection can now cross orders:
+  - the products are **grouped under their source order code** in the picker, so the provenance of every line is visible before confirming;
+  - the modal states in plain copy that **a single delivery will be created** with all of them (`BR-08-12`), because a delivery spanning several orders is a shape the collector has almost never seen.
+
+  The confirmation stays at "count plus list": it declares the quantity in the primary action and shows every product, and it deliberately does not ask the collector to type a confirmation word. That contract holds at **every** size, one product included: the per-order entry points preselect the whole order themselves, so with a single product they name it in a sentence instead of listing it, but a store-scoped selection was picked row by row and the dialog must echo it back whatever its size (26 of the collector's 36 standing orders contribute exactly one pending product, so this is the common case). A recorded arrival is recoverable (deleting the delivery returns its products to `ARRIVED_AT_STORE` per `FR-08-25`); what is lost is one bit, whether a product had been marked `ARRIVED_AT_STORE` beforehand, which is the known cost already stated in `BR-08-11`. The selected products are never trusted as sent: the write re-reads each one and refuses the whole selection when any product is not the caller's, is not from that store, is no longer eligible, or belongs to a cancelled order.
+
+- `FR-08-38a`: A delivery must never be created from a product whose order is cancelled, whatever the entry point. A cancelled order is outside the delivery lifecycle (its status is never re-derived by a delivery mutation), so such a delivery would move the product's state and leave the order frozen, with no surface able to explain the mismatch. The refusal is decided in the write path itself, before anything is written, rather than in one caller: the store-scoped selection of `FR-08-38` spans several orders, and the create wizard's product picker does not filter cancelled orders either. Previously only the per-order quick arrival enforced this, so the wizard could reach the invalid state.
+
 - `FR-08-37`: When the quick-arrival flow records no dispatch date, `Delivery.deliveryDate` must be set to the arrival date rather than to the current date or to an invented earlier date. `Delivery.deliveryDate` is `NOT NULL` and is the value the dashboard reads as dated arrival evidence, so standing it in with the only date the collector actually stated keeps punctuality and monthly bucketing honest.
 
 ## Business Rules
@@ -124,7 +132,12 @@ As a collector, I want to reopen, cancel, or edit a delivery when the store chan
 
 - `BR-08-09`: A delivery can never be received before it was dispatched. Whenever both dates are present, `receivedDate` must be greater than or equal to `deliveryDate`; the pair is rejected at the validation boundary. The rule is stated here because the quick-arrival modal is the first surface that puts both pickers side by side, but it holds for every delivery.
 - `BR-08-10`: A quick arrival records **no** shipping cost rather than a zero one that the collector never stated. `Delivery.cost` remains a required column, so an unstated cost is persisted as `0`; because that value feeds the dashboard's monthly shipping figure, the modal must say so on screen before saving and must keep the cost field one tap away. Making the column nullable so "not recorded" and "free shipping" become distinguishable is the known follow-up, deliberately out of scope of the quick-arrival change.
+- `BR-08-12`: A store-scoped arrival (`FR-08-38`) writes **exactly one** `Delivery` for the whole selection, never one per source order, even when the products come from several orders of that store. `FR-08-02` already allows a delivery to span orders of one store; this applies it rather than changing it. The reason is that the fact being recorded is a physical box: one row per order would mint N `DLV-*` identifiers for one arrival, inflate the monthly delivery count, and force the shipping cost to be asked N times or split across orders, which is precisely what `BR-08-10` avoids by not asking for it at all. The cost belongs to the box, not to the orders.
+
+  A consequence that has to be stated because this is the first flow where it can happen: `Delivery.currencyCode` is the currency of the **shipping cost**, not of the products. A store-scoped selection can legitimately mix orders denominated in different currencies, and that is not a conflict to resolve. With the default unstated cost of `0` the code is only a unit label on the delivery row; when a cost is declared it is declared once, in one currency, for the one box. Per-order currency stays where it belongs, on the order.
+
 - `BR-08-11`: The quick-arrival flow offers no undo affordance. Reversing it would require restoring each product's prior state, and `NONE` cannot be told apart from `ARRIVED_AT_STORE` once the delivery exists (delete returns products to `ARRIVED_AT_STORE` per `FR-08-25`), so an undo would assert a fact the collector never stated. The success toast links to the created delivery instead, where reopen, edit and delete already live.
+- `BR-08-13` **(added 2026-08-16, `ADR 0030` §6):** **"Today" on every delivery surface is the collector's CIVIL day, resolved from `User.timezone`, never a wall-clock instant.** This is `BR-05-25` applied to deliveries, and for the same reason: lateness is decided against `expectedArrival*`, which is a calendar day stored at UTC midnight, so comparing an instant against it is wrong in both directions in a negative-offset zone (in Lima, UTC−5, a delivery due today reads late from 10:00, and one due tomorrow reads late from 21:00). Both consumers on the list are bound to one value — the row chips AND the "Atrasados" SQL toggle — because fixing one and not the other puts a delivery in the filter with no chip on it, on the same screen. The delivery detail hero is a Client Component, so its page resolves the day on the SERVER and passes it down as a prop; deriving it in the browser would desynchronise hydration. Its two forward-counting captions ("llega en N días" / "la ventana cierra en N días") are deliberately NOT the overdue formula and stay local — they count toward an arrival that has not happened, so there is nothing to unify them with.
 
 ## Acceptance Criteria
 
@@ -215,6 +228,8 @@ Delivery mutations return typed, expected error codes (not exceptions) so flows 
 
 - create / edit: `STORE_NOT_FOUND`, `NO_PRODUCTS_SELECTED`, `PRODUCTS_FROM_DIFFERENT_STORE`, `PRODUCT_NOT_ELIGIBLE` (carries the offending product ids so the selector can refresh), `EXCHANGE_RATE_REQUIRED` (currency differs from base and no rate was supplied), and — edit only — `INVALID_STATUS` (the delivery is no longer `IN_TRANSIT`). A concurrent product-state change is reconciled into `PRODUCT_NOT_ELIGIBLE`.
 - quick arrival: `ORDER_NOT_FOUND` (the order is not the caller's), `ORDER_CANCELLED`, `EXCHANGE_RATE_REQUIRED`, plus every create code above, since it runs through the same mutation. Its validation layer additionally rejects `RECEIVED_DATE_IN_FUTURE` and `RECEIVED_BEFORE_SHIPPED` (`BR-08-09`).
+- store-scoped arrival (`FR-08-38`): the same codes as quick arrival minus `ORDER_NOT_FOUND` (no order is named), plus `INVALID_STORE_ID` and `TOO_MANY_PRODUCTS` from its validation layer. Ownership and store scope surface as `PRODUCTS_FROM_DIFFERENT_STORE`, and a selection that went stale as `PRODUCT_NOT_ELIGIBLE` carrying the offending ids, so the client can flag exactly those rows instead of retrying silently with the eligible subset.
+- `ORDER_CANCELLED` is now returned by the create mutation itself rather than by one caller (`FR-08-38a`), so the create wizard returns it too.
 - mark delivered / cancel / delete / reopen / note: `DELIVERY_NOT_FOUND`; lifecycle guards return `INVALID_STATUS` (mark delivered and cancel require `IN_TRANSIT`; delete rejects `DELIVERED`; reopen rejects `IN_TRANSIT`); reopen additionally returns `PRODUCTS_IN_OTHER_DELIVERY` per `BR-08-08`.
 - The validation layer rejects malformed input before these run (future shipping/received dates, `expectedArrivalTo` before `expectedArrivalFrom`, negative or over-cap cost, unsupported currency, out-of-range exchange rate, empty product set).
 
@@ -226,6 +241,8 @@ Delivery events are namespaced under `POSTHOG_EVENTS.DELIVERY` in `src/lib/const
 - lifecycle: `delivery_marked_delivered`, `delivery_reopened`, `delivery_cancelled`, `delivery_deleted`, `delivery_note_saved`, `delivery_note_deleted`
 - list: `deliveries_list_filtered`, `deliveries_list_filter_chip_removed`, `deliveries_list_filters_reset`, `deliveries_list_card_expanded`, `deliveries_list_card_collapsed`, `deliveries_list_expanded_all`, `deliveries_list_collapsed_all`
 - mobile detail chrome: `delivery_detail_sticky_primary_clicked`, `delivery_detail_actions_sheet_opened`
+- quick arrival: `delivery_quick_arrival_opened` (client, carries the launcher `source`), `delivery_quick_arrival_logged` (server)
+- store-scoped arrival (`FR-08-38`): `delivery_store_arrival_logged` (server, carries `store_id`, `product_count`, `order_count`, `had_shipped_date`, `backdated`) and `delivery_store_selection_started` (client). The modal open reuses `delivery_quick_arrival_opened` with `source: "orders_store_view"`, so the entry points stay comparable in one funnel.
 
 Mutation events carry counts (product / affected-order / added / removed) but never the free-text note value.
 
@@ -268,16 +285,16 @@ Each delivery route under `/{locale}/(app)/deliveries`. All routes are authentic
 
 A delivery is created `IN_TRANSIT`, or directly `DELIVERED` through the quick-arrival flow (`FR-08-36`), and never has its status edited through a free field (`FR-08-13`); status moves only through lifecycle actions:
 
-| From                       | Action            | To           | Product effect                                     | Order re-derivation         |
-| -------------------------- | ----------------- | ------------ | -------------------------------------------------- | --------------------------- |
-| —                          | create            | `IN_TRANSIT` | selected products → `IN_TRANSIT`                   | yes                         |
-| —                          | quick arrival     | `DELIVERED`  | selected products → `DELIVERED`; sets `receivedDate` | yes                       |
-| `IN_TRANSIT`               | mark delivered    | `DELIVERED`  | all products → `DELIVERED`; sets `receivedDate`    | yes                         |
-| `IN_TRANSIT`               | cancel            | `CANCELLED`  | products → `ARRIVED_AT_STORE`                      | yes                         |
-| `IN_TRANSIT`               | edit (add/remove) | `IN_TRANSIT` | added → `IN_TRANSIT`; removed → `ARRIVED_AT_STORE` | yes                         |
-| `DELIVERED`                | reopen            | `IN_TRANSIT` | products → `IN_TRANSIT`; clears `receivedDate`     | yes                         |
-| `CANCELLED`                | reopen            | `IN_TRANSIT` | products → `IN_TRANSIT`; clears `receivedDate`     | yes (blocked by `BR-08-08`) |
-| `IN_TRANSIT` / `CANCELLED` | delete            | (removed)    | still-unfulfilled products → `ARRIVED_AT_STORE`    | yes                         |
+| From                       | Action            | To           | Product effect                                       | Order re-derivation         |
+| -------------------------- | ----------------- | ------------ | ---------------------------------------------------- | --------------------------- |
+| —                          | create            | `IN_TRANSIT` | selected products → `IN_TRANSIT`                     | yes                         |
+| —                          | quick arrival     | `DELIVERED`  | selected products → `DELIVERED`; sets `receivedDate` | yes                         |
+| `IN_TRANSIT`               | mark delivered    | `DELIVERED`  | all products → `DELIVERED`; sets `receivedDate`      | yes                         |
+| `IN_TRANSIT`               | cancel            | `CANCELLED`  | products → `ARRIVED_AT_STORE`                        | yes                         |
+| `IN_TRANSIT`               | edit (add/remove) | `IN_TRANSIT` | added → `IN_TRANSIT`; removed → `ARRIVED_AT_STORE`   | yes                         |
+| `DELIVERED`                | reopen            | `IN_TRANSIT` | products → `IN_TRANSIT`; clears `receivedDate`       | yes                         |
+| `CANCELLED`                | reopen            | `IN_TRANSIT` | products → `IN_TRANSIT`; clears `receivedDate`       | yes (blocked by `BR-08-08`) |
+| `IN_TRANSIT` / `CANCELLED` | delete            | (removed)    | still-unfulfilled products → `ARRIVED_AT_STORE`      | yes                         |
 
 `DELIVERED` cannot be deleted directly and cannot be edited directly — reopen first (`BR-08-07`, `FR-08-24`).
 

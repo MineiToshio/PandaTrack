@@ -17,10 +17,14 @@ import { revalidateCollectionSurfaces } from "@/lib/cache/revalidateCollectionSu
 
 export type OrderLifecycleResult = { ok: true } | { ok: false; error: string };
 
+/**
+ * `paymentsChoice` accepts both the store-level vocabulary (`lost` / `credit`) and the per-order
+ * one the current cancel dialog still sends (`keep` / `remove`); the schema normalizes them.
+ */
 export async function cancelOrderAction(
   orderId: string,
   cancellationReason: string | null = null,
-  paymentsChoice: "keep" | "remove" = "keep",
+  paymentsChoice: "lost" | "credit" | "keep" | "remove" = "lost",
 ): Promise<OrderLifecycleResult> {
   const session = await getSession();
   if (!session?.user?.id) return { ok: false, error: "unauthorized" };

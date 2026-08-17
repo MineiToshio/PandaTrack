@@ -72,24 +72,33 @@ describe("validateUploadedImages", () => {
     expect(result.images[0].format).toBe("png");
   });
 
-  it("rejects dimensions below the minimum as dimensions-out-of-range", async () => {
+  it("rejects dimensions below the minimum as image-too-small, with the measurement and the position", async () => {
     const tiny = await buildPngBuffer(100, 100);
 
-    const result = await validateUploadedImages([toInput(tiny, "image/png")]);
+    const result = await validateUploadedImages([
+      toInput(await buildPngBuffer(), "image/png"),
+      toInput(tiny, "image/png"),
+    ]);
 
     expect(result.ok).toBe(false);
     if (result.ok) return;
-    expect(result.error.code).toBe("dimensions-out-of-range");
+    expect(result.error.code).toBe("image-too-small");
+    // The position and the measurement are what let the screen name the photo and quote its size
+    // back, instead of telling a collector that one of their photos is too small or too large.
+    expect(result.error.index).toBe(1);
+    expect(result.error.measured).toEqual({ width: 100, height: 100 });
   });
 
-  it("rejects dimensions above the maximum as dimensions-out-of-range", async () => {
+  it("rejects dimensions above the maximum as image-too-large, with the measurement and the position", async () => {
     const huge = await buildPngBuffer(4200, 400);
 
     const result = await validateUploadedImages([toInput(huge, "image/png")]);
 
     expect(result.ok).toBe(false);
     if (result.ok) return;
-    expect(result.error.code).toBe("dimensions-out-of-range");
+    expect(result.error.code).toBe("image-too-large");
+    expect(result.error.index).toBe(0);
+    expect(result.error.measured).toEqual({ width: 4200, height: 400 });
   });
 
   it("rejects more than the maximum number of images as too-many-images", async () => {

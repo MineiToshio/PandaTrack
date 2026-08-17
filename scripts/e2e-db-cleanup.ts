@@ -13,6 +13,8 @@ import { PrismaClient } from "../generated/prisma/client";
 interface CleanupRequest {
   orderIds?: string[];
   storeSlugs?: string[];
+  /** Namespaced fixture prefix (e.g. `E2E Payments Store 17…`), for specs whose slug may be unknown. */
+  storeNamePrefix?: string;
   deliveryIds?: string[];
   pushEndpointPrefix?: string;
 }
@@ -41,6 +43,13 @@ async function main(): Promise<void> {
   }
   if (request.storeSlugs?.length) {
     await prisma.store.deleteMany({ where: { slug: { in: request.storeSlugs } } });
+  }
+  if (request.storeNamePrefix) {
+    // Deliberately NOT scoped by `userId` (neither is the `storeSlugs` channel above): this script
+    // runs against the single-owner dev database, and the prefix carries a full millisecond
+    // timestamp, so what it matches is only ever a store this run created. Add the ownership filter
+    // before pointing it at any database with more than one collector in it.
+    await prisma.store.deleteMany({ where: { name: { startsWith: request.storeNamePrefix } } });
   }
   if (request.pushEndpointPrefix) {
     await prisma.pushSubscription.deleteMany({ where: { endpoint: { startsWith: request.pushEndpointPrefix } } });

@@ -1,7 +1,13 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { compressForIntake } from "../compressForIntake";
+import { compressForIntake, prepareSubmissionForIntake } from "../compressForIntake";
+import {
+  INTAKE_WEBP_QUALITY,
+  INTAKE_WEBP_QUALITY_LADDER,
+  MAX_IMAGE_FILE_BYTES,
+  MAX_SUBMISSION_TOTAL_BYTES,
+} from "@/lib/imageIntake/constants";
 import { resetEncoderSupportCache } from "../canvasEncoding";
 
 const dimensionsByBlob = new WeakMap<Blob, { width: number; height: number }>();
@@ -161,5 +167,102 @@ describe("compressForIntake", () => {
   it("never logs a full image payload to the console", () => {
     const source = readFileSync(join(__dirname, "../compressForIntake.ts"), "utf-8");
     expect(source).not.toMatch(/console\.log/);
+  });
+});
+
+/**
+ * Mocks `toBlob` so the produced byte size depends on the requested quality, which is the whole
+ * behaviour the fit pass is built on. A fixed-size stub would let a ladder that never actually
+ * lowers the quality still pass.
+ */
+function mockToBlobByQuality(sizeForQuality: (quality: number) => number) {
+  vi.spyOn(HTMLCanvasElement.prototype, "toBlob").mockImplementation(function (
+    this: HTMLCanvasElement,
+    callback: BlobCallback,
+    type?: string,
+    quality?: number,
+  ) {
+    callback(new Blob([new Uint8Array(sizeForQuality(quality ?? 1))], { type: type ?? "image/png" }));
+  });
+}
+
+describe("prepareSubmissionForIntake", () => {
+  beforeEach(() => {
+    resetEncoderSupportCache();
+    mockCreateImageBitmap();
+    mockCanvasContext();
+    mockWebpSupport(true);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it("keeps the default quality when the submission already fits", async () => {
+    mockToBlobByQuality(() => 100_000);
+    const files = [createFakeImageFile(1080, 2400, 4_000_000), createFakeImageFile(1080, 2400, 4_000_000)];
+
+    const prepared = await prepareSubmissionForIntake(files);
+
+    expect(prepared.webpQuality).toBe(INTAKE_WEBP_QUALITY);
+    expect(prepared.usedFallbackQuality).toBe(false);
+    expect(prepared.fits).toBe(true);
+    expect(prepared.results).toHaveLength(2);
+  });
+
+  it("drops to a lower rung, and stops at the first one that fits", async () => {
+    // Ten photographic pages: over the budget at 0.85, under it at the next rung down.
+    const perPhoto = (quality: number) => (quality >= INTAKE_WEBP_QUALITY ? 400_000 : 330_000);
+    mockToBlobByQuality(perPhoto);
+    const files = Array.from({ length: 10 }, () => createFakeImageFile(1080, 2400, 4_000_000));
+
+    const prepared = await prepareSubmissionForIntake(files);
+
+    expect(prepared.fits).toBe(true);
+    expect(prepared.usedFallbackQuality).toBe(true);
+    // The second rung, not the floor: the ladder must stop as soon as the submission fits, because
+    // every further rung is quality given up for nothing.
+    expect(prepared.webpQuality).toBe(INTAKE_WEBP_QUALITY_LADDER[1]);
+    expect(prepared.totalBytes).toBeLessThanOrEqual(MAX_SUBMISSION_TOTAL_BYTES);
+  });
+
+  it("never changes dimensions at a lower rung, only quality", async () => {
+    mockToBlobByQuality((quality) => (quality >= INTAKE_WEBP_QUALITY ? 500_000 : 300_000));
+    const files = Array.from({ length: 9 }, () => createFakeImageFile(1179, 2400, 4_000_000));
+
+    const prepared = await prepareSubmissionForIntake(files);
+
+    expect(prepared.usedFallbackQuality).toBe(true);
+    for (const result of prepared.results) {
+      for (const segment of result.segments) {
+        // 1080 is the cap from FR-11-14, reached by width normalisation and never by the ladder.
+        expect(segment.width).toBe(1080);
+      }
+    }
+  });
+
+  it("returns the floor's bytes, flagged as not fitting, when no rung is enough", async () => {
+    mockToBlobByQuality(() => 900_000);
+    const files = Array.from({ length: 8 }, () => createFakeImageFile(1080, 2400, 4_000_000));
+
+    const prepared = await prepareSubmissionForIntake(files);
+
+    expect(prepared.fits).toBe(false);
+    expect(prepared.webpQuality).toBe(INTAKE_WEBP_QUALITY_LADDER[INTAKE_WEBP_QUALITY_LADDER.length - 1]);
+    // The bytes still come back, so the caller can quote a real figure and a real count instead of
+    // refusing with nothing but the rule.
+    expect(prepared.results).toHaveLength(8);
+    expect(prepared.totalBytes).toBeGreaterThan(MAX_SUBMISSION_TOTAL_BYTES);
+  });
+
+  it("falls back for a single segment over the per-file ceiling, not only for the batch total", async () => {
+    mockToBlobByQuality((quality) =>
+      quality >= INTAKE_WEBP_QUALITY ? MAX_IMAGE_FILE_BYTES + 1 : MAX_IMAGE_FILE_BYTES - 1,
+    );
+    const prepared = await prepareSubmissionForIntake([createFakeImageFile(1080, 2400, 8_000_000)]);
+
+    expect(prepared.usedFallbackQuality).toBe(true);
+    expect(prepared.fits).toBe(true);
   });
 });

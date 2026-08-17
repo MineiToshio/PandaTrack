@@ -24,7 +24,7 @@ Describe the client-side shell that wraps private collector routes and gives Pan
 - `src/app/[locale]/(app)/layout.tsx` (server boundary: session + verification gating, identity/preference loading)
 - `src/app/[locale]/(app)/_components/AppLayout/AppLayout.tsx` (client shell root; owns `--sidebar-current-w`, drawer state, `ShellIdentityContext`, `ToastProvider`, `HeaderTitleProvider`)
 - `src/components/modules/Sidebar.tsx` (desktop sidebar; PUSH toggle + FLOAT hover/focus expand)
-- `src/components/modules/Header.tsx` (top bar: burger + breadcrumb + presentational title + lang/theme — this is the header the shell mounts; `_components/AppLayout/ContentHeader.tsx` is a sibling variant)
+- `src/components/modules/Header.tsx` (top bar: burger + breadcrumb + presentational title + lang/theme — the only header the shell mounts; the `_components/AppLayout/ContentHeader.tsx` sibling variant was unreferenced and has been deleted)
 - `src/app/[locale]/(app)/_components/AppLayout/AppNavDrawer.tsx` (mobile burger drawer; focus-scoped)
 - `src/app/[locale]/(app)/_components/AppLayout/ShellAccountMenu.tsx` (lower-shell account trigger + menu, shared desktop/drawer)
 - `src/app/[locale]/(app)/_components/AppLayout/navigationConfig.ts` (nav item set + active-route + curated entry-point hrefs)
@@ -32,7 +32,7 @@ Describe the client-side shell that wraps private collector routes and gives Pan
 - `src/app/[locale]/(app)/_components/AppLayout/HeaderTitleContext.tsx` + `SetHeaderTitle.tsx` (dynamic title / middle-crumb injection)
 - `src/hooks/useSidebarState.ts` (pinned expand/collapse persistence)
 - `src/hooks/useIsMobile.ts` (SSR-safe viewport hook)
-- `src/app/[locale]/(app)/dashboard/page.tsx` + `_components/AppPlaceholderPage.tsx` + `AppComingSoonCard`
+- `src/app/[locale]/(app)/dashboard/page.tsx` (the landing surface itself is owned by FRD-06; the shell only guarantees the route exists. The former `AppPlaceholderPage` + `AppComingSoonCard` placeholder pair has been removed.)
 - `src/app/[locale]/(app)/error.tsx` + `not-found.tsx` (shell boundaries)
 - locale copy in `src/i18n/locales/{es,en}/app-layout.json` (`appLayout.*`) and `dashboard.json`
 - shell tests in `src/app/[locale]/(app)/_components/AppLayout/_tests/*` and `_utils/_tests/pageHeader.test.ts`

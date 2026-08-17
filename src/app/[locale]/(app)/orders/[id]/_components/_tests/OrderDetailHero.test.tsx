@@ -33,11 +33,11 @@ function buildOrder(store: { status: StoreStatus; removalReason: StoreRemovalRea
 }
 
 const BASE_PROPS = {
-  remainingAmount: 10000,
-  paymentPercentage: 0,
+  allocatedAmountMinor: 0,
   hasUnpaidBalance: true,
   isOverdue: false,
   overdueDays: 0,
+  storeDebtMinor: 0,
   locale: "en",
 };
 
@@ -69,5 +69,58 @@ describe("OrderDetailHero store link", () => {
     expect(url.pathname).toBe("/en/stores/manga-store");
     expect(url.searchParams.get("returnTo")).toBe("/en/orders/o1");
     expect(url.searchParams.get("returnLabel")).toBe("ORD-1");
+  });
+});
+
+// § store-level payments: the two hero states below allocated / storeDebt drive.
+describe("OrderDetailHero allocation state", () => {
+  const order = buildOrder({ status: "APPROVED", removalReason: null });
+
+  it("shows the allocated-of-total line and a progress bar once something is allocated", () => {
+    render(<OrderDetailHero {...BASE_PROPS} allocatedAmountMinor={5000} order={order} />);
+
+    expect(screen.getByText("detail.hero.allocatedOfTotal")).toBeInTheDocument();
+    expect(screen.getByRole("progressbar")).toBeInTheDocument();
+    expect(screen.queryByText("detail.hero.storeDebtLink")).toBeNull();
+  });
+
+  it("shows the store's debt link instead of a progress bar while nothing is allocated yet", () => {
+    render(<OrderDetailHero {...BASE_PROPS} allocatedAmountMinor={0} storeDebtMinor={3000} order={order} />);
+
+    expect(screen.queryByRole("progressbar")).toBeNull();
+    expect(screen.queryByText("detail.hero.allocatedOfTotal")).toBeNull();
+    const debtLink = screen.getByRole("link", { name: /detail\.hero\.storeDebtLink/ });
+    expect(new URL(debtLink.getAttribute("href")!, "http://localhost").pathname).toBe("/en/stores/manga-store");
+  });
+
+  it("shows the credit line instead of the debt line when the store owes the collector", () => {
+    render(<OrderDetailHero {...BASE_PROPS} allocatedAmountMinor={0} storeDebtMinor={-2000} order={order} />);
+
+    expect(screen.getByText("detail.hero.storeCreditLink")).toBeInTheDocument();
+    expect(screen.queryByText("detail.hero.storeDebtLink")).toBeNull();
+  });
+
+  it("shows the paid-in-full badge only once allocated reaches the total", () => {
+    const { rerender } = render(<OrderDetailHero {...BASE_PROPS} allocatedAmountMinor={5000} order={order} />);
+    expect(screen.queryByText("detail.hero.paidInFull")).toBeNull();
+
+    rerender(<OrderDetailHero {...BASE_PROPS} allocatedAmountMinor={10000} order={order} />);
+    expect(screen.getByText("detail.hero.paidInFull")).toBeInTheDocument();
+  });
+
+  it("renders neither the debt link nor the credit link when nothing is owed either way", () => {
+    render(<OrderDetailHero {...BASE_PROPS} allocatedAmountMinor={0} storeDebtMinor={0} order={order} />);
+
+    expect(screen.queryByRole("link", { name: /detail\.hero\.storeDebtLink/ })).toBeNull();
+    expect(screen.queryByText("detail.hero.storeCreditLink")).toBeNull();
+  });
+
+  it("hides both the allocation line and the debt link on a cancelled order", () => {
+    const cancelledOrder = { ...order, status: "CANCELLED" as const };
+    render(<OrderDetailHero {...BASE_PROPS} allocatedAmountMinor={0} storeDebtMinor={3000} order={cancelledOrder} />);
+
+    expect(screen.queryByRole("progressbar")).toBeNull();
+    expect(screen.queryByText("detail.hero.storeDebtLink")).toBeNull();
+    expect(screen.getByText("detail.hero.cancelledOn")).toBeInTheDocument();
   });
 });

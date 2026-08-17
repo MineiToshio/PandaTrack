@@ -159,13 +159,22 @@ export default function DateInput({
         )}
       >
         <span className="flex-1 truncate">{value ? formatDisplay(value, locale) : placeholder}</span>
+        {/*
+          Trailing cluster — one touch target at a time (`docs/design/interface-patterns.md` §12).
+          The clear is a 44×44 box below `md`; the negative margins are exactly the trigger's own
+          `py-3` / `pr-4`, so the box reaches the field's edges without making the field taller or
+          the cluster wider. Growing INTO the parent trigger is safe in a way growing into a
+          sibling is not: the trigger is this control's fallback, not its peer, and the click is
+          stopped here. The calendar glyph steps aside below `md` — it is decoration, and the
+          trigger it sits in is what opens the picker.
+        */}
         <span className="flex flex-shrink-0 items-center gap-[var(--space-1)] [color:var(--text-muted)]">
           {value && !isDisabled && (
             <span
               role="button"
               aria-label={t("clear")}
               onClick={handleClear}
-              className="flex items-center hover:[color:var(--text-primary)]"
+              className="-my-[var(--space-3)] -mr-[var(--space-4)] grid size-11 place-items-center hover:[color:var(--text-primary)] md:m-0 md:size-[14px]"
             >
               <X size={14} aria-hidden="true" />
             </span>
@@ -178,7 +187,7 @@ export default function DateInput({
               style={{ animationDuration: "calc(var(--motion-base) * 4)", animationTimingFunction: "linear" }}
             />
           ) : (
-            <CalendarDays size={16} aria-hidden="true" />
+            <CalendarDays size={16} aria-hidden="true" className={cn(value && !isDisabled && "hidden md:block")} />
           )}
         </span>
       </button>

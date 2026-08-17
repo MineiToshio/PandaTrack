@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { buildPageMetadata } from "@/lib/seo";
 import { getSession } from "@/lib/auth/auth-server";
 import { getDeliveryDetail } from "@/lib/data/deliveries/deliveryQueries";
+import { getTodayStart } from "@/lib/data/dashboard/dashboardPeriods";
 import { safeRelativeReturnTo } from "@/lib/navigation/safeRelativeReturnTo";
 import { prisma } from "@/lib/prisma";
 import DeliveryDetailContent from "./_components/DeliveryDetailContent";
@@ -33,7 +34,10 @@ export default async function DeliveryDetailPage({ params, searchParams }: Deliv
 
   const [delivery, user] = await Promise.all([
     getDeliveryDetail(id, userId),
-    prisma.user.findUnique({ where: { id: userId }, select: { baseCurrencyCode: true } }),
+    // `timezone` rides along with the currency the page already reads: the hero's lateness and
+    // window countdown compare against midnight-UTC domain dates, so they need the collector's
+    // civil day rather than a wall-clock instant.
+    prisma.user.findUnique({ where: { id: userId }, select: { baseCurrencyCode: true, timezone: true } }),
   ]);
 
   if (!delivery) notFound();
@@ -44,6 +48,7 @@ export default async function DeliveryDetailPage({ params, searchParams }: Deliv
       locale={locale}
       baseCurrencyCode={user?.baseCurrencyCode ?? null}
       backHref={backHref}
+      today={getTodayStart(new Date(), user?.timezone)}
     />
   );
 }

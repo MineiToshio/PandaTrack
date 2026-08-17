@@ -11,6 +11,8 @@ type DeliveryDetailContentProps = {
   locale: string;
   baseCurrencyCode: string | null;
   backHref?: string | null;
+  /** The collector's civil day, resolved on the server (see the page). */
+  today: Date;
 };
 
 export default async function DeliveryDetailContent({
@@ -18,6 +20,7 @@ export default async function DeliveryDetailContent({
   locale,
   baseCurrencyCode,
   backHref,
+  today,
 }: DeliveryDetailContentProps) {
   const t = await getTranslations({ locale, namespace: "deliveries" });
   const backTarget = backHref ?? `/${locale}${ROUTES.deliveries}`;
@@ -37,6 +40,7 @@ export default async function DeliveryDetailContent({
           delivery={delivery}
           baseCurrencyCode={baseCurrencyCode}
           locale={locale}
+          today={today}
           noteCard={
             <DeliveryPrivateNoteCard
               deliveryId={delivery.id}

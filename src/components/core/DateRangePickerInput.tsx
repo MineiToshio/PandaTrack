@@ -256,18 +256,33 @@ export default function DateRangePickerInput({
         >
           <span className={cn("min-w-0 flex-1 truncate", triggerText)}>{hasValue ? displayValue : placeholder}</span>
         </button>
+        {/*
+          Trailing cluster — one touch target at a time (`docs/design/interface-patterns.md` §12).
+          Same shape as `DateInput`/`SearchableSelect`: a 44×44 clear below `md`, the compact box
+          from `md` up, and the calendar glyph (decoration; the trigger beside it opens the picker)
+          stepping aside while the clear is on screen. `tap-target-guard` cannot see this one — the
+          icon size is a `size === "sm"` expression, so the guard's content-width check refuses to
+          judge it — which is exactly why it has to be kept to the same rule by hand.
+        */}
         <div className="flex shrink-0 items-center gap-1 pr-3">
           {hasValue && !disabled && (
             <button
               type="button"
               aria-label={clearLabel}
               onClick={handleClear}
-              className="focus-visible:ring-ring rounded p-0.5 [color:var(--text-muted)] hover:[color:var(--text-primary)] focus-visible:ring-2 focus-visible:outline-none"
+              className={cn(
+                "focus-visible:ring-ring grid size-11 place-items-center rounded [color:var(--text-muted)] hover:[color:var(--text-primary)] focus-visible:ring-2 focus-visible:outline-none",
+                size === "sm" ? "md:size-[16px]" : "md:size-[18px]",
+              )}
             >
               <X size={size === "sm" ? 12 : 14} aria-hidden />
             </button>
           )}
-          <CalendarDays size={size === "sm" ? 14 : 16} className="[color:var(--text-muted)]" aria-hidden />
+          <CalendarDays
+            size={size === "sm" ? 14 : 16}
+            className={cn("[color:var(--text-muted)]", hasValue && !disabled && "hidden md:block")}
+            aria-hidden
+          />
         </div>
       </div>
 

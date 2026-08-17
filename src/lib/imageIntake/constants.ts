@@ -7,13 +7,22 @@
 /** One submission is a single order's worth of source photos, not a bulk-import tool. */
 export const MAX_IMAGES_PER_SUBMISSION = 20;
 
-/** Per-file ceiling after client compression, enforced again server-side against tampering. */
+/**
+ * Per-file ceiling on the PREPARED upload, enforced again server-side against tampering.
+ *
+ * It is not a limit on the photo a collector attaches, and must never be applied to one. The source
+ * is deliberately unbounded in bytes: preparation normalises it to `INTAKE_TARGET_MAX_WIDTH` and
+ * re-encodes it, which is what decides the size of the upload, and a full-resolution phone
+ * screenshot (routinely several megabytes, and nothing its owner can change) comes out of that step
+ * an order of magnitude smaller. Checking this against the source refused the single most ordinary
+ * input this feature has, before the step that would have made it fit ever ran.
+ */
 export const MAX_IMAGE_FILE_BYTES = 2 * 1024 * 1024;
 
 /**
- * Whole-submission ceiling. Kept under Vercel's 4 MB Server Action body limit (itself lowered
- * from 6 MB, see `next.config.ts`) so a maxed-out photo count never produces a raw 413 with no
- * readable error.
+ * Whole-submission ceiling on the PREPARED upload, on the same terms as `MAX_IMAGE_FILE_BYTES`.
+ * Kept under Vercel's 4 MB Server Action body limit (itself lowered from 6 MB, see
+ * `next.config.ts`) so a maxed-out photo count never produces a raw 413 with no readable error.
  */
 export const MAX_SUBMISSION_TOTAL_BYTES = 3.5 * 1024 * 1024;
 
@@ -154,6 +163,29 @@ export const INTAKE_TARGET_MAX_HEIGHT = 2400;
 
 /** WebP encode quality when the browser's canvas encoder supports WebP output. */
 export const INTAKE_WEBP_QUALITY = 0.85;
+
+/**
+ * Encode qualities the preparation step may fall back to, in order, when a submission prepared at
+ * `INTAKE_WEBP_QUALITY` does not fit in one request.
+ *
+ * The alternative to this ladder is refusing the submission outright, so the comparison to make is
+ * not "0.85 versus 0.78" but "0.78 versus not being read at all". It exists because the single-pass
+ * contract (`FR-11-20`) leaves no other way out: the images are read as ONE conversation, so a
+ * submission that does not fit cannot be split across requests without splitting the conversation
+ * with it, which is a different and worse product.
+ *
+ * Only quality moves. Dimensions never do, at any rung, because downscaling degrades text
+ * recognition between 7 and 16 times more than compression does (`FR-11-14`) and text is the whole
+ * point of the read.
+ *
+ * The floor is measured, not guessed. On a 1080px chat screenshot the ladder buys almost nothing
+ * (79 KB at 0.85, 61 KB at 0.70) because flat text regions hold few bits to give up; on a
+ * photographic product page it buys a third (310 KB to 197 KB). The bits therefore come out of
+ * gradients and photography, which is not what the model is reading, and stay in the text, which is.
+ * That asymmetry is what makes the floor safe, and it is also why the ladder is short: below 0.70
+ * there is little left to win and ringing starts appearing around glyphs.
+ */
+export const INTAKE_WEBP_QUALITY_LADDER = [INTAKE_WEBP_QUALITY, 0.78, 0.7] as const;
 
 /** JPEG encode quality fallback when WebP encoding is unavailable (see canvasEncoding.ts). */
 export const INTAKE_JPEG_QUALITY = 0.9;

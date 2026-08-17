@@ -73,35 +73,35 @@ describe("cancelOrderAction", () => {
     const result = await cancelOrderAction(VALID_ORDER_ID, "  Changed my mind  ");
 
     expect(result).toEqual({ ok: true });
-    expect(cancelOrderMock).toHaveBeenCalledWith(VALID_ORDER_ID, "user-1", "Changed my mind", "keep");
+    expect(cancelOrderMock).toHaveBeenCalledWith(VALID_ORDER_ID, "user-1", "Changed my mind", "lost");
     expect(posthogCaptureMock).toHaveBeenCalledWith({
       distinctId: "user-1",
       event: POSTHOG_EVENTS.ORDER.CANCELLED,
-      properties: { orderId: VALID_ORDER_ID, hasReason: true, paymentsChoice: "keep" },
+      properties: { orderId: VALID_ORDER_ID, hasReason: true, paymentsChoice: "lost" },
     });
   });
 
-  it("defaults to keeping payments and passes null when the reason is blank", async () => {
+  it("defaults to treating the money as lost and passes null when the reason is blank", async () => {
     getSessionMock.mockResolvedValue(AUTHENTICATED_SESSION);
     cancelOrderMock.mockResolvedValue({ ok: true });
 
     await cancelOrderAction(VALID_ORDER_ID, "   ");
 
-    expect(cancelOrderMock).toHaveBeenCalledWith(VALID_ORDER_ID, "user-1", null, "keep");
+    expect(cancelOrderMock).toHaveBeenCalledWith(VALID_ORDER_ID, "user-1", null, "lost");
   });
 
-  it("forwards the remove choice and records it on the tracked event", async () => {
+  it("normalizes the dialog's remove choice to credit and records it on the tracked event", async () => {
     getSessionMock.mockResolvedValue(AUTHENTICATED_SESSION);
     cancelOrderMock.mockResolvedValue({ ok: true });
 
     const result = await cancelOrderAction(VALID_ORDER_ID, null, "remove");
 
     expect(result).toEqual({ ok: true });
-    expect(cancelOrderMock).toHaveBeenCalledWith(VALID_ORDER_ID, "user-1", null, "remove");
+    expect(cancelOrderMock).toHaveBeenCalledWith(VALID_ORDER_ID, "user-1", null, "credit");
     expect(posthogCaptureMock).toHaveBeenCalledWith({
       distinctId: "user-1",
       event: POSTHOG_EVENTS.ORDER.CANCELLED,
-      properties: { orderId: VALID_ORDER_ID, hasReason: false, paymentsChoice: "remove" },
+      properties: { orderId: VALID_ORDER_ID, hasReason: false, paymentsChoice: "credit" },
     });
   });
 

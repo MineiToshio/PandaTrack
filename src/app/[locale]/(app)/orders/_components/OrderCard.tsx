@@ -7,13 +7,16 @@ import StoreAvatar from "@/components/core/StoreAvatar";
 import { getStoreProductTypeIcon } from "@/lib/catalog/storeProductTypeIcons";
 import { formatAmountWithSymbol } from "@/lib/currency";
 import { formatDomainDate } from "@/lib/domainDate";
-import { isOrderOverdue, resolveOrderArrivalDueDate } from "@/lib/orders/orderDerivedState";
-import { formatArrivalWindow } from "@/lib/arrivalWindow";
+import { isOrderArrivalObserved, isOrderOverdue, resolveOrderArrivalDueDate } from "@/lib/orders/orderDerivedState";
+import { formatArrivalWindow, getOverdueDays } from "@/lib/arrivalWindow";
 import { ROUTES } from "@/lib/constants";
 import { cn } from "@/lib/styles";
-import OrderUnpaidPill from "./share/OrderUnpaidPill";
 import StoreTombstoneNotice from "./share/StoreTombstoneNotice";
-import { describeOrderListChip, describeOverdueDays, getOrderListChipToneClassName } from "./share/orderListStatusChip";
+import {
+  describeOrderListBalanceChip,
+  describeOrderListChip,
+  getOrderListChipToneClassName,
+} from "./share/orderListStatusChip";
 import { resolveStoreTombstone } from "@/lib/store/storeTombstone";
 import type { OrdersListPageItem } from "@/lib/data/orders/orderQueries";
 import OrderItemStateChip from "./share/OrderItemStateChip";
@@ -45,15 +48,19 @@ export default function OrderCard({
 }: OrderCardProps) {
   const t = useTranslations("orderListing");
 
+  // Same reading as the desktop row: an order whose every product has been observed reaching the
+  // store has had its arrival prediction answered. See `isOrderArrivalObserved`.
+  const arrivalObserved = isOrderArrivalObserved(order.items);
   const overdue = isOrderOverdue(
     {
       expectedDeliveryFrom: order.expectedDeliveryFrom,
       expectedDeliveryTo: order.expectedDeliveryTo,
       status: order.status,
+      items: order.items,
     },
     today,
   );
-  const overdueDays = overdue ? describeOverdueDays(resolveOrderArrivalDueDate(order), today) : 0;
+  const overdueDays = overdue ? getOverdueDays(resolveOrderArrivalDueDate(order), today) : 0;
   const arrivalWindow = formatArrivalWindow(order.expectedDeliveryFrom, order.expectedDeliveryTo, locale);
   const chip = describeOrderListChip({
     status: order.status,
@@ -63,18 +70,14 @@ export default function OrderCard({
     overdueDays,
   });
   const ChipIcon = chip.icon;
-  const showUnpaid = order.status === "COMPLETED" && order.hasUnpaidBalance;
+  const balanceChip = describeOrderListBalanceChip({
+    status: order.status,
+    hasUnpaidBalance: order.hasUnpaidBalance,
+  });
+  const BalanceChipIcon = balanceChip?.icon;
   const detailHref = `/${locale}${ROUTES.orders}/${order.id}?returnTo=${encodeURIComponent(returnTo)}`;
   const isCompletedOrCancelled = order.status === "COMPLETED" || order.status === "CANCELLED";
   const storeTombstone = resolveStoreTombstone(order.store);
-
-  const progressTone = isCompletedOrCancelled
-    ? "[background:var(--success)]"
-    : overdue || (order.status === "COMPLETED" && order.hasUnpaidBalance)
-      ? "[background:var(--warning)]"
-      : order.paymentPercentage >= 100
-        ? "[background:var(--success)]"
-        : "[background:var(--accent)]";
 
   const handleToggle = (event: React.MouseEvent<HTMLButtonElement>) => {
     // The card is overlaid by a full-bleed detail link; stop the toggle from navigating.
@@ -125,12 +128,17 @@ export default function OrderCard({
             <p
               className={cn(
                 "truncate [font-size:var(--text-caption)] tabular-nums",
-                overdue ? "[color:var(--warning)]" : "[color:var(--text-secondary)]",
+                // `--warning-chip-text`, not `--warning`, for the same reason as the desktop row.
+                overdue ? "[color:var(--warning-chip-text)]" : "[color:var(--text-secondary)]",
               )}
             >
-              {overdue
-                ? t("table.arrivalExpected", { window: arrivalWindow })
-                : t("table.arrivalArrives", { window: arrivalWindow })}
+              {/* Three readings, same as the desktop row: without the first one, an order whose
+                  products are already at the store reads "llega 12 jun" in August. */}
+              {arrivalObserved
+                ? t("table.arrivalResolved")
+                : overdue
+                  ? t("table.arrivalExpected", { window: arrivalWindow })
+                  : t("table.arrivalArrives", { window: arrivalWindow })}
             </p>
           )}
         </div>
@@ -146,34 +154,26 @@ export default function OrderCard({
           <ChipIcon width={12} height={12} aria-hidden="true" />
           {t(chip.labelKey, chip.labelVars)}
         </span>
-        {showUnpaid && <OrderUnpaidPill label={t("card.unpaid")} />}
-      </div>
-
-
-      <div className="pointer-events-none relative flex flex-col gap-1.5">
-        <div
-          role="progressbar"
-          aria-label={t("card.paymentBarLabel")}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={order.paymentPercentage}
-          className="relative h-[3px] w-full overflow-hidden rounded-full [background:color-mix(in_oklch,var(--text-primary)_10%,transparent)]"
-        >
-          <div
-            className={cn("h-full rounded-full", progressTone)}
-            style={{ width: `${Math.min(100, Math.max(0, order.paymentPercentage))}%` }}
-          />
-        </div>
-        <p className="flex flex-wrap items-center gap-x-1.5 [font-size:var(--text-caption)] [color:var(--text-secondary)] tabular-nums">
-          <span>{t("card.items", { count: order.itemCount })}</span>
-          <span aria-hidden>·</span>
-          <span>{t("card.paymentPercentage", { pct: order.paymentPercentage })}</span>
-          <span aria-hidden>·</span>
-          <span className="[font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
-            {formatAmountWithSymbol(order.totalCost, order.currencyCode, locale)}
+        {balanceChip && BalanceChipIcon && (
+          <span
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] px-2.5 py-1 text-[12px] [font-weight:var(--font-weight-medium)] whitespace-nowrap [border:1px_solid]",
+              getOrderListChipToneClassName(balanceChip.toneKey),
+            )}
+          >
+            <BalanceChipIcon width={12} height={12} aria-hidden="true" />
+            {t(balanceChip.labelKey)}
           </span>
-        </p>
+        )}
       </div>
+
+      <p className="pointer-events-none relative flex flex-wrap items-center gap-x-1.5 [font-size:var(--text-caption)] [color:var(--text-secondary)] tabular-nums">
+        <span>{t("card.items", { count: order.itemCount })}</span>
+        <span aria-hidden>·</span>
+        <span className="[font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
+          {formatAmountWithSymbol(order.totalCost, order.currencyCode, locale)}
+        </span>
+      </p>
 
       {isExpanded && (
         <div

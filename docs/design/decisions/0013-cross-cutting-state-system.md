@@ -95,6 +95,15 @@ Un **404 no es un error** (el contenido no existe / se movió) → `neutral`, no
 - Empties: S10 **no** monta mascota; el icon-well canónico es suficiente. El slot `visual` de `EmptyState`
   queda reservado para una futura mascota _sleeping_ en empty-hero cuando los assets existan. **No bloquea S10.**
 
+**Actualización (2026-08-13).** El componente `MascotBubble.tsx` se eliminó del repositorio: llevaba
+desmontado desde S5.3 y no tenía ningún consumidor. Al retirarlo se comprobó que **nunca dibujó una
+mascota**: pintaba `/icon.svg` porque los sprites de D3-03 jamás llegaron a existir. Por tanto las
+variantes `sleeping` / `confused` / `celebrating` que algunos documentos de producto citaban eran
+**inconstruibles**, no pendientes de cablear. Consecuencia vinculante: ningún documento puede
+especificar una mascota como requisito aceptado. La mascota es **intención de diseño diferida** y
+sigue bloqueada por la producción de los recursos gráficos; hasta entonces el icon-well es la única
+representación válida de un estado vacío.
+
 ### D6 — Ownership de Sentry (sin ruido duplicado)
 
 Cada error se reporta **una sola vez**:

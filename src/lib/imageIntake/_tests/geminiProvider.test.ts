@@ -225,8 +225,54 @@ describe("GeminiExtractionProvider.generateDraft: the request actually sent", ()
 
     const response = await new GeminiExtractionProvider().generateDraft(buildImages(), buildContext());
 
-    expect(response.usage).toEqual({ inputTokens: 2240, outputTokens: 500 });
+    expect(response.usage).toEqual({
+      inputTokens: 2240,
+      outputTokens: 500,
+      thoughtsTokens: null,
+      totalTokens: null,
+    });
     expect(response.raw).toMatchObject({ store: { matchedStoreId: null } });
+  });
+
+  it("carries the reasoning token count through, since it is what explains a blown output budget", async () => {
+    const { GeminiExtractionProvider } = await importProvider();
+    generateContentMock.mockResolvedValue({
+      ...buildSdkResponse(),
+      usageMetadata: {
+        promptTokenCount: 2240,
+        candidatesTokenCount: 500,
+        thoughtsTokenCount: 31_000,
+        totalTokenCount: 33_740,
+      },
+    });
+
+    const response = await new GeminiExtractionProvider().generateDraft(buildImages(), buildContext());
+
+    expect(response.usage.thoughtsTokens).toBe(31_000);
+    expect(response.usage.totalTokens).toBe(33_740);
+    // Diagnostic only: reasoning is already inside `candidatesTokenCount`, so counting it again
+    // would bill it twice.
+    expect(response.usage.outputTokens).toBe(500);
+  });
+
+  it("measures the shape of a truncated answer, and keeps none of its text", async () => {
+    const { GeminiExtractionProvider } = await importProvider();
+    const { FinishReason } = await import("@google/genai");
+    const partial =
+      '{"groups":[{"sourcePhrase":"Nendoroid 1520 x2","products":[{"name":"a","unitPrice":10},{"name":"b","unitPrice":20}';
+    generateContentMock.mockResolvedValue({
+      ...buildSdkResponse(),
+      text: partial,
+      candidates: [{ finishReason: FinishReason.MAX_TOKENS }],
+    });
+
+    // This is the only moment the cut-off answer exists: zero retention means nothing downstream can
+    // ever look at it again, so the counts have to be taken here or the failure is unexplainable.
+    await expect(new GeminiExtractionProvider().generateDraft(buildImages(), buildContext())).rejects.toMatchObject({
+      kind: "truncated",
+      code: "GEMINI_RESPONSE_TRUNCATED",
+      shape: { groupsEmitted: 1, productsEmitted: 2, paymentsEmitted: 0, partialChars: partial.length },
+    });
   });
 
   it("refuses before building a client or sending anything when the paid tier is not confirmed", async () => {

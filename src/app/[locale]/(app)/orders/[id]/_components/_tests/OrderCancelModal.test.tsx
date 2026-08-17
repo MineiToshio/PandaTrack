@@ -62,33 +62,33 @@ describe("OrderCancelModal payments-choice control", () => {
     cancelOrderActionMock.mockResolvedValue({ ok: true });
   });
 
-  it("hides the control and cancels with the keep default when the order has no payments", async () => {
+  it("hides the control and cancels with the credit default when the order has no payments", async () => {
     const user = userEvent.setup();
-    render(<OrderCancelModal {...BASE_PROPS} paidAmountMinor={0} hasPayments={false} />);
+    render(<OrderCancelModal {...BASE_PROPS} paidAmountMinor={0} hasPayments={false} markedItemCount={0} />);
 
-    expect(screen.queryByText("detail.cancelModal.paymentsKeepLabel")).not.toBeInTheDocument();
-    expect(screen.queryByText("detail.cancelModal.paymentsRemoveLabel")).not.toBeInTheDocument();
+    expect(screen.queryByText("detail.cancelModal.paymentsCreditLabel")).not.toBeInTheDocument();
+    expect(screen.queryByText("detail.cancelModal.paymentsLostLabel")).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "detail.cancelModal.confirm" }));
 
-    expect(cancelOrderActionMock).toHaveBeenCalledWith("order-1", null, "keep");
+    expect(cancelOrderActionMock).toHaveBeenCalledWith("order-1", null, "credit");
   });
 
-  it("shows the control defaulting to keep, and submits the remove choice once selected", async () => {
+  it("shows the control defaulting to credit, and submits the lost choice once selected", async () => {
     const user = userEvent.setup();
-    render(<OrderCancelModal {...BASE_PROPS} paidAmountMinor={16000} hasPayments />);
+    render(<OrderCancelModal {...BASE_PROPS} paidAmountMinor={16000} hasPayments markedItemCount={0} />);
 
-    const keepRadio = screen.getByRole("radio", { name: /paymentsKeepLabel/ });
-    const removeRadio = screen.getByRole("radio", { name: /paymentsRemoveLabel/ });
-    expect(keepRadio).toBeChecked();
-    expect(removeRadio).not.toBeChecked();
+    const creditRadio = screen.getByRole("radio", { name: /paymentsCreditLabel/ });
+    const lostRadio = screen.getByRole("radio", { name: /paymentsLostLabel/ });
+    expect(creditRadio).toBeChecked();
+    expect(lostRadio).not.toBeChecked();
 
-    await user.click(removeRadio);
-    expect(removeRadio).toBeChecked();
-    expect(keepRadio).not.toBeChecked();
+    await user.click(lostRadio);
+    expect(lostRadio).toBeChecked();
+    expect(creditRadio).not.toBeChecked();
 
     await user.click(screen.getByRole("button", { name: "detail.cancelModal.confirm" }));
 
-    expect(cancelOrderActionMock).toHaveBeenCalledWith("order-1", null, "remove");
+    expect(cancelOrderActionMock).toHaveBeenCalledWith("order-1", null, "lost");
   });
 });

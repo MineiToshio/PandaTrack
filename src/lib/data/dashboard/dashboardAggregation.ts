@@ -54,6 +54,7 @@ import type {
   SpendBlock,
   StatusCount,
   UpcomingPayment,
+  UpcomingPaymentDueState,
 } from "./dashboardTypes";
 
 const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -176,7 +177,7 @@ function buildCashObligations(
     baseCurrencyCode,
   );
 
-  const upcomingPayments = buildUpcomingPayments(datedOutstanding, baseCurrencyCode);
+  const upcomingPayments = buildUpcomingPayments(datedOutstanding, baseCurrencyCode, todayStart);
 
   return {
     currentMonth,
@@ -189,8 +190,31 @@ function buildCashObligations(
   };
 }
 
-function buildUpcomingPayments(datedOutstanding: DerivedOrder[], baseCurrencyCode: string | null): UpcomingPayment[] {
+/** Same lookahead window "próximas llegadas" uses, so "pronto" means one thing across the dashboard. */
+function resolveUpcomingPaymentDueState(dueDate: Date, todayStart: Date): UpcomingPaymentDueState {
+  const daysAhead = (dueDate.getTime() - todayStart.getTime()) / MILLISECONDS_PER_DAY;
+  if (daysAhead < 0) return "overdue";
+  return daysAhead <= DASHBOARD_UPCOMING_ARRIVAL_DAYS ? "soon" : "scheduled";
+}
+
+/**
+ * "Lo que toca pagar": per-order balances the collector still has ahead of them.
+ *
+ * `COMPLETED` orders are excluded from this LIST even though they stay in every obligation total
+ * above. A delivered pedido that still owes money is real debt (so it must keep counting in
+ * `totalOutstanding` / `overdue` / `currentMonth`), but it is not "upcoming": its arrival date is
+ * in the past and, sorted ascending by that date, those rows sit permanently at the top and push
+ * out everything the collector actually has coming. That is how a set of years-old delivered
+ * pedidos occupied all five rows of this widget. Those balances now have their own door: the
+ * orders list "Con saldo pendiente" filter, and the warning chip on their own rows (`FR-05-35`).
+ */
+function buildUpcomingPayments(
+  datedOutstanding: DerivedOrder[],
+  baseCurrencyCode: string | null,
+  todayStart: Date,
+): UpcomingPayment[] {
   return datedOutstanding
+    .filter((order) => order.input.status !== "COMPLETED")
     .slice()
     .sort((a, b) => a.input.expectedDeliveryFrom!.getTime() - b.input.expectedDeliveryFrom!.getTime())
     .map((order) => {
@@ -208,6 +232,7 @@ function buildUpcomingPayments(datedOutstanding: DerivedOrder[], baseCurrencyCod
         outstandingMinor: order.outstandingMinor,
         baseOutstandingMinor,
         isFxPending: fxPending,
+        dueState: resolveUpcomingPaymentDueState(order.input.expectedDeliveryFrom!, todayStart),
       };
     });
 }

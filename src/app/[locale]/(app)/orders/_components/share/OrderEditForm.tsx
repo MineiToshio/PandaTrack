@@ -26,7 +26,7 @@ import { useIsMobile } from "@/hooks/useIsMobile";
 import { useStoreProductTypeName } from "@/app/[locale]/(app)/_components/StoreProductTypeNamesProvider";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 import { formatAmount, formatCentsForInput } from "@/lib/currency";
-import { utcDomainDateToLocal } from "@/lib/domainDate";
+import { toLocalIsoDateString, utcDomainDateToLocal } from "@/lib/domainDate";
 import { isValidPositiveDecimal, sanitizeDecimalInput } from "@/lib/decimalInput";
 import { fetchTodayRate } from "@/lib/fx/exchangeRates";
 import { deriveItemizedTotal, shouldShowDiscrepancyModal } from "@/lib/orders/orderItemUtils";
@@ -104,13 +104,10 @@ function itemRowSignature(row: ItemRow): string {
 
 // Domain-date state is held in local-midnight Dates (the date picker emits local time and
 // the prefill converts server UTC-midnight to the same local calendar day). Serialize with
-// local getters so the submitted yyyy-mm-dd matches the day shown in every timezone.
+// `toLocalIsoDateString` so the submitted yyyy-mm-dd matches the day shown in every timezone;
+// a null field (no delivery window set yet) serializes to "".
 function dateToIso(d: Date | null): string {
-  if (!d) return "";
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
+  return d ? toLocalIsoDateString(d) : "";
 }
 
 export default function OrderEditForm({ stores, productTypeKeys, baseCurrencyCode, action, initialOrder }: Props) {

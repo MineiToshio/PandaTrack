@@ -45,7 +45,12 @@ async function fetchDashboardOrders(userId: string): Promise<DashboardOrderInput
           },
         },
       },
-      payments: { select: { amount: true, paymentDate: true } },
+      // Money reaches the dashboard through this order's own allocations, so a payment shared with
+      // other orders contributes only the slice declared here, never its full amount. The date
+      // comes from the parent payment, which is where it lives.
+      paymentAllocations: {
+        select: { amountMinor: true, payment: { select: { paymentDate: true } } },
+      },
     },
   });
 
@@ -70,7 +75,10 @@ async function fetchDashboardOrders(userId: string): Promise<DashboardOrderInput
       deliveryState: item.deliveryState,
       deliveryDates: item.deliveryItems.map((link) => link.delivery.deliveryDate),
     })),
-    payments: row.payments.map((payment) => ({ amount: payment.amount, paymentDate: payment.paymentDate })),
+    payments: row.paymentAllocations.map((allocation) => ({
+      amount: allocation.amountMinor,
+      paymentDate: allocation.payment.paymentDate,
+    })),
   }));
 }
 

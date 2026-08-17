@@ -83,12 +83,35 @@ The literal `oklch(...)` values for every token (light and dark) live in [`token
 
 #### Surfaces
 
-| Token                | Velvet light                 | Velvet dark                  | Use                                                                                                                                                                                                              |
-| -------------------- | ---------------------------- | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--background`       | `oklch(93% 0.020 285)`       | `oklch(10% 0.028 265)`       | Root app canvas. Never inside cards or sub-surfaces.                                                                                                                                                             |
-| `--surface`          | `oklch(96.5% 0.014 285)`     | `oklch(13% 0.028 265)`       | Default card, list, primary detail panel. Never as an accent.                                                                                                                                                    |
-| `--surface-elevated` | `oklch(95% 0.016 285)`       | `oklch(16% 0.030 265)`       | Only when there is real hierarchy against `--surface` (sub-card inside a card, drawer/sheet body, popover, scroll-spy header). In light it is **slightly darker** than `--surface` (paper-overlap), not lighter. |
-| `--surface-overlay`  | `oklch(8% 0.020 285 / 0.55)` | `oklch(4% 0.020 265 / 0.65)` | Only the modal scrim, sheet backdrop, command-palette overlay. Never as a content background.                                                                                                                    |
+| Token                | Velvet light                 | Velvet dark                  | Use                                                                                                                                                                                                                                     |
+| -------------------- | ---------------------------- | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--background`       | `oklch(93% 0.020 285)`       | `oklch(10% 0.028 265)`       | Root app canvas. Never inside cards or sub-surfaces.                                                                                                                                                                                    |
+| `--surface`          | `oklch(96.5% 0.014 285)`     | `oklch(13% 0.028 265)`       | **Container / recessed** surface: a panel whose children are themselves cards, a card whose content is chiefly controls, a well inset into an elevated card. Never a leaf card sitting on the canvas. Never as an accent.               |
+| `--surface-elevated` | `oklch(95% 0.016 285)`       | `oklch(16% 0.030 265)`       | **Raised** surface: the default fill for anything that sits directly on the canvas (list card, table shell, detail hero, KPI tile, wizard step), for overlay chrome (sheet, drawer, popover, modal panel), and for inputs and controls. |
+| `--surface-overlay`  | `oklch(8% 0.020 285 / 0.55)` | `oklch(4% 0.020 265 / 0.65)` | Only the modal scrim, sheet backdrop, command-palette overlay. Never as a content background.                                                                                                                                           |
+
+#### Choosing between `--surface` and `--surface-elevated`
+
+The two are **not** a plain low/high pair, because their relative lightness swaps between modes: in light `--surface` (96.5% L) is _lighter_ than `--surface-elevated` (95% L, the deliberate paper-overlap), while in dark `--surface-elevated` (16% L) is _lighter_ than `--surface` (13% L). So "elevated" cannot be read as "always one step up". What is stable is each token's **distance from whatever it sits on**, and that is what the choice is made on:
+
+| Fill sitting on…                        | Light ΔL | Dark ΔL | Reads as              |
+| --------------------------------------- | -------- | ------- | --------------------- |
+| `--surface` on `--background`           | +3.5     | +3      | flat in dark          |
+| `--surface-elevated` on `--background`  | +2.0     | +6      | raised in both        |
+| `--surface-elevated` inside `--surface` | −1.5     | +3      | distinct sub-level    |
+| `--surface` inside `--surface-elevated` | +1.5     | −3      | recessed well in dark |
+
+A **+3 ΔL on the near-black dark canvas is at the threshold of perception**, and `--border` flattens in dark too (see [states.md](states.md)), so a leaf card filled with `--surface` loses its edges entirely in dark mode. Measured against the dark canvas the fill-to-fill ratio is `1.023:1` for `--surface` versus `1.061:1` for `--surface-elevated`, roughly a threefold difference in the part of the signal the eye actually has to work with. In light the same two land at `1.111:1` and `1.064:1`, both plainly visible and both backed by a `--border` that still carries contrast there, which is why the dark measurement is the one that decides.
+
+Apply in this order:
+
+1. **Sits directly on the page canvas → `--surface-elevated`.** List card, table shell, detail hero, KPI tile, section card, wizard step, empty state, sidebar. This is the default in the authenticated app.
+2. **Is a panel that holds its own sub-cards → `--surface`.** This keeps the `background → surface → surface-elevated` ladder monotonic in dark and gives the sub-cards something to read against. Canonical implementation: `DashboardZoneCard` (zone panel on `--surface`, its chart cards and micro-stat tiles on `--surface-elevated`).
+3. **Is a card whose content is chiefly inputs or controls → `--surface`.** Inputs, selects, secondary buttons, and chips all fill with `--surface-elevated`; their container must therefore drop to `--surface` (`<Card variant="outlined">`) or the control dissolves into it.
+4. **Is a well recessed into an elevated card → `--surface`.** Inline form band, image well, toggle knob, calendar day cell.
+5. **Is overlay chrome → `--surface-elevated`,** always: modal panel, sheet body, right drawer, popover, dropdown.
+
+**Anti-pattern:** a leaf card on the canvas filled with `--surface`. It is nearly invisible in dark mode. Rules 1 and 3 do not conflict: rule 3 is about a container that must let its controls read, rule 1 about a card that must let itself read against the canvas. When a card would qualify for both, it is a form card and rule 3 wins.
 
 There is intentionally no `--surface-warm` token: `--surface` is already a warm lead-violet, an extra warm surface would be imperceptible and would break the `background → surface → surface-elevated` ladder. When a sub-card needs warm differentiation, mix the accent into the surface (`color-mix(in oklch, var(--accent-warm) 14%, var(--surface))`).
 
@@ -145,6 +168,25 @@ color: var(--success-chip-text); /* light: dedicated chip-text alias; dark: the 
 
 In light mode the base status color does not reach 4.5:1 on a 14% chip, so each status has a darker `--{status}-chip-text` alias for light; in dark the chip text is the base status token. These aliases are also shared across all palettes.
 
+##### Status color as text
+
+**`--{status}-chip-text` is the status TEXT token. The `-chip-` in its name records the first thing that needed it, not the only thing allowed to use it.** Any status-coloured string — a chip label, a line of copy in a dense row, an inline note — takes the alias. The base token is a fill and a border colour, and against `--surface` in the light theme it is nowhere near AA as text:
+
+| pair (light, on `--surface`) | ratio      |
+| ---------------------------- | ---------- |
+| `--warning`                  | **2.46:1** |
+| `--warning-chip-text`        | 8.42:1     |
+| `--info`                     | **3.83:1** |
+| `--info-chip-text`           | 8.06:1     |
+
+Dark needs no alias for the same reason it never did — the base tokens land above 10:1 there, which is why `globals.css` collapses each alias to its base under the dark theme.
+
+**The suite now catches the TOKEN, and still cannot catch the CONTRAST.** Both halves of this trap were walked into on the same feature ([ADR 0030](decisions/0030-arrival-window-shown-at-declared-granularity.md)): once with `--info` and once with `--warning`, and flipping the shipped line back to the raw token left all 3183 tests green. `design-token-guard`'s third scan closes that: it fails on `[color:var(--{warning,info,success,destructive})]` anywhere under `src/**/*.{ts,tsx}`, with a **zero budget** against an explicit per-file map of the pre-existing debt (46 files, 100 hits at the time of writing). The map is exact and self-verifying — a new hit in a listed file fails as loudly as one in a fresh file, a fixed file must be lowered or removed, and an entry whose file is gone fails rather than rotting into a rubber stamp — so the number can only go down.
+
+What it does NOT do is compute a ratio. It knows which token is the text one; it cannot tell you whether a new colour pairing is readable, and it says nothing about a status colour applied through `style={{ color: … }}` or a CSS file. **Measure before you pair, and add the measurement to the entry if you exempt something.** The `-chip-` in the alias name is the only thing standing between a status colour and a 2.5:1 label.
+
+**A chip does not exempt itself by carrying its own wash.** A 12% fill of the same hue lifts nothing: the orders list ran raw labels on their own washes at 2.23:1 (`--warning`), 3.33:1 (`--info`) and 3.14:1 (`--success`), against 7.62 / 7.00 / 6.13 with the alias. Tone and label colour are separate decisions — `warning`-toned is a statement about the tone, never a licence for the raw token on the label.
+
 #### Focus and state layers
 
 | Token / state  | Recipe                                                                                                                                                                                       |
@@ -171,7 +213,7 @@ There is **no categorical palette** in the system (see [ADR 0004](decisions/0004
 
 ### Chart series colors
 
-Charts do ship: the dashboard's "Tendencias" section renders four line charts (see [interface-patterns.md § 15](interface-patterns.md)), and the collection zone renders donuts and bars. They take their series colors from the **existing semantic tokens** — `--accent`, `--accent-cool`, `--warning`, `--success` — and introduce no `--chart-*` set.
+Charts do ship: the dashboard's "Tendencias" section renders four line charts (see [interface-patterns.md § 16](interface-patterns.md)), and the collection zone renders donuts and bars. They take their series colors from the **existing semantic tokens** — `--accent`, `--accent-cool`, `--warning`, `--success` — and introduce no `--chart-*` set.
 
 In the **trend charts**, nothing here is a category:
 

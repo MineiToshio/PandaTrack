@@ -21,7 +21,7 @@ This is the spine of FRD-11. Everything after it is either an enrichment of this
 ## In Scope
 
 - Intake route under the orders subtree (proposed `orders/new/image`) with its upload surface: attach photos, thumbnails, remove a photo, and the "Extraer datos" action.
-- Client pipeline wiring: compress through `compressForIntake`, show an "Optimizando imágenes..." state, upload, and batch the request when the attachments exceed the 4.5 MB request ceiling.
+- Client pipeline wiring: prepare through `prepareSubmissionForIntake` (bounded concurrency per `FR-11-17d`, plus the quality ladder of `FR-11-19a` when the submission does not fit), show an "Optimizando imágenes..." state, and upload in a single request. The pre-upload pass checks photo count only; byte size is judged once, on the prepared segments, never on the attached source (`FR-11-17c`). A submission still over the budget at the ladder's floor is refused with the count of photos that would fit (`FR-11-19b`), never split across requests.
 - Processing screen naming the real steps (optimising, uploading, reading), not an indeterminate spinner. Three to eight seconds is the expected duration.
 - Server Action `imageIntakeActions.ts`: authenticate, validate, call `extract`, return the draft.
 - **Currency gate**: when the user has no base currency configured, ask for it before extraction runs and only process the submission once it is set.

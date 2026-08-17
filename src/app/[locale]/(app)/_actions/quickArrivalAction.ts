@@ -48,9 +48,8 @@ export async function quickArrivalAction(input: QuickArrivalActionInput): Promis
   if (!sourceOrder) {
     return { ok: false, error: "ORDER_NOT_FOUND" };
   }
-  if (sourceOrder.status === "CANCELLED") {
-    return { ok: false, error: "ORDER_CANCELLED" };
-  }
+  // The cancelled-order refusal is no longer checked here: it lives inside `createDelivery`, so
+  // every entry point into a delivery inherits it instead of only this one.
 
   const preferences = await getCollectorPreferencesSnapshot(userId);
   const baseCurrencyCode = preferences?.baseCurrencyCode ?? null;

@@ -52,8 +52,10 @@ It is justified as a foundation because WO-02, WO-06, and WO-07 all consume the 
 
 ### Server-side validation and limits
 
-- `src/lib/imageIntake/validateUpload.ts` using `sharp.metadata()`: 1 to 20 images, 2 MB per file, 3.5 MB total, real type from header bytes, dimensions between `200x200` and `4000x8000`, decodability, and an explicit `empty-submission` code for a zero-image submission. Validate and measure only, never re-encode.
-- `src/lib/imageIntake/clientPrecheck.ts`: `precheckIntakeSubmission`, a pure, client-safe precheck of image count and total/per-file byte size (no `sharp`, no server-only API), reusing the subset of `validateUpload.ts`'s error codes it can detect without decoding (`empty-submission`, `too-many-images`, `file-too-large`, `submission-too-large`). It exists for WO-02's earliest-possible feedback and is not a security boundary; the server always re-validates.
+- `src/lib/imageIntake/validateUpload.ts` using `sharp.metadata()`, against the prepared upload it receives (never the attached source, see `FR-11-17c`): 1 to 20 images, 2 MB per file, 3.5 MB total, real type from header bytes, dimensions between `200x200` and `4000x8000`, decodability, and an explicit `empty-submission` code for a zero-image submission. Validate and measure only, never re-encode.
+- `src/lib/imageIntake/clientPrecheck.ts`: two pure, client-safe prechecks (no `sharp`, no server-only API), reusing the subset of `validateUpload.ts`'s error codes each can detect without decoding. It exists for WO-02's earliest-possible feedback and is not a security boundary; the server always re-validates.
+  - `precheckAttachedPhotos`, run on the photos as attached: image **count** only (`empty-submission`, `too-many-images`). Byte size is deliberately absent, per `FR-11-17c`.
+  - `precheckPreparedSegments`, run on the segments preparation produced: count plus per-file and total byte size (`file-too-large`, `submission-too-large`). Segments are what gets uploaded, and one tall screenshot can become several of them.
 - Lower `experimental.serverActions.bodySizeLimit` in `next.config.ts` from `6mb` to `4mb`.
 - Do not put `image/heic` in any file input `accept` attribute (documented constraint consumed by WO-02).
 

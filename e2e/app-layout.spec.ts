@@ -141,16 +141,18 @@ test.describe("App layout header and breadcrumbs", () => {
 
     await signInAndLandOnDashboard(page);
 
-    await page.goto("/en/purchases/pre-orders");
-    await expect(page).toHaveURL(/\/en\/orders\/pre-orders/);
+    // `/orders/new`, not the old `/purchases/pre-orders`: that sub-route was deleted when order
+    // management was unified under `/orders`, so the spec was asserting the shell chrome of a 404.
+    await page.goto("/en/orders/new");
+    await expect(page).toHaveURL(/\/en\/orders\/new$/);
 
     const breadcrumbNav = page.getByRole("navigation", { name: "Breadcrumb" });
     await expect(breadcrumbNav).toBeVisible();
     await expect(breadcrumbNav.getByRole("link", { name: "Orders" })).toBeVisible();
 
-    // The shell header shows the page title as plain text, not a heading: the orders list page
+    // The shell header shows the page title as plain text, not a heading: the page itself
     // owns the single real h1 in main content, so scope the heading assertion to main instead.
-    await expect(page.getByRole("banner").getByText("Pre-orders", { exact: true })).toBeVisible();
+    await expect(page.getByRole("banner").getByText("New order", { exact: true })).toBeVisible();
     await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toBeVisible();
   });
 });

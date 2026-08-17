@@ -180,7 +180,8 @@
   "upcomingPayments": {
     "eyebrow": "Upcoming payments",
     "title": "What's next to pay",
-    "dueSoon": "due soon",
+    "dueSoonOn": "due soon, {date}",
+    "overdueOn": "overdue since {date}",
     "dueOn": "due {date}",
     "seeOrders": "View orders",
     "rowLabel": "{store}, order {code}, balance {amount}",

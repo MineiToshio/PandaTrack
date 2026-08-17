@@ -872,9 +872,12 @@
     .row-list .row:hover { background: color-mix(in oklch, var(--text-primary) var(--state-hover), transparent); border-radius: 10px; }
     .row-list .row.is-active { background: color-mix(in oklch, var(--accent) var(--state-hover), transparent); }
 
+    /* Mirrors src/components/core/ProgressBar.tsx: the track clips the rounded ends and the
+       fill stays square-edged, because it moves with transform: scaleX and a rounded fill
+       distorts its corners when scaled. See interface-patterns.md "Progress meters". */
     .progress {
       height: 4px;
-      background: color-mix(in oklch, var(--text-primary) 8%, transparent);
+      background: color-mix(in oklch, var(--text-primary) 10%, transparent);
       border-radius: 999px;
       overflow: hidden;
       width: 100%;
@@ -882,8 +885,44 @@
     .progress > span {
       display: block;
       height: 100%;
+      width: 100%;
+      transform-origin: left;
       background: linear-gradient(90deg, var(--accent), var(--accent-warm));
-      border-radius: 999px;
+    }
+    .payment-progress { padding: 8px 0; border-top: 1px solid var(--border); }
+    .payment-progress-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; font-size: 13.5px; }
+    .payment-progress-head .remaining { font-weight: 500; color: var(--text-primary); }
+    .payment-progress-head .pct { color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+    .payment-progress .pair { margin: 4px 0 0; font-size: 13px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+    .payment-progress .lost { margin: 4px 0 0; font-size: 13px; color: var(--warning); font-variant-numeric: tabular-nums; }
+    .payment-progress .progress { margin-top: 6px; }
+
+    /* "Pagos a esta tienda" row. Desktop is one line; below 768px it splits in two, with the
+       DOM order matching the visual order at BOTH breakpoints (never CSS `order`). */
+    .pay-row { display: flex; flex-direction: column; padding: 8px 0; border-bottom: 1px solid var(--border); }
+    .pay-row:last-child { border-bottom: 0; }
+    .pay-row .line-a { display: flex; align-items: baseline; gap: 12px; }
+    .pay-row .date { flex: none; width: 92px; font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+    .pay-row .coverage { flex: 1; min-width: 0; font-size: 13px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .pay-row .coverage a { color: var(--accent); text-underline-offset: 2px; }
+    .pay-row .amount { flex: none; font-size: 14px; font-weight: 600; color: var(--text-title); font-variant-numeric: tabular-nums; }
+    .pay-row .icon-btn { flex: none; display: grid; place-items: center; width: 28px; height: 28px; border: 0; background: none; color: var(--text-muted); cursor: pointer; border-radius: 6px; }
+    .pay-breakdown { margin-top: 6px; padding-left: 104px; }
+    .pay-breakdown .head { font-family: var(--font-mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--text-muted); }
+    .pay-breakdown .line { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 4px 0; font-size: 12px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+    .pay-breakdown .line.unassigned { color: var(--warning); }
+    @media (max-width: 767px) {
+      /* Two lines: A = date, amount, delete · B = coverage, toggle. The shipped component writes
+         the coverage cell and the toggle out ONCE PER BREAKPOINT rather than reordering them with
+         CSS `order`, so the DOM order matches the visual order on both (WCAG 1.3.2 / 2.4.3); this
+         prototype keeps a single copy for legibility and reflows it with `wrap`. Both controls
+         keep a 28px visual size with the hit area expanded to 44px. */
+      .pay-row .line-a { flex-wrap: wrap; }
+      .pay-row .date { width: auto; }
+      .pay-row .amount { margin-left: auto; }
+      .pay-row .coverage { order: 1; flex-basis: 100%; margin-top: 4px; font-size: 12px; }
+      .pay-row .icon-btn { margin: -8px; padding: 8px; box-sizing: content-box; }
+      .pay-breakdown { padding-left: 0; }
     }
 
     .kbd {
@@ -4448,6 +4487,72 @@
               </div>
             </div>
 
+            <!-- FR-04-58 (2026-08-10). Stays in the MAIN column on purpose: the rail leaves
+                 278px of usable width, which is ~7px for the product name once the date, the
+                 fixed 15-character order reference, the amount and two controls are placed. The
+                 header count is the TRUE total, not the 20 rows the query cap let through. -->
+            <div class="subcard is-open" data-collapsible>
+              <button class="subcard-toggle">
+                <span class="s8-eyebrow-chip"><i data-lucide="wallet"></i>Pagos a esta tienda</span>
+                <span class="text-muted" style="font-size: 12px;">38</span>
+                <span class="chev"><i data-lucide="chevron-down"></i></span>
+              </button>
+              <div class="subcard-body">
+                <div class="subcard-body-inner">
+                  <ul style="list-style: none; margin: 0; padding: 0;">
+                    <!-- 1 declaración a un producto: la fila responde sola, sin toggle. -->
+                    <li class="pay-row">
+                      <div class="line-a">
+                        <span class="date">24 jul 2026</span>
+                        <span class="coverage"><a href="#order-detail">ORD-20260805-07</a> · Figura Goku SSJ4</span>
+                        <span class="amount">S/ 216.60</span>
+                        <button class="icon-btn" aria-label="Eliminar pago de S/ 216.60 del 24 jul 2026"><i data-lucide="x"></i></button>
+                      </div>
+                    </li>
+                    <!-- 1 declaración al pedido completo. -->
+                    <li class="pay-row">
+                      <div class="line-a">
+                        <span class="date">30 nov 2021</span>
+                        <span class="coverage"><a href="#order-detail">ORD-20211130-01</a> · Todo el pedido</span>
+                        <span class="amount">S/ 586.39</span>
+                        <button class="icon-btn" aria-label="Eliminar pago de S/ 586.39 del 30 nov 2021"><i data-lucide="x"></i></button>
+                      </div>
+                    </li>
+                    <!-- Pedido CANCELADO: el dinero está hundido, y se dice con palabra + icono. -->
+                    <li class="pay-row">
+                      <div class="line-a">
+                        <span class="date">30 ene 2023</span>
+                        <span class="coverage"><a href="#order-detail">ORD-20230130-01</a> · Todo el pedido <span class="chip warning"><i data-lucide="circle-off"></i> Perdido</span></span>
+                        <span class="amount">S/ 160.00</span>
+                        <button class="icon-btn" aria-label="Eliminar pago de S/ 160.00 del 30 ene 2023"><i data-lucide="x"></i></button>
+                      </div>
+                    </li>
+                    <!-- 2+ declaraciones: única fila con toggle, y el panel es de solo lectura (BR-04-31). -->
+                    <li class="pay-row">
+                      <div class="line-a">
+                        <span class="date">14 ago 2026</span>
+                        <span class="coverage"><a href="#order-detail">ORD-20260805-07</a> · 2 productos</span>
+                        <span class="amount">S/ 186.60</span>
+                        <button class="icon-btn" aria-label="Eliminar pago de S/ 186.60 del 14 ago 2026"><i data-lucide="x"></i></button>
+                        <button class="icon-btn" aria-expanded="true" aria-controls="pay-breakdown-demo" aria-label="Ver a qué se asignó el pago de S/ 186.60 del 14 ago 2026"><i data-lucide="chevron-up"></i></button>
+                      </div>
+                      <div class="pay-breakdown" id="pay-breakdown-demo" role="group" aria-label="Asignado a">
+                        <p class="head">Asignado a</p>
+                        <div class="line"><span><a href="#order-detail">ORD-20260805-07</a> · Figura Goku SSJ4</span><span>S/ 120.00</span></div>
+                        <div class="line"><span><a href="#order-detail">ORD-20260805-07</a> · Manga Vol. 1</span><span>S/ 60.00</span></div>
+                        <div class="line unassigned"><span>Sin asignar</span><span>S/ 6.60</span></div>
+                      </div>
+                    </li>
+                  </ul>
+                  <!-- Un control real, no un texto que parece uno. Al pulsarlo el foco pasa a la
+                       primera fila nueva y una región de solo texto anuncia "38 de 38 pagos". -->
+                  <div style="margin-top: 8px;">
+                    <button class="btn ghost sm">Ver los 38 pagos</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div class="subcard is-open" data-collapsible>
               <button class="subcard-toggle">
                 <span class="eyebrow">Contactos</span>
@@ -4527,16 +4632,74 @@
         </div>
 
         <aside>
+          <!-- FR-04-55 / FR-04-59 (2026-08-10): the flat "Deuda pendiente" row is gone; a payment
+               progress block per currency takes its place. "Total facturado" STAYS, and gains the
+               conditional "Cancelados" line that reconciles it with the committed total the debt
+               is derived from ("Total facturado" counts cancelled orders, that total does not).
+
+               DENOMINATOR, amended the same day: the bar compares money declared against the
+               PEDIDOS ACTIVOS over what those pedidos cost, NOT the store's lifetime pair. The
+               lifetime ratio converges on 100% in any store with history, so the collector's
+               largest live debt read 85% while a debt 25 times smaller read 99%. `debtMinor`,
+               which the "Falta" headline, the "Registrar pago" gate and the dashboard all read,
+               is untouched: only the ratio moved. Figures below are the real Pop Dealer Store and
+               Baúl Jare numbers, computed with the production formula. -->
           <div class="card elevated" style="position: sticky; top: 80px;">
-            <span class="eyebrow">Resumen</span>
+            <span class="eyebrow">Tus pedidos aquí</span>
             <div style="margin-top: 10px;">
-              <div class="summary-row"><span class="label">Pedidos activos</span><span class="value num">3</span></div>
-              <div class="summary-row"><span class="label">Pedidos cerrados</span><span class="value num">9</span></div>
-              <div class="summary-row"><span class="label">Total gastado</span><span class="value num">$846,20</span></div>
-              <div class="summary-row"><span class="label">Última visita</span><span class="value">hace 2 sem</span></div>
+              <div class="summary-row"><span class="label">Pedidos anotados</span><span class="value num">75</span></div>
+              <!-- The set the bar below measures the money of. Two scopes in one card, each named. -->
+              <div class="summary-row"><span class="label">Pedidos activos</span><span class="value num">17</span></div>
+              <div class="summary-row"><span class="label">Total facturado</span><span class="value num">18,212.30 PEN</span></div>
+              <!-- Rendered only when it differs from the committed total: 2 stores today. -->
+              <div class="summary-row"><span class="label">Cancelados</span><span class="value num">1,940.00 PEN</span></div>
+
+              <div class="payment-progress">
+                <div class="payment-progress-head">
+                  <!-- The store's whole debt, unchanged: 2,355.00 on the 17 pedidos activos. -->
+                  <span class="remaining">Falta 2,355.00 PEN</span>
+                  <!-- Math.floor, and 100 is reserved for a debt of exactly zero: rounding would
+                       print "Falta 33.83 · 100%" on a store one payment away from settled. -->
+                  <span class="pct num">39%</span>
+                </div>
+                <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="39"
+                     aria-label="Progreso de pago de pedidos activos en PEN"
+                     aria-valuetext="1,519.60 PEN pagados de 3,874.60 PEN en pedidos activos, 39 por ciento">
+                  <span style="transform: scaleX(0.39);"></span>
+                </div>
+                <!-- Never the percentage alone: the denominator moves when a pedido is recorded,
+                     and now also when one is delivered. The caption states its own scope so it
+                     cannot be read as the store's lifetime total. BOTH operands carry the currency
+                     code, matching `formatAmount` and the identical pair in the orders store view;
+                     an earlier draft wrote it once here and twice in `aria-valuetext` below, which
+                     made the prototype disagree with itself. -->
+                <p class="pair">1,519.60 PEN pagados de 3,874.60 PEN en pedidos activos</p>
+                <!-- Conditional, and not pictured because this store is in neither state: the two
+                     directions of the gap between the "Falta" headline (the whole debt) and the
+                     bar's pair (los pedidos activos only). "Fuera de pedidos activos {amount}"
+                     when a delivered pedido still owes money, "A cuenta {amount}" when money was
+                     handed over without being declared against an active pedido. Suppressed only
+                     on a store in credit, where "A favor" is already the headline. -->
+
+                <!-- Conditional: only when part of what was paid is sunk in a cancelled order.
+                     Matches the "Perdido" row of S/ 160.00 in the payments card, which is exactly
+                     the disagreement this line exists to name. -->
+                <p class="lost">Perdido en cancelados 160.00 PEN</p>
+              </div>
+
+              <!-- Second currency, and the ordinary shape: nothing in flight, so no bar and no
+                   percentage. 112 of 122 store/currency pairs look like this. The block stays
+                   because "am I square with this store?" still needs an answer; what it refuses to
+                   do is fill a track whose denominator is zero. -->
+              <div class="payment-progress">
+                <div class="payment-progress-head">
+                  <span class="chip success">Al día</span>
+                </div>
+                <p class="pair">Sin pedidos activos</p>
+              </div>
             </div>
             <div style="margin-top: 14px;">
-              <button class="btn link sm"><i data-lucide="external-link"></i> Ver pedidos</button>
+              <button class="btn link sm"><i data-lucide="external-link"></i> Ver pedidos vinculados</button>
             </div>
           </div>
 
@@ -4544,6 +4707,7 @@
             <span class="eyebrow">Acciones</span>
             <div class="actions-list" style="margin-top: 10px;">
               <a href="#order-create" class="btn primary" data-screen-link="order-create"><i data-lucide="plus-circle"></i> Anotar pedido aquí</a>
+              <button class="btn ghost"><i data-lucide="circle-dollar-sign"></i> Registrar pago</button>
               <button class="btn ghost"><i data-lucide="bookmark"></i> Guardar tienda</button>
               <button class="btn destructive-ghost"><i data-lucide="flag"></i> Reportar tienda</button>
             </div>

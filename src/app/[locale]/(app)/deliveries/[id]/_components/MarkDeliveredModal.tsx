@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { Info, PackageCheck } from "lucide-react";
 import Modal from "@/components/modules/Modal/Modal";
 import Input from "@/components/core/Input";
-import { toIsoDateString } from "@/lib/localDate";
+import { toDomainDate, toLocalIsoDateString } from "@/lib/domainDate";
 
 type MarkDeliveredModalProps = {
   isOpen: boolean;
@@ -17,7 +17,8 @@ type MarkDeliveredModalProps = {
   onSubmit: (receivedDate: Date) => void;
 };
 
-/** Parses the `yyyy-mm-dd` input value as a LOCAL date (not UTC midnight). */
+/** Parses the `yyyy-mm-dd` input value as a LOCAL date. Converted with `toDomainDate` before it
+    leaves for the server: see `handleConfirm`. */
 function parseLocalDate(iso: string): Date | null {
   const [y, m, d] = iso.split("-").map(Number);
   if (!y || !m || !d) return null;
@@ -33,7 +34,7 @@ export default function MarkDeliveredModal({
   onSubmit,
 }: MarkDeliveredModalProps) {
   const t = useTranslations("deliveries");
-  const todayIso = toIsoDateString(new Date());
+  const todayIso = toLocalIsoDateString(new Date());
   const [dateInput, setDateInput] = useState(todayIso);
   const [error, setError] = useState<string | null>(null);
 
@@ -49,7 +50,10 @@ export default function MarkDeliveredModal({
     }
     // Optimistic confirmation: dispatch + close synchronously; the coordinator owns
     // the optimistic patch, rollback, and failure toast (the modal is gone by then).
-    onSubmit(parsed);
+    // A `Date` crosses the Server Action boundary as its exact instant, so the picker's local
+    // midnight would be persisted as that day at 05:00Z from Lima, off the UTC midnight every
+    // other domain date sits on. `toDomainDate` pins the same calendar day to UTC midnight.
+    onSubmit(toDomainDate(parsed));
     handleClose();
   }
 

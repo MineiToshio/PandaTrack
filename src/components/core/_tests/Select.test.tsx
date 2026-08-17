@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import Select from "@/components/core/Select";
@@ -131,5 +131,65 @@ describe("ControlledSelect — keyboard navigation", () => {
     fireEvent.click(screen.getByRole("option", { name: "Peru" }));
 
     expect(onChange).toHaveBeenCalledWith("PE");
+  });
+});
+
+describe("ControlledSelect — grouped options heading", () => {
+  // Every listing-page select (Orders/Deliveries/Stores sort, Orders group-by) passes a single
+  // `SelectGroup` so the listbox names what the user is choosing when it opens — see
+  // `docs/design/interface-patterns.md` §3 "Toggle choice groups, switches, selects". This test
+  // covers the shared mechanism all of those callers rely on.
+  const GROUPED_OPTIONS = [{ heading: "Sort by", options: OPTIONS }];
+
+  it("shows the group heading in the listbox when opened", () => {
+    render(<Select {...BASE_PROPS} options={GROUPED_OPTIONS} value={null} onChange={vi.fn()} />);
+
+    // The invisible width sizer also stacks the heading text (see the sizer test below), so once
+    // the listbox is open two "Sort by" text nodes exist in the DOM; scope the query to the real
+    // listbox to assert on the *visible* heading, not the hidden measuring copy.
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("combobox"));
+
+    const listbox = within(screen.getByRole("listbox"));
+    expect(listbox.getByText("Sort by")).toBeInTheDocument();
+    expect(listbox.getByRole("option", { name: "Argentina" })).toBeInTheDocument();
+  });
+
+  it("keeps the visible heading on a single line", () => {
+    render(<Select {...BASE_PROPS} options={GROUPED_OPTIONS} value={null} onChange={vi.fn()} />);
+
+    fireEvent.click(screen.getByRole("combobox"));
+
+    expect(within(screen.getByRole("listbox")).getByText("Sort by")).toHaveClass("whitespace-nowrap");
+  });
+
+  it("includes the group heading, in its own typography, in the invisible width sizer", () => {
+    // A heading (mono, uppercase eyebrow) is often visually wider per character than a plain
+    // option label, so it needs its own sizer entry — otherwise a heading longer than every
+    // option (e.g. "Agrupar por" over "Pedidos"/"Tiendas") wraps to two lines once the listbox
+    // opens, even though every individual option fits on one line. See `docs/design/interface-
+    // patterns.md` §3 "Every listing-page select declares its own heading".
+    const { container } = render(<Select {...BASE_PROPS} options={GROUPED_OPTIONS} value={null} onChange={vi.fn()} />);
+
+    const sizer = container.querySelector('[data-testid="select-width-sizer"]');
+    expect(sizer).not.toBeNull();
+
+    const headingSizerEntry = sizer?.querySelector('[data-testid="select-width-sizer-heading"]');
+    expect(headingSizerEntry).not.toBeNull();
+    expect(headingSizerEntry).toHaveTextContent("Sort by");
+    expect(headingSizerEntry).toHaveClass("whitespace-nowrap");
+    // Rendered with the heading's own typography (mono, uppercase eyebrow), not the body option
+    // font a plain sizer span uses — otherwise the measured width still doesn't match what the
+    // listbox actually paints.
+    expect(headingSizerEntry?.className).toContain("uppercase");
+    expect(headingSizerEntry?.className).toContain("font-mono");
+  });
+
+  it("omits the heading sizer entry for plain, non-grouped options", () => {
+    const { container } = render(<Select {...BASE_PROPS} value={null} onChange={vi.fn()} />);
+
+    const sizer = container.querySelector('[data-testid="select-width-sizer"]');
+    expect(sizer?.querySelector('[data-testid="select-width-sizer-heading"]')).toBeNull();
   });
 });

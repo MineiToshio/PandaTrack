@@ -13,6 +13,16 @@ implementation_status: IMPLEMENTED
 
 # WO-06 Orders List, Filters, Expansion Rows, and Overdue Payment Signals
 
+> **Amendment (store-level payments v5, FRD-05 phase 3a):** the per-order payment percentage column/bar,
+> the paid/partial/unpaid payment-status filter pills, and the `payment-asc` sort described below were
+> retired. Store-level payments no longer track a per-order paid ratio worth a dedicated column or
+> filter; the `overdue` payment state was dropped in favor of the already-present "Entrega atrasada"
+> delivery quick-filter, which covers the same case. In its place, the Orders list gained a second
+> view — "Por tienda" — that groups every store's pending products with a per-currency debt summary
+> instead of a per-order percentage. See `src/app/[locale]/(app)/orders/_components/StoreGroupedView.tsx`
+> and `src/lib/data/orders/pendingProductsByStoreQueries.ts`. The rest of this document (filters,
+> expansion rows, overdue-delivery signal) still reflects the shipped "Por pedido" list.
+
 ## Summary
 
 Build the orders workspace list at `/orders`: a paginated, URL-backed list of order cards with a filter sidebar, removable filter chips, a default active-orders view, expandable cards that reveal associated items, an overdue-delivery warning signal, and a payment-progress summary per card. This slice replaces the current placeholder page and becomes the collector's primary entry point for reviewing and acting on their order history.
@@ -79,7 +89,7 @@ WO-06 does not introduce any Prisma migration. It adds `getOrdersList` to the ex
 | ------------------ | ---------------------------------------- | ------------------------------------- |
 | `/[locale]/orders` | `src/app/[locale]/(app)/orders/page.tsx` | Server-rendered paginated orders list |
 
-The existing `page.tsx` currently renders `AppPlaceholderPage` and is replaced entirely by this slice.
+Before this slice, `page.tsx` rendered the generic `AppPlaceholderPage` stub; this slice replaced it entirely. That stub component no longer exists anywhere in the tree.
 
 ## Module Structure
 
@@ -124,7 +134,7 @@ export const DEFAULT_ACTIVE_STATUSES: OrderStatus[] = [
 
 ### Page header
 
-`AppPageHero` with no `BackNavLink` (orders is a root-level workspace):
+An inline page heading with no `BackNavLink` (orders is a root-level workspace). The shared `AppPageHero` component this originally named was removed as dead code; listing pages render a bare `h1` at the shared hero scale ([interface-patterns.md](../../../../../design/interface-patterns.md)):
 
 - Title (ES): "Órdenes" · (EN): "Orders"
 - Primary action: `Button` → `/orders/new` · (ES): "Nuevo pedido" · (EN): "New order"
@@ -160,7 +170,7 @@ Each card in the list renders the following sections:
 
 **Payment bar:** thin progress bar from 0% to 100% using theme-aware semantic tokens
 
-**Status row:** `OrderStatusBadge` · `Impago` / `Unpaid` pill when `status === "COMPLETED"` and `hasUnpaidBalance === true` (`FR-05-35`) · `Atrasada` / `Overdue` warning chip when `isOrderOverdue` returns `true`
+**Status row:** the localized status chip · `Impago` / `Unpaid` pill when `status === "COMPLETED"` and `hasUnpaidBalance === true` (`FR-05-35`) · `Atrasada` / `Overdue` warning chip when `isOrderOverdue` returns `true`. All three chips are described by the shared helper module `_components/share/orderListStatusChip.ts` (`describeOrderListChip`, `describeOrderListBalanceChip`, `describeOverdueDays` + `getOrderListChipToneClassName`) and rendered by `OrderCard.tsx` / `OrdersTable.tsx`. The standalone `OrderStatusBadge` component this work order originally specified was superseded by that descriptor helper, and the orphan has been deleted.
 
 **Delivery row:** expected delivery range formatted per locale; when overdue the range text renders in warning color
 

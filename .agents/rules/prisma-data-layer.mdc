@@ -257,7 +257,7 @@ Rules for the sentinel:
 - **Never let it change the public contract.** Same result shape, same `error` codes. The sentinel must not escape the `.catch`.
 - **Always re-`throw` unmatched errors** in the `.catch`, or a genuine failure gets swallowed as a refusal.
 
-Enforced by `src/test/transaction-refusal-guard.test.ts` (static scan) and recorded as **ADR 0022**. The guard only sees a literal `return { ok: false … }` after a direct `tx.*` write; a refusal returned through a variable, or a write buried in a helper, is invisible to it. Treat a green suite as no evidence — the rule is the contract.
+Enforced by `src/test/transaction-refusal-guard.test.ts` (static scan) and recorded as **ADR 0022**. The guard sees a literal `return { ok: false … }` positioned after the first write, and a write counts whether it is issued directly as `tx.*` or through a same-file helper taking a `Prisma.TransactionClient` — extracting a write behind such a helper does not take the mutation out of the scan. What stays invisible to it: a refusal returned through a variable (`return applied`) rather than an object literal, and a write reached through a helper declared in ANOTHER file or more than one hop down (the live case is `parseAndApplyCollectorPreferencesPatch`, covered behaviourally by `src/lib/data/user-settings/_tests/collectorPreferencesRefusalOrder.test.ts` instead). Treat a green suite as no evidence — the rule is the contract.
 
 ## Typing
 

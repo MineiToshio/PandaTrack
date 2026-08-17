@@ -56,13 +56,6 @@ export default function OrderListFilterChips({ basePath, locale, filters, stores
       }),
     );
   }
-  filters.paymentStates.forEach((state) =>
-    chips.push({
-      key: `payment-${state}`,
-      label: t(`payment.${state}`),
-      onRemove: () => pushOverride({ paymentStates: filters.paymentStates.filter((s) => s !== state) }, "payment"),
-    }),
-  );
   if (filters.storeId) {
     chips.push({
       key: "store",
@@ -97,6 +90,15 @@ export default function OrderListFilterChips({ basePath, locale, filters, stores
       key: "fxPending",
       label: t("chips.fxPending"),
       onRemove: () => pushOverride({ fxPendingOnly: false }, "fxPending"),
+    });
+  }
+  // Binary "this order still owes money" (`FR-05-35`). Not a payment percentage: ADR 0025 retired
+  // that idea, and this chip says nothing about how much of the total is covered.
+  if (filters.withBalanceOnly) {
+    chips.push({
+      key: "withBalance",
+      label: t("chips.withBalance"),
+      onRemove: () => pushOverride({ withBalanceOnly: false }, "withBalance"),
     });
   }
   // Stricter than "Por recibir" — the delivery window has fully closed, not just started.

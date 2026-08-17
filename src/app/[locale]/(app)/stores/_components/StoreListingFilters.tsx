@@ -485,7 +485,7 @@ export default function StoreListingFilters({
   return (
     <section>
       <div className="flex flex-col gap-2 md:flex-row md:items-center">
-        <div className="flex-1">
+        <div className="min-w-0 flex-1">
           <SearchInput
             value={nameQuery}
             onChange={setNameQuery}
@@ -503,7 +503,10 @@ export default function StoreListingFilters({
             value={sortBy}
             onChange={handleSortChange}
             size="md"
-            options={sortOptions}
+            // Grouped with a single heading so the listbox names what's being chosen when it
+            // opens (see `docs/design/interface-patterns.md` §3 "Toggle choice groups, switches,
+            // selects").
+            options={[{ heading: tListing("s6.toolbar.sortLabel"), options: sortOptions }]}
             className="w-max"
           />
           <FilterTriggerButton

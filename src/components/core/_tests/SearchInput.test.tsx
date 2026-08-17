@@ -58,3 +58,29 @@ describe("SearchInput — accessibility", () => {
     expect(screen.getByRole("button", { name: "Find items" })).toBeTruthy();
   });
 });
+
+describe("SearchInput — submit button stays inside the search landmark", () => {
+  // Regression test: the inner input container previously combined `flex flex-1` with `w-full`
+  // and no `min-w-0`, which let it claim 100% of the parent's width and push the flex-shrink-0
+  // submit button outside the `role="search"` box on narrow viewports (the submit button became
+  // unreachable, with taps landing on a sibling control instead).
+  it("keeps the search landmark shrinkable with min-w-0", () => {
+    render(<SearchInput value="" onChange={vi.fn()} onSubmit={vi.fn()} />);
+    const landmark = screen.getByRole("search");
+    expect(landmark.className).toContain("min-w-0");
+    expect(landmark.className).toContain("w-full");
+  });
+
+  it("keeps the input container shrinkable without claiming the full row width", () => {
+    render(<SearchInput value="" onChange={vi.fn()} onSubmit={vi.fn()} />);
+    const inputContainer = screen.getByRole("searchbox").parentElement;
+    expect(inputContainer).not.toBeNull();
+    expect(inputContainer?.className).toContain("min-w-0");
+    expect(inputContainer?.className).not.toMatch(/(^|\s)w-full(\s|$)/);
+  });
+
+  it("keeps the submit button flex-shrink-0 so it is never squeezed out", () => {
+    render(<SearchInput value="" onChange={vi.fn()} onSubmit={vi.fn()} />);
+    expect(screen.getByRole("button").className).toContain("flex-shrink-0");
+  });
+});

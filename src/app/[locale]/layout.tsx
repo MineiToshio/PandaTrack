@@ -89,13 +89,23 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
   const messages = await getMessages();
 
   return (
-    <html lang={locale} data-scroll-behavior="smooth" suppressHydrationWarning>
+    // next/font's `variable` classes set --font-inter / --font-jetbrains-mono / --font-secondary /
+    // --font-logo as CSS custom properties on whichever element carries the class. Those must land
+    // on <html> (the element `:root` matches), not <body>: CSS custom properties only cascade
+    // downward to descendants, and globals.css's `:root { --font-sans: var(--font-inter); ... }`
+    // reads --font-inter at the :root element itself. Declaring it lower, on <body>, left --font-sans
+    // resolving to nothing at :root, so every element inherited an empty font-family and silently
+    // fell back to the browser's default UI font instead of Inter.
+    <html
+      lang={locale}
+      data-scroll-behavior="smooth"
+      suppressHydrationWarning
+      className={`${interFont.variable} ${monoFont.variable} ${secondaryFont.variable} ${logoFont.variable}`}
+    >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
-      <body
-        className={`${interFont.variable} ${monoFont.variable} ${secondaryFont.variable} ${logoFont.variable} antialiased`}
-      >
+      <body className="antialiased">
         <NextIntlClientProvider locale={locale} messages={messages}>
           <ThemeProvider>{children}</ThemeProvider>
         </NextIntlClientProvider>

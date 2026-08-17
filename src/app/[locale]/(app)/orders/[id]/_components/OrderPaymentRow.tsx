@@ -8,12 +8,25 @@ import { Modal } from "@/components/modules/Modal";
 import { formatAmountSymbolOnly } from "@/lib/currency";
 import { formatDomainDate } from "@/lib/domainDate";
 
-type PaymentRecord = { id: string; amount: number; paymentDate: Date };
+type PaymentRecord = {
+  id: string;
+  amount: number;
+  paymentDate: Date;
+  paymentId: string;
+  paymentTotalMinor: number;
+  isShared: boolean;
+  /** This is the payment's only allocation, and it does not cover the payment's full amount — an
+      unclaimed remainder rides along, so deleting this allocation deletes the whole payment. */
+  isPartialClaim: boolean;
+};
 
 type OrderPaymentRowProps = {
   payment: PaymentRecord;
   currencyCode: string;
   locale: string;
+  /** Store this order belongs to — only needed for the "part of a payment to {store}" copy on a
+      shared payment. */
+  storeName: string;
   /** Parent owns the payments list and removes the row when this resolves with `ok: true`. */
   onConfirmDelete: (paymentId: string) => Promise<{ ok: boolean; error?: string }>;
 };
@@ -22,8 +35,27 @@ type OrderPaymentRowProps = {
  * Single row of the payments list. Layout mirrors the demo's `.pay-row`:
  * date (left) · amount (right, mono) · delete × button (far right, muted).
  * The amount always carries two decimals so it lines up across rows.
+ *
+ * Under store-level payments, a row is one order's allocation of a store payment, and the
+ * delete-confirm copy has three variants depending on what deleting this allocation actually does:
+ *  - 1:1 (`!isShared && !isPartialClaim`): the payment exists only for this declaration at its full
+ *    amount, so removing it removes the payment too — the plain "delete this payment" copy applies.
+ *  - shared (`isShared`): other orders also claim this payment, so only this order's slice goes —
+ *    the copy is explicit that the rest of the payment survives.
+ *  - partial claim (`isPartialClaim`): this is the payment's only allocation, but it does not cover
+ *    the payment's full amount (an unclaimed remainder rides along "on account"). Deleting it still
+ *    deletes the whole payment (`deleteOrderPayment` has no partial-allocation path for a sole
+ *    claim), so the copy says so explicitly rather than implying only this order's slice goes — and
+ *    the row's own subtitle names the payment's full amount for the same reason, so it never reads
+ *    as if this order's amount were the entire payment.
  */
-export default function OrderPaymentRow({ payment, currencyCode, locale, onConfirmDelete }: OrderPaymentRowProps) {
+export default function OrderPaymentRow({
+  payment,
+  currencyCode,
+  locale,
+  storeName,
+  onConfirmDelete,
+}: OrderPaymentRowProps) {
   const t = useTranslations("orders");
   const [modalOpen, setModalOpen] = useState(false);
   const [isPending, setIsPending] = useState(false);
@@ -31,6 +63,7 @@ export default function OrderPaymentRow({ payment, currencyCode, locale, onConfi
 
   const dateLabel = formatDomainDate(payment.paymentDate, locale, { dateStyle: "medium" });
   const amountLabel = formatAmountSymbolOnly(payment.amount, currencyCode, locale);
+  const paymentTotalLabel = formatAmountSymbolOnly(payment.paymentTotalMinor, currencyCode, locale);
 
   async function handleConfirm() {
     setIsPending(true);
@@ -48,16 +81,36 @@ export default function OrderPaymentRow({ payment, currencyCode, locale, onConfi
     <>
       {/* Demo `.pay-row`: gap 12px · py 6px · font 14px. No inter-row border — payments
           read as a single block; the only visible separator is the one between the last
-          payment and the `Total pagado` row (rendered by the parent aside card). */}
-      <li className="flex items-center gap-3 py-1.5 text-[14px]">
-        <span className="text-text-muted flex-1 font-mono text-[12px] tabular-nums">{dateLabel}</span>
-        <span className="text-text-title font-semibold tabular-nums">{amountLabel}</span>
-        {/* Demo `.pay-row .pay-delete`: 28×28 · rounded 6px · transparent bg · muted icon */}
+          payment and the totals row (rendered by the parent aside card). */}
+      {/* `py-2` on mobile, not the demo's 6px: the delete button below expands its hit area by
+          `inset:-8px`, so two rows' pseudo-elements need 16px between the button boxes or the
+          LATER row in the DOM takes the whole contested band and the row above it loses part of
+          its 44px. 6px padding left 12px. Desktop keeps the demo's 6px, where the expansion is
+          dropped by `md:before:inset-0`. */}
+      <li className="flex items-start gap-3 py-2 text-[14px] md:py-1.5">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-baseline gap-3">
+            <span className="text-text-muted font-mono text-[12px] tabular-nums">{dateLabel}</span>
+          </div>
+          {(payment.isShared || payment.isPartialClaim) && (
+            <p className="text-text-muted mt-0.5 text-[11px] leading-snug">
+              {t("detail.payments.sharedSubtitle", { paymentTotal: paymentTotalLabel, store: storeName })}
+            </p>
+          )}
+        </div>
+        <span className="text-text-title shrink-0 font-semibold tabular-nums">{amountLabel}</span>
+        {/* Demo `.pay-row .pay-delete`: 28×28 · rounded 6px · transparent bg · muted icon.
+            Tap target ≥44×44 on mobile via the `::before` pseudo, the same mechanism as
+            `IconButton` and the twin control in `StorePaymentRow`: padding inside a fixed `size-7`
+            box never grows the box, so `inset:-8px` expands the hit area outward to 44px instead.
+            Its only neighbour on the row is the non-interactive amount `<span>` (`gap-3`, 12px);
+            the vertical neighbour is the next row's own delete button, which is what the row's
+            `py-2` above is for. `md:before:inset-0` drops the extra area on desktop. */}
         <button
           type="button"
           onClick={() => setModalOpen(true)}
           aria-label={t("detail.payments.deleteLabelDetailed", { amount: amountLabel, date: dateLabel })}
-          className="text-text-muted hover:text-text-title focus-visible:ring-ring focus-visible:ring-offset-background grid size-7 shrink-0 cursor-pointer place-items-center rounded-md transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+          className="text-text-muted hover:text-text-title focus-visible:ring-ring focus-visible:ring-offset-background relative grid size-7 shrink-0 cursor-pointer place-items-center rounded-md transition-colors before:absolute before:[inset:-8px] before:content-[''] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none md:before:inset-0"
         >
           <X className="size-[13px]" aria-hidden />
         </button>
@@ -66,8 +119,27 @@ export default function OrderPaymentRow({ payment, currencyCode, locale, onConfi
       <Modal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
-        title={t("detail.payments.deleteModalTitle")}
-        subtitle={t("detail.payments.deleteModalDescription")}
+        title={t(
+          payment.isShared
+            ? "detail.payments.deleteModalTitleShared"
+            : payment.isPartialClaim
+              ? "detail.payments.deleteModalTitlePartial"
+              : "detail.payments.deleteModalTitle",
+        )}
+        subtitle={
+          payment.isShared
+            ? t("detail.payments.deleteModalDescriptionShared", {
+                amount: amountLabel,
+                paymentTotal: paymentTotalLabel,
+                store: storeName,
+              })
+            : payment.isPartialClaim
+              ? t("detail.payments.deleteModalDescriptionPartial", {
+                  paymentTotal: paymentTotalLabel,
+                  store: storeName,
+                })
+              : t("detail.payments.deleteModalDescription")
+        }
         icon={<Trash2 size={20} aria-hidden="true" />}
         tone="destructive"
         role="alertdialog"

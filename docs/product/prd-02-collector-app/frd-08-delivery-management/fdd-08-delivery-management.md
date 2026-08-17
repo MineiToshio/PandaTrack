@@ -169,6 +169,16 @@ detail. Do not add it for symmetry.
    so a stale rate is never shown as a value. Resolved by editing the delivery, which saves the
    rate together with the base it converts into (the reconciliation path; mirrors the order FX chip).
 
+**The temporal bar is the shared `ProgressBar` (2026-08-10, declared deviation).** It was a
+hand-rolled track until the store-payment work made it the fourth such meter in the app; it now
+renders `src/components/core/ProgressBar.tsx` per
+[interface-patterns.md § 15](../../../design/interface-patterns.md). Two visible consequences,
+recorded rather than left to be rediscovered as a regression: the fill moves with `scaleX` and is
+**square-edged** (the track clips the rounded ends), so the right end of a partial bar is no longer
+rounded; and the track tone moves from `color-mix(in oklab, var(--text-primary) 8%)` to the
+system's `color-mix(in oklch, var(--text-primary) 10%)`. Both are the system rule, and avoiding a
+fourth hand-rolled meter is why the migration happened.
+
 **Per-state hero** (prototype anchors in parentheses):
 
 | State                                         | Hero treatment                                                                                                                                                            |
@@ -299,6 +309,29 @@ existing components**; it must not fork or reinvent any of them.
 New data needs (Phase B, not design): a `getDeliveriesForList` query and `markDelivered` /
 `reopen` / `cancel` / `delete` / `updateNote` mutations. These are implementation contracts,
 not design surfaces.
+
+**Quick arrival, and its store-scoped variant (`FR-08-36` / `FR-08-38`).** `QuickArrivalModal`
+(`src/components/modules/QuickArrival/`) writes a delivery this FRD owns, but every one of its
+launchers lives on another surface, so its design record sits with them: the per-order launchers in
+`fdd-05-order-payment-shipment.md` and `fdd-06-dashboard.md`, and the store-scoped selection that
+opens it in the 2026-08-13 amendment of `fdd-05`. One modal, and only three things change when the
+scope is a store rather than an order:
+
+1. **The subtitle is composed by the caller**, because the scope differs: "PED-001 · AmiAmi" from an
+   order, "AmiAmi · 3 productos de 2 pedidos" from a store selection.
+2. **The list groups by source order** (`role="group"` + `aria-labelledby` on a "Pedido {code}"
+   heading, never a per-checkbox `aria-label` — the product name has to stay the checkbox's visible
+   label, so the order code can only reach assistive tech as context around it) and adds a plain
+   notice that **a single delivery** will hold all of them (`BR-08-12`). A delivery spanning orders
+   is a shape the collector has seen once in 530.
+3. **The count and the list never collapse to the single-product sentence** (`alwaysListItems`).
+   That sentence is right when the modal preselected a whole order by itself; it is wrong when the
+   collector picked the rows by hand.
+
+Everything else is inherited unchanged: today's default arrival date and no future dates, the
+collapsed shipping section stating on screen that cost 0 and `deliveryDate = receivedDate` will be
+written (`BR-08-10`, `FR-08-37`), the uncheck-to-exclude picker, and Optimistic Confirmation on
+submit.
 
 ---
 

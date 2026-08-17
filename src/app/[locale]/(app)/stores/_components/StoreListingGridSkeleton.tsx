@@ -19,7 +19,8 @@ function StoreCardSkeleton() {
     <div
       className={cn(
         "flex h-[279px] flex-col gap-3 overflow-hidden rounded-[var(--radius-xl)] p-[18px]",
-        "[background:var(--surface)] [border:1px_solid_var(--border)]",
+        // Mirrors `StoreCard`: leaf card on the canvas, so it takes the raised fill.
+        "[background:var(--surface-elevated)] [border:1px_solid_var(--border)]",
       )}
     >
       {/* Header: avatar + name/location */}

@@ -115,10 +115,21 @@ export default function Toast({ toast, onRemove }: ToastProps) {
           {action.label}
         </button>
       )}
+      {/*
+        The dismiss target is 44×44 and grows INWARD, over the toast's own `px-4 py-3` padding,
+        via the matching negative margins. The `::before` recipe cannot be used here at all: the
+        root is `overflow-hidden` (it clips the countdown bar to the rounded corners) and an
+        `overflow-hidden` ancestor removes a pseudo-element from hit-testing entirely. A real box
+        pulled into padding is not the "padding inside a fixed box" antipattern either — the box
+        really is 44px, and it eats dead space, not a neighbour's clearance (the action button is
+        still `gap-3` away, and flow boxes cannot overlap). Because the margins cancel the box's
+        own size, the toast's height and the message's width are unchanged at every breakpoint,
+        so there is no compact variant to drop back to.
+      */}
       <button
         type="button"
         onClick={dismiss}
-        className="text-text-muted hover:text-foreground shrink-0 cursor-pointer transition-colors"
+        className="text-text-muted hover:text-foreground -my-3 -mr-3 grid size-11 shrink-0 cursor-pointer place-items-center transition-colors"
         aria-label={t("dismiss")}
       >
         <X size={16} aria-hidden />

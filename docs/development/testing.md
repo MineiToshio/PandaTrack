@@ -168,6 +168,57 @@ the variable names (`PLAYWRIGHT_PORT`, `E2E_USER_EMAIL`, `E2E_USER_PASSWORD`,
 To run the full authenticated suite locally: ensure `.env`/`.env.local` have the vars above, then
 run `npm run test:e2e` as usual (`PLAYWRIGHT_PORT` already defaults to `7100` via `.env`).
 
+## Why a full E2E pass is slow, and what protects it
+
+The suite runs against `next dev`, not a production build (`playwright.config.ts`'s `webServer`
+command is `npm run dev`). That single fact drives most of the suite's timing behavior.
+
+### Cold compilation is the main source of flakiness
+
+`next dev` compiles each route lazily, on its first request. That compile is charged to whichever
+test happens to reach the route first, on top of the first Neon round-trip for every query the
+route's server components issue (the `(app)` layout alone fans out to about eight). With the former
+15s `navigationTimeout` this regularly overran, and a full pass lost a rotating handful of specs
+that then all passed on a warm re-run.
+
+Three layers address it, and all three are infrastructure — none weakens an assertion:
+
+- **`globalSetup` (`e2e/_helpers/globalSetup.ts`)** issues plain unauthenticated GETs against the
+  public routes before the first spec, so their compile is paid once, up front. Its highest-value
+  target is `/[locale]/sign-in`, the form every authenticated spec drives first. It **cannot** warm
+  private routes: `src/proxy.ts` redirects every private prefix to sign-in before the route renders,
+  so an unauthenticated GET to `/en/dashboard` never compiles the dashboard. It also never signs in
+  (that would duplicate `_helpers/auth.ts` and depend on credentials that may be unset) and never
+  throws — a failed warmup is logged and the specs report the real problem themselves.
+  Playwright runs plugin setup (the `webServer` plugin) **before** `globalSetup`, so the server is
+  already listening; with `reuseExistingServer` true outside CI it is often already warm, and the
+  warmup is then a fast no-op.
+- **Dev-sized timeouts** (`timeout` 90s, `navigationTimeout` 60s, `actionTimeout` 20s,
+  `expect.timeout` 15s) cover the private routes the warmup cannot reach. A genuinely broken route
+  still fails; it just takes longer to say so.
+- **`retries: 1`** lets a residual cold-compile miss self-heal. It cannot hide a deterministic
+  product bug, which fails on the retry too, and it is what makes `trace: "on-first-retry"` produce
+  a trace at all (`retries: 0` never could).
+
+Note that `e2e/store-moderation.spec.ts` uses `test.describe.configure({ mode: "serial" })`: a
+failure there skips the rest of the block, and a retry reruns the whole block.
+
+### Reaching the end of a full pass
+
+`maxFailures` is set explicitly: unlimited locally, `10` in CI. Locally that is only documentation
+of intent (unlimited was already Playwright's default) — **Playwright has never been what cut a
+local pass short.** There is no failure limit, no `-x`, and no wrapper script anywhere in the repo;
+`npm run test:e2e` is a bare `playwright test`. A run that stops partway through the alphabetical
+spec order is being killed by a _wall-clock_ limit outside Playwright — most commonly the 10-minute
+cap on an agent's shell call. Run the full suite from a real terminal, not through a tool call with
+a command timeout.
+
+Two specs fail today for a reason unrelated to the code under test: the shared `E2E_USER` account
+holds the administrator role, so `e2e/admin-shell.spec.ts` and `e2e/store-moderation.spec.ts` fail
+their "a non-admin does not see …" assertions. They are deliberately **not** skipped — they must
+keep failing loudly. The correct fix is a non-admin `E2E_USER` account with the admin role moved to
+`E2E_ADMIN_EMAIL` (see `.env.example`), not a change to those specs.
+
 ## Test file organization
 
 PandaTrack keeps tests close to the code they protect, but not mixed indiscriminately with implementation files.

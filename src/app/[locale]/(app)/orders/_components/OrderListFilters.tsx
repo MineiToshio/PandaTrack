@@ -1,20 +1,9 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
-import {
-  AlertTriangle,
-  Ban,
-  CheckCircle,
-  CircleDot,
-  Clock,
-  PackageCheck,
-  PackageX,
-  Plus,
-  Truck,
-  XCircle,
-} from "lucide-react";
+import { Ban, Clock, PackageCheck, PackageX, Plus, Truck } from "lucide-react";
 import posthog from "posthog-js";
 import Button from "@/components/core/Button/Button";
 import FilterTriggerButton from "@/components/core/FilterTriggerButton/FilterTriggerButton";
@@ -23,16 +12,20 @@ import Select from "@/components/core/Select";
 import FilterDrawer, { type FilterDrawerValues, type FilterSection } from "@/components/modules/FilterDrawer";
 import { useHasDesktopToolbar } from "@/hooks/useMediaQuery";
 import { POSTHOG_EVENTS } from "@/lib/constants";
-import { ORDER_LIST_SORT_VALUES, type OrderListPaymentState, type OrderListSort } from "@/lib/orders/orderListSort";
+import { ORDER_LIST_SORT_VALUES, type OrderListSort } from "@/lib/orders/orderListSort";
+import { DEFAULT_STORE_VIEW_SORT, STORE_VIEW_SORT_VALUES, type StoreViewSort } from "@/lib/orders/storeViewSort";
 import type { OrderStatus } from "../../../../../../generated/prisma/client";
 import {
   buildOrderListFilterUrl,
   DEFAULT_ORDER_LIST_SORT,
   isDefaultActiveStatusSet,
   type OrderListActiveFilters,
+  type OrderListViewMode,
 } from "../_utils/orderListingParams";
 import { addDays, endOfMonth, startOfMonth, toIsoDateString } from "@/lib/localDate";
 import OrderCreateMethodSelector from "@/components/modules/OrderCreateMethodSelector/OrderCreateMethodSelector";
+import OrderListGroupBy from "./OrderListGroupBy";
+import StoreViewSortCompact from "./StoreViewSortCompact";
 import type { PhotoCounterSnapshot } from "./share/photoCounterContract";
 
 type StoreOption = { id: string; name: string };
@@ -41,11 +34,18 @@ type OrderListFiltersProps = {
   locale: string;
   storeOptions: StoreOption[];
   initial: OrderListActiveFilters;
+  /** Active Orders list view — the filter drawer only applies in "order" view. */
+  view: OrderListViewMode;
+  /** Current "Por tienda" sort, only meaningful when `view === "store"`. */
+  storeSort: StoreViewSort;
+  /** Current "Por tienda" search text (`?sq=`), only meaningful when `view === "store"`. */
+  storeQuery?: string;
   /** Photo balance for the create-method selector this toolbar opens; read server-side by the page. */
   photoCounter?: PhotoCounterSnapshot | null;
 };
 
 const FX_PENDING_FLAG = "fxPending";
+const WITH_BALANCE_FLAG = "withBalance";
 
 /** Trailing-choice values for the delivery-date quick states (mutually exclusive with the range). */
 const DELIVERY_CHOICE_OVERDUE = "overdue";
@@ -55,13 +55,13 @@ type DateRangeWithFlag = { from?: string; to?: string; flag?: boolean; choice?: 
 
 type DrawerState = {
   statuses: string[];
-  paymentStates: string[];
   stores: string[];
   dateRange: { from?: string; to?: string };
   /** Composite value: range + `flag` (Por recibir / overdue) handled by the trailing switch. */
   deliveryRange: DateRangeWithFlag;
   sort: OrderListSort;
   fxFlags: string[];
+  paymentFlags: string[];
 };
 
 /**
@@ -106,12 +106,17 @@ export default function OrderListFilters({
   locale,
   storeOptions,
   initial,
+  view,
+  storeSort,
+  storeQuery: initialStoreQuery,
   photoCounter = null,
 }: OrderListFiltersProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const t = useTranslations("orderListing");
-  // The toolbar carries the sort control from `lg` up; below that the drawer has to.
+  // The toolbar carries the sort control from `lg` up; below that the drawer has to. Store view has
+  // no drawer at all (search/filters do not apply there), so its Select is always visible instead.
   const hasDesktopToolbar = useHasDesktopToolbar();
 
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -120,7 +125,6 @@ export default function OrderListFilters({
   const initialDrawer = useMemo<DrawerState>(
     () => ({
       statuses: statusValuesFromFilters(initial),
-      paymentStates: initial.paymentStates,
       stores: initial.storeId ? [initial.storeId] : [],
       dateRange: { from: initial.dateFromIso, to: initial.dateToIso },
       deliveryRange: {
@@ -134,6 +138,7 @@ export default function OrderListFilters({
       },
       sort: initial.sort,
       fxFlags: initial.fxPendingOnly ? [FX_PENDING_FLAG] : [],
+      paymentFlags: initial.withBalanceOnly ? [WITH_BALANCE_FLAG] : [],
     }),
     [initial],
   );
@@ -156,13 +161,20 @@ export default function OrderListFilters({
     setNameQuery(initial.nameQuery ?? "");
   }
 
+  // Store view's search box: its own committed value, synced from the URL the same render-time way.
+  const [storeQuery, setStoreQuery] = useState(initialStoreQuery ?? "");
+  const [syncedStoreQuery, setSyncedStoreQuery] = useState(initialStoreQuery ?? "");
+  if ((initialStoreQuery ?? "") !== syncedStoreQuery) {
+    setSyncedStoreQuery(initialStoreQuery ?? "");
+    setStoreQuery(initialStoreQuery ?? "");
+  }
+
   const drawerAppliedCount = useMemo(() => {
     let count = 0;
     const statuses = (draft.statuses as string[] | undefined) ?? [];
     // Badge mirrors the drawer state — each checked pill counts individually.
     // "Solo activas" is a visual chip collapse, not a count collapse.
     count += statuses.length;
-    count += (draft.paymentStates as string[] | undefined)?.length ?? 0;
     count += (draft.stores as string[] | undefined)?.length ?? 0;
     const range = (draft.dateRange ?? {}) as { from?: string; to?: string };
     if (range.from || range.to) count += 1;
@@ -173,16 +185,19 @@ export default function OrderListFilters({
       count += 1;
     }
     if ((draft.fxFlags as string[] | undefined)?.includes(FX_PENDING_FLAG)) count += 1;
+    if ((draft.paymentFlags as string[] | undefined)?.includes(WITH_BALANCE_FLAG)) count += 1;
     return count;
   }, [draft]);
 
+  // Store view swaps the sort domain (its default is "arrival-asc", not "recent") but the two enums
+  // overlap on every value except that one, so one label lookup serves both.
   const sortOptions = useMemo(
     () =>
-      ORDER_LIST_SORT_VALUES.map((value) => ({
+      (view === "store" ? STORE_VIEW_SORT_VALUES : ORDER_LIST_SORT_VALUES).map((value) => ({
         value,
         label: t(`sort.${sortLabelKey(value)}`),
       })),
-    [t],
+    [t, view],
   );
 
   const sections: FilterSection[] = useMemo(() => {
@@ -206,17 +221,6 @@ export default function OrderListFilters({
           },
           { value: "COMPLETED", label: t("status.COMPLETED"), icon: <PackageCheck size={12} aria-hidden /> },
           { value: "CANCELLED", label: t("status.CANCELLED"), icon: <Ban size={12} aria-hidden /> },
-        ],
-      },
-      {
-        id: "paymentStates",
-        type: "pills",
-        label: t("filters.paymentLabel"),
-        options: [
-          { value: "paid", label: t("payment.paid"), icon: <CheckCircle size={12} aria-hidden /> },
-          { value: "partial", label: t("payment.partial"), icon: <CircleDot size={12} aria-hidden /> },
-          { value: "unpaid", label: t("payment.unpaid"), icon: <XCircle size={12} aria-hidden /> },
-          { value: "overdue", label: t("payment.overdue"), icon: <AlertTriangle size={12} aria-hidden /> },
         ],
       },
       {
@@ -287,6 +291,19 @@ export default function OrderListFilters({
         options: sortOptions.map((option) => ({ value: option.value, label: option.label })),
       });
     }
+    // Payment section: the only payment filter the store-level model can answer honestly. ADR 0025
+    // retired the paid/partial/unpaid filter because a per-order percentage stopped being a fact;
+    // "does this order still owe money" never stopped being one. It lives inside the drawer rather
+    // than as a toolbar control on purpose: the toolbar's canonical order (Search < Filter < Sort <
+    // Group by < New order) is already at its budget, and this is a refinement, not a mode.
+    base.push({
+      id: "paymentFlags",
+      type: "switches",
+      label: t("filters.paymentLabel"),
+      options: [
+        { value: WITH_BALANCE_FLAG, label: t("filters.withBalanceLabel"), helper: t("filters.withBalanceHelper") },
+      ],
+    });
     base.push({
       id: "fxFlags",
       type: "switches",
@@ -319,14 +336,55 @@ export default function OrderListFilters({
     pushUrl({ sort: next, page: 1 });
   };
 
+  // Store view has no filter drawer and its sort domain differs from the order list's (its default
+  // is "arrival-asc", not "recent"), so it navigates directly instead of going through
+  // `buildOrderListFilterUrl` (which only knows the order-list sort domain). Every other param —
+  // including the order-mode filters, which stay inert but preserved while in store view — is
+  // carried forward unchanged.
+  const pushStoreViewUrl = useCallback(
+    (mutate: (params: URLSearchParams) => void) => {
+      const params = new URLSearchParams(searchParams.toString());
+      mutate(params);
+      const qs = params.toString();
+      router.push(qs ? `${pathname}?${qs}` : pathname);
+    },
+    [router, pathname, searchParams],
+  );
+
+  const handleStoreSortChange = (value: string) => {
+    const next: StoreViewSort = (STORE_VIEW_SORT_VALUES as readonly string[]).includes(value)
+      ? (value as StoreViewSort)
+      : DEFAULT_STORE_VIEW_SORT;
+    pushStoreViewUrl((params) => {
+      if (next === DEFAULT_STORE_VIEW_SORT) params.delete("sort");
+      else params.set("sort", next);
+    });
+  };
+
+  // Store view's search commits to its own `?sq=` param, and through the same params-preserving
+  // navigation the store sort uses: `buildOrderListFilterUrl` rebuilds the URL from the ORDER
+  // view's filter shape alone, so routing this through it would drop `?view=store` on submit.
+  const submitStoreSearch = useCallback(
+    (value: string) => {
+      const trimmed = value.trim();
+      posthog.capture(POSTHOG_EVENTS.ORDER.LIST_FILTERED, {
+        view: "store",
+        query_present: trimmed !== "",
+        sort: storeSort,
+      });
+      pushStoreViewUrl((params) => {
+        if (trimmed) params.set("sq", trimmed);
+        else params.delete("sq");
+        params.delete("page");
+      });
+    },
+    [pushStoreViewUrl, storeSort],
+  );
+
   const handleApply = () => {
     const statusesRaw = (draft.statuses as string[] | undefined) ?? [];
     const { statuses, appliedDefaultStatuses } = classifyStatuses(statusesRaw);
     const stores = (draft.stores as string[] | undefined) ?? [];
-    const paymentStates = ((draft.paymentStates as string[] | undefined) ?? []).filter(
-      (value): value is OrderListPaymentState =>
-        value === "paid" || value === "partial" || value === "unpaid" || value === "overdue",
-    );
     const range = (draft.dateRange ?? {}) as { from?: string; to?: string };
     const deliveryRange = (draft.deliveryRange ?? {}) as DateRangeWithFlag;
     const deliveryOverdueOnly = deliveryRange.choice === DELIVERY_CHOICE_OVERDUE;
@@ -334,11 +392,11 @@ export default function OrderListFilters({
     const hasDeliveryQuickState = deliveryOverdueOnly || deliveryLateOnly;
     const sortValue = (draft.sort as OrderListSort | undefined) ?? DEFAULT_ORDER_LIST_SORT;
     const fxFlags = (draft.fxFlags as string[] | undefined) ?? [];
+    const paymentFlags = (draft.paymentFlags as string[] | undefined) ?? [];
 
     posthog.capture(POSTHOG_EVENTS.ORDER.LIST_FILTERED, {
       query_present: Boolean(nameQuery.trim()),
       status_count: statuses.length,
-      payment_count: paymentStates.length,
       store_count: stores.length,
       date_from: Boolean(range.from),
       date_to: Boolean(range.to),
@@ -347,13 +405,13 @@ export default function OrderListFilters({
       delivery_overdue: deliveryOverdueOnly,
       delivery_late: deliveryLateOnly,
       fx_pending: fxFlags.includes(FX_PENDING_FLAG),
+      with_balance: paymentFlags.includes(WITH_BALANCE_FLAG),
       sort: sortValue,
     });
 
     pushUrl({
       statuses,
       appliedDefaultStatuses,
-      paymentStates,
       storeId: stores[0],
       dateFromIso: range.from,
       dateToIso: range.to,
@@ -364,6 +422,7 @@ export default function OrderListFilters({
       deliveryLateOnly,
       sort: sortValue,
       fxPendingOnly: fxFlags.includes(FX_PENDING_FLAG),
+      withBalanceOnly: paymentFlags.includes(WITH_BALANCE_FLAG),
       page: 1,
     });
     setDrawerOpen(false);
@@ -374,45 +433,83 @@ export default function OrderListFilters({
     // The default-active state is now scoped to the sidebar/burger entry-point only.
     setDraft({
       statuses: [],
-      paymentStates: [],
       stores: [],
       dateRange: {},
       deliveryRange: {},
       sort: DEFAULT_ORDER_LIST_SORT,
       fxFlags: [],
+      paymentFlags: [],
     });
   };
 
+  const isStoreView = view === "store";
+
   return (
     <>
-      {/* Desktop toolbar */}
-      <div className="hidden flex-col gap-3 lg:flex lg:flex-row lg:items-center">
-        <div className="flex-1">
+      {/* Desktop toolbar — single row, canonical control order: Search < Filter < Sort < Group by
+          < New order. Every view renders a SUBSEQUENCE of that order, never a permutation. Store
+          view drops Filter (the drawer's sections are per-order predicates the grouped-by-store
+          body cannot answer) but keeps Search, so the trailing cluster (Sort, Group by, New order)
+          lives in its own `ml-auto` container: with a leading `flex-1` Search before it that
+          margin is a no-op, and it is what would pin the cluster right if the row ever renders
+          without it. Because the cluster is right-anchored, when the Sort select's own
+          width changes between views (order vs store sort option labels), only the cluster's own
+          left edge moves — Group by and New order do not shift. No `flex-wrap`: that was the prior
+          layout's 3-line collapse at `lg` widths. */}
+      <div className="hidden items-center gap-2 lg:flex">
+        {/* Both views search, each against its own body and its own URL param: the order view's
+            `?q=` runs in SQL over every order; the store view's `?sq=` narrows the already-loaded
+            pending-product set by store name or product name. Same slot, same shape, different
+            placeholder — the control is the same affordance, so it stays in the same place. */}
+        <div className="min-w-0 flex-1">
           <SearchInput
-            value={nameQuery}
-            onChange={setNameQuery}
-            onSubmit={submitSearch}
-            placeholder={t("search.placeholder")}
-            searchLabel={t("search.label")}
+            value={isStoreView ? storeQuery : nameQuery}
+            onChange={isStoreView ? setStoreQuery : setNameQuery}
+            onSubmit={isStoreView ? submitStoreSearch : submitSearch}
+            placeholder={isStoreView ? t("storeView.search.placeholder") : t("search.placeholder")}
+            searchLabel={isStoreView ? t("storeView.search.label") : t("search.label")}
           />
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Order: filter → sort → new (matches demo `.orders-toolbar`) */}
-          <FilterTriggerButton
-            appliedCount={drawerAppliedCount}
-            onClick={() => setDrawerOpen(true)}
-            label={t("filters.openButton")}
-            className="[color:var(--text-primary)] [background:var(--surface-elevated)] [border:1px_solid_var(--border-strong)] hover:[background:color-mix(in_oklab,var(--text-primary)_4%,var(--surface-elevated))]"
-          />
+        {!isStoreView && (
+          <>
+            {/* `xl` (≥1280px) shows the labeled Filter trigger; `lg` (1024-1279px) collapses it to
+                icon-only so the row stays a single line. Two instances swapped via
+                `display:contents`/`display:none` rather than a `useMediaQuery` read, which would
+                flash the wrong variant on the first client frame before hydration settles;
+                `display:none` also drops the inert copy from the accessibility tree. */}
+            <div className="hidden xl:contents">
+              <FilterTriggerButton
+                appliedCount={drawerAppliedCount}
+                onClick={() => setDrawerOpen(true)}
+                label={t("filters.openButton")}
+                className="[color:var(--text-primary)] [background:var(--surface-elevated)] [border:1px_solid_var(--border-strong)] hover:[background:color-mix(in_oklab,var(--text-primary)_4%,var(--surface-elevated))]"
+              />
+            </div>
+            <div className="contents xl:hidden">
+              <FilterTriggerButton
+                appliedCount={drawerAppliedCount}
+                onClick={() => setDrawerOpen(true)}
+                variant="icon-only"
+                aria-label={t("filters.iconLabel")}
+                className="shrink-0 [color:var(--text-primary)] [background:var(--surface-elevated)] [border:1px_solid_var(--border-strong)] hover:[background:color-mix(in_oklab,var(--text-primary)_4%,var(--surface-elevated))]"
+              />
+            </div>
+          </>
+        )}
+        <div className="ml-auto flex items-center gap-2">
           <Select
             id="orders-sort"
             aria-label={t("sort.label")}
-            value={initial.sort}
-            onChange={handleSortChange}
+            value={isStoreView ? storeSort : initial.sort}
+            onChange={isStoreView ? handleStoreSortChange : handleSortChange}
             size="md"
-            options={sortOptions}
+            // Grouped with a single heading so the listbox names what's being chosen when it
+            // opens, matching `OrderListGroupBy`'s pattern (see `docs/design/interface-patterns.md`
+            // §3 "Toggle choice groups, switches, selects").
+            options={[{ heading: t("sort.label"), options: sortOptions }]}
             className="w-max"
           />
+          <OrderListGroupBy id="orders-group-by" view={view} variant="select" />
           <Button
             type="button"
             variant="primary"
@@ -427,30 +524,47 @@ export default function OrderListFilters({
         </div>
       </div>
 
-      {/* Mobile sticky action row, below the topbar (h-14 = 56px). The search wrapper takes
-          `min-w-0 flex-1` so it absorbs all shrink (an input's intrinsic min-content otherwise
-          keeps the row wider than the viewport, S9.1 overflow). No "Nuevo" button here: below
+      {/* Mobile sticky action row, below the topbar (h-14 = 56px). Same canonical order as
+          desktop, and the same geometry in both views: Search < one icon trigger < Group by. The
+          icon trigger is Filter in order view (its Sort lives inside the FilterDrawer below `lg`)
+          and Sort in store view, which has no drawer to move it into — either way sort is a
+          control you OPEN on mobile, never a value read off the toolbar. Search takes `min-w-0
+          flex-1` so it absorbs all shrink (an input's intrinsic min-content otherwise keeps the row
+          wider than the viewport, S9.1 overflow); the other two are `shrink-0`, so Group by pins to
+          the same x position regardless of which view is active. No "Nuevo" button here: below
           1024px the single-action floating button is the create entry point, and the two
           affordances must never coexist on the same screen. */}
       <div className="sticky top-14 z-30 -mx-4 flex items-center gap-2 px-4 py-2 [background:color-mix(in_oklab,var(--background)_92%,transparent)] supports-[backdrop-filter:blur(8px)]:backdrop-blur lg:hidden">
         <div className="min-w-0 flex-1">
           <SearchInput
-            value={nameQuery}
-            onChange={setNameQuery}
-            onSubmit={submitSearch}
-            placeholder={t("search.placeholder")}
-            searchLabel={t("search.label")}
+            value={isStoreView ? storeQuery : nameQuery}
+            onChange={isStoreView ? setStoreQuery : setNameQuery}
+            onSubmit={isStoreView ? submitStoreSearch : submitSearch}
+            placeholder={isStoreView ? t("storeView.search.placeholder") : t("search.placeholder")}
+            searchLabel={isStoreView ? t("storeView.search.label") : t("search.label")}
           />
         </div>
-        <FilterTriggerButton
-          appliedCount={drawerAppliedCount}
-          onClick={() => setDrawerOpen(true)}
-          variant="icon-only"
-          aria-label={t("filters.iconLabel")}
-          // Match the bordered look of the Search input so both controls share the same
-          // visual height + container affordance in the mobile action row.
-          className="shrink-0 [background:var(--surface-elevated)] [border:1px_solid_var(--border-strong)] hover:[background:color-mix(in_oklab,var(--text-primary)_4%,var(--surface-elevated))]"
-        />
+        {isStoreView ? (
+          <StoreViewSortCompact
+            id="orders-sort-mobile"
+            value={storeSort}
+            onChange={handleStoreSortChange}
+            options={sortOptions}
+            label={t("sort.label")}
+            triggerAriaLabel={t("sort.compactAriaLabel", { value: t(`sort.${sortLabelKey(storeSort)}`) })}
+          />
+        ) : (
+          <FilterTriggerButton
+            appliedCount={drawerAppliedCount}
+            onClick={() => setDrawerOpen(true)}
+            variant="icon-only"
+            aria-label={t("filters.iconLabel")}
+            // Match the bordered look of the Search input so both controls share the same
+            // visual height + container affordance in the mobile action row.
+            className="shrink-0 [background:var(--surface-elevated)] [border:1px_solid_var(--border-strong)] hover:[background:color-mix(in_oklab,var(--text-primary)_4%,var(--surface-elevated))]"
+          />
+        )}
+        <OrderListGroupBy view={view} variant="compact" className="shrink-0" />
       </div>
 
       <OrderCreateMethodSelector
@@ -480,7 +594,7 @@ export default function OrderListFilters({
   );
 }
 
-function sortLabelKey(value: OrderListSort): string {
+function sortLabelKey(value: OrderListSort | StoreViewSort): string {
   switch (value) {
     case "oldest":
       return "oldest";
@@ -488,10 +602,10 @@ function sortLabelKey(value: OrderListSort): string {
       return "storeAZ";
     case "store-desc":
       return "storeZA";
-    case "payment-asc":
-      return "paymentAsc";
     case "total-desc":
       return "totalDesc";
+    case "arrival-asc":
+      return "arrivalAsc";
     case "recent":
     default:
       return "newest";

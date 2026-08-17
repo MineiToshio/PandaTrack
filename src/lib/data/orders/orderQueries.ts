@@ -1,13 +1,23 @@
 import { prisma } from "@/lib/prisma";
 import { buildNeedsFxReconciliationWhere, needsFxReconciliation } from "@/lib/fx/reconciliation";
 import { getCollectorPreferencesSnapshot } from "@/lib/data/user-settings/userSettingsQueries";
+import { getTodayStart } from "@/lib/data/dashboard/dashboardPeriods";
 import { deriveHasUnpaidBalance } from "@/lib/orders/orderState";
+import { computeOrderEligibility, type OrderEligibilityResult } from "@/lib/orders/orderLifecycle";
 import { calculatePaymentSummary } from "@/lib/orders/paymentSummary";
+import { resolveBasePagableMinor } from "@/lib/orders/productPaymentState";
+import {
+  mapAllocationsToOrderPayments,
+  ORDER_PAYMENT_ALLOCATION_ORDER_BY,
+  ORDER_PAYMENT_ALLOCATION_SELECT,
+  type OrderPaymentRecord,
+} from "./orderPaymentAllocations";
 import type { ItemDeliveryState } from "@/lib/orders/orderState";
-import type { OrderListPaymentState, OrderListSort } from "@/lib/orders/orderListSort";
+import type { OrderListSort } from "@/lib/orders/orderListSort";
 import { DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS } from "@/lib/constants";
 import {
   DeliveryStatus,
+  OrderItemDeliveryState,
   type OrderItemDeliveryState as OrderItemDeliveryStatePrisma,
   type OrderStatus,
   type StoreRemovalReason,
@@ -38,11 +48,9 @@ export type OrderListItem = {
   createdAt: Date;
 };
 
-export type OrderPayment = {
-  id: string;
-  amount: number;
-  paymentDate: Date;
-};
+/** An order's payments come from its allocations; see `orderPaymentAllocations` for the shape. */
+export type OrderPayment = OrderPaymentRecord;
+export type { OrderPaymentRecord };
 
 export type OrderDetail = OrderListItem & {
   note: string | null;
@@ -71,13 +79,32 @@ export type OrderListFilters = {
 
 export type OrderItemWithDeliveryState = OrderItem & {
   deliveryState: ItemDeliveryState;
+  /**
+   * The collector's own "this product is paid" mark. Independent of `deliveryState`: arriving and
+   * being paid are different axes, and the detail is the only surface where a delivered product can
+   * still be audited for payment.
+   */
+  paidDeclared: boolean;
+  /**
+   * Money already declared against THIS item specifically (`PaymentAllocation.amountMinor` rows
+   * naming it). Order-level money that never named a product is not counted here. Raw input for
+   * `resolveProductPaymentState`, same shape as `PendingProductRow.allocatedMinor`.
+   */
+  allocatedMinor: number;
+  /**
+   * The amount this item is "responsible" for out of the order total: unit price x quantity when
+   * known, or the whole order total when this is the order's only item. `null` when neither can be
+   * derived. Raw input for `resolveProductPaymentState`, same shape as
+   * `PendingProductRow.basePagableMinor`.
+   */
+  basePagableMinor: number | null;
 };
 
-export type OrderEligibility = {
-  canDelete: boolean;
-  canCancel: boolean;
-  blockReason?: "ITEMS_LINKED_TO_DELIVERY";
-};
+/**
+ * Alias of the pure rule's result type. The rule itself lives in `@/lib/orders/orderLifecycle`;
+ * this name is kept because the detail surfaces already import it from here.
+ */
+export type OrderEligibility = OrderEligibilityResult;
 
 export type OrderFlags = {
   hasPayments: boolean;
@@ -96,6 +123,11 @@ export type OrderDetailFull = Omit<OrderDetail, "items"> & {
   items: OrderItemWithDeliveryState[];
   eligibility: OrderEligibility;
   flags: OrderFlags;
+  /**
+   * Money declared against this order without naming a product. Stated as its own figure instead of
+   * being spread across the items, which nothing in this codebase is allowed to do.
+   */
+  undetailedPaidMinor: number;
 };
 
 /**
@@ -125,6 +157,28 @@ export async function findOrderIdByNoteMarker(userId: string, marker: string): P
     select: { id: true },
   });
   return row?.id ?? null;
+}
+
+/**
+ * The ids of an order's items paired with the position each one was written at.
+ *
+ * The one read that lets a declaration made against an order that did not exist yet be resolved to
+ * real products: the review screen speaks positions (the only key that survives the client/server
+ * hop, since `createMany` returns no ids in Postgres), and this turns them back into `orderItemId`s
+ * once the create transaction has committed.
+ *
+ * It returns rows and NOT a `Map` on purpose. A `Map` would already have resolved the ordering, so a
+ * caller mapping by array index instead of by `position` would look identical from the outside, and
+ * no test of the caller could tell the two apart.
+ */
+export async function listOrderItemPositions(
+  orderId: string,
+  userId: string,
+): Promise<{ id: string; position: number }[]> {
+  return prisma.orderItem.findMany({
+    where: { orderId, userId },
+    select: { id: true, position: true },
+  });
 }
 
 export async function getOrderById(orderId: string, userId: string): Promise<OrderDetail | null> {
@@ -159,9 +213,9 @@ export async function getOrderById(orderId: string, userId: string): Promise<Ord
         },
         orderBy: { position: "asc" },
       },
-      payments: {
-        select: { id: true, amount: true, paymentDate: true },
-        orderBy: [{ paymentDate: "desc" }, { createdAt: "desc" }],
+      paymentAllocations: {
+        select: ORDER_PAYMENT_ALLOCATION_SELECT,
+        orderBy: ORDER_PAYMENT_ALLOCATION_ORDER_BY,
       },
       history: {
         select: { id: true, eventType: true, metadata: true, createdAt: true },
@@ -172,7 +226,8 @@ export async function getOrderById(orderId: string, userId: string): Promise<Ord
 
   if (!row) return null;
 
-  const { paidAmount, remainingAmount, paymentPercentage } = calculatePaymentSummary(row.totalCost, row.payments);
+  const payments = mapAllocationsToOrderPayments(row.paymentAllocations);
+  const { paidAmount, remainingAmount, paymentPercentage } = calculatePaymentSummary(row.totalCost, payments);
 
   return {
     id: row.id,
@@ -203,12 +258,16 @@ export async function getOrderById(orderId: string, userId: string): Promise<Ord
     remainingAmount,
     paymentPercentage,
     items: row.items,
-    payments: row.payments,
+    payments,
     history: row.history,
   };
 }
 
-function deriveItemDeliveryState(
+/**
+ * Exported for `pendingProductsByStoreQueries.ts` (the "Por tienda" list view), so both list shapes
+ * derive an item's display state from the same rule instead of drifting apart.
+ */
+export function deriveItemDeliveryState(
   deliveryItems: Array<{ delivery: { status: DeliveryStatus } }>,
   ownDeliveryState: OrderItemDeliveryStatePrisma,
 ): ItemDeliveryState {
@@ -253,6 +312,7 @@ export async function getOrderDetail(orderId: string, userId: string): Promise<O
           productTypeKey: true,
           position: true,
           deliveryState: true,
+          paidDeclaredAt: true,
           deliveryItems: {
             select: { delivery: { select: { status: true } } },
             where: { delivery: { status: { not: DeliveryStatus.CANCELLED } } },
@@ -260,9 +320,9 @@ export async function getOrderDetail(orderId: string, userId: string): Promise<O
         },
         orderBy: { position: "asc" },
       },
-      payments: {
-        select: { id: true, amount: true, paymentDate: true },
-        orderBy: [{ paymentDate: "desc" }, { createdAt: "desc" }],
+      paymentAllocations: {
+        select: ORDER_PAYMENT_ALLOCATION_SELECT,
+        orderBy: ORDER_PAYMENT_ALLOCATION_ORDER_BY,
       },
       history: {
         select: { id: true, eventType: true, metadata: true, createdAt: true },
@@ -273,7 +333,19 @@ export async function getOrderDetail(orderId: string, userId: string): Promise<O
 
   if (!row) return null;
 
-  const { paidAmount, remainingAmount, paymentPercentage } = calculatePaymentSummary(row.totalCost, row.payments);
+  const payments = mapAllocationsToOrderPayments(row.paymentAllocations);
+  const { paidAmount, remainingAmount, paymentPercentage } = calculatePaymentSummary(row.totalCost, payments);
+
+  // Money already declared against each item specifically, read from the allocations already
+  // fetched above rather than a second query — `paymentAllocations` already carries `orderItemId`.
+  const allocatedMinorByItemId = new Map<string, number>();
+  for (const allocation of row.paymentAllocations) {
+    if (allocation.orderItemId === null) continue;
+    allocatedMinorByItemId.set(
+      allocation.orderItemId,
+      (allocatedMinorByItemId.get(allocation.orderItemId) ?? 0) + allocation.amountMinor,
+    );
+  }
 
   const itemsWithState: OrderItemWithDeliveryState[] = row.items.map((item) => ({
     id: item.id,
@@ -283,21 +355,23 @@ export async function getOrderDetail(orderId: string, userId: string): Promise<O
     productTypeKey: item.productTypeKey,
     position: item.position,
     deliveryState: deriveItemDeliveryState(item.deliveryItems, item.deliveryState),
+    paidDeclared: item.paidDeclaredAt !== null,
+    allocatedMinor: allocatedMinorByItemId.get(item.id) ?? 0,
+    basePagableMinor: resolveBasePagableMinor(item.unitPrice, item.quantity, row.totalCost, row.items.length),
   }));
 
-  const hasNonCancelledDeliveryLinks = itemsWithState.some(
-    (item) => item.deliveryState === "in_transit" || item.deliveryState === "delivered",
+  const undetailedPaidMinor = row.paymentAllocations.reduce(
+    (sum, allocation) => (allocation.orderItemId === null ? sum + allocation.amountMinor : sum),
+    0,
   );
 
-  const eligibility: OrderEligibility = {
-    canDelete: !hasNonCancelledDeliveryLinks,
-    canCancel: !hasNonCancelledDeliveryLinks,
-    blockReason: hasNonCancelledDeliveryLinks ? "ITEMS_LINKED_TO_DELIVERY" : undefined,
-  };
+  // The rule for "can this order still be cancelled or deleted" is owned by
+  // `@/lib/orders/orderLifecycle`; this query only feeds it the derived item states.
+  const eligibility: OrderEligibility = computeOrderEligibility(itemsWithState);
 
   const flags: OrderFlags = {
-    hasPayments: row.payments.length > 0,
-    hasNonCancelledDeliveryLinks,
+    hasPayments: payments.length > 0,
+    hasNonCancelledDeliveryLinks: eligibility.blockReason === "ITEMS_LINKED_TO_DELIVERY",
   };
 
   return {
@@ -330,10 +404,11 @@ export async function getOrderDetail(orderId: string, userId: string): Promise<O
     remainingAmount,
     paymentPercentage,
     items: itemsWithState,
-    payments: row.payments,
+    payments,
     history: row.history,
     eligibility,
     flags,
+    undetailedPaidMinor,
   };
 }
 
@@ -370,14 +445,13 @@ export type OrdersListPageItem = {
 };
 
 export { ORDER_LIST_SORT_VALUES } from "@/lib/orders/orderListSort";
-export type { OrderListPaymentState, OrderListSort } from "@/lib/orders/orderListSort";
+export type { OrderListSort } from "@/lib/orders/orderListSort";
 
 export type OrdersListPageFilters = {
   nameQuery?: string;
   productTypeKeys?: string[];
   storeId?: string;
   statuses?: OrderStatus[];
-  paymentStates?: OrderListPaymentState[];
   dateFrom?: Date;
   dateTo?: Date;
   /** Expected-delivery range overlap (any part of the order's window inside the range). */
@@ -397,10 +471,26 @@ export type OrdersListPageFilters = {
    * `deliveryOverdueOnly`/`deliveryFrom`/`deliveryTo` when set.
    */
   deliveryLateOnly?: boolean;
+  /**
+   * "Con saldo pendiente": the order's declared allocations do not cover its own total
+   * (`totalCost > allocatedAmountMinor`), i.e. the same fact `deriveHasUnpaidBalance` reports per
+   * row. Cancelled orders are always excluded, whatever `statuses` says: ADR 0025 defines debt as
+   * `Σ committed (non-cancelled orders) − Σ paid`, so a cancelled pedido owes nothing regardless of
+   * the total it was created with. Composes with every other filter (`status=COMPLETED` plus this
+   * is the "delivered but still owing" question that motivated it).
+   */
+  withBalanceOnly?: boolean;
   /** When true, restrict to orders eligible for FX reconciliation (foreign currency, current-month). */
   fxPendingOnly?: boolean;
   /** User's base currency, required for `fxPendingOnly` and `pendingFxCount`. */
   baseCurrencyCode?: string | null;
+  /**
+   * The collector's IANA timezone, used to resolve the CIVIL day the delivery toggles compare
+   * against. Travels with `baseCurrencyCode` because it comes from the same preferences snapshot.
+   * Without it the day falls back to UTC (`resolveTimeZone`), which is the dashboard's and the
+   * reminders' behaviour too — being consistent with them is worth more than being special here.
+   */
+  timeZone?: string | null;
   sort?: OrderListSort;
   page: number;
   pageSize: number;
@@ -513,15 +603,16 @@ export async function getOrdersList(userId: string, filters: OrdersListPageFilte
     productTypeKeys,
     storeId,
     statuses,
-    paymentStates,
     dateFrom,
     dateTo,
     deliveryFrom,
     deliveryTo,
     deliveryOverdueOnly,
     deliveryLateOnly,
+    withBalanceOnly,
     fxPendingOnly,
     baseCurrencyCode,
+    timeZone,
     sort = "recent",
     page,
     pageSize: requestedPageSize,
@@ -530,7 +621,11 @@ export async function getOrdersList(userId: string, filters: OrdersListPageFilte
   const pageSize = (PAGE_SIZE_OPTIONS as readonly number[]).includes(requestedPageSize)
     ? requestedPageSize
     : DEFAULT_PAGE_SIZE;
-  const now = new Date();
+  // The collector's civil day at UTC midnight, never a wall-clock instant. The delivery toggles
+  // below compare against midnight-UTC domain dates, so a raw `new Date()` made "Atrasados" pick up
+  // an order due TOMORROW from 19:00 in Lima — and it would then disagree with the row chip on the
+  // very same page, which resolves the same question with `getTodayStart`.
+  const now = getTodayStart(new Date(), timeZone);
 
   const itemConditions: Array<Record<string, unknown>> = [];
   if (nameQuery && nameQuery.trim()) {
@@ -552,6 +647,16 @@ export async function getOrdersList(userId: string, filters: OrdersListPageFilte
   // carries its own `OR`, which would otherwise sit alongside the search/payment-state `OR`s.
   const fxPendingWhere = fxPendingOnly ? buildNeedsFxReconciliationWhere(baseCurrencyCode) : null;
 
+  // Column-to-column comparison via a Prisma field reference, so the filter, `prisma.order.count`
+  // and the pagination window all read the same rows in SQL. Deriving it in memory would need the
+  // whole result set fetched first, which is exactly what the allocation cache exists to avoid.
+  const withBalanceWhere: Record<string, unknown> | null = withBalanceOnly
+    ? {
+        totalCost: { gt: prisma.order.fields.allocatedAmountMinor },
+        status: { not: "CANCELLED" satisfies OrderStatus },
+      }
+    : null;
+
   // Delivery filter — `deliveryLateOnly` ("Atrasados") wins over `deliveryOverdueOnly`
   // ("Por recibir"), which wins over an explicit range, when more than one is present.
   // `deliveryLateOnly`: the window has fully closed (`expectedDeliveryTo ?? expectedDeliveryFrom
@@ -569,9 +674,45 @@ export async function getOrdersList(userId: string, filters: OrdersListPageFilte
       { expectedDeliveryTo: { lt: now } },
       { expectedDeliveryTo: null, expectedDeliveryFrom: { lt: now } },
     ];
-    if (!hasExplicitStatuses) {
-      deliveryWhere.status = { notIn: ["COMPLETED", "CANCELLED"] as OrderStatus[] };
-    }
+    // `isOrderArrivalObserved` expressed in SQL: at least one product still WAITING, so an order
+    // whose every product has already been observed reaching the store drops out of the filter the
+    // same way it drops out of the chip. The pairing is the point — this filter and the row chips
+    // sit on the same page, and a row that matches the filter with no chip on it is the defect the
+    // civil-day guard already exists to prevent in the other dimension.
+    //
+    // "Waiting" is spelled the way `deriveItemDeliveryState` derives it, not as `deliveryState:
+    // NONE` alone: an item still at NONE but linked to a live delivery is `in_transit`, and the
+    // `not: CANCELLED` narrow here is the same one the row select applies to `deliveryItems`.
+    //
+    // An order with NO items at all can satisfy neither `some` clause above, so on its own the
+    // "waiting" narrow would drop it from the filter while `isOrderArrivalObserved([]) === false`
+    // (see orderDerivedState.ts) keeps its chip amber — the exact pairing failure this narrow
+    // exists to prevent, just reached from the other side. `items: { none: {} }` is the SQL reading
+    // of that same `false`: an itemless order is never "observed", so it stays in "Atrasados" too.
+    deliveryWhere.AND = [
+      {
+        OR: [
+          {
+            items: {
+              some: {
+                deliveryState: OrderItemDeliveryState.NONE,
+                deliveryItems: { none: { delivery: { status: { not: DeliveryStatus.CANCELLED } } } },
+              },
+            },
+          },
+          { items: { none: {} } },
+        ],
+      },
+    ];
+    // `isOrderOverdue` hard-zeroes COMPLETED/CANCELLED whatever else is true of the order
+    // (orderDerivedState.ts), so this narrow must always intersect the caller's own explicit
+    // statuses rather than only filling in when none were given — otherwise ticking "Cancelado"
+    // alongside "Atrasados" could return a cancelled order with a waiting product and no overdue
+    // chip on it, the same pairing failure as the itemless case above.
+    const stillPendingStatuses: OrderStatus[] = ["COMPLETED", "CANCELLED"];
+    deliveryWhere.status = hasExplicitStatuses
+      ? { in: statuses, notIn: stillPendingStatuses }
+      : { notIn: stillPendingStatuses };
   } else if (deliveryOverdueOnly) {
     deliveryWhere.expectedDeliveryFrom = { lte: now };
     if (!hasExplicitStatuses) {
@@ -611,17 +752,11 @@ export async function getOrdersList(userId: string, filters: OrdersListPageFilte
     matchAny.push({ store: { is: { name: { contains: trimmedQuery, mode: "insensitive" } } } });
   }
 
-  // Payment-state filters map onto the persisted `paymentPercent` cache (kept in sync by the
-  // payment/total mutations), except `overdue`, which is a pure date/status predicate. Each
-  // selected state adds one OR branch so an order matching any of them qualifies. Merged into the
-  // existing AND so it composes with the delivery-overlap conditions already in `baseFilters`.
-  const paymentStateWhere = buildPaymentStateWhere(paymentStates, now);
-
   const existingAnd = baseFilters.AND;
   const andGroups: Array<Record<string, unknown>> = Array.isArray(existingAnd) ? [...existingAnd] : [];
   if (matchAny.length > 0) andGroups.push({ OR: matchAny });
-  if (paymentStateWhere) andGroups.push(paymentStateWhere);
   if (fxPendingWhere) andGroups.push(fxPendingWhere);
+  if (withBalanceWhere) andGroups.push(withBalanceWhere);
 
   const { AND: _ignoredBaseAnd, ...baseWithoutAnd } = baseFilters;
   const where = andGroups.length > 0 ? { ...baseWithoutAnd, AND: andGroups } : baseFilters;
@@ -657,8 +792,7 @@ export async function getOrdersList(userId: string, filters: OrdersListPageFilte
       },
       orderBy: { position: "asc" } as const,
     },
-    paidAmountMinor: true,
-    paymentPercent: true,
+    allocatedAmountMinor: true,
   } as const;
 
   const fxWhere = buildFxPendingWhere(userId, baseCurrencyCode ?? null);
@@ -698,9 +832,12 @@ export async function getOrdersList(userId: string, filters: OrdersListPageFilte
       unitPrice: item.unitPrice,
       deliveryState: deriveItemDeliveryState(item.deliveryItems, item.deliveryState),
     })),
-    paidAmount: row.paidAmountMinor,
-    paymentPercentage: row.paymentPercent,
-    hasUnpaidBalance: deriveHasUnpaidBalance(row.totalCost, row.paidAmountMinor),
+    // Read from the allocation cache: money declared against this order under store-level
+    // payments. The percentage is derived from the same number rather than read from the frozen
+    // `paymentPercent` column, so the card's amount and its progress can never disagree.
+    paidAmount: row.allocatedAmountMinor,
+    paymentPercentage: calculatePaymentSummary(row.totalCost, [{ amount: row.allocatedAmountMinor }]).paymentPercentage,
+    hasUnpaidBalance: deriveHasUnpaidBalance(row.totalCost, row.allocatedAmountMinor),
   }));
 
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
@@ -725,43 +862,9 @@ function resolveOrderBy(sort: OrderListSort) {
       return [{ store: { name: "desc" as const } }, ID_TIEBREAKER];
     case "total-desc":
       return [{ totalCost: "desc" as const }, ID_TIEBREAKER];
-    case "payment-asc":
-      // Sort by the persisted paid ratio; `orderDate` desc breaks the common ties.
-      return [{ paymentPercent: "asc" as const }, { orderDate: "desc" as const }, ID_TIEBREAKER];
     case "recent":
     default:
       return [{ orderDate: "desc" as const }, ID_TIEBREAKER];
-  }
-}
-
-/**
- * Builds the payment-state `where` fragment from the selected states. Returns `null` when no
- * states are selected. `paid`/`partial`/`unpaid` read the persisted `paymentPercent` cache;
- * `overdue` is a date/status predicate independent of payment progress. States are OR'd.
- */
-function buildPaymentStateWhere(
-  paymentStates: OrderListPaymentState[] | undefined,
-  now: Date,
-): Record<string, unknown> | null {
-  if (!paymentStates || paymentStates.length === 0) return null;
-  return { OR: paymentStates.map((state) => paymentStateBranch(state, now)) };
-}
-
-function paymentStateBranch(state: OrderListPaymentState, now: Date): Record<string, unknown> {
-  switch (state) {
-    case "paid":
-      // paymentPercent is clamped to 100, so a fully covered order is exactly 100.
-      return { paymentPercent: { gte: 100 } };
-    case "partial":
-      return { paymentPercent: { gt: 0, lt: 100 } };
-    case "unpaid":
-      return { paymentPercent: 0 };
-    case "overdue":
-      // A non-null delivery window that has closed while the order is still live. Mirrors the
-      // previous in-memory predicate (a null `expectedDeliveryTo` never matches `lt`).
-      return { expectedDeliveryTo: { lt: now }, status: { notIn: ["COMPLETED", "CANCELLED"] as OrderStatus[] } };
-    default:
-      return {};
   }
 }
 

@@ -105,15 +105,6 @@ export const TONE_ICON_CLASSES: Record<ModalTone, string> = {
   success: "[background:color-mix(in_oklch,var(--success)_14%,var(--surface-elevated))] [color:var(--success)]",
 };
 
-/** CSS custom property name for each tone — used for inline gradient/ring styles. */
-export const TONE_COLOR_VAR: Record<ModalTone, string> = {
-  default: "var(--accent)",
-  destructive: "var(--destructive)",
-  warning: "var(--warning)",
-  info: "var(--info)",
-  success: "var(--success)",
-};
-
 export const SIZE_MAX_WIDTH: Record<ModalSize, string> = {
   md: "460px",
   lg: "768px",

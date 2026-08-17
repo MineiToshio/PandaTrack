@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { deliveryCreateSchema } from "../deliveryValidation";
+import { deliveryCreateSchema, deliveryStoreArrivalSchema } from "../deliveryValidation";
+import { addUtcDays, utcMidnightToday } from "@/test/domainDateFixtures";
 
 const VALID_CUID = "clxxxxxxxxxxxxxxxxxxxxxx0";
 
@@ -70,5 +71,84 @@ describe("deliveryCreateSchema arrival date", () => {
     if (!result.success) {
       expect(result.error.issues.map((issue) => issue.message)).toContain("RECEIVED_DATE_IN_FUTURE");
     }
+  });
+});
+
+/**
+ * The store-scoped arrival payload is the per-order quick arrival with the scope key swapped. Its
+ * bounds and refinements are asserted here rather than assumed identical, because the two schemas
+ * feed the same `createDelivery` transaction and a drift between them would only surface in
+ * production, on whichever path was left weaker.
+ */
+describe("deliveryStoreArrivalSchema", () => {
+  const YESTERDAY = addUtcDays(utcMidnightToday(), -1);
+
+  function buildInput(overrides: Record<string, unknown> = {}) {
+    return {
+      storeId: VALID_CUID,
+      productIds: [VALID_CUID],
+      receivedDate: YESTERDAY,
+      shippedDate: null,
+      cost: 0,
+      currencyCode: "USD",
+      exchangeRate: null,
+      ...overrides,
+    };
+  }
+
+  it("accepts a store-scoped selection", () => {
+    expect(deliveryStoreArrivalSchema.safeParse(buildInput()).success).toBe(true);
+  });
+
+  it("scopes by store, not by order: an orderId is not a substitute for a storeId", () => {
+    const { storeId: _storeId, ...withoutStore } = buildInput();
+    const result = deliveryStoreArrivalSchema.safeParse({ ...withoutStore, orderId: VALID_CUID });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects a storeId that is not a cuid", () => {
+    const result = deliveryStoreArrivalSchema.safeParse(buildInput({ storeId: "not-a-cuid" }));
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error.issues.map((e) => e.message)).toContain("INVALID_STORE_ID");
+  });
+
+  it("rejects an empty selection", () => {
+    const result = deliveryStoreArrivalSchema.safeParse(buildInput({ productIds: [] }));
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error.issues.map((e) => e.message)).toContain("NO_PRODUCTS_SELECTED");
+  });
+
+  it("accepts a selection at the 200-product ceiling", () => {
+    const productIds = Array.from({ length: 200 }, () => VALID_CUID);
+    expect(deliveryStoreArrivalSchema.safeParse(buildInput({ productIds })).success).toBe(true);
+  });
+
+  it("rejects a selection past the 200-product ceiling", () => {
+    const productIds = Array.from({ length: 201 }, () => VALID_CUID);
+    const result = deliveryStoreArrivalSchema.safeParse(buildInput({ productIds }));
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error.issues.map((e) => e.message)).toContain("TOO_MANY_PRODUCTS");
+  });
+
+  it("rejects a future arrival date", () => {
+    const result = deliveryStoreArrivalSchema.safeParse(
+      buildInput({ receivedDate: addUtcDays(utcMidnightToday(), 1) }),
+    );
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error.issues.map((e) => e.message)).toContain("RECEIVED_DATE_IN_FUTURE");
+  });
+
+  it("rejects a box that arrived before it was dispatched", () => {
+    const result = deliveryStoreArrivalSchema.safeParse(
+      buildInput({ receivedDate: YESTERDAY, shippedDate: utcMidnightToday() }),
+    );
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error.issues.map((e) => e.message)).toContain("RECEIVED_BEFORE_SHIPPED");
+  });
+
+  it("rejects a fractional-subunit cost for a zero-decimal currency", () => {
+    const result = deliveryStoreArrivalSchema.safeParse(buildInput({ currencyCode: "JPY", cost: 500050 }));
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error.issues.map((e) => e.message)).toContain("COST_FRACTIONAL_SUBUNITS");
   });
 });

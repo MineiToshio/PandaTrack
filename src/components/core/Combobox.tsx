@@ -190,11 +190,19 @@ export default function Combobox(props: ComboboxProps) {
               )}
             >
               {opt.label}
+              {/*
+                Removable-chip contract (`docs/design/interface-patterns.md` §12): the remove is a
+                real 44×44 box below `md`, never a `::before`. Chips wrap at 4px, so an expansion
+                large enough to reach 44 would overlap the row above and below and, by paint order,
+                hand the band to the later chip — a remove that deletes a different chip. The
+                negative margins are exactly this chip's own `px-2 py-0.5`, so the target reaches
+                the chip's edges and the chip lands at exactly 44px tall instead of 48.
+              */}
               <button
                 type="button"
                 aria-label={`Remove ${opt.label}`}
                 onClick={() => removeChip(opt.value)}
-                className="flex items-center [color:var(--text-muted)] hover:[color:var(--text-primary)]"
+                className="-my-[var(--space-0_5)] -mr-[var(--space-2)] grid size-11 place-items-center [color:var(--text-muted)] hover:[color:var(--text-primary)] md:m-0 md:size-[10px]"
               >
                 <X size={10} aria-hidden="true" />
               </button>

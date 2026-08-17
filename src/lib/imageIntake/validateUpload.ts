@@ -20,7 +20,13 @@ export const UPLOAD_VALIDATION_ERROR_CODES = [
   "submission-too-large",
   "unsupported-format",
   "unreadable-file",
-  "dimensions-out-of-range",
+  // Split from a single "dimensions out of range" code on purpose. The two failures have nothing in
+  // common but the field they read: one is a source with too few pixels to read, the other is a
+  // decompression-bomb guard on a file far larger than anything this flow prepares. Reporting them
+  // together forced one message to name both, which is how a collector ended up being told their
+  // 3000 px screenshot might be "too small or too large" with no way to tell which.
+  "image-too-small",
+  "image-too-large",
 ] as const;
 export type UploadValidationErrorCode = (typeof UPLOAD_VALIDATION_ERROR_CODES)[number];
 
@@ -37,12 +43,24 @@ type AcceptedRealFormat = (typeof ACCEPTED_REAL_FORMATS)[number];
 export class ImageIntakeUploadValidationError extends Error {
   readonly code: UploadValidationErrorCode;
   readonly index: number | null;
+  /**
+   * The measurement that failed, for the codes that have one, so the caller can quote the real
+   * figure back to the collector instead of a message that only names the rule. `null` on failures
+   * that never decoded the file.
+   */
+  readonly measured: { width: number; height: number } | null;
 
-  constructor(code: UploadValidationErrorCode, message: string, index: number | null = null) {
+  constructor(
+    code: UploadValidationErrorCode,
+    message: string,
+    index: number | null = null,
+    measured: { width: number; height: number } | null = null,
+  ) {
     super(message);
     this.name = "ImageIntakeUploadValidationError";
     this.code = code;
     this.index = index;
+    this.measured = measured;
   }
 }
 
@@ -118,15 +136,27 @@ async function validateOneImage(buffer: Buffer, index: number): Promise<Validate
   }
 
   const { width, height } = metadata;
-  const withinWidth = width >= MIN_IMAGE_DIMENSION && width <= MAX_IMAGE_WIDTH;
-  const withinHeight = height >= MIN_IMAGE_DIMENSION && height <= MAX_IMAGE_HEIGHT;
-  if (!withinWidth || !withinHeight) {
+
+  if (width < MIN_IMAGE_DIMENSION || height < MIN_IMAGE_DIMENSION) {
     return {
       ok: false,
       error: new ImageIntakeUploadValidationError(
-        "dimensions-out-of-range",
-        `File at index ${index} is ${width}x${height}, outside the accepted ${MIN_IMAGE_DIMENSION}x${MIN_IMAGE_DIMENSION} to ${MAX_IMAGE_WIDTH}x${MAX_IMAGE_HEIGHT} range.`,
+        "image-too-small",
+        `File at index ${index} is ${width}x${height}, under the ${MIN_IMAGE_DIMENSION}x${MIN_IMAGE_DIMENSION} minimum.`,
         index,
+        { width, height },
+      ),
+    };
+  }
+
+  if (width > MAX_IMAGE_WIDTH || height > MAX_IMAGE_HEIGHT) {
+    return {
+      ok: false,
+      error: new ImageIntakeUploadValidationError(
+        "image-too-large",
+        `File at index ${index} is ${width}x${height}, over the ${MAX_IMAGE_WIDTH}x${MAX_IMAGE_HEIGHT} maximum.`,
+        index,
+        { width, height },
       ),
     };
   }

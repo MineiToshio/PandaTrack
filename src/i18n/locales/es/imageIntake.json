@@ -57,11 +57,20 @@
     "attachmentsKept": "Tus fotos siguen adjuntas.",
     "emptySubmission": "Adjunta al menos una foto para continuar.",
     "tooManyImages": "Son muchas fotos para una sola subida. Envía hasta 20 por vez.",
-    "fileTooLarge": "Una de las fotos es demasiado grande. El máximo es 2 MB.",
-    "submissionTooLarge": "Las fotos juntas pesan demasiado para un solo envío. Quita algunas e inténtalo de nuevo.",
+    "fileTooLarge": "Una de las fotos sigue pesando demasiado después de optimizarla. Recórtala o divídela en dos capturas.",
+    "submissionTooLarge": "Las fotos juntas siguen pesando demasiado después de optimizarlas. Quita algunas e inténtalo de nuevo.",
+    "submissionTooLargeWithFit": "Incluso optimizadas, estas fotos no entran en un solo envío. Envía las primeras {count} e inténtalo de nuevo.",
     "unsupportedFormat": "Solo se aceptan imágenes PNG, JPEG y WebP.",
     "unreadableFile": "No se pudo leer la foto. Prueba con otro archivo.",
-    "dimensionsOutOfRange": "Una de las fotos es demasiado pequeña o demasiado grande para leerla.",
+    "imageTooSmall": "Una de las fotos es demasiado pequeña para leerla. El mínimo es {minDimension} x {minDimension} px.",
+    "imageTooLarge": "Una de las fotos es demasiado grande para leerla. El máximo es {maxWidth} x {maxHeight} px.",
+    "photosRejected": "{count, plural, one {No podemos usar esta foto. Quítala o cámbiala y vuelve a intentarlo:} other {No podemos usar estas fotos. Quítalas o cámbialas y vuelve a intentarlo:}}",
+    "photoLabel": "Foto {position}",
+    "photoLabelNamed": "Foto {position} ({name})",
+    "photoTooSmall": "{photo}: mide {width} x {height} px y el mínimo es {minDimension} x {minDimension} px. Usa una captura más grande.",
+    "photoTooWide": "{photo}: es muy ancha para lo baja que es, {width} x {height} px. Con ese ancho necesitamos al menos {minHeight} px de alto para leer el texto. Recorta menos por los lados o adjunta la captura completa.",
+    "photoTooLarge": "{photo}: mide {width} x {height} px y el máximo es {maxWidth} x {maxHeight} px. Reduce la captura antes de subirla.",
+    "photoTooHeavy": "{photo}: incluso optimizada sigue pesando {size} MB y el máximo por foto es {maxSize} MB. Recórtala o divídela en dos capturas.",
     "compressionFailed": "No se pudo preparar una de las fotos. Prueba con otro archivo.",
     "budgetBlocked": "La lectura con IA está en pausa por ahora. Puedes registrar el pedido a mano, sin límite y con todas las funciones.",
     "rateLimited": "Espera unos segundos antes de enviar otras fotos.",
@@ -73,6 +82,7 @@
     "multipleOrders": "Esas fotos parecen de varias compras distintas. Cada pedido se sube por separado, aunque tenga varios productos. Quita las fotos que sobran y deja solo las de una compra.",
     "providerError": "No pudimos leer las fotos en este momento. Inténtalo de nuevo en un minuto.",
     "providerRejected": "Hubo un problema al leer las fotos. No se soluciona reintentando: ya estamos avisados y lo vamos a arreglar. Mientras tanto puedes registrar el pedido a mano.",
+    "responseTooLong": "La lectura se hizo demasiado larga y se cortó. Envía menos fotos por vez, o registra el pedido a mano.",
     "ledgerError": "No pudimos completar la lectura. Inténtalo de nuevo en un minuto.",
     "productCeilingExceeded": "Son demasiados productos para un pedido. El chat pide {productCount} y un pedido admite {maxProducts}. Únelos en un solo producto o divide la compra en dos pedidos.",
     "missingBaseCurrency": "Primero elige tu moneda base en configuración.",
@@ -80,6 +90,7 @@
     "serverError": "Algo salió mal. Inténtalo de nuevo.",
     "saveInvalidDraft": "Faltan datos para crear el pedido. Revisa la tienda, la fecha, la moneda y el total.",
     "saveStoreRequired": "Elige la tienda antes de guardar.",
+    "saveOrderDateRequired": "Escribe la fecha del pedido antes de guardar.",
     "saveTotalRequired": "Escribe el total del pedido antes de guardar."
   },
   "review": {
@@ -110,10 +121,12 @@
     },
     "provenance": {
       "assumed": "asumido",
+      "derived": "calculado",
       "missing": "falta",
       "assumedHint": "El chat no lo dice. Lo completamos nosotros, así que conviene revisarlo.",
       "missingHint": "No lo encontramos en el chat. Complétalo si lo sabes.",
-      "totalHint": "El chat no dice un total. Súmalo de los productos o escríbelo."
+      "totalHint": "El chat no dice un total. Súmalo de los productos o escríbelo.",
+      "totalDerivedHint": "El chat no dice un total. Lo calculamos sumando {count, plural, one {el precio del # producto} other {el precio de los # productos}}."
     },
     "fx": {
       "label": "Tipo de cambio {from} a {to}",
@@ -186,7 +199,13 @@
       "amountLabel": "Pago {position}",
       "dateLabel": "Fecha del pago",
       "add": "Añadir pago",
-      "removeLabel": "Quitar pago {position}"
+      "removeLabel": "Quitar pago {position}",
+      "breakdownCleared": "Cambiaste los productos, así que quitamos el desglose de los pagos. Vuelve a marcarlos.",
+      "breakdownNeedsAmount": "Ponle importe a este pago para poder guardar su desglose.",
+      "breakdownNeedsDate": "Ponle fecha a este pago para poder guardar su desglose.",
+      "breakdownDateTooEarly": "La fecha del pago no puede ser anterior a la del pedido.",
+      "breakdownDateInFuture": "La fecha del pago no puede ser futura.",
+      "breakdownExceedsBalance": "Con los pagos anteriores, este pago supera el total del pedido. Ajusta los importes."
     },
     "totals": {
       "paid": "Adelanto pagado",
@@ -206,6 +225,10 @@
       "productsEyebrow": "Paso 2",
       "paymentsEyebrow": "Paso 3"
     }
+  },
+  "save": {
+    "paymentsSkipped": "No pudimos registrar {count, plural, one {# pago} other {# pagos}} del chat. Revísalo y agrégalo a mano en el pedido.",
+    "breakdownSkipped": "No pudimos registrar {count, plural, one {un pago con desglose} other {# pagos con desglose}}. Anótalo en el pedido con su desglose."
   },
   "share": {
     "attach": "No encontramos las fotos que compartiste. Adjúntalas aquí y seguimos desde ahí.",

@@ -11,7 +11,7 @@ import { formatAmountSymbolOnly } from "@/lib/currency";
 import { cancelOrderAction } from "../_actions/orderLifecycleActions";
 import { MAX_CANCELLATION_REASON_LENGTH } from "@/lib/orders/orderValidation";
 
-type PaymentsChoice = "keep" | "remove";
+type PaymentsChoice = "credit" | "lost";
 
 type OrderCancelModalProps = {
   isOpen: boolean;
@@ -26,6 +26,11 @@ type OrderCancelModalProps = {
   /** Whether the order has any recorded payments. When false the payments-choice control is
       hidden and the order cancels exactly as before (no added friction). */
   hasPayments: boolean;
+  /**
+   * How many of the order's products carry a paid mark. The credit branch clears them, and that
+   * consequence is only announced when there is something to clear: today every order has zero.
+   */
+  markedItemCount: number;
   onSuccess?: () => void;
 };
 
@@ -35,7 +40,9 @@ const ERROR_MAP: Record<string, string> = {
   unauthorized: "errorGeneral",
 };
 
-const DEFAULT_PAYMENTS_CHOICE: PaymentsChoice = "keep";
+// Defaults to "credit": most cancellations are not a lost cause, they free the money to cover
+// another order at the same store, so that is the choice that should require no action.
+const DEFAULT_PAYMENTS_CHOICE: PaymentsChoice = "credit";
 
 export default function OrderCancelModal({
   isOpen,
@@ -46,6 +53,7 @@ export default function OrderCancelModal({
   paidAmountMinor,
   currencyCode,
   hasPayments,
+  markedItemCount,
   onSuccess,
 }: OrderCancelModalProps) {
   const t = useTranslations("orders");
@@ -57,14 +65,17 @@ export default function OrderCancelModal({
 
   const paymentsChoiceOptions: RadioOption<PaymentsChoice>[] = [
     {
-      value: "keep",
-      label: t("detail.cancelModal.paymentsKeepLabel"),
-      description: t("detail.cancelModal.paymentsKeepHint"),
+      value: "credit",
+      label: t("detail.cancelModal.paymentsCreditLabel", { store: storeName }),
+      description:
+        markedItemCount > 0
+          ? `${t("detail.cancelModal.paymentsCreditHint")} ${t("detail.cancelModal.creditClearsMarks")}`
+          : t("detail.cancelModal.paymentsCreditHint"),
     },
     {
-      value: "remove",
-      label: t("detail.cancelModal.paymentsRemoveLabel"),
-      description: t("detail.cancelModal.paymentsRemoveHint"),
+      value: "lost",
+      label: t("detail.cancelModal.paymentsLostLabel"),
+      description: t("detail.cancelModal.paymentsLostHint"),
       tone: "destructive",
     },
   ];

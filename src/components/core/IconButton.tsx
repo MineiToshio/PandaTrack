@@ -34,15 +34,19 @@ const SIZE_MAP: Record<IconButtonSize, { box: string; iconSize: number }> = {
 const VARIANT_CLASSES: Record<IconButtonVariant, string> = {
   primary:
     "[background:var(--accent)] [color:var(--text-on-accent)] hover:[background:color-mix(in_oklch,var(--accent)_92%,transparent)]",
+  // Same skin as `Button` variant `secondary` (`core/Button/buttonVariants.ts`): controls fill with
+  // `--surface-elevated`, and the border does the separating work whenever that fill matches the
+  // panel underneath (sidebar footer), so it is `--border-strong`. See `docs/design/visual-foundations.md`,
+  // "Choosing between --surface and --surface-elevated".
   secondary:
-    "bg-[var(--surface)] [border:1px_solid_var(--border)] [color:var(--text-primary)] hover:[background:color-mix(in_oklch,var(--text-primary)_var(--state-hover-mix),transparent)]",
+    "bg-[var(--surface-elevated)] [border:1px_solid_var(--border-strong)] [color:var(--text-primary)] hover:[background:color-mix(in_oklch,var(--text-primary)_var(--state-hover-mix),transparent)]",
   ghost:
     "[color:var(--text-primary)] hover:[background:color-mix(in_oklch,var(--text-primary)_var(--state-hover-mix),transparent)]",
   "destructive-ghost":
     "[color:var(--destructive-chip-text)] hover:[background:color-mix(in_oklch,var(--destructive)_var(--state-hover-mix),transparent)]",
   // Legacy aliases kept for backward compatibility
   outline:
-    "bg-[var(--surface)] [border:1px_solid_var(--border)] [color:var(--text-primary)] hover:[background:color-mix(in_oklch,var(--text-primary)_var(--state-hover-mix),transparent)]",
+    "bg-[var(--surface-elevated)] [border:1px_solid_var(--border-strong)] [color:var(--text-primary)] hover:[background:color-mix(in_oklch,var(--text-primary)_var(--state-hover-mix),transparent)]",
   standard:
     "[color:var(--text-primary)] hover:[background:color-mix(in_oklch,var(--text-primary)_var(--state-hover-mix),transparent)]",
 };

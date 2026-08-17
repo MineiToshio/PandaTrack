@@ -57,11 +57,20 @@
     "attachmentsKept": "Your photos are still attached.",
     "emptySubmission": "Attach at least one photo to continue.",
     "tooManyImages": "That is a lot of photos for a single upload. Send up to 20 at a time.",
-    "fileTooLarge": "One of the photos is too large. The maximum is 2 MB.",
-    "submissionTooLarge": "Those photos are too heavy for a single upload. Remove a few and try again.",
+    "fileTooLarge": "One of the photos is still too heavy after optimizing it. Crop it or split it into two screenshots.",
+    "submissionTooLarge": "Those photos are still too heavy together after optimizing them. Remove a few and try again.",
+    "submissionTooLargeWithFit": "Even optimized, these photos do not fit in a single upload. Send the first {count} and try again.",
     "unsupportedFormat": "Only PNG, JPEG and WebP images are accepted.",
     "unreadableFile": "We could not read the photo. Try another file.",
-    "dimensionsOutOfRange": "One of the photos is too small or too large to read.",
+    "imageTooSmall": "One of the photos is too small to read. The minimum is {minDimension} x {minDimension} px.",
+    "imageTooLarge": "One of the photos is too large to read. The maximum is {maxWidth} x {maxHeight} px.",
+    "photosRejected": "{count, plural, one {We cannot use this photo. Remove it or swap it and try again:} other {We cannot use these photos. Remove them or swap them and try again:}}",
+    "photoLabel": "Photo {position}",
+    "photoLabelNamed": "Photo {position} ({name})",
+    "photoTooSmall": "{photo}: it is {width} x {height} px and the minimum is {minDimension} x {minDimension} px. Use a larger screenshot.",
+    "photoTooWide": "{photo}: it is too wide for how short it is, {width} x {height} px. At that width we need at least {minHeight} px of height to read the text. Crop less from the sides, or attach the full screenshot.",
+    "photoTooLarge": "{photo}: it is {width} x {height} px and the maximum is {maxWidth} x {maxHeight} px. Shrink the screenshot before uploading it.",
+    "photoTooHeavy": "{photo}: even optimized it still weighs {size} MB and the maximum per photo is {maxSize} MB. Crop it or split it into two screenshots.",
     "compressionFailed": "We could not prepare one of the photos. Try another file.",
     "budgetBlocked": "AI reading is paused for now. You can add the order by hand, with no limit and every feature.",
     "rateLimited": "Wait a few seconds before sending more photos.",
@@ -73,6 +82,7 @@
     "multipleOrders": "Those photos look like several separate purchases. Each order is uploaded on its own, even when it has several products. Remove the extra photos and keep only the ones from a single purchase.",
     "providerError": "We could not read the photos right now. Try again in a minute.",
     "providerRejected": "Something went wrong reading the photos. Trying again will not fix it: we have already been notified and we are on it. In the meantime you can add the order by hand.",
+    "responseTooLong": "The reading grew too long and was cut off. Send fewer photos at a time, or add the order by hand.",
     "ledgerError": "We could not finish the reading. Try again in a minute.",
     "productCeilingExceeded": "That is too many products for one order. The chat asks for {productCount} and an order takes {maxProducts}. Merge them into a single product or split the purchase into two orders.",
     "missingBaseCurrency": "Pick your base currency in settings first.",
@@ -80,6 +90,7 @@
     "serverError": "Something went wrong. Try again.",
     "saveInvalidDraft": "Some data is missing to create the order. Check the store, the date, the currency and the total.",
     "saveStoreRequired": "Pick the store before saving.",
+    "saveOrderDateRequired": "Enter the order date before saving.",
     "saveTotalRequired": "Enter the order total before saving."
   },
   "review": {
@@ -110,10 +121,12 @@
     },
     "provenance": {
       "assumed": "assumed",
+      "derived": "calculated",
       "missing": "missing",
       "assumedHint": "The chat does not say it. We filled it in, so it is worth a look.",
       "missingHint": "We did not find it in the chat. Fill it in if you know it.",
-      "totalHint": "The chat states no total. Add up the products or type it in."
+      "totalHint": "The chat states no total. Add up the products or type it in.",
+      "totalDerivedHint": "The chat states no total. We calculated it by adding up {count, plural, one {the price of the # product} other {the prices of the # products}}."
     },
     "fx": {
       "label": "Exchange rate {from} to {to}",
@@ -186,7 +199,13 @@
       "amountLabel": "Payment {position}",
       "dateLabel": "Payment date",
       "add": "Add payment",
-      "removeLabel": "Remove payment {position}"
+      "removeLabel": "Remove payment {position}",
+      "breakdownCleared": "You changed the products, so we cleared the payment breakdown. Tick them again.",
+      "breakdownNeedsAmount": "Give this payment an amount to save its breakdown.",
+      "breakdownNeedsDate": "Give this payment a date to save its breakdown.",
+      "breakdownDateTooEarly": "The payment date cannot be earlier than the order date.",
+      "breakdownDateInFuture": "The payment date cannot be in the future.",
+      "breakdownExceedsBalance": "With the earlier payments, this one goes over the order total. Adjust the amounts."
     },
     "totals": {
       "paid": "Paid up front",
@@ -206,6 +225,10 @@
       "productsEyebrow": "Step 2",
       "paymentsEyebrow": "Step 3"
     }
+  },
+  "save": {
+    "paymentsSkipped": "We could not record {count, plural, one {# payment} other {# payments}} from the chat. Check it and add it to the order by hand.",
+    "breakdownSkipped": "We could not record {count, plural, one {one payment with a breakdown} other {# payments with a breakdown}}. Record it on the order with its breakdown."
   },
   "share": {
     "attach": "We could not find the photos you shared. Attach them here and we will take it from there.",

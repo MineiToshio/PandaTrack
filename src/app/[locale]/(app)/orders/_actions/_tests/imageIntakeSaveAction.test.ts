@@ -113,7 +113,14 @@ describe("saveOrderFromDraftAction", () => {
   it("writes the order with one item per confirmed product and an idempotency marker on the note", async () => {
     const result = await saveOrderFromDraftAction(buildDraft());
 
-    expect(result).toEqual({ ok: true, orderId: ORDER_ID, paymentsRecorded: 0, paymentsSkipped: 0 });
+    expect(result).toEqual({
+      ok: true,
+      orderId: ORDER_ID,
+      paymentsRecorded: 0,
+      paymentsSkipped: 0,
+      skippedBreakdownIndexes: [],
+      breakdownDropped: 0,
+    });
     const [, input] = createOrderMock.mock.calls[0];
     expect(input.items).toHaveLength(2);
     expect(input.items[0]).toMatchObject({ name: "Gojo", quantity: 1, position: 1 });
@@ -143,7 +150,14 @@ describe("saveOrderFromDraftAction", () => {
 
     const result = await saveOrderFromDraftAction(buildDraft());
 
-    expect(result).toEqual({ ok: true, orderId: "order-existing", paymentsRecorded: 0, paymentsSkipped: 0 });
+    expect(result).toEqual({
+      ok: true,
+      orderId: "order-existing",
+      paymentsRecorded: 0,
+      paymentsSkipped: 0,
+      skippedBreakdownIndexes: [],
+      breakdownDropped: 0,
+    });
     expect(createOrderMock).not.toHaveBeenCalled();
   });
 
@@ -201,7 +215,14 @@ describe("saveOrderFromDraftAction", () => {
       }),
     );
 
-    expect(result).toEqual({ ok: true, orderId: ORDER_ID, paymentsRecorded: 1, paymentsSkipped: 1 });
+    expect(result).toEqual({
+      ok: true,
+      orderId: ORDER_ID,
+      paymentsRecorded: 1,
+      paymentsSkipped: 1,
+      skippedBreakdownIndexes: [],
+      breakdownDropped: 0,
+    });
   });
 
   it("keeps the created order when a payment cannot even be validated", async () => {
@@ -209,7 +230,14 @@ describe("saveOrderFromDraftAction", () => {
       buildDraft({ payments: [{ amount: field(null, null), paidAt: field(null, null) }] }),
     );
 
-    expect(result).toEqual({ ok: true, orderId: ORDER_ID, paymentsRecorded: 0, paymentsSkipped: 1 });
+    expect(result).toEqual({
+      ok: true,
+      orderId: ORDER_ID,
+      paymentsRecorded: 0,
+      paymentsSkipped: 1,
+      skippedBreakdownIndexes: [],
+      breakdownDropped: 0,
+    });
     expect(addOrderPaymentMock).not.toHaveBeenCalled();
   });
 

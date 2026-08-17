@@ -24,7 +24,8 @@
     "prettier": "prettier --config .prettierrc.json --write \"**/*.*\"",
     "type-check": "tsc --pretty --noEmit",
     "lint": "eslint",
-    "download-og-fonts": "node scripts/download-og-fonts.mjs"
+    "download-og-fonts": "node scripts/download-og-fonts.mjs",
+    "find-unused-i18n-keys": "node scripts/find-unused-i18n-keys.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1085.0",

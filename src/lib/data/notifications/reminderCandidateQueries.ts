@@ -77,7 +77,7 @@ function coarseOverdueUpperBound(now: Date): Date {
 /**
  * Upcoming-payment candidates: non-cancelled orders with an outstanding balance whose
  * expected date falls in the coarse payment window (`BR-09-05`, `BR-09-08`). Outstanding
- * is read from the transactionally-synced `paidAmountMinor` cache and compared in memory,
+ * is read from the transactionally-synced `allocatedAmountMinor` cache and compared in memory,
  * so the payment graph is never loaded.
  */
 export async function getPaymentDueCandidates(now: Date): Promise<ReminderCandidate[]> {
@@ -94,14 +94,14 @@ export async function getPaymentDueCandidates(now: Date): Promise<ReminderCandid
       userId: true,
       expectedDeliveryFrom: true,
       totalCost: true,
-      paidAmountMinor: true,
+      allocatedAmountMinor: true,
       store: { select: { name: true } },
       user: { select: { timezone: true, locale: true } },
     },
   });
 
   return rows
-    .filter((row) => row.paidAmountMinor < row.totalCost && row.expectedDeliveryFrom !== null)
+    .filter((row) => row.allocatedAmountMinor < row.totalCost && row.expectedDeliveryFrom !== null)
     .map((row) => ({
       userId: row.userId,
       type: NotificationType.PAYMENT_DUE,
