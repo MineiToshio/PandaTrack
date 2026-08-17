@@ -385,13 +385,41 @@ describe("createStorePayment", () => {
     expect(result).toEqual({ ok: false, error: "ALLOCATION_AMOUNT_INVALID", orderId: "order-1" });
   });
 
-  it("accepts a zero-amount allocation when it declares settlesTarget", async () => {
-    const order = makeFixtureOrder({ id: "order-1", totalCost: 10000, allocatedAmountMinor: 10000 });
+  /**
+   * `settlesTarget` used to be the "covered in full, amount unknown" declaration. It is refused on
+   * write now: it could not be edited without deleting the whole payment, and the zero-amount row
+   * it left showed up in the order's history as a phantom 0.00 line. `OrderItem.paidDeclaredAt`
+   * replaced it, and it is editable.
+   */
+  it("refuses a settlesTarget declaration outright, without writing a payment", async () => {
+    const order = makeFixtureOrder({ id: "order-1", totalCost: 10000, allocatedAmountMinor: 0 });
     const tx = makeCreateStorePaymentTx({
       orders: [order],
       debtByCurrency: { USD: { committedMinor: 5000, paidMinor: 0 } },
-      cacheAfterWriteByOrderId: { "order-1": 10000 },
-      snapshotsByOrderId: { "order-1": { totalCost: 10000, allocatedAmountMinor: 10000 } },
+    });
+    runStorePaymentTx(prismaMock, tx);
+
+    const result = await createStorePayment({
+      userId: "user-1",
+      storeId: "store-1",
+      amount: 500,
+      paymentDate: PAYMENT_DATE,
+      currencyCode: "USD",
+      allocations: [{ orderId: "order-1", amountMinor: 500, settlesTarget: true }],
+    });
+
+    expect(result).toEqual({ ok: false, error: "SETTLES_TARGET_UNSUPPORTED", orderId: "order-1" });
+    expect(tx.storePayment.create).not.toHaveBeenCalled();
+  });
+
+  it("refuses `{ amountMinor: 0, settlesTarget: true }` as the DEPRECATION, not as a bad amount", async () => {
+    // The order of the two guards is the test. With the settlesTarget check placed AFTER the
+    // amount check, this exact payload earns `ALLOCATION_AMOUNT_INVALID` instead and the field's
+    // deprecation is silently unenforced for the one payload that most wants to use it.
+    const order = makeFixtureOrder({ id: "order-1", totalCost: 10000, allocatedAmountMinor: 0 });
+    const tx = makeCreateStorePaymentTx({
+      orders: [order],
+      debtByCurrency: { USD: { committedMinor: 5000, paidMinor: 0 } },
     });
     runStorePaymentTx(prismaMock, tx);
 
@@ -404,10 +432,8 @@ describe("createStorePayment", () => {
       allocations: [{ orderId: "order-1", amountMinor: 0, settlesTarget: true }],
     });
 
-    expect(result).toMatchObject({ ok: true });
-    expect(tx.paymentAllocation.createMany).toHaveBeenCalledWith({
-      data: [expect.objectContaining({ orderId: "order-1", amountMinor: 0, settlesTarget: true })],
-    });
+    expect(result).toEqual({ ok: false, error: "SETTLES_TARGET_UNSUPPORTED", orderId: "order-1" });
+    expect(tx.storePayment.create).not.toHaveBeenCalled();
   });
 
   it("rejects EXCEEDS_BALANCE when the allocation would push the order past its total", async () => {
@@ -483,6 +509,154 @@ describe("createStorePayment", () => {
 
     expect(result).toEqual({ ok: false, error: "EXCEEDS_ITEM_BASE", orderId: "order-1", orderItemId: "item-1" });
   });
+
+  /**
+   * D5 — the fractional-subunit rule has to hold per LINE, not only for the payment total.
+   *
+   * The payment-level guard cannot see this: JPY 10000 is a perfectly whole amount, and it still
+   * splits into two lines that have no representation in a currency with no subunit. Without the
+   * per-line check the rows persist and render back as something the collector never entered.
+   */
+  it("rejects AMOUNT_FRACTIONAL_SUBUNITS for a LINE, on a payment whose own total is whole", async () => {
+    const order = makeFixtureOrder({
+      id: "order-1",
+      currencyCode: "JPY",
+      totalCost: 2000000,
+      items: [
+        { id: "item-1", unitPrice: 1000000, quantity: 1 },
+        { id: "item-2", unitPrice: 1000000, quantity: 1 },
+      ],
+    });
+    const tx = makeCreateStorePaymentTx({
+      orders: [order],
+      debtByCurrency: { JPY: { committedMinor: 2000000, paidMinor: 0 } },
+    });
+    runStorePaymentTx(prismaMock, tx);
+
+    const result = await createStorePayment({
+      userId: "user-1",
+      storeId: "store-1",
+      // 10000 minor units = a whole 100 JPY, so the payment-level guard waves it through.
+      amount: 10000,
+      paymentDate: PAYMENT_DATE,
+      currencyCode: "JPY",
+      allocations: [
+        { orderId: "order-1", orderItemId: "item-1", amountMinor: 4950 },
+        { orderId: "order-1", orderItemId: "item-2", amountMinor: 5050 },
+      ],
+    });
+
+    expect(result).toMatchObject({ ok: false, error: "AMOUNT_FRACTIONAL_SUBUNITS" });
+    // Refused before the first write (ADR 0022): a `return` after `storePayment.create` would have
+    // committed the payment while reporting a failure.
+    expect(tx.storePayment.create).not.toHaveBeenCalled();
+    expect(tx.paymentAllocation.createMany).not.toHaveBeenCalled();
+  });
+
+  it("names the offending line, so the panel can mark it instead of blaming the whole payment", async () => {
+    const order = makeFixtureOrder({
+      id: "order-1",
+      currencyCode: "JPY",
+      totalCost: 2000000,
+      items: [
+        { id: "item-1", unitPrice: 1000000, quantity: 1 },
+        { id: "item-2", unitPrice: 1000000, quantity: 1 },
+      ],
+    });
+    const tx = makeCreateStorePaymentTx({
+      orders: [order],
+      debtByCurrency: { JPY: { committedMinor: 2000000, paidMinor: 0 } },
+    });
+    runStorePaymentTx(prismaMock, tx);
+
+    const result = await createStorePayment({
+      userId: "user-1",
+      storeId: "store-1",
+      amount: 10000,
+      paymentDate: PAYMENT_DATE,
+      // 5000 + 4950 = 9950, under the payment: the sum guard has nothing to say, so the only thing
+      // that can refuse here is the per-line subunit check, on the SECOND line.
+      currencyCode: "JPY",
+      allocations: [
+        { orderId: "order-1", orderItemId: "item-1", amountMinor: 5000 },
+        { orderId: "order-1", orderItemId: "item-2", amountMinor: 4950 },
+      ],
+    });
+
+    expect(result).toEqual({
+      ok: false,
+      error: "AMOUNT_FRACTIONAL_SUBUNITS",
+      orderId: "order-1",
+      orderItemId: "item-2",
+    });
+  });
+
+  it("accepts whole-major LINES on a zero-decimal currency", async () => {
+    // The guard must not refuse a legal split: 5000 + 5000 are both whole 50 JPY.
+    const order = makeFixtureOrder({
+      id: "order-1",
+      currencyCode: "JPY",
+      totalCost: 2000000,
+      items: [
+        { id: "item-1", unitPrice: 1000000, quantity: 1 },
+        { id: "item-2", unitPrice: 1000000, quantity: 1 },
+      ],
+    });
+    const tx = makeCreateStorePaymentTx({
+      orders: [order],
+      debtByCurrency: { JPY: { committedMinor: 2000000, paidMinor: 0 } },
+      cacheAfterWriteByOrderId: { "order-1": 10000 },
+      snapshotsByOrderId: { "order-1": { totalCost: 2000000, allocatedAmountMinor: 10000 } },
+    });
+    runStorePaymentTx(prismaMock, tx);
+
+    const result = await createStorePayment({
+      userId: "user-1",
+      storeId: "store-1",
+      amount: 10000,
+      paymentDate: PAYMENT_DATE,
+      currencyCode: "JPY",
+      allocations: [
+        { orderId: "order-1", orderItemId: "item-1", amountMinor: 5000 },
+        { orderId: "order-1", orderItemId: "item-2", amountMinor: 5000 },
+      ],
+    });
+
+    expect(result).toMatchObject({ ok: true });
+    expect(tx.storePayment.create).toHaveBeenCalled();
+  });
+
+  it("leaves a two-decimal currency alone: 49.50 + 50.50 is an ordinary split", async () => {
+    const order = makeFixtureOrder({
+      id: "order-1",
+      totalCost: 200000,
+      items: [
+        { id: "item-1", unitPrice: 100000, quantity: 1 },
+        { id: "item-2", unitPrice: 100000, quantity: 1 },
+      ],
+    });
+    const tx = makeCreateStorePaymentTx({
+      orders: [order],
+      debtByCurrency: { USD: { committedMinor: 200000, paidMinor: 0 } },
+      cacheAfterWriteByOrderId: { "order-1": 10000 },
+      snapshotsByOrderId: { "order-1": { totalCost: 200000, allocatedAmountMinor: 10000 } },
+    });
+    runStorePaymentTx(prismaMock, tx);
+
+    const result = await createStorePayment({
+      userId: "user-1",
+      storeId: "store-1",
+      amount: 10000,
+      paymentDate: PAYMENT_DATE,
+      currencyCode: "USD",
+      allocations: [
+        { orderId: "order-1", orderItemId: "item-1", amountMinor: 4950 },
+        { orderId: "order-1", orderItemId: "item-2", amountMinor: 5050 },
+      ],
+    });
+
+    expect(result).toMatchObject({ ok: true });
+  });
 });
 
 describe("deleteStorePayment", () => {
@@ -551,5 +725,138 @@ describe("deleteStorePayment", () => {
     expect(tx.storePayment.delete).toHaveBeenCalledWith({ where: { id: "payment-1" } });
     expect(tx.paymentAllocation.groupBy).not.toHaveBeenCalled();
     expect(tx.order.update).not.toHaveBeenCalled();
+  });
+});
+
+describe("createStorePayment declared coverage", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("marks the declared products in the same transaction as the money", async () => {
+    const order = makeFixtureOrder({
+      id: "order-1",
+      totalCost: 10000,
+      allocatedAmountMinor: 0,
+      items: [{ id: "item-1", unitPrice: null, quantity: 1 }],
+    });
+    const tx = makeCreateStorePaymentTx({
+      orders: [order],
+      debtByCurrency: { USD: { committedMinor: 20000, paidMinor: 0 } },
+      cacheAfterWriteByOrderId: { "order-1": 500 },
+      snapshotsByOrderId: { "order-1": { totalCost: 10000, allocatedAmountMinor: 500 } },
+      declarableItemIds: ["item-1"],
+    });
+    runStorePaymentTx(prismaMock, tx);
+
+    const result = await createStorePayment({
+      userId: "user-1",
+      storeId: "store-1",
+      amount: 500,
+      paymentDate: PAYMENT_DATE,
+      currencyCode: "USD",
+      allocations: [{ orderId: "order-1", amountMinor: 500 }],
+      declarePaidItemIds: ["item-1"],
+    });
+
+    expect(result).toMatchObject({ ok: true });
+    expect(tx.orderItem.updateMany).toHaveBeenCalledWith({
+      where: { id: { in: ["item-1"] }, userId: "user-1" },
+      data: { paidDeclaredAt: expect.any(Date) },
+    });
+  });
+
+  /**
+   * The refusal has to be decided before the FIRST write. A payment row committed beside a
+   * declaration that never landed is the ADR 0022 failure in its most expensive form: the money is
+   * on the store's account and the caller was told it failed.
+   */
+  it("refuses a declared product from another store WITHOUT creating the payment", async () => {
+    const order = makeFixtureOrder({ id: "order-1", totalCost: 10000, allocatedAmountMinor: 0 });
+    const tx = makeCreateStorePaymentTx({
+      orders: [order],
+      debtByCurrency: { USD: { committedMinor: 20000, paidMinor: 0 } },
+      declarableItemIds: [],
+    });
+    runStorePaymentTx(prismaMock, tx);
+
+    const result = await createStorePayment({
+      userId: "user-1",
+      storeId: "store-1",
+      amount: 500,
+      paymentDate: PAYMENT_DATE,
+      currencyCode: "USD",
+      allocations: [{ orderId: "order-1", amountMinor: 500 }],
+      declarePaidItemIds: ["item-from-another-store"],
+    });
+
+    expect(result).toMatchObject({ ok: false, error: "ITEM_ORDER_MISMATCH" });
+    expect(tx.storePayment.create).not.toHaveBeenCalled();
+    expect(tx.paymentAllocation.createMany).not.toHaveBeenCalled();
+    expect(tx.orderItem.updateMany).not.toHaveBeenCalled();
+  });
+
+  /**
+   * The sentinel branch. `findDeclaredItemOutsideStore` already proved `item-1` reachable before the
+   * first write, so `setOrderItemsPaidDeclaredWithin`'s own `orderItem.count` re-check can only fail
+   * here for a concurrent delete happening AFTER the payment row was already written. A plain
+   * `return` at that point would commit the payment while reporting failure (ADR 0022); this proves
+   * `DeclaredItemsRollback` throws instead, and the result carries no created payment.
+   */
+  it("rolls the payment back when the declared item disappears between the pre-check and the write (DeclaredItemsRollback)", async () => {
+    const order = makeFixtureOrder({
+      id: "order-1",
+      totalCost: 10000,
+      allocatedAmountMinor: 0,
+      items: [{ id: "item-1", unitPrice: null, quantity: 1 }],
+    });
+    const tx = makeCreateStorePaymentTx({
+      orders: [order],
+      debtByCurrency: { USD: { committedMinor: 20000, paidMinor: 0 } },
+      cacheAfterWriteByOrderId: { "order-1": 500 },
+      snapshotsByOrderId: { "order-1": { totalCost: 10000, allocatedAmountMinor: 500 } },
+      declarableItemIds: ["item-1"],
+    });
+    // Simulates the concurrent delete: the pre-check's own `findMany` already proved ownership, but
+    // by the time this later `count` re-check runs the item is gone.
+    tx.orderItem.count = vi.fn().mockResolvedValue(0);
+    runStorePaymentTx(prismaMock, tx);
+
+    const result = await createStorePayment({
+      userId: "user-1",
+      storeId: "store-1",
+      amount: 500,
+      paymentDate: PAYMENT_DATE,
+      currencyCode: "USD",
+      allocations: [{ orderId: "order-1", amountMinor: 500 }],
+      declarePaidItemIds: ["item-1"],
+    });
+
+    expect(result).toEqual({ ok: false, error: "ITEM_ORDER_MISMATCH" });
+    // The row WAS written before the sentinel fired — in production the throw is what rolls it back
+    // at the transaction level; this asserts the caller-visible result never shows it as created.
+    expect(tx.storePayment.create).toHaveBeenCalled();
+  });
+
+  it("touches no product when the payment declares none", async () => {
+    const order = makeFixtureOrder({ id: "order-1", totalCost: 10000, allocatedAmountMinor: 0 });
+    const tx = makeCreateStorePaymentTx({
+      orders: [order],
+      debtByCurrency: { USD: { committedMinor: 20000, paidMinor: 0 } },
+      cacheAfterWriteByOrderId: { "order-1": 500 },
+      snapshotsByOrderId: { "order-1": { totalCost: 10000, allocatedAmountMinor: 500 } },
+    });
+    runStorePaymentTx(prismaMock, tx);
+
+    await createStorePayment({
+      userId: "user-1",
+      storeId: "store-1",
+      amount: 500,
+      paymentDate: PAYMENT_DATE,
+      currencyCode: "USD",
+      allocations: [{ orderId: "order-1", amountMinor: 500 }],
+    });
+
+    expect(tx.orderItem.updateMany).not.toHaveBeenCalled();
   });
 });

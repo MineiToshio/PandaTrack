@@ -60,6 +60,8 @@ export type CreateStorePaymentTxOptions = {
   snapshotsByOrderId?: Record<string, { totalCost: number; allocatedAmountMinor: number }>;
   paymentRecordsByOrderId?: Record<string, unknown[]>;
   createdPaymentId?: string;
+  /** Item ids reachable as this collector's AND belonging to an order of this store. */
+  declarableItemIds?: string[];
 };
 
 export type CreateStorePaymentTx = ReturnType<typeof makeCreateStorePaymentTx>;
@@ -75,6 +77,7 @@ export function makeCreateStorePaymentTx(options: CreateStorePaymentTxOptions = 
     snapshotsByOrderId = {},
     paymentRecordsByOrderId = {},
     createdPaymentId = "payment-new",
+    declarableItemIds = [],
   } = options;
 
   const ordersById = new Map(orders.map((order) => [order.id, order]));
@@ -130,6 +133,21 @@ export function makeCreateStorePaymentTx(options: CreateStorePaymentTxOptions = 
       findMany: vi.fn().mockImplementation((args: { where: { orderId: string } }) => {
         return Promise.resolve(paymentRecordsByOrderId[args.where.orderId] ?? []);
       }),
+    },
+    // `declarePaidItemIds` is checked twice on purpose: `findMany` proves store membership before
+    // the first write, `count` re-proves ownership inside the batch mutation.
+    orderItem: {
+      findMany: vi
+        .fn()
+        .mockImplementation((args: { where: { id: { in: string[] } } }) =>
+          Promise.resolve(args.where.id.in.filter((id) => declarableItemIds.includes(id)).map((id) => ({ id }))),
+        ),
+      count: vi
+        .fn()
+        .mockImplementation((args: { where: { id: { in: string[] } } }) =>
+          Promise.resolve(args.where.id.in.filter((id) => declarableItemIds.includes(id)).length),
+        ),
+      updateMany: vi.fn().mockResolvedValue({ count: 0 }),
     },
   };
 }

@@ -64,15 +64,6 @@
   },
   "edit": {
     "backToDetail": "Back to store",
-    "cancelCta": "Cancel",
-    "identityEyebrow": "Step 1",
-    "identityTitle": "Editable profile",
-    "catalogEyebrow": "Step 2",
-    "catalogTitle": "Catalog and commerce",
-    "contactEyebrow": "Step 3",
-    "addressEyebrow": "Step 4",
-    "commentEyebrow": "Request details",
-    "commentTitle": "Why are you suggesting this change?",
     "commentLabel": "Change request context (optional)",
     "commentHelper": "Add concise context that helps moderators understand why this update is needed.",
     "immutableFieldsHelper": "Seller type ({sellerType}) and country ({country}) cannot be changed from this flow.",
@@ -83,14 +74,12 @@
     },
     "direct": {
       "title": "Edit {storeName}",
-      "description": "You can update this pending store directly because you are allowed to manage it.",
       "shortLabel": "Edit store",
       "submitCta": "Save changes",
       "submitting": "Saving changes…"
     },
     "changeRequest": {
       "title": "Suggest changes for {storeName}",
-      "description": "Your edits will be saved as a change request for moderation instead of updating the public profile immediately.",
       "shortLabel": "Suggest changes",
       "submitCta": "Submit change request",
       "submitting": "Saving request…"
@@ -105,11 +94,6 @@
     "cancel": "Cancel"
   },
   "success": {
-    "title": "Store created",
-    "approvedMessage": "Your store is published and visible in the listing.",
-    "pendingTitle": "Store under review",
-    "pendingMessage": "Your store is visible in search and listings, and is pending moderation.",
-    "viewStores": "View stores",
     "redirectingToStore": "Store created. Redirecting to the store profile..."
   },
   "logo": {
@@ -126,54 +110,24 @@
     "editorCancel": "Cancel",
     "editorConfirm": "Use this crop",
     "acceptedFormats": "PNG, JPG, JPEG, or WebP",
-    "maxSize": "Max {size} MB",
-    "detailAlt": "{storeName} logo"
+    "maxSize": "Max {size} MB"
   },
   "detail": {
     "pendingDisclaimerTitle": "Store under review",
     "pendingDisclaimerMessage": "Someone from the community created this store and the team is reviewing it. You can already use it as normal; it just won't appear in search engines until it's approved.",
-    "reportNoticeTitle": "This store has reports pending review",
-    "reportNoticeMessage": "People in the community reported that the information published here may not be right, and the team has not reviewed it yet. A report is not a rating of the store: reviews are for that. It stays visible; check its details and decide for yourself.",
     "governanceAlertTitle": "Reports and suggestions",
     "governanceAlertMessage": "This store has public reports or change requests. Open the summary to review the community input.",
     "inactiveWarningTitle": "Store no longer active",
     "inactiveWarningMessage": "This store is no longer operating. The information is kept for reference only.",
-    "noDescription": "This store does not have a description yet.",
-    "averageRatingLabel": "Average rating",
-    "reviewCountLabel": "Reviews",
-    "countryLabel": "Country",
-    "productTypesLabel": "Product types",
     "noProductTypes": "No product types have been set.",
-    "presenceLabel": "Sales channels",
     "quickSummaryLabel": "Quick summary",
-    "importCountriesLabel": "Import countries",
-    "contactChannelsCountLabel": "Contact channels",
-    "addressesCountLabel": "Addresses",
-    "businessSignalsTitle": "Shopping options",
-    "storeTypeLabel": "Seller type",
-    "statusLabel": "Status",
-    "statusPending": "Pending review",
-    "statusApproved": "Approved",
-    "createdAtLabel": "Profile created",
     "noImportCountries": "No import countries were provided.",
-    "noContactChannels": "No public contact channels available.",
-    "noAddresses": "No public addresses available.",
-    "notAvailableForStoreType": "This information does not apply to this seller type.",
-    "receivesOrdersUnknown": "Overseas buying: not specified",
-    "hasStockUnknown": "In-stock sales: not specified",
     "reviews": {
-      "title": "Community reviews",
-      "description": "Public reviews help other collectors judge how reliable this store feels over time.",
-      "showMoreCta": "View {count, plural, one {# more review} other {# more reviews}}",
-      "empty": "This store does not have public reviews yet.",
-      "noAverage": "No rating yet",
       "noComment": "No public comment was added.",
       "anonymousAuthor": "Collector",
       "yourReviewBadge": "Your review",
       "youLabel": "You",
-      "ratingBadge": "{rating}/5",
       "form": {
-        "eyebrow": "Your review",
         "title": "Share your public review",
         "description": "Your rating becomes part of the store's public trust score. You can edit it later.",
         "lastUpdated": "Last updated: {date}",
@@ -181,14 +135,10 @@
         "ratingHelper": "Tap the left half of a star for .5 and the right half for the full star.",
         "ratingPlaceholder": "Select a rating",
         "ratingSelected": "{rating} out of 5",
-        "ratingOption": "{rating} out of 5",
         "commentLabel": "Public comment (optional)",
         "commentPlaceholder": "Share context from your experience with this store that may help other collectors.",
-        "openCreateCta": "Write a review",
         "editVisibleCta": "Edit",
-        "openEditCta": "Edit your review",
         "deleteCta": "Delete review",
-        "deleteConfirm": "Delete your review? This action cannot be undone.",
         "deleteConfirmModalTitle": "Delete your review?",
         "deleteConfirmModalDescription": "This action cannot be undone. Your review will be permanently removed and will no longer appear on the store profile.",
         "deleteConfirmCta": "Delete",
@@ -217,12 +167,7 @@
       "lastUpdated": "Last updated: {date}",
       "form": {
         "contentPlaceholder": "Add a reminder or private context about this store.",
-        "submitCta": "Save note",
-        "updateCta": "Update note",
-        "submitDisabledEmpty": "Add note text to enable saving.",
-        "submitDisabledUnchanged": "Edit the note to enable saving.",
         "submitting": "Saving note…",
-        "success": "Your private note was saved.",
         "errors": {
           "unauthorized": "You must sign in to save a private note.",
           "validation_failed": "Please review the note and try again.",
@@ -232,7 +177,9 @@
           "saveNoteFailed": "Could not save the note. Please try again."
         }
       }
-    }
+    },
+    "reportNoticeMessage": "People in the community reported that the information published here may not be right, and the team has not reviewed it yet. A report is not a rating of the store: reviews are for that. It stays visible; check its details and decide for yourself.",
+    "reportNoticeTitle": "This store has reports pending review"
   },
   "moderation": {
     "panelTitle": "Moderation",
@@ -290,9 +237,6 @@
       "requestedBy": "Requested by @{username}",
       "adminOnlyCaption": "Requester and details visible to administrators only.",
       "noComment": "No additional comment.",
-      "commentLabel": "Comment",
-      "currentLabel": "Current",
-      "proposedLabel": "Proposed",
       "alreadyAppliedTag": "Already applied",
       "emptyValue": "Not set",
       "boolValues": {
@@ -326,30 +270,9 @@
       "title": "Reports and suggestions",
       "description": "Here you can review the reports and suggestions the community has shared to improve this store profile.",
       "reportSectionTitle": "Community reports",
-      "reportSectionDescription": "Review your own report first, then the aggregated community signal.",
-      "yourReportTitle": "Your community report",
-      "yourReportSubmitted": "Submitted on {date}",
-      "yourReportEmpty": "You do not have an open report for this store yet.",
-      "reasonLabel": "Selected reason",
-      "descriptionLabel": "Description",
-      "noAdditionalDescription": "You did not add extra context.",
-      "communityReportTitle": "Community snapshot",
-      "reportSummaryPrefix": "This store has been reported",
-      "reportSummaryTimes": "{count, plural, one {time by the community.} other {times by the community.}}",
-      "reportReasonsLabel": "Reasons cited",
-      "reportReasonChipAriaLabel": "{label}: {count} {count, plural, one {report} other {reports}}",
       "changeRequestSectionTitle": "Change requests",
-      "changeRequestSectionDescription": "Your pending edits stay separated from the broader moderation picture.",
-      "yourPendingChangeRequestTitle": "Your pending change request",
       "yourPendingChangeRequestStatus": "Pending review",
-      "yourPendingChangeRequestUpdated": "Last updated: {date}",
-      "yourPendingChangeRequestEmpty": "You do not have any pending change request for this store.",
-      "changedFieldsLabel": "Requested fields",
-      "commentLabel": "Reason or comment",
-      "noComment": "You did not add an extra comment.",
       "yourPendingChangeRequestEditCta": "Continue editing",
-      "communityChangeRequestTitle": "Community change summary",
-      "communityChangeRequestUpdated": "Updated on {date}",
       "yourReportEyebrow": "Your report",
       "yourChangeRequestEyebrow": "Your request",
       "communityPrivacyNote": "Details from other reports aren't publicly visible.",
@@ -358,11 +281,6 @@
       "pendingCountChip": "{count, plural, one {# pending} other {# pending}}",
       "empty": "There are no reports or suggestions available for this store yet.",
       "noChangedFields": "No field changes available.",
-      "changeRequestStatuses": {
-        "PENDING": "Pending",
-        "APPROVED": "Approved",
-        "REJECTED": "Rejected"
-      },
       "fieldLabels": {
         "name": "Store name",
         "description": "Description",
@@ -384,11 +302,9 @@
       "title": "Report this store",
       "description": "You can keep one open report per store. Reopening this form updates your active report.",
       "reasonLabel": "Reason",
-      "reasonPlaceholder": "Select a reason",
       "detailsLabel": "Additional context (optional)",
       "detailsHelper": "Keep it factual. Raw details stay hidden from public visitors.",
       "submitCta": "Save report",
-      "submitting": "Saving report…",
       "cancelCta": "Cancel",
       "success": "Your report was saved.",
       "reasonOptions": {
@@ -417,7 +333,6 @@
       "reasonLabel": "Why should we add it? (optional)",
       "reasonHelper": "This context helps moderators understand the need.",
       "submitCta": "Send request",
-      "submitting": "Sending request…",
       "cancelCta": "Cancel",
       "success": "Your product type request was sent.",
       "errors": {
@@ -506,20 +421,13 @@
       "applyWithCount": "Apply ({count} results)"
     },
     "detail": {
-      "back": "Stores",
       "reviewsTitle": "Reviews",
       "categoriesTitle": "Categories and imports",
       "channelsTitle": "Contact channels",
       "addressesTitle": "Addresses",
       "paymentsTitle": "Payments to this store",
-      "reviewsAll": "See all {count} reviews",
       "writeReviewPlaceholder": "What do you think of this store?",
       "publishReview": "Publish review",
-      "privateNotePlaceholder": "Your notes about this store.",
-      "noteSaved": "Saved {time} ago",
-      "reportButton": "Report store",
-      "pendingDisclaimer": "Under review. Visible in the app; not indexed in search engines.",
-      "reportNotice": "It has reports pending review. It stays visible; check its details and decide for yourself.",
       "reportedChip": "Reported",
       "privateBadge": "Private, only you can see this",
       "presence": {
@@ -540,28 +448,46 @@
         "resumen": "Your orders here",
         "acciones": "Actions",
         "notaPrivada": "Your private note",
-        "notaPrivadaHelper": "Only you can see this.",
         "ordersTotalLabel": "Orders logged",
         "ordersActiveLabel": "Active orders",
         "totalSpentLabel": "Total billed",
-        "debtLabel": "Outstanding debt",
+        "cancelledLabel": "Cancelled",
         "debtCredit": "In your favor {amount}",
+        "paymentProgress": {
+          "remaining": "Remaining {amount}",
+          "settled": "All settled",
+          "paidOfCommitted": "{paid} paid of {committed} on active orders",
+          "noActiveOrders": "No active orders",
+          "outsideActiveOrders": "Outside active orders {amount}",
+          "onAccount": "On account {amount}",
+          "lostOnCancelled": "Lost on cancelled {amount}",
+          "percent": "{pct}%",
+          "barLabel": "Active order payment progress in {currency}",
+          "barValueText": "{paid} paid of {committed} on active orders, {pct} percent"
+        },
         "viewLinkedOrders": "View linked orders",
-        "viewOrdersHere": "View my orders at this store",
         "noOrdersYet": "No orders at this store yet."
       },
       "actions": {
         "anotarPedido": "Log order here",
         "registerPayment": "Log payment",
-        "registerPaymentHint": "No outstanding balance with this store",
-        "suggestChanges": "Suggest changes",
-        "editStore": "Edit store",
-        "reportStore": "Report store"
+        "registerPaymentHint": "No outstanding balance with this store"
       },
       "payments": {
         "unassignedBadge": "Unassigned {amount}",
         "noteLabel": "Note: {note}",
-        "moreCount": "and {count} more",
+        "seeAll": "See all {count} payments",
+        "seeAllError": "Could not load the remaining payments.",
+        "seeAllRetry": "Retry",
+        "loadedStatus": "{shown} of {total} payments",
+        "coverageWholeOrder": "Whole order",
+        "coverageSettled": "Settled",
+        "coverageManyProducts": "{count, plural, one {# product} other {# products}}",
+        "coverageManyOrders": "{count, plural, one {# order} other {# orders}}",
+        "cancelledMarker": "Lost",
+        "breakdownHeading": "Assigned to",
+        "breakdownUnassigned": "Unassigned",
+        "breakdownToggleAria": "See what the {amount} payment from {date} was assigned to",
         "deleteAria": "Delete payment of {amount} from {date}",
         "deleteModalTitle": "Delete this payment?",
         "deleteModalDescription": "This will delete the {amount} payment from {date}.",
@@ -580,21 +506,6 @@
         "viewAll": "See all {count, plural, one {# review} other {# reviews}}",
         "beTheFirst": "Be the first to review this store."
       }
-    },
-    "report": {
-      "title": "Report store",
-      "subtitle": "Why do you want to report {name}?",
-      "reasons": {
-        "INCORRECT_INFO": "Incorrect info",
-        "SPAM": "Possible scam or fraud",
-        "INAPPROPRIATE": "Inappropriate content",
-        "DUPLICATE": "Duplicate store",
-        "DOES_NOT_EXIST": "Does not exist"
-      },
-      "contextLabel": "Additional context",
-      "contextOptional": "(optional)",
-      "submit": "Send report",
-      "cancel": "Cancel"
     },
     "create": {
       "step1": {
@@ -622,7 +533,6 @@
         "eyebrow": "STEP 3 · CATEGORIES",
         "shortLabel": "Categories",
         "title": "What do they sell?",
-        "helper": "What it sells and where it exists.",
         "productTypesHelper": "At least one category.",
         "presenceLabel": "Presence",
         "presenceHelper": "Where the store operates. Contact channels go in the next step.",
@@ -663,16 +573,6 @@
       "back": "Back",
       "submit": "Create store",
       "summaryEyebrow": "Summary",
-      "requestCategory": "Request new category",
-      "categoryRequest": {
-        "title": "Request new category",
-        "helper": "Can't find the category you're looking for? Suggest a name and explain why it should be included.",
-        "nameLabel": "Category name",
-        "namePlaceholder": "E.g. Nendoroids, Trading Cards, Gashapon…",
-        "reasonLabel": "Reason",
-        "reasonPlaceholder": "Why should this category be added? Describe what types of products it covers and why it's different from existing ones.",
-        "submit": "Send request"
-      },
       "channels": {
         "addButton": "Add",
         "helper": "Choose the channel type and paste the value (URL, handle, email or number).",
@@ -698,14 +598,7 @@
         "eyebrow": "Similar stores found",
         "title": "Is it any of these?",
         "viewStore": "View store",
-        "createAnyway": "Create anyway",
         "cancel": "Cancel"
-      },
-      "logo": {
-        "title": "Upload logo",
-        "reframe": "Reframe",
-        "remove": "Remove",
-        "save": "Save logo"
       },
       "addresses": {
         "empty": "No addresses added yet.",
@@ -713,15 +606,8 @@
         "helper": "City, street address, and optional reference."
       }
     },
-    "toast": {
-      "created": "Store created, pending review",
-      "createdApproved": "Store created"
-    },
     "edit": {
       "title": "Edit store"
-    },
-    "validationErrors": {
-      "isPrivateOnlyPerson": "Private profile is only valid for Person stores."
     }
   },
   "intakeResolution": {

@@ -13,7 +13,7 @@ import {
   getAssignableOrdersByStore,
   type AssignableOrder,
 } from "@/lib/data/orders/storePaymentAssignableOrdersQueries";
-import type { StorePaymentListRow } from "@/lib/data/orders/storePaymentQueries";
+import { getStorePaymentsForStore, type StorePaymentListRow } from "@/lib/data/orders/storePaymentQueries";
 import { storePaymentCreateSchema, storePaymentDeleteSchema } from "@/lib/orders/orderValidation";
 import { revalidateCollectionSurfaces } from "@/lib/cache/revalidateCollectionSurfaces";
 
@@ -33,6 +33,34 @@ export async function getStorePaymentSheetOrdersAction(storeId: string): Promise
   return { ok: true, orders };
 }
 
+export type ListAllStorePaymentsResult =
+  { ok: true; payments: StorePaymentListRow[] } | { ok: false; error: "unauthorized" | "server_error" };
+
+/**
+ * The store's payments with no row cap, for the "Ver los N pagos" control of the store detail card.
+ *
+ * A read, so nothing is revalidated. The cap stays on the page's own render because most stores
+ * have a single payment and the heaviest one in the collection has 102 (~43 KB with its allocation
+ * lines): worth fetching on an explicit click, not worth carrying on every visit. The store is
+ * scoped by the session's own `userId`, never one supplied by the caller.
+ */
+export async function listAllStorePaymentsAction(storeId: string): Promise<ListAllStorePaymentsResult> {
+  const session = await getSession();
+  if (!session?.user?.id) return { ok: false, error: "unauthorized" };
+
+  try {
+    const result = await getStorePaymentsForStore(session.user.id, storeId, { limit: null });
+    return { ok: true, payments: result.payments };
+  } catch (error) {
+    Sentry.withScope((scope) => {
+      scope.setTag("feature", "store_payment");
+      scope.setContext("storePayment", { storeId });
+      Sentry.captureException(error);
+    });
+    return { ok: false, error: "server_error" };
+  }
+}
+
 export type CreateStorePaymentActionInput = {
   storeId: string;
   amount: number;
@@ -40,6 +68,8 @@ export type CreateStorePaymentActionInput = {
   currencyCode?: string;
   note?: string | null;
   allocations?: { orderId: string; orderItemId?: string; amountMinor: number; settlesTarget?: boolean }[];
+  /** Products this payment declares covered, with no amount attached. */
+  declarePaidItemIds?: string[];
 };
 
 export type CreateStorePaymentActionResult =
@@ -52,13 +82,23 @@ export type CreateStorePaymentActionResult =
           insert without a second query. */
       payment: StorePaymentListRow;
     }
-  | { ok: false; error: CreateStorePaymentError | "unauthorized" | "validation" | "server_error" };
+  | {
+      ok: false;
+      error: CreateStorePaymentError | "unauthorized" | "validation" | "server_error";
+      /** The order the refusal names, when the mutation could attribute it to one. */
+      orderId?: string;
+      /** The product the refusal names, when the mutation could attribute it to one. */
+      orderItemId?: string;
+    };
 
 /**
- * Records a payment to a store, with its optional declaration of what it covers. Called
- * fire-and-forget from the sheet's Optimistic Confirmation submit — the sheet has already closed
- * by the time this resolves, so every failure surfaces through the caller's toast, not an inline
- * form error.
+ * Records a payment to a store, with its optional declaration of what it covers.
+ *
+ * A payment with no declarations is dispatched fire-and-forget (the sheet has already closed by the
+ * time this resolves, so its failure surfaces through the caller's toast). A payment that carries
+ * declarations is awaited by the still-open sheet, which is why the refusal keeps the mutation's
+ * `orderId` / `orderItemId`: those are what let the sheet mark the offending line instead of
+ * discarding a draft the collector typed by hand.
  */
 export async function createStorePaymentAction(
   input: CreateStorePaymentActionInput,
@@ -72,7 +112,9 @@ export async function createStorePaymentAction(
 
   try {
     const result = await createStorePayment({ userId, ...parsed.data });
-    if (!result.ok) return { ok: false, error: result.error };
+    if (!result.ok) {
+      return { ok: false, error: result.error, orderId: result.orderId, orderItemId: result.orderItemId };
+    }
 
     revalidateCollectionSurfaces();
 
@@ -88,6 +130,7 @@ export async function createStorePaymentAction(
         has_item_allocations: hasItemAllocations,
         // "On account": money handed over with nothing declared against a specific order yet.
         is_on_account: allocationsCount === 0,
+        declared_paid_items_count: parsed.data.declarePaidItemIds?.length ?? 0,
       },
     });
     await posthog.shutdown();

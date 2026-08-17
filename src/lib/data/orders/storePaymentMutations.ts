@@ -1,13 +1,19 @@
 import { OrderStatus, type Prisma } from "../../../../generated/prisma/client";
 import { isWholeMajorAmount, isZeroDecimalCurrency } from "@/lib/currency";
 import { MAX_PAYMENT_AMOUNT } from "@/lib/orders/orderValidation";
+import { setOrderItemsPaidDeclaredWithin } from "./orderItemMutations";
 import {
   listOrderPaymentRecords,
   recalculateOrderAllocationCache,
   type OrderPaymentRecord,
 } from "./orderPaymentAllocations";
 import { runSerializableTransaction } from "./serializableTransaction";
-import { getStoreDebtMinor, resolveInheritedStoreCurrency, type StorePaymentListRow } from "./storePaymentQueries";
+import {
+  getStoreDebtMinor,
+  isActiveOrderStatus,
+  resolveInheritedStoreCurrency,
+  type StorePaymentListRow,
+} from "./storePaymentQueries";
 
 /**
  * Store-level payments.
@@ -46,6 +52,12 @@ export type CreateStorePaymentInput = {
   exchangeRate?: number | null;
   exchangeRateBaseCode?: string | null;
   allocations?: StorePaymentAllocationInput[];
+  /**
+   * Products the collector declares covered by this payment, with no amount attached. Orthogonal to
+   * `allocations`: these ids move no money and are not capped by anything. They must belong to the
+   * caller and to an order of this same store, which is checked before the first write.
+   */
+  declarePaidItemIds?: string[];
 };
 
 export type CreateStorePaymentError =
@@ -64,8 +76,13 @@ export type CreateStorePaymentError =
   | "STORE_MISMATCH"
   | "ORDER_CANCELLED"
   | "CURRENCY_MISMATCH"
-  /** Negative, fractional, over the ceiling, or zero without a `settlesTarget` declaration. */
+  /** Negative, fractional, zero, or over the ceiling. */
   | "ALLOCATION_AMOUNT_INVALID"
+  /**
+   * `settlesTarget` is deprecated and no longer accepted on write. An amount-less declaration is
+   * `OrderItem.paidDeclaredAt`, reachable through `declarePaidItemIds`.
+   */
+  | "SETTLES_TARGET_UNSUPPORTED"
   /** The order would end up with more money declared against it than it costs. */
   | "EXCEEDS_BALANCE"
   | "ITEM_ORDER_MISMATCH"
@@ -103,19 +120,40 @@ export type NormalizedAllocation = {
   settlesTarget: boolean;
 };
 
+/**
+ * A validated allocation plus the two labels the store detail's payments card renders it with.
+ *
+ * They are resolved by `validateAllocations`, which already reads every targeted order and product,
+ * and therefore BEFORE the first write. That ordering is the point (ADR 0022): the canonical
+ * `StorePaymentListRow` this mutation returns is then assembled purely from memory after the write,
+ * so there is no post-write read that could fail and tempt a `return` that would commit a refusal.
+ */
+export type NormalizedAllocationWithLabels = NormalizedAllocation & {
+  orderHumanReadableId: string;
+  orderItemName: string | null;
+  /**
+   * Whether the targeted order is still active. Carried out of validation for the same reason as
+   * the labels: the row this mutation returns has to tell the store detail whether this line moves
+   * the active-orders progress bar, and validation is the only place that has already read the
+   * order's status.
+   */
+  orderActive: boolean;
+};
+
 type AllocationValidationResult =
-  | { ok: true; allocations: NormalizedAllocation[]; affectedOrderIds: string[] }
+  | { ok: true; allocations: NormalizedAllocationWithLabels[]; affectedOrderIds: string[] }
   | { ok: false; error: CreateStorePaymentError; orderId?: string; orderItemId?: string };
 
 type OrderForAllocation = {
   id: string;
+  humanReadableId: string;
   storeId: string;
   currencyCode: string;
   status: OrderStatus;
   orderDate: Date;
   totalCost: number;
   allocatedAmountMinor: number;
-  items: Array<{ id: string; unitPrice: number | null; quantity: number }>;
+  items: Array<{ id: string; name: string; unitPrice: number | null; quantity: number }>;
 };
 
 /**
@@ -139,6 +177,40 @@ function isValidMinorAmount(value: number): boolean {
   return Number.isInteger(value) && value >= 0 && value <= MAX_PAYMENT_AMOUNT;
 }
 
+/**
+ * Sentinel for the one refusal `createStorePayment` cannot hoist: the declared products were proven
+ * to belong to this store before the first write, so a later mismatch can only be a concurrent
+ * delete, and by then the payment row exists. Returning would commit it (ADR 0022).
+ */
+class DeclaredItemsRollback extends Error {
+  constructor() {
+    super("DECLARED_ITEMS_GONE");
+    this.name = "DeclaredItemsRollback";
+  }
+}
+
+/**
+ * The first declared product id that is not this collector's, or whose order belongs to another
+ * store. `null` when every id checks out (and when there are none). Read-only, so it can run as the
+ * last refusal before the first write.
+ */
+async function findDeclaredItemOutsideStore(
+  tx: Prisma.TransactionClient,
+  itemIds: string[],
+  userId: string,
+  storeId: string,
+): Promise<string | null> {
+  const uniqueIds = [...new Set(itemIds)];
+  if (uniqueIds.length === 0) return null;
+
+  const reachable = await tx.orderItem.findMany({
+    where: { id: { in: uniqueIds }, userId, order: { storeId } },
+    select: { id: true },
+  });
+  const reachableIds = new Set(reachable.map((item) => item.id));
+  return uniqueIds.find((id) => !reachableIds.has(id)) ?? null;
+}
+
 async function validateAllocations(
   tx: Prisma.TransactionClient,
   params: {
@@ -159,13 +231,14 @@ async function validateAllocations(
     where: { id: { in: orderIds }, userId },
     select: {
       id: true,
+      humanReadableId: true,
       storeId: true,
       currencyCode: true,
       status: true,
       orderDate: true,
       totalCost: true,
       allocatedAmountMinor: true,
-      items: { select: { id: true, unitPrice: true, quantity: true } },
+      items: { select: { id: true, name: true, unitPrice: true, quantity: true } },
     },
   });
   const orderById = new Map(orders.map((order) => [order.id, order]));
@@ -191,7 +264,7 @@ async function validateAllocations(
   // checked against their combined effect, not each on its own.
   const pendingByOrderId = new Map<string, number>();
   const pendingByItemId = new Map<string, number>();
-  const normalized: NormalizedAllocation[] = [];
+  const normalized: NormalizedAllocationWithLabels[] = [];
 
   for (const allocation of allocations) {
     const order = orderById.get(allocation.orderId);
@@ -201,14 +274,31 @@ async function validateAllocations(
     if (order.currencyCode !== currencyCode) return { ok: false, error: "CURRENCY_MISMATCH", orderId: order.id };
     if (paymentDate < order.orderDate) return { ok: false, error: "DATE_BEFORE_ORDER", orderId: order.id };
 
-    const settlesTarget = allocation.settlesTarget ?? false;
+    // Deliberately BEFORE the amount checks: a `{ amountMinor: 0, settlesTarget: true }` payload
+    // would otherwise slip past a guard placed after them and write the very row this refusal
+    // exists to stop.
+    if (allocation.settlesTarget) {
+      return { ok: false, error: "SETTLES_TARGET_UNSUPPORTED", orderId: order.id };
+    }
     if (!isValidMinorAmount(allocation.amountMinor)) {
       return { ok: false, error: "ALLOCATION_AMOUNT_INVALID", orderId: order.id };
     }
-    // A zero line says nothing on its own; it is only meaningful as the "covered in full, amount
-    // unknown" declaration `settlesTarget` exists for.
-    if (allocation.amountMinor === 0 && !settlesTarget) {
+    // A zero line says nothing at all now that `settlesTarget` is refused on write: it is money
+    // declared as covering something, and zero money covers nothing.
+    if (allocation.amountMinor === 0) {
       return { ok: false, error: "ALLOCATION_AMOUNT_INVALID", orderId: order.id };
+    }
+    // Per LINE, not only per payment. The payment-level guard in `createStorePayment` cannot see
+    // this: a whole JPY 10000 splits perfectly well into 4950 + 5050, two amounts that have no
+    // representation in a currency with no subunit and would render back as something else. Refused
+    // here, with every other allocation check, so it lands before the first write (ADR 0022).
+    if (isZeroDecimalCurrency(currencyCode) && !isWholeMajorAmount(allocation.amountMinor)) {
+      return {
+        ok: false,
+        error: "AMOUNT_FRACTIONAL_SUBUNITS",
+        orderId: order.id,
+        orderItemId: allocation.orderItemId ?? undefined,
+      };
     }
 
     const pendingForOrder = (pendingByOrderId.get(order.id) ?? 0) + allocation.amountMinor;
@@ -218,9 +308,11 @@ async function validateAllocations(
     pendingByOrderId.set(order.id, pendingForOrder);
 
     const orderItemId = allocation.orderItemId ?? null;
+    let orderItemName: string | null = null;
     if (orderItemId !== null) {
       const item = order.items.find((candidate) => candidate.id === orderItemId);
       if (!item) return { ok: false, error: "ITEM_ORDER_MISMATCH", orderId: order.id, orderItemId };
+      orderItemName = item.name;
 
       const base = resolveItemAllocationBase(item, order);
       if (base !== null) {
@@ -233,7 +325,16 @@ async function validateAllocations(
       }
     }
 
-    normalized.push({ orderId: order.id, orderItemId, amountMinor: allocation.amountMinor, settlesTarget });
+    normalized.push({
+      orderId: order.id,
+      orderItemId,
+      amountMinor: allocation.amountMinor,
+      // Flatly false: the only payload that could have made it true is refused above.
+      settlesTarget: false,
+      orderHumanReadableId: order.humanReadableId,
+      orderItemName,
+      orderActive: isActiveOrderStatus(order.status),
+    });
   }
 
   return { ok: true, allocations: normalized, affectedOrderIds: [...pendingByOrderId.keys()] };
@@ -243,6 +344,13 @@ async function validateAllocations(
  * Writes a payment and its declarations. Pure persistence: the caller has already decided that
  * every value here is legal, which is what lets this run after another mutation's own writes
  * without introducing a refusal past the point of no return.
+ *
+ * DECLARED GAP, not an oversight: this is exported and `orderMutations.ts` calls it directly for an
+ * order's initial payment, skipping `validateAllocations` entirely — including its per-line
+ * `AMOUNT_FRACTIONAL_SUBUNITS` check. Harmless today because that path hand-builds exactly one
+ * allocation whose `amountMinor` equals the payment's own amount, which `createStorePayment`'s
+ * payment-level guard already validated. The day that path emits several lines, the per-line check
+ * has to move up here.
  */
 export async function writeStorePaymentWithAllocations(
   tx: Prisma.TransactionClient,
@@ -324,7 +432,7 @@ async function loadAffectedOrderSnapshots(
  * wrong store or the wrong amount, and a silent credit is far harder to notice than a refusal.
  */
 export async function createStorePayment(input: CreateStorePaymentInput): Promise<CreateStorePaymentResult> {
-  const { userId, storeId, amount, paymentDate, note = null, allocations = [] } = input;
+  const { userId, storeId, amount, paymentDate, note = null, allocations = [], declarePaidItemIds = [] } = input;
 
   return runSerializableTransaction<CreateStorePaymentResult>(async (tx) => {
     if (!Number.isInteger(amount) || amount <= 0 || amount > MAX_PAYMENT_AMOUNT) {
@@ -363,6 +471,14 @@ export async function createStorePayment(input: CreateStorePaymentInput): Promis
       return validated;
     }
 
+    // Last refusal before the first write (ADR 0022): every declared product must belong to this
+    // collector AND to an order of this same store. Checking it here, rather than trusting
+    // `setOrderItemsPaidDeclaredWithin` to refuse later, is what keeps the write below unconditional.
+    const foreignDeclaredItemId = await findDeclaredItemOutsideStore(tx, declarePaidItemIds, userId, storeId);
+    if (foreignDeclaredItemId) {
+      return { ok: false, error: "ITEM_ORDER_MISMATCH", orderItemId: foreignDeclaredItemId };
+    }
+
     const written = await writeStorePaymentWithAllocations(tx, {
       userId,
       storeId,
@@ -374,6 +490,14 @@ export async function createStorePayment(input: CreateStorePaymentInput): Promis
       exchangeRateBaseCode: input.exchangeRateBaseCode,
       allocations: validated.allocations,
     });
+
+    // Ownership was proven above, so this cannot refuse for any reason but a concurrent delete. If
+    // it somehow does, the sentinel rolls the payment back rather than committing it beside a
+    // declaration that never landed: a plain `return` here would commit the payment (ADR 0022).
+    const declared = await setOrderItemsPaidDeclaredWithin(tx, declarePaidItemIds, userId, true);
+    if (!declared.ok) {
+      throw new DeclaredItemsRollback();
+    }
 
     const affectedOrders = await loadAffectedOrderSnapshots(tx, written.affectedOrderIds, userId);
     const allocatedTotal = validated.allocations.reduce((sum, allocation) => sum + allocation.amountMinor, 0);
@@ -390,9 +514,31 @@ export async function createStorePayment(input: CreateStorePaymentInput): Promis
         paymentDate,
         note,
         allocatedTotal,
-        allocationsCount: validated.allocations.length,
+        // Distinct ORDERS, exactly as `getStorePaymentsForStore` counts them: one order can carry
+        // several lines of the same payment, and the figure feeds a modal that names pedidos.
+        claimingOrdersCount: new Set(validated.allocations.map((allocation) => allocation.orderId)).size,
+        // Assembled from what validation already read, not from a fresh query: see the note on
+        // `NormalizedAllocation`'s display fields. `orderCancelled` is flatly false because
+        // validation refuses `ORDER_CANCELLED` before anything is written.
+        allocations: validated.allocations.map((allocation) => ({
+          orderId: allocation.orderId,
+          orderHumanReadableId: allocation.orderHumanReadableId,
+          orderCancelled: false,
+          orderActive: allocation.orderActive,
+          orderItemId: allocation.orderItemId,
+          orderItemName: allocation.orderItemName,
+          amountMinor: allocation.amountMinor,
+          settlesTarget: allocation.settlesTarget,
+        })),
       },
     };
+  }).catch((error: unknown) => {
+    // Mapped back to a code the caller already handles, with no widened result type. Anything else
+    // is a genuine failure and must keep propagating.
+    if (error instanceof DeclaredItemsRollback) {
+      return { ok: false, error: "ITEM_ORDER_MISMATCH" } satisfies CreateStorePaymentResult;
+    }
+    throw error;
   });
 }
 

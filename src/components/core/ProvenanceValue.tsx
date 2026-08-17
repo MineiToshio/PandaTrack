@@ -1,13 +1,21 @@
-import { CircleHelp, Sparkles } from "lucide-react";
+import { Calculator, CircleHelp, Sparkles } from "lucide-react";
 import type { ReactNode } from "react";
 import Chip from "@/components/core/Chip";
 import { cn } from "@/lib/styles";
 
 /**
  * How a value reached the screen. `read` was genuinely present in the source, `assumed` was filled
- * in by convention, and `missing` was never found at all.
+ * in by convention, `derived` was computed from other fields the collector can already see (a total
+ * summed from priced products, never from the model), and `missing` was never found at all.
  */
-export type ProvenanceState = "read" | "assumed" | "missing";
+export type ProvenanceState = "read" | "assumed" | "derived" | "missing";
+
+/** Marker icon for every state but `read`, which renders no marker at all. */
+const PROVENANCE_MARKER_ICON: Record<Exclude<ProvenanceState, "read">, ReactNode> = {
+  assumed: <Sparkles size={12} />,
+  derived: <Calculator size={12} />,
+  missing: <CircleHelp size={12} />,
+};
 
 /** The provenance wrapper shape this component renders. Structurally matches an extraction `Field<T>`. */
 export type ProvenanceField<T> = { value: T | null; source: "read" | "assumed" | null };
@@ -30,6 +38,14 @@ export type ProvenanceValueProps = {
   control: (props: ProvenanceControlProps) => ReactNode;
   /** Optional supporting line under the value (for example the quoted source phrase). */
   hint?: ReactNode;
+  /**
+   * Marks the field invalid: turns the label destructive to match the control's own error border.
+   * The message itself is not this component's job. The caller passes it straight to `control`
+   * (usually `Input`'s own `error` string, which already renders the message with `role="alert"`
+   * and sets `aria-invalid`), and omits `hint` while an error is present so the two never show at
+   * once in the same slot.
+   */
+  error?: boolean;
   className?: string;
 };
 
@@ -50,10 +66,9 @@ export default function ProvenanceValue({
   markerLabel,
   control,
   hint,
+  error = false,
   className,
 }: ProvenanceValueProps) {
-  const isAssumed = state === "assumed";
-
   return (
     <div className={cn("space-y-1.5", className)}>
       <label
@@ -61,11 +76,14 @@ export default function ProvenanceValue({
         // A minimum height so a label carrying a provenance chip lines its control up with the one
         // beside it: the chip is taller than a bare label, and without this a marked field sat a
         // few pixels lower than its neighbour in every two-column row.
-        className="flex min-h-[1.625rem] flex-wrap items-center gap-[var(--space-2)] text-[13px] font-medium [color:var(--text-secondary)]"
+        className={cn(
+          "flex min-h-[1.625rem] flex-wrap items-center gap-[var(--space-2)] text-[13px] font-medium",
+          error ? "[color:var(--destructive)]" : "[color:var(--text-secondary)]",
+        )}
       >
         {label}
         {state !== "read" && (
-          <Chip variant="warning" size="sm" icon={isAssumed ? <Sparkles size={12} /> : <CircleHelp size={12} />}>
+          <Chip variant="warning" size="sm" icon={PROVENANCE_MARKER_ICON[state]}>
             {markerLabel}
           </Chip>
         )}

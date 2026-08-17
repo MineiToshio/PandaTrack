@@ -14,6 +14,7 @@ import {
 } from "@/lib/store/duplicateMatch";
 import { DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS } from "@/lib/constants";
 import { DEFAULT_STORE_LIST_SORT, type StoreListSort } from "@/lib/stores/storeListSort";
+import { isActiveOrderStatus } from "@/lib/data/orders/storePaymentQueries";
 
 const DEFAULT_DUPLICATE_CANDIDATES_LIMIT = 5;
 export const DEFAULT_PUBLIC_STORE_PAGE_SIZE = DEFAULT_PAGE_SIZE;
@@ -792,7 +793,11 @@ export async function getViewerStoreActivity(userId: string, storeId: string): P
   let ordersActive = 0;
   const spendByCurrency = new Map<string, number>();
   for (const order of orders) {
-    if (order.status !== "COMPLETED" && order.status !== "CANCELLED") {
+    // The shared predicate, not a second inline list of statuses: this count and the payment
+    // progress bar's denominator (`getStoreDebtByCurrency`) sit in the same card and have to name
+    // the same set of orders. An inline `!== COMPLETED && !== CANCELLED` agrees with
+    // `ACTIVE_ORDER_STATUSES` only for as long as `OrderStatus` has exactly six members.
+    if (isActiveOrderStatus(order.status)) {
       ordersActive += 1;
     }
     const prev = spendByCurrency.get(order.currencyCode) ?? 0;

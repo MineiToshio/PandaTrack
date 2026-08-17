@@ -100,6 +100,16 @@ export const STORE_REPORT_NOTICE_THRESHOLD = 1;
  */
 export const STORE_REPORT_CLUSTER_THRESHOLD = 2;
 
+/**
+ * How long an interaction has to settle before a live-recalculating money panel announces its
+ * running total.
+ *
+ * Shared by the store payment sheet's allocation panel and the order detail's breakdown panel: both
+ * rewrite several amounts per keystroke, so an undebounced `aria-live` region reads one total per
+ * character. Two surfaces with the same mechanism, one number, or they drift.
+ */
+export const TOTALS_ANNOUNCE_DELAY_MS = 700;
+
 export const POSTHOG_EVENTS = {
   LANDING: {
     HERO_CTA_CLICKED: "hero_cta_clicked",
@@ -142,9 +152,6 @@ export const POSTHOG_EVENTS = {
     ACCOUNT_MENU_ITEM_CLICKED: "app_shell_account_menu_item_clicked",
     THEME_CHANGED: "app_shell_theme_changed",
     LOCALE_CHANGED: "app_shell_locale_changed",
-    MASCOT_HIDDEN: "app_shell_mascot_hidden",
-    MASCOT_SHOWN: "app_shell_mascot_shown",
-    PLACEHOLDER_CTA_CLICKED: "app_shell_placeholder_cta_clicked",
   },
   SETTINGS: {
     ACCOUNT_EMAIL_CHANGE_MODAL_OPENED: "settings_account_email_change_modal_opened",
@@ -183,6 +190,8 @@ export const POSTHOG_EVENTS = {
     LIST_PAGE_CHANGED: "orders_list_page_changed",
     ITEM_MARKED_ARRIVED: "order_item_marked_arrived",
     ITEM_REVERTED_PENDING: "order_item_reverted_pending",
+    ITEM_PAID_DECLARED: "order_item_paid_declared",
+    ITEM_PAID_UNDECLARED: "order_item_paid_undeclared",
     STICKY_BAR_PRIMARY_CLICKED: "order_detail_sticky_primary_clicked",
     SPLIT_MERGE_MODAL_OPENED: "order_split_merge_modal_opened",
     CREATE_METHOD_SELECTOR_OPENED: "order_create_method_selector_opened",
@@ -190,6 +199,7 @@ export const POSTHOG_EVENTS = {
     LIST_VIEW_CHANGED: "orders_list_view_changed",
     LIST_STORE_GROUP_EXPANDED: "orders_list_store_group_expanded",
     LIST_STORE_GROUP_COLLAPSED: "orders_list_store_group_collapsed",
+    LIST_STORE_UNDETAILED_OPENED: "orders_list_store_undetailed_opened",
     CREATED_WITH_ADVANCE: "order_created_with_advance",
   },
   IMAGE_INTAKE: {
@@ -198,6 +208,10 @@ export const POSTHOG_EVENTS = {
     EXTRACTION_SUCCEEDED: "image_intake_succeeded",
     EXTRACTION_FAILED: "image_intake_failed",
     GLOBAL_BUDGET_BLOCKED: "image_intake_global_budget_blocked",
+    // Fired when a submission had to be prepared again at a lower encode quality to fit in one
+    // request. Worth seeing: it is a silent reduction in what the model receives, and how often the
+    // ladder's floor is reached is the signal that would justify revisiting the request budget.
+    SUBMISSION_RECOMPRESSED: "image_intake_submission_recompressed",
     ORDER_SAVED_FROM_IMAGE: "image_intake_result_confirmed",
     COMPLETED_MANUALLY_CLICKED: "image_intake_completed_manually_clicked",
     STORE_MATCHED: "image_intake_store_matched",
@@ -232,6 +246,8 @@ export const POSTHOG_EVENTS = {
     MARKED_DELIVERED: "delivery_marked_delivered",
     QUICK_ARRIVAL_OPENED: "delivery_quick_arrival_opened",
     QUICK_ARRIVAL_LOGGED: "delivery_quick_arrival_logged",
+    STORE_ARRIVAL_LOGGED: "delivery_store_arrival_logged",
+    STORE_SELECTION_STARTED: "delivery_store_selection_started",
     REOPENED: "delivery_reopened",
     CANCELLED: "delivery_cancelled",
     DELETED: "delivery_deleted",
@@ -273,8 +289,11 @@ export const POSTHOG_EVENTS = {
     PRODUCT_TYPE_REQUEST_APPROVED: "store_product_type_request_approved",
     PRODUCT_TYPE_REQUEST_REJECTED: "store_product_type_request_rejected",
     PAYMENT_SHEET_OPENED: "store_payment_sheet_opened",
+    PAYMENT_ALLOCATIONS_OPENED: "store_payment_allocations_opened",
     PAYMENT_REGISTERED: "store_payment_registered",
     PAYMENT_DELETED: "store_payment_deleted",
+    PAYMENT_BREAKDOWN_OPENED: "store_payment_breakdown_opened",
+    PAYMENTS_ALL_LOADED: "store_payments_all_loaded",
   },
   NAVIGATION: {
     VIEW_TRANSITION_NAVIGATED: "view_transition_navigated",

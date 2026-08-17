@@ -64,15 +64,6 @@
   },
   "edit": {
     "backToDetail": "Volver a la tienda",
-    "cancelCta": "Cancelar",
-    "identityEyebrow": "Paso 1",
-    "identityTitle": "Perfil editable",
-    "catalogEyebrow": "Paso 2",
-    "catalogTitle": "Catálogo y perfil comercial",
-    "contactEyebrow": "Paso 3",
-    "addressEyebrow": "Paso 4",
-    "commentEyebrow": "Detalles de la solicitud",
-    "commentTitle": "¿Por qué sugieres este cambio?",
     "commentLabel": "Contexto de la solicitud (opcional)",
     "commentHelper": "Agrega contexto breve que ayude al moderador a entender por qué se necesita esta actualización.",
     "immutableFieldsHelper": "El tipo de vendedor ({sellerType}) y el país ({country}) no se pueden cambiar desde este flujo.",
@@ -83,14 +74,12 @@
     },
     "direct": {
       "title": "Editar {storeName}",
-      "description": "Puedes actualizar esta tienda pendiente directamente porque tienes permiso para administrarla.",
       "shortLabel": "Editar tienda",
       "submitCta": "Guardar cambios",
       "submitting": "Guardando cambios…"
     },
     "changeRequest": {
       "title": "Sugerir cambios en {storeName}",
-      "description": "Tus ediciones se guardarán como una solicitud de cambio para moderación en lugar de actualizar el perfil público de inmediato.",
       "shortLabel": "Sugerir cambios",
       "submitCta": "Enviar solicitud",
       "submitting": "Guardando solicitud…"
@@ -105,11 +94,6 @@
     "cancel": "Cancelar"
   },
   "success": {
-    "title": "Tienda creada",
-    "approvedMessage": "Tu tienda está publicada y visible en el listado.",
-    "pendingTitle": "Tienda en revisión",
-    "pendingMessage": "Tu tienda es visible en búsquedas y listados, y está pendiente de moderación.",
-    "viewStores": "Ver tiendas",
     "redirectingToStore": "Tienda creada. Redirigiendo al perfil de la tienda..."
   },
   "logo": {
@@ -126,54 +110,24 @@
     "editorCancel": "Cancelar",
     "editorConfirm": "Usar este recorte",
     "acceptedFormats": "PNG, JPG, JPEG o WebP",
-    "maxSize": "Máximo {size} MB",
-    "detailAlt": "Logo de {storeName}"
+    "maxSize": "Máximo {size} MB"
   },
   "detail": {
     "pendingDisclaimerTitle": "Tienda en revisión",
     "pendingDisclaimerMessage": "Una persona de la comunidad creó esta tienda y el equipo la está revisando. Ya puedes usarla con normalidad; solo no aparece en buscadores hasta que se apruebe.",
-    "reportNoticeTitle": "Esta tienda tiene reportes por revisar",
-    "reportNoticeMessage": "Personas de la comunidad reportaron que la información publicada aquí podría no estar correcta, y el equipo todavía no la revisa. Un reporte no califica a la tienda: para eso están las reseñas. Sigue visible; revisa sus datos con atención y decide por tu cuenta.",
     "governanceAlertTitle": "Reportes y sugerencias",
     "governanceAlertMessage": "Esta tienda tiene reportes o solicitudes de cambio registradas. Abre el resumen para revisar los aportes de la comunidad.",
     "inactiveWarningTitle": "Tienda sin actividad",
     "inactiveWarningMessage": "Esta tienda ya no está en actividad. La información se mantiene solo como referencia.",
-    "noDescription": "Esta tienda no tiene descripción todavía.",
-    "averageRatingLabel": "Calificación promedio",
-    "reviewCountLabel": "Reseñas",
-    "countryLabel": "País",
-    "productTypesLabel": "Tipos de producto",
     "noProductTypes": "No se han definido tipos de producto.",
-    "presenceLabel": "Canales de venta",
     "quickSummaryLabel": "Resumen rápido",
-    "importCountriesLabel": "Países de importación",
-    "contactChannelsCountLabel": "Canales de contacto",
-    "addressesCountLabel": "Direcciones",
-    "businessSignalsTitle": "Modalidad de pedido",
-    "storeTypeLabel": "Tipo de vendedor",
-    "statusLabel": "Estado",
-    "statusPending": "Pendiente de revisión",
-    "statusApproved": "Aprobada",
-    "createdAtLabel": "Perfil creado",
     "noImportCountries": "No se registraron países de importación.",
-    "noContactChannels": "No hay canales de contacto públicos disponibles.",
-    "noAddresses": "No hay direcciones públicas disponibles.",
-    "notAvailableForStoreType": "Esta información no aplica para este tipo de vendedor.",
-    "receivesOrdersUnknown": "Acepta pedidos: sin indicar",
-    "hasStockUnknown": "Venta con stock: sin indicar",
     "reviews": {
-      "title": "Reseñas de la comunidad",
-      "description": "Las reseñas públicas ayudan a otros coleccionistas a juzgar qué tan confiable se siente esta tienda con el tiempo.",
-      "showMoreCta": "Ver {count, plural, one {# reseña más} other {# reseñas más}}",
-      "empty": "Esta tienda todavía no tiene reseñas públicas.",
-      "noAverage": "Sin calificación",
       "noComment": "No se agregó un comentario público.",
       "anonymousAuthor": "Coleccionista",
       "yourReviewBadge": "Tu reseña",
       "youLabel": "Tú",
-      "ratingBadge": "{rating}/5",
       "form": {
-        "eyebrow": "Tu reseña",
         "title": "Comparte tu reseña pública",
         "description": "Tu calificación pasa a formar parte del puntaje público de confianza de la tienda. Puedes editarla más adelante.",
         "lastUpdated": "Última actualización: {date}",
@@ -181,14 +135,10 @@
         "ratingHelper": "Toca la mitad izquierda de una estrella para .5 y la derecha para la estrella completa.",
         "ratingPlaceholder": "Selecciona una calificación",
         "ratingSelected": "{rating} de 5",
-        "ratingOption": "{rating} de 5",
         "commentLabel": "Comentario público (opcional)",
         "commentPlaceholder": "Comparte contexto de tu experiencia con esta tienda que pueda ayudar a otros coleccionistas.",
-        "openCreateCta": "Escribir reseña",
         "editVisibleCta": "Editar",
-        "openEditCta": "Editar tu reseña",
         "deleteCta": "Eliminar reseña",
-        "deleteConfirm": "¿Eliminar tu reseña? Esta acción no se puede deshacer.",
         "deleteConfirmModalTitle": "¿Eliminar tu reseña?",
         "deleteConfirmModalDescription": "Esta acción no se puede deshacer. La reseña se borrará de forma permanente y dejará de mostrarse en el perfil de la tienda.",
         "deleteConfirmCta": "Eliminar",
@@ -217,12 +167,7 @@
       "lastUpdated": "Última actualización: {date}",
       "form": {
         "contentPlaceholder": "Añade un recordatorio o contexto privado sobre esta tienda.",
-        "submitCta": "Guardar nota",
-        "updateCta": "Actualizar nota",
-        "submitDisabledEmpty": "Escribe la nota para poder guardar.",
-        "submitDisabledUnchanged": "Cambia la nota para poder guardar.",
         "submitting": "Guardando nota…",
-        "success": "Tu nota privada se guardó.",
         "errors": {
           "unauthorized": "Debes iniciar sesión para guardar una nota privada.",
           "validation_failed": "Revisa la nota e inténtalo de nuevo.",
@@ -232,7 +177,9 @@
           "saveNoteFailed": "No se pudo guardar la nota. Inténtalo de nuevo."
         }
       }
-    }
+    },
+    "reportNoticeMessage": "Personas de la comunidad reportaron que la información publicada aquí podría no estar correcta, y el equipo todavía no la revisa. Un reporte no califica a la tienda: para eso están las reseñas. Sigue visible; revisa sus datos con atención y decide por tu cuenta.",
+    "reportNoticeTitle": "Esta tienda tiene reportes por revisar"
   },
   "moderation": {
     "panelTitle": "Moderación",
@@ -290,9 +237,6 @@
       "requestedBy": "Solicitado por @{username}",
       "adminOnlyCaption": "Autor y detalles visibles solo para administradores.",
       "noComment": "Sin comentario adicional.",
-      "commentLabel": "Comentario",
-      "currentLabel": "Ahora",
-      "proposedLabel": "Propuesta",
       "alreadyAppliedTag": "Ya aplicado",
       "emptyValue": "Sin especificar",
       "boolValues": {
@@ -326,30 +270,9 @@
       "title": "Reportes y sugerencias",
       "description": "Aquí puedes ver los reportes y las sugerencias que la comunidad ha dejado para mejorar este perfil de tienda.",
       "reportSectionTitle": "Reportes de la comunidad",
-      "reportSectionDescription": "Aquí ves primero tu aporte y luego la lectura agregada de la comunidad.",
-      "yourReportTitle": "Tu reporte a la comunidad",
-      "yourReportSubmitted": "Enviado el {date}",
-      "yourReportEmpty": "Todavía no has dejado un reporte abierto para esta tienda.",
-      "reasonLabel": "Motivo elegido",
-      "descriptionLabel": "Descripción",
-      "noAdditionalDescription": "No agregaste contexto adicional.",
-      "communityReportTitle": "Panorama de la comunidad",
-      "reportSummaryPrefix": "Esta tienda ha sido reportada",
-      "reportSummaryTimes": "{count, plural, one {vez por la comunidad.} other {veces por la comunidad.}}",
-      "reportReasonsLabel": "Motivos involucrados",
-      "reportReasonChipAriaLabel": "{label}: {count} {count, plural, one {reporte} other {reportes}}",
       "changeRequestSectionTitle": "Solicitudes de cambio",
-      "changeRequestSectionDescription": "Tus cambios pendientes quedan separados del resumen general para facilitar la revisión.",
-      "yourPendingChangeRequestTitle": "Tu solicitud de cambio pendiente",
       "yourPendingChangeRequestStatus": "En revisión",
-      "yourPendingChangeRequestUpdated": "Última actualización: {date}",
-      "yourPendingChangeRequestEmpty": "No tienes solicitudes de cambio pendientes en esta tienda.",
-      "changedFieldsLabel": "Campos solicitados",
-      "commentLabel": "Motivo o comentario",
-      "noComment": "No agregaste un comentario adicional.",
       "yourPendingChangeRequestEditCta": "Seguir editando",
-      "communityChangeRequestTitle": "Resumen de cambios de la comunidad",
-      "communityChangeRequestUpdated": "Actualizado el {date}",
       "yourReportEyebrow": "Tu reporte",
       "yourChangeRequestEyebrow": "Tu solicitud",
       "communityPrivacyNote": "Los detalles de otros reportes no son visibles públicamente.",
@@ -358,11 +281,6 @@
       "pendingCountChip": "{count, plural, one {# pendiente} other {# pendientes}}",
       "empty": "Todavía no hay reportes ni sugerencias disponibles para esta tienda.",
       "noChangedFields": "No hay campos cambiados disponibles.",
-      "changeRequestStatuses": {
-        "PENDING": "Pendiente",
-        "APPROVED": "Aprobada",
-        "REJECTED": "Rechazada"
-      },
       "fieldLabels": {
         "name": "Nombre de la tienda",
         "description": "Descripción",
@@ -384,11 +302,9 @@
       "title": "Reportar esta tienda",
       "description": "Puedes mantener un solo reporte abierto por tienda. Si vuelves a abrir este formulario, se actualizará tu reporte activo.",
       "reasonLabel": "Motivo",
-      "reasonPlaceholder": "Seleccionar motivo",
       "detailsLabel": "Contexto adicional (opcional)",
       "detailsHelper": "Mantén el texto factual. Los detalles no se muestran públicamente.",
       "submitCta": "Guardar reporte",
-      "submitting": "Guardando reporte…",
       "cancelCta": "Cancelar",
       "success": "Tu reporte fue guardado.",
       "reasonOptions": {
@@ -417,7 +333,6 @@
       "reasonLabel": "¿Por qué deberíamos agregarlo? (opcional)",
       "reasonHelper": "Este contexto ayuda a moderación a entender la necesidad.",
       "submitCta": "Enviar solicitud",
-      "submitting": "Enviando solicitud…",
       "cancelCta": "Cancelar",
       "success": "Tu solicitud fue enviada.",
       "errors": {
@@ -506,20 +421,13 @@
       "applyWithCount": "Aplicar ({count} resultados)"
     },
     "detail": {
-      "back": "Tiendas",
       "reviewsTitle": "Reseñas",
       "categoriesTitle": "Categorías e importaciones",
       "channelsTitle": "Canales de contacto",
       "addressesTitle": "Direcciones",
       "paymentsTitle": "Pagos a esta tienda",
-      "reviewsAll": "Ver todas las {count} reseñas",
       "writeReviewPlaceholder": "¿Qué opinas de esta tienda?",
       "publishReview": "Publicar reseña",
-      "privateNotePlaceholder": "Apuntes sobre esta tienda.",
-      "noteSaved": "Guardada hace {time}",
-      "reportButton": "Reportar tienda",
-      "pendingDisclaimer": "En revisión. Visible en la app; no indexable en buscadores.",
-      "reportNotice": "Tiene reportes por revisar. Sigue visible; revisa sus datos y decide por tu cuenta.",
       "reportedChip": "Con reportes",
       "privateBadge": "Privada, solo tú la ves",
       "presence": {
@@ -540,28 +448,46 @@
         "resumen": "Tus pedidos aquí",
         "acciones": "Acciones",
         "notaPrivada": "Tu nota privada",
-        "notaPrivadaHelper": "Solo tú la ves.",
         "ordersTotalLabel": "Pedidos anotados",
         "ordersActiveLabel": "Pedidos activos",
         "totalSpentLabel": "Total facturado",
-        "debtLabel": "Deuda pendiente",
+        "cancelledLabel": "Cancelados",
         "debtCredit": "A favor {amount}",
+        "paymentProgress": {
+          "remaining": "Falta {amount}",
+          "settled": "Al día",
+          "paidOfCommitted": "{paid} pagados de {committed} en pedidos activos",
+          "noActiveOrders": "Sin pedidos activos",
+          "outsideActiveOrders": "Fuera de pedidos activos {amount}",
+          "onAccount": "A cuenta {amount}",
+          "lostOnCancelled": "Perdido en cancelados {amount}",
+          "percent": "{pct}%",
+          "barLabel": "Progreso de pago de pedidos activos en {currency}",
+          "barValueText": "{paid} pagados de {committed} en pedidos activos, {pct} por ciento"
+        },
         "viewLinkedOrders": "Ver pedidos vinculados",
-        "viewOrdersHere": "Ver mis pedidos en esta tienda",
         "noOrdersYet": "Aún no hay pedidos en esta tienda."
       },
       "actions": {
         "anotarPedido": "Anotar pedido aquí",
         "registerPayment": "Registrar pago",
-        "registerPaymentHint": "Sin deuda pendiente con esta tienda",
-        "suggestChanges": "Sugerir cambios",
-        "editStore": "Editar tienda",
-        "reportStore": "Reportar tienda"
+        "registerPaymentHint": "Sin deuda pendiente con esta tienda"
       },
       "payments": {
         "unassignedBadge": "Sin asignar {amount}",
         "noteLabel": "Nota: {note}",
-        "moreCount": "y {count} más",
+        "seeAll": "Ver los {count} pagos",
+        "seeAllError": "No se pudieron cargar los pagos restantes.",
+        "seeAllRetry": "Reintentar",
+        "loadedStatus": "{shown} de {total} pagos",
+        "coverageWholeOrder": "Todo el pedido",
+        "coverageSettled": "Saldado",
+        "coverageManyProducts": "{count, plural, one {# producto} other {# productos}}",
+        "coverageManyOrders": "{count, plural, one {# pedido} other {# pedidos}}",
+        "cancelledMarker": "Perdido",
+        "breakdownHeading": "Asignado a",
+        "breakdownUnassigned": "Sin asignar",
+        "breakdownToggleAria": "Ver a qué se asignó el pago de {amount} del {date}",
         "deleteAria": "Eliminar pago de {amount} del {date}",
         "deleteModalTitle": "¿Eliminar este pago?",
         "deleteModalDescription": "Se eliminará el pago de {amount} del {date}.",
@@ -580,21 +506,6 @@
         "viewAll": "Ver todas las {count, plural, one {# reseña} other {# reseñas}}",
         "beTheFirst": "Sé el primero en reseñar esta tienda."
       }
-    },
-    "report": {
-      "title": "Reportar tienda",
-      "subtitle": "¿Por qué quieres reportar {name}?",
-      "reasons": {
-        "INCORRECT_INFO": "Info incorrecta",
-        "SPAM": "Posible estafa o fraude",
-        "INAPPROPRIATE": "Contenido inapropiado",
-        "DUPLICATE": "Tienda duplicada",
-        "DOES_NOT_EXIST": "No existe"
-      },
-      "contextLabel": "Contexto adicional",
-      "contextOptional": "(opcional)",
-      "submit": "Enviar reporte",
-      "cancel": "Cancelar"
     },
     "create": {
       "step1": {
@@ -622,7 +533,6 @@
         "eyebrow": "PASO 3 · CATEGORÍAS",
         "shortLabel": "Categorías",
         "title": "¿Qué venden?",
-        "helper": "Qué vende y dónde se encuentra.",
         "productTypesHelper": "Mínimo una categoría.",
         "presenceLabel": "Presencia",
         "presenceHelper": "Dónde opera la tienda. Los canales de contacto van en el paso siguiente.",
@@ -663,16 +573,6 @@
       "back": "Atrás",
       "submit": "Crear tienda",
       "summaryEyebrow": "Resumen",
-      "requestCategory": "Solicitar nueva categoría",
-      "categoryRequest": {
-        "title": "Solicitar nueva categoría",
-        "helper": "¿No encuentras la categoría que buscas? Sugiere un nombre y explica por qué debería incluirse.",
-        "nameLabel": "Nombre de la categoría",
-        "namePlaceholder": "Ej: Nendoroids, Trading Cards, Gashapon…",
-        "reasonLabel": "Motivo",
-        "reasonPlaceholder": "¿Por qué debería agregarse esta categoría? Describe qué tipo de productos cubre y por qué es distinta a las existentes.",
-        "submit": "Enviar solicitud"
-      },
       "channels": {
         "addButton": "Agregar",
         "helper": "Elige el tipo de canal y pega el valor (URL, handle, email o número).",
@@ -698,14 +598,7 @@
         "eyebrow": "Tiendas similares encontradas",
         "title": "¿Es alguna de estas?",
         "viewStore": "Ver tienda",
-        "createAnyway": "Crear de todos modos",
         "cancel": "Cancelar"
-      },
-      "logo": {
-        "title": "Subir logo",
-        "reframe": "Reencuadrar",
-        "remove": "Quitar",
-        "save": "Guardar logo"
       },
       "addresses": {
         "empty": "Aún no hay direcciones.",
@@ -713,15 +606,8 @@
         "helper": "Ciudad, dirección y referencia opcional."
       }
     },
-    "toast": {
-      "created": "Tienda creada, pendiente de revisión",
-      "createdApproved": "Tienda creada"
-    },
     "edit": {
       "title": "Editar tienda"
-    },
-    "validationErrors": {
-      "isPrivateOnlyPerson": "El perfil privado solo aplica a tiendas tipo Persona."
     }
   },
   "intakeResolution": {

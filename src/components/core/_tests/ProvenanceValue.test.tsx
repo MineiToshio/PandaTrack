@@ -81,4 +81,43 @@ describe("ProvenanceValue", () => {
     );
     expect(screen.getByText('Del chat: "pop"')).toBeTruthy();
   });
+
+  it("marks a derived value with its own word, never the assumed one", () => {
+    render(
+      <ProvenanceValue
+        id="total"
+        label="Total"
+        state="derived"
+        markerLabel="calculado"
+        control={({ id }) => <input id={id} defaultValue="480.00" />}
+      />,
+    );
+
+    expect(screen.getByText("calculado")).toBeTruthy();
+    expect(screen.queryByText("asumido")).toBeNull();
+  });
+
+  it("turns the label destructive when the field carries an error", () => {
+    render(
+      <ProvenanceValue
+        id="total"
+        label="Total"
+        state="missing"
+        markerLabel="falta"
+        error
+        control={({ id }) => <input id={id} />}
+      />,
+    );
+
+    const label = screen.getByText("Total").closest("label");
+    expect(label?.className).toContain("[color:var(--destructive)]");
+  });
+
+  it("keeps the label's neutral color when there is no error", () => {
+    render(<ProvenanceValue id="total" label="Total" state="read" control={({ id }) => <input id={id} />} />);
+
+    const label = screen.getByText("Total").closest("label");
+    expect(label?.className).toContain("[color:var(--text-secondary)]");
+    expect(label?.className).not.toContain("[color:var(--destructive)]");
+  });
 });

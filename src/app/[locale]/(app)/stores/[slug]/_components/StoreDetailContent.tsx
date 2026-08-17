@@ -65,7 +65,7 @@ import StoreAdminModerationPanel from "./StoreAdminModerationPanel";
 import StoreCreateOrderButton from "./StoreCreateOrderButton";
 import StorePaymentStateProvider from "./StorePaymentStateProvider";
 import StorePaymentsSection from "./StorePaymentsSection";
-import StoreDebtSummaryRows from "./StoreDebtSummaryRows";
+import StorePaymentProgressRows from "./StorePaymentProgressRows";
 import StoreRegisterPaymentButton from "./StoreRegisterPaymentButton";
 
 type StoreDetailContentProps = {
@@ -353,7 +353,11 @@ export default function StoreDetailContent({
                               ch.type === "EMAIL" || ch.type === "PHONE" ? (
                                 <a
                                   href={href}
-                                  className="inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] [color:var(--text-secondary)] hover:[background:color-mix(in_oklch,var(--text-primary)_5%,transparent)]"
+                                  // Tap target ≥44×44 on mobile via the `::before` pseudo (same mechanism as
+                                  // `IconButton`): 36 + 2×4. `ChannelRow` is ~60px tall with a single trailing
+                                  // control, so the expansion stays inside the row and clears the neighbouring
+                                  // rows' links. `md:before:inset-0` drops the extra area on desktop.
+                                  className="relative inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] [color:var(--text-secondary)] before:absolute before:[inset:-4px] before:content-[''] hover:[background:color-mix(in_oklch,var(--text-primary)_5%,transparent)] md:before:inset-0"
                                   aria-label={tChannelTypes(ch.type)}
                                 >
                                   <Copy size={14} aria-hidden="true" />
@@ -363,7 +367,11 @@ export default function StoreDetailContent({
                                   href={href}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] [color:var(--text-secondary)] hover:[background:color-mix(in_oklch,var(--text-primary)_5%,transparent)]"
+                                  // Tap target ≥44×44 on mobile via the `::before` pseudo (same mechanism as
+                                  // `IconButton`): 36 + 2×4. `ChannelRow` is ~60px tall with a single trailing
+                                  // control, so the expansion stays inside the row and clears the neighbouring
+                                  // rows' links. `md:before:inset-0` drops the extra area on desktop.
+                                  className="relative inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] [color:var(--text-secondary)] before:absolute before:[inset:-4px] before:content-[''] hover:[background:color-mix(in_oklch,var(--text-primary)_5%,transparent)] md:before:inset-0"
                                   aria-label={tChannelTypes(ch.type)}
                                 >
                                   <ExternalLink size={14} aria-hidden="true" />
@@ -478,10 +486,11 @@ export default function StoreDetailContent({
                               .join(" · ")}
                           />
                         )}
-                        {/* Debt per currency, stacked (§ store-level payments): a credit renders
-                        in success green so it reads as money owed back, not a balance due. Reads
-                        the live (optimistically patched) figure from `StorePaymentStateProvider`. */}
-                        <StoreDebtSummaryRows />
+                        {/* Payment progress per currency (§ store-level payments), replacing the
+                        old "Deuda pendiente" row: a bar plus the absolute paid/committed pair, and
+                        the "Cancelados" line that reconciles it with "Total facturado" above. Reads
+                        the live (optimistically patched) figures from `StorePaymentStateProvider`. */}
+                        <StorePaymentProgressRows totalSpentByCurrency={viewerActivity.totalSpentByCurrency} />
                       </div>
                       {/* Inline hyperlink recipe (playbook §1, `link` variant is legacy) — matches
                       the "Ver entregas" link in OrderItemsReadOnlyList. */}
@@ -507,13 +516,6 @@ export default function StoreDetailContent({
                       label={tStores("redesign.detail.actions.anotarPedido")}
                     />
                     <StoreRegisterPaymentButton />
-                    <Link
-                      href={`/${locale}${ROUTES.orders}?view=store`}
-                      className="text-accent inline-flex items-center gap-1.5 self-start [font-size:var(--text-caption)] font-medium underline-offset-2 hover:underline"
-                    >
-                      <ExternalLink size={14} aria-hidden="true" />
-                      {tStores("redesign.detail.aside.viewOrdersHere")}
-                    </Link>
                     {canAccessEditRoute && (
                       <Button
                         as="a"

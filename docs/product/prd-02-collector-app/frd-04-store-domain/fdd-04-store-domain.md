@@ -62,43 +62,213 @@ demo_anchors:
 > verbatim in Spanish (`es` is the default locale). The `en` equivalents live in
 > `src/i18n/locales/en/stores.json`.
 >
-> **Amendment — Store-level payments on the store detail page (2026-08-08, `FR-04-55`–`FR-04-58`).**
+> **Amendment — Store-level payments on the store detail page (2026-08-08, revised 2026-08-10,
+> `FR-04-55`–`FR-04-59`).**
 > The money model (`StorePayment`, declared `PaymentAllocation`) is owned by FRD-05
 > ([`docs/design/decisions/0025-store-level-payments-declared-allocations.md`](../../../design/decisions/0025-store-level-payments-declared-allocations.md));
-> this note covers only the four things `#store-detail` itself adds. None of this is pictured
-> in the prototype HTML below (see the follow-up note at the end of this block).
+> this note covers only what `#store-detail` itself adds. The 2026-08-10 revision settled the
+> debt this amendment had been carrying: the `#store-detail` prototype anchor now pictures the
+> progress block and the payments card, so prototype and prose agree again.
 >
-> - **"Resumen" card, new stacked row.** Below the order-count/spend rows, one "Deuda pendiente
->   {amount}" row per currency the viewer has ordered from or paid this store in
->   (`StoreDebtSummaryRows`). A negative debt (the store owes the collector back) swaps to the
->   success tone, "A favor {amount}", rather than a debt figure. The rows, like the rest of the
->   card, are entirely absent when the viewer has never ordered from or paid this store.
+> - **"Resumen" card, payment progress block** (`StorePaymentProgressRows`, `FR-04-55` /
+>   `FR-04-59`; **rewritten 2026-08-10**, replacing the flat "Deuda pendiente {amount}" row the
+>   first version of this amendment described; **denominator amended the same day**). One block per
+>   currency, sitting where that row used to, inside the same `flex flex-col` container as the
+>   `SummaryStatRow`s above so the `border-top` separators keep aligning. Each block, top to bottom:
+>
+>   1. A baseline-aligned line: on the left "Falta {amount}" in `--text-primary` at 500 weight, or
+>      a success `Chip` reading "Al día" when the debt is exactly zero, or "A favor {amount}" in
+>      `text-success` when the store holds money for the collector. On the right, the percentage
+>      in `--text-secondary`, tabular figures, **only when a bar is drawn**.
+>   2. `<ProgressBar size="sm">` (`src/components/core/ProgressBar.tsx`), full width, 6px below.
+>      Drawn when, and only when, `activeCommittedMinor > 0`.
+>   3. A caption at `--text-caption` / `--text-muted`: "{paid} pagados de {committed} en pedidos
+>      activos" when there is a bar, "Sin pedidos activos" when there is not. **Both operands carry
+>      the currency code** (`formatAmount` on each, as in the identical pair in the orders "Por
+>      tienda" view): "1,519.60 PEN pagados de 3,874.60 PEN en pedidos activos". The prototype wrote
+>      it once in the visible caption and twice in `aria-valuetext`, contradicting itself; the
+>      implementation is the design and the prototype was corrected to match.
+>   4. **Conditional**, muted: the reconciliation line between the headline (the whole debt) and
+>      the bar's pair (los pedidos activos), in whichever direction the gap opens. Only alongside a
+>      bar, and at most one of the two: "Fuera de pedidos activos {amount}" when the debt is the
+>      bigger of the two (money owed on a pedido already delivered), "A cuenta {amount}" when it is
+>      the smaller (money handed over that no pedido activo claims). **Both directions named as of
+>      2026-08-10**: the negative one used to be dropped on the grounds that "the credit already has
+>      its own headline", which is only true when `debtMinor < 0`. With a live debt and an
+>      allocation-less pago (a first-class submit) the block read "Falta 150.00" over a pair saying
+>      250.00 was outstanding, and nothing on the page named the 100.00 in between. Suppressed now
+>      only for `debtMinor < 0`, where "A favor {amount}" is the headline and a second credit-shaped
+>      figure beside it would read as a competing answer rather than a reconciliation. That last one
+>      is a deliberate choice, not an arithmetic claim: "A favor" is the net position, not the
+>      complement of the bar's gap.
+>   5. **Conditional**, warning tone: "Perdido en cancelados {amount}", rendered only when part of
+>      what the collector paid this store is still declared against a cancelled order. It is the one
+>      figure on the page for money that left the collector's hands and bought nothing: `paidMinor`
+>      nets it out, the bar's pair never counted it (a cancelled pedido is not active), and the
+>      payments list below shows the pago at face value with no hint that part of it died with its
+>      pedido. **Re-justified 2026-08-10:** the original reason was that the block would otherwise
+>      read "250.00 pagados" over a list adding up to 410.00, which stopped being true when the
+>      caption switched to the active pair and `paidMinor` left the block entirely. The amount is
+>      unchanged and the line still earns its place, on the reason above. Two stores in the real
+>      collection are in that state today.
+>
+>   **What the bar compares (2026-08-10).** `activePaidMinor / activeCommittedMinor`: money declared
+>   against the pedidos activos ([glossary](../../glossary.md): the four non-terminal statuses), over
+>   what those pedidos cost. Not the store's lifetime pair, which accumulates and ends up settled and
+>   therefore converges on 100% in any store with history: measured on the real base, the collector's
+>   largest live debt (2,355.00 PEN) read 85% while a debt 25 times smaller read 99%. Scoped to the
+>   pedidos activos those same five rows read 39 / 13 / 20 / 23 / 56.
+>
+>   **What did NOT change with it, and must not.** `debtMinor` stays lifetime-wide. It is the ceiling
+>   `createStorePayment` enforces and the gate on "Registrar pago", so narrowing it would grey out
+>   the button on a store that owes money on an already delivered pedido, and would make this page
+>   disagree with the dashboard. The headline, the CTA gate, the "Por tienda" view and the dashboard
+>   all keep reading the same number they always did; only the ratio moved.
+>
+>   **No pedidos activos, no bar (the ordinary case).** 112 of the collector's 122 store/currency
+>   pairs have nothing in flight, and all 112 are settled. The block stays, keeps its "Al día" chip,
+>   and reads "Sin pedidos activos" instead of filling a track whose denominator is zero. Keeping the
+>   block is the point: dropping it would take the answer to "am I square with this store?" off 110
+>   of 120 store pages.
+>
+>   **Fifth state, "sin actividad" (added 2026-08-10).** When a currency has `committedMinor === 0`
+>   **and** `paidMinor === 0`, the block (chip, percentage, bar, caption) is **not rendered at all**;
+>   only the conditional "Perdido en cancelados" line survives, and if there is none the currency
+>   contributes nothing. This is the shape left behind when a store's last standing order is
+>   cancelled and its payment is kept as lost (`BR-05-15`). Distinct from "settled with nothing
+>   active", which does keep its chip: there the collector is square with a store they still have a
+>   history with, here there is no standing left to be square about. No store is in this state today;
+>   it is one owner action away.
+>
+>   Currencies are ordered live-debt-first, then by commitment; figures are never summed across
+>   currencies. Amounts use `formatAmount` (code suffix), matching the rest of this rail.
+>
+>   **Bar tone at 100% (declared deviation).** The settled block draws the same accent gradient as
+>   every other state; `ProgressBar` has no `success` tone and none was added. The green "Al día"
+>   chip on the same line carries the state in a word, which is what ADR 0006 asks for; a tone that
+>   exists only at one endpoint would be a second, redundant encoding of it.
+>
+>   **Credit and the bar (changed 2026-08-10).** The credit state no longer suppresses the bar. The
+>   original reason was that a track filled past 100% is a graphical lie, which held while the
+>   percentage was derived from `debtMinor`; the active-orders ratio is independent of it and clamps
+>   at 100 on its own. A store in credit with pedidos activos now shows "A favor {amount}" above a
+>   bar measuring those pedidos. No store is in that state today.
+>
+>   **Known and deliberately untouched:** the whole "Resumen" card is still gated on
+>   `viewerActivity.ordersTotal > 0`, so in theory a viewer with zero orders but at least one
+>   payment would see no block. Checked against the real data: there is no such store, and deleting
+>   an order already deletes the payments that only touched it, so the gate has no reachable case.
+>   Widening it would be scope with no observable effect. Recorded here so the next reader knows it
+>   was considered rather than missed.
+>
+>   **Why the pair is always printed next to the percentage.** The denominator moves: recording a
+>   NEW pedido raises `activeCommittedMinor`, so the bar shrinks even though the collector has
+>   un-paid nothing. It moves in the other direction too now, because delivering a pedido takes it
+>   out of both sides. Showing "Falta {amount}" and the absolute pair alongside the percentage is
+>   what makes that legible instead of alarming. A bar with only a percentage must not ship.
+>
+> - **"Resumen" card, "Cancelados {amount}" row** (`FR-04-59`). A `SummaryStatRow` directly under
+>   "Total facturado", rendered only for a currency where that figure (which counts cancelled
+>   orders) exceeds the store's committed total (which does not). A currency with **no debt
+>   row at all** is the maximal case, not the empty one: it means every order in that currency was
+>   cancelled and nothing was ever paid there, so the cancelled slice is 100% of "Total facturado"
+>   and the row must render. "Total facturado" is
+>   deliberately **kept**: it is a number the collector reads, and deleting it to resolve the
+>   inconsistency would silently remove 1,940.00 PEN from one real store's card. Naming the gap
+>   resolves the same contradiction without making a figure disappear. Two stores today.
+>
+>   **Re-checked when the bar's denominator was narrowed (2026-08-10), and kept as is.** The bar no
+>   longer shares a denominator with anything in the rows above it, so this line no longer
+>   reconciles "Total facturado" against the bar. It reconciles it against the committed total the
+>   headline's `debtMinor` is derived from, which is the figure it was always really about. The gap
+>   between "Total facturado" and the bar's own total is a different thing and is not named by a
+>   line, because it does not need one: "Pedidos anotados" vs "Pedidos activos" already establishes
+>   the two scopes in the same card, and the bar's caption states its own ("en pedidos activos"), so
+>   neither figure can be mistaken for the other's total. The rule this card is held to is not "all
+>   figures share a scope" but "no figure is left looking like a total when it is a slice".
+>
 > - **"Acciones" card, new second row.** A ghost "Registrar pago" button (`CircleDollarSign`
 >   icon, `StoreRegisterPaymentButton`) sits directly below the existing "Anotar pedido aquí"
 >   primary and above the edit affordance, opening the shared `StorePaymentSheet`
 >   (`src/components/modules/StorePaymentSheet/`) pre-targeted at this store. Disabled unless the
 >   viewer owes this store a strictly positive amount in at least one currency; a zero or negative
 >   (credit, "A favor") row does not enable it on its own. The disabled state wraps the button in a
->   `Tooltip` reading "Sin deuda pendiente con esta tienda". Below it,
->   an inline hyperlink "Ver mis pedidos en esta tienda" (`ExternalLink` icon, same recipe as the
->   "Resumen" card's "Ver pedidos vinculados" link) navigates to `/orders?view=store`.
+>   `Tooltip` reading "Sin deuda pendiente con esta tienda". **Removed 2026-08-10:** an earlier
+>   draft of this row also carried a "Ver mis pedidos en esta tienda" link into `/orders?view=store`
+>   (`FR-04-57`); it was pulled because that URL is the cross-store grouped view, not a view scoped
+>   to this store, so the link's promise did not match its destination. The card's existing "Resumen"
+>   link, "Ver pedidos vinculados" (`?store={storeId}`), already covers the scoped case.
 > - **New main-column subcard, "Pagos a esta tienda"** (`StorePaymentsSection`, a
 >   `CollapsibleSection` with a `Wallet`-icon accent eyebrow and a count badge), positioned right
 >   after the Categorías/Importa desde subcard and before Contactos. Renders nothing when the
->   viewer has never paid this store (no empty state, the card is simply absent). Each row: a
->   monospace date, an amount right-aligned in bold, an optional "Nota: {note}" caption line, a
->   warning-tone "Sin asignar {amount}" `Chip` when the payment carries an undeclared remainder,
->   and a ghost icon-only delete button (`X`, 28px hit target, with a descriptive
->   `aria-label` naming the amount and date). Delete opens the canonical destructive `Modal`
->   (`role="alertdialog"`, non-dismissible backdrop) titled "¿Eliminar este pago?", whose body
->   copy names the affected allocation count when the payment has any ("Se eliminará el pago de
->   {amount} del {date}. Se perderá su asignación con {N} pedido(s).") or a plain single-sentence
->   variant when it has none. A list beyond the server's row cap adds a trailing caption, "y {N}
->   más".
+>   viewer has never paid this store (no empty state, the card is simply absent). Delete opens the
+>   canonical destructive `Modal` (`role="alertdialog"`, non-dismissible backdrop) titled
+>   "¿Eliminar este pago?", whose body copy names the affected PEDIDO count when the payment
+>   declares anything ("Se eliminará el pago de {amount} del {date}. Se perderá su asignación con {N}
+>   pedido(s).") or a plain single-sentence variant when it declares nothing.
 >
-> **Follow-up (explicit, not scheduled):** the `#store-detail` prototype anchors have not been
-> updated for this amendment; this FDD prose is the source of truth in the meantime (per the
-> Authority order in `.agents/rules/frd-design-documentation.mdc`).
+>   **`{N}` counts distinct pedidos, never allocation lines (corrected 2026-08-15, `ADR 0028`).** A
+>   pago desglosado across two productos of one pedido writes three allocations (the two productos
+>   plus the order-level remainder) and still touches exactly ONE pedido, so counting lines put "3
+>   pedidos" in a destructive dialog about one. Same correction, and the same reason, as the coverage
+>   summary counting PRODUCTO lines rather than allocations.
+>
+>   **Row anatomy (rewritten 2026-08-10, `FR-04-58`).** `StorePaymentRow`. One line at `md` and up,
+>   two below, with the DOM order matching the visual order at BOTH breakpoints (the coverage cell
+>   and the toggle are written once per breakpoint rather than reordered with CSS `order`, which
+>   would be exactly the reading-order mismatch WCAG 1.3.2 / 2.4.3 forbid; only one copy is ever in
+>   the accessibility tree).
+>
+>   - **Desktop, one line:** `92px` monospace date (fits `24 jul 2026` and `Jul 24, 2026`), the
+>     coverage cell (flexible, truncating, `title` carrying the full string), the amount in bold
+>     tabular figures, the delete button, and the breakdown toggle.
+>   - **Mobile, two lines:** line A `date … amount ✕`, line B `coverage ⌄`. Both controls keep a
+>     28px visual size with the hit area expanded to 44px via `-m-2 p-2`.
+>   - **Coverage cell**, the point of the whole row: `{ORD} · {producto}` (319 real payments),
+>     `{ORD} · Todo el pedido` (288), `{ORD} · {n} productos`, `{n} pedidos`, or nothing but the
+>     existing "Sin asignar {amount}" chip. `{ORD}` is a `ViewTransitionLink` in `--accent`. A
+>     declaration against a **cancelled** order additionally carries a warning `Chip` with a
+>     `CircleOff` icon reading "Perdido" — the same word the order detail's payments card and the
+>     dashboard already use for that money. Colour alone never carries it (ADR 0006). The
+>     `{n} pedidos` shape carries it too, whenever **any** of its declarations names a cancelled order:
+>     it is the one shape that cannot name the order, so the marker is the only signal left on the
+>     collapsed row. The cell is a flex line — only the naming text truncates, the chips are
+>     `shrink-0` — because inside a single truncating span a long product name clips the marker
+>     away ("ORD-20250721-01 · Kagurabachi Especial" already measures ~295px against 309px of
+>     usable mobile width).
+>   - **Breakdown toggle** renders **only** at two or more declarations. Every payment in the real
+>     collection has exactly one, so in practice the toggle is absent and the collapsed row already
+>     answers the question. The panel opens inline inside the same `<li>` (`role="group"`, labelled
+>     "Asignado a"), indented to the date column on desktop, one line per declaration with its
+>     amount, plus a warning "Sin asignar" line for any remainder. Read-only (`BR-04-31`).
+>
+>   **Header count and "see all" (`FR-04-58`).** The count badge shows the TRUE total, not the
+>   number of rows the 20-row query cap let through. When rows are withheld, a ghost `Button`
+>   reading "Ver los {total} pagos" sits under the list; pressing it fetches the rest, moves focus
+>   to the first newly revealed row (which carries `tabIndex={-1}` for exactly that) **from an
+>   effect keyed on the pending index plus the row count, never from the click handler's awaited
+>   continuation** — that continuation resumes on a microtask while React commits the new rows on a
+>   later task, so a focus call written there reads the pre-load list, silently no-ops, and lets
+>   focus fall to `<body>` when the button unmounts. It also updates a
+>   text-only `role="status"` region to "{shown} de {total} pagos". The button is never inside that
+>   region: `role="status"` implies `aria-atomic`, so its own label would be re-announced. A failed
+>   fetch keeps every row already on screen, shows an inline `role="alert"` line and relabels the
+>   button "Reintentar" — a section-wide error state would throw away 20 valid rows to report a
+>   partial failure. This replaces the old trailing caption "y {N} más", which read like a control
+>   and was a `<p>`.
+>
+>   **Not collapsed by default, even at 102 rows.** A collapsed `CollapsibleSection` body keeps its
+>   children focusable inside an `aria-hidden` subtree (`grid-template-rows: 0fr` hides it visually
+>   without removing it from the tree), which axe reports as `aria-hidden-focus`, and the "Ver los
+>   N pagos" control lives inside that body — so collapsing would hide the one control that
+>   resolves the volume it was meant to manage.
+>
+>   **Why this card stays in the main column** (`FR-04-58` carries the same reasoning as a
+>   requirement, because the design system's rail text otherwise invites moving it): the rail is
+>   320px, i.e. 278px of usable width inside `Card padding="md"`. The desktop row grid consumes
+>   roughly 271px of that before the coverage cell gets anything, and the order reference alone is
+>   a fixed 15 characters. In the rail, about 64% of the collector's real product names fit; in the
+>   main column, about 91%. What belongs in the rail is the summary half — the progress block.
 
 ---
 
@@ -206,8 +376,10 @@ icon (`store` 12px for `RETAILER` / `truck` 12px for `PROXY` / `user` 12px muted
 "Importa de" text line in `text-muted` (or a muted "no imports" fallback) → a top-bordered
 stats row (rating number bold `.num` + review count, the viewer's order count when present,
 and a `StarRating` on the right). **No neutral type/presence signal chips and no trust chips
-render on the card** — only product-type chips. `StoreCommerceSignalPills` exists in the
-`share/` folder but is **not used** by `StoreCard`. **Moderation status chips are not rendered
+render on the card** — only product-type chips. A `StoreCommerceSignalPills` component used to sit
+unused in the `share/` folder as the leftover of that decision; it has now been deleted, so the
+"no signal chips on the card" rule is enforced by there being no such component at all.
+**Moderation status chips are not rendered
 on cards** (S6.1 decision, FRD Current Implementation Notes); status appears only on detail.
 
 The privacy marker above is deliberately **not** a chip, and that is what keeps the S6.1 decision
@@ -528,7 +700,7 @@ or reinvent system primitives.
 | `DetailSidebar` / `SectionCard`        | module | aside rail; subcard container                                                                                                                                                   |
 | `PrivateNoteCard`                      | module | inline-editable private note                                                                                                                                                    |
 | `Modal` (`ModalDialog` / `ModalSheet`) | module | report / category-request / duplicate / logo / preview overlays — [ADR 0008](../../../design/decisions/0008-modal-enhancement.md)                                               |
-| `EmptyState` / `MascotBubble`          | module | filtered-empty state                                                                                                                                                            |
+| `EmptyState`                           | module | filtered-empty state (canonical icon well, no mascot — [ADR 0013 · D5](../../../design/decisions/0013-cross-cutting-state-system.md))                                           |
 | `Skeleton`                             | core   | list loading                                                                                                                                                                    |
 | `Toast`                                | module | create/edit/report confirmations                                                                                                                                                |
 
@@ -551,9 +723,14 @@ Owned by the system — see [states.md](../../../design/states.md) and
   StoreCard: avatar + 2 lines + 2 chip rows + stats), `aria-busy="true"` on the grid,
   `aria-hidden="true"` per skeleton; toolbar inputs disabled. SSR-delivered — no fake client
   fallback.
-- **Empty, filtered** (`#s6-stores-list-empty`): `EmptyState` + `MascotBubble` in the
-  `sleeping` variant, `"Sin resultados"`, a suggestion to loosen filters, a ghost
-  `"Limpiar filtros"`; toolbar and chips stay active.
+- **Empty, filtered** (`#s6-stores-list-empty`): `EmptyState appearance="card"` with the `Sparkles`
+  icon in a `neutral` icon well, `"Sin resultados"`, a suggestion to loosen filters, a ghost
+  `"Limpiar filtros"`; toolbar and chips stay active (`stores/page.tsx` → `StoresEmptyState`). The
+  same component with an `accent` well and no action covers the unfiltered empty directory.
+  Earlier drafts specified a `MascotBubble sleeping` here; no mascot sprite ever existed and the
+  component has been deleted, so that variant was never buildable. The binding rule is
+  [ADR 0013 · D5](../../../design/decisions/0013-cross-cutting-state-system.md): the icon well is
+  canonical and the `visual` slot stays reserved for a mascot **if** the assets are ever produced.
 - **No empty-initial mock**: the directory is seeded, so the workshop only mocks the
   filtered-empty case.
 
@@ -616,10 +793,9 @@ reports surface is the governance-summary banner above the layout, not an aside 
 private note (`StoreNoteForm`) occupies the third aside slot for any viewer. Admin moderation
 tooling beyond this is an Open Question, not yet built.
 
-**Added 2026-08-08 (`FR-04-56`/`FR-04-57`, see the store-level payments amendment at the top of
+**Added 2026-08-08 (`FR-04-56`, see the store-level payments amendment at the top of
 this document):** a "Registrar pago" ghost button sits between "Anotar pedido aquí" and the edit
-affordance, and a "Ver mis pedidos en esta tienda" inline link sits below it, before the edit
-affordance's block.
+affordance.
 
 ### 5.5 Create-flow interactions
 
