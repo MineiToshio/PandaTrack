@@ -61,17 +61,6 @@
       "toAfterFrom": "\"To\" date must come after \"From\"."
     }
   },
-  "mascotBubble": {
-    "contextMenu": {
-      "open": "Open mascot menu",
-      "hide": "Hide mascot",
-      "theme": "Toggle theme",
-      "settings": "Settings"
-    },
-    "altSleeping": "Felix sleeping",
-    "altCelebrating": "Felix celebrating",
-    "altIdle": "Felix"
-  },
   "statusChip": {
     "orderStatus": {
       "OPEN": "Open",

@@ -35,7 +35,8 @@ This FRD defines the private collector workspace shell that gives PandaTrack a s
 ### Removed during the redesign
 
 - `MobileTabBar` (4-tab bottom bar) — built in an earlier pass and then removed; its token `--mobile-tab-bar-h` and `mobileTabBar.*` i18n keys were dropped. The burger drawer is the sole primary mobile navigation.
-- The floating action button (`FAB`) and the idle `MascotBubble` are no longer mounted by the app layout. The `FAB` component and its route-to-action helper have since been deleted outright, along with the `--fab-size` / `--fab-offset` / `--z-fab` tokens; the mobile primary CTA lives in each screen's sticky action bar. The `MascotBubble` component file still exists but is not consumed by the shell.
+- The original generic floating action button (`FAB`) and its route-to-action helper were deleted outright, along with the `--fab-size` token. A narrower replacement, `CreateOrderFab` (`modules/CreateOrderFab/`), was later reintroduced and **is** mounted by `AppLayout` on eligible routes (`isFabEligibleRoute`); it still consumes the `--fab-h` / `--fab-offset` / `--z-fab` tokens, which remain live. Screens outside that eligibility keep their mobile primary CTA in a sticky action bar.
+- The idle `MascotBubble` was unmounted from the app layout during the redesign and its component file has since been deleted, together with the `components.mascotBubble` i18n keys, the `--z-mascot` token, and the `mascot-menu-pop` / `.animate-mascot-menu` motion rules.
 
 ### Adopted cross-app redesign patterns
 
@@ -44,7 +45,7 @@ These are owned by the redesign design system (documented in `docs/design/PLAYBO
 ## Functional Requirements
 
 - `FR-03-01`: Signed-in routes must render inside a reusable collector app shell. **Implementation note:** route protection is enforced at the server layout boundary (`(app)/layout.tsx`) before the client shell renders: no session redirects to `/{locale}/sign-in`; an email-verification snapshot in state `blocked` redirects to the verify-email gate (carrying a `returnTo` back to the dashboard) before any `(app)` content is shown. Only `verified`, `not_applicable`, or `grace` states reach the shell.
-- `FR-03-02`: The dashboard must be the default private entry destination. **Implementation note:** the dashboard route (`/{locale}/dashboard`) renders an `AppPlaceholderPage` + `AppComingSoonCard` placeholder (the dashboard feature itself is out of scope for the MVP — see the FDD §1); it exists so the shell always has a stable landing surface, and offers CTAs into `Orders` and `Stores`.
+- `FR-03-02`: The dashboard must be the default private entry destination. **Implementation note:** the dashboard route (`/{locale}/dashboard`) now renders the **real dashboard** owned by FRD-06 (KPI strip + zone surfaces, `_components/Dashboard*`). It originally shipped as an `AppPlaceholderPage` + `AppComingSoonCard` "coming soon" placeholder while the dashboard feature was out of MVP scope; both of those components have since been removed along with their `app_shell_placeholder_cta_clicked` event. This requirement is unchanged in intent: the shell still always has a stable landing surface, it is simply a real one now.
 - `FR-03-03`: The desktop sidebar must support expanded and collapsed states. **Redesign note:** implemented as two modes — the **manual toggle is PUSH** (shifts the content column) and **hover/focus-expand is FLOAT** (overlays the content and leaves it in place). The collapsed rail is `--sidebar-w-collapsed` (`4rem`, icons only); the expanded sidebar is `--sidebar-w-expanded` (`15rem`, icons + labels). Only the pinned (toggled) state pushes the content; hover-expand floats. The desktop sidebar exists only at `≥1024px` (`lg:flex`); below that it is `display:none` and navigation moves to the drawer.
 - `FR-03-04`: The mobile and tablet experience must replace hover-dependent behavior with a drawer pattern. **Redesign note:** the burger `AppNavDrawer` is the single primary mobile navigation; the `MobileTabBar` that briefly implemented a 4-tab bottom bar was removed (token and i18n keys dropped).
 - `FR-03-05`: The content header must support route-aware title and contextual chrome. **Redesign note (ADR 0011):** "contextual chrome" is intentionally limited to `[☰]` + breadcrumb + title. The header does not host back navigation, an overflow (`⋯`) menu, or the account avatar; contextual actions (secondary actions, back links, CTAs) live in the page content (`<main>`), not in the shell header.
@@ -125,12 +126,10 @@ The shell is **persistent chrome, not a screen**: it wraps every authenticated r
 - **Client state (`AppLayout`):** pinned sidebar `expanded` (persisted), transient `floatingOpen` (hover/focus), mobile `drawerOpen`, and a mutable `currentUser` exposed through `ShellIdentityContext` so settings/avatar changes update the chrome live. Wraps children in `ToastProvider` and `HeaderTitleProvider`.
 - **States:** authenticated/verified → plain shell; `grace` → shell + sticky `VerifyEmailBanner` + `--app-banner-offset: 56px`; `blocked` → never rendered (redirected); unauthenticated → never rendered (redirected). A skip link (`#main-content`) precedes the sidebar.
 
-### Dashboard placeholder — `/{locale}/dashboard`
+### Dashboard landing surface — `/{locale}/dashboard`
 
-- **Purpose:** the default private landing surface (`FR-03-02`); a placeholder until the dashboard feature is built (out of scope for the MVP — FDD §1).
-- **Data loaded:** translations only (`dashboard`, `appLayout` namespaces) + page metadata via `buildPageMetadata`. No domain queries.
-- **Actions:** navigation only — primary CTA → `/orders`, ghost CTA → `/stores` (both emit `app_shell_placeholder_cta_clicked`).
-- **States:** static placeholder (`AppComingSoonCard`); no loading/empty/error of its own.
+- **Purpose:** the default private landing surface (`FR-03-02`). The shell's only stake is that this route exists and is reachable; **its contents are owned by FRD-06 (Dashboard)**.
+- **History:** this section used to describe a "coming soon" placeholder (`AppPlaceholderPage` + `AppComingSoonCard`, translations only, no domain queries, two navigation CTAs into `/orders` and `/stores` emitting `app_shell_placeholder_cta_clicked`). The dashboard has since been built, the placeholder components and that event have been deleted, and the data loading, actions, and states of this route are now specified in FRD-06 rather than here.
 
 ### Shell error boundary — `/{locale}/(app)/error.tsx`
 
@@ -193,8 +192,8 @@ Shell events live under `POSTHOG_EVENTS.APP_SHELL` in `src/lib/constants.ts`. Re
 - drawer: `app_shell_drawer_opened` (props: `viewport` mobile/tablet, `route`).
 - account menu: `app_shell_account_menu_toggled` (props: `action` opened/closed, `surface` desktop/drawer, `route`), `app_shell_account_menu_item_clicked` (declarative; props: `destination` settings/sign-out/privacy/terms, `surface`).
 - top-bar controls: `app_shell_theme_changed` (props: `route`), `app_shell_locale_changed` (props: `locale`, `route`).
-- dashboard placeholder: `app_shell_placeholder_cta_clicked` (props: `source: "dashboard"`, `target` orders/stores).
-- defined but currently unused by the shell: `app_shell_mascot_hidden`, `app_shell_mascot_shown` (the `MascotBubble` is no longer mounted — see "Removed during the redesign").
+- the `app_shell_mascot_hidden` / `app_shell_mascot_shown` events were removed from `POSTHOG_EVENTS` together with the `MascotBubble` component — see "Removed during the redesign".
+- removed: `app_shell_placeholder_cta_clicked` (props were `source: "dashboard"`, `target` orders/stores). Its only emitter was the dashboard "coming soon" placeholder; the real dashboard replaced it, so the constant was deleted from `POSTHOG_EVENTS.APP_SHELL` rather than left defined with no emitter.
 
 Sign-out additionally fires the auth-domain event `POSTHOG_EVENTS.AUTH.SIGNOUT` (the shell triggers it; the event is owned by the auth taxonomy, not `APP_SHELL`).
 

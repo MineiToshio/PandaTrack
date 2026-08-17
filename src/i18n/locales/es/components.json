@@ -61,17 +61,6 @@
       "toAfterFrom": "La fecha «Hasta» tiene que ser posterior a «Desde»."
     }
   },
-  "mascotBubble": {
-    "contextMenu": {
-      "open": "Abrir menú de mascota",
-      "hide": "Ocultar mascota",
-      "theme": "Cambiar tema",
-      "settings": "Configuración"
-    },
-    "altSleeping": "Felix dormido",
-    "altCelebrating": "Felix festejando",
-    "altIdle": "Felix"
-  },
   "statusChip": {
     "orderStatus": {
       "OPEN": "Abierto",

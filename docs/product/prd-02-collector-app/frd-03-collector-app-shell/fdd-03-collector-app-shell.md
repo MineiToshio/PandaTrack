@@ -174,10 +174,12 @@ BR-03-05). The drawer is a **fixed-position overlay dialog** (`role="dialog"`,
 
 > **Removed during the redesign (do not reintroduce):** the 4-tab `MobileTabBar` (its token
 > `--mobile-tab-bar-h` and `mobileTabBar.*` i18n keys were dropped — S5.2), and the floating
-> action button (`FAB`) + idle `MascotBubble`. The `FAB` component and its route-to-action
-> helper have since been deleted, along with the `--fab-size` / `--fab-offset` / `--z-fab`
-> tokens; the `MascotBubble` component file survives but the shell no longer mounts it. The
-> burger drawer is the sole primary mobile navigation.
+> action button (`FAB`) + idle `MascotBubble`. The generic `FAB` component and its
+> route-to-action helper were deleted, along with the `--fab-size` token; the narrower
+> `CreateOrderFab` that replaced it **is** mounted by `AppLayout` on eligible routes and still
+> uses `--fab-h` / `--fab-offset` / `--z-fab`. The `MascotBubble` component file has since been
+> deleted outright (with its i18n keys, `--z-mascot`, and its motion rules). The burger drawer
+> is the sole primary mobile navigation.
 
 ---
 
@@ -241,9 +243,9 @@ components**; it must not fork or reinvent any of them.
 | `Logo`             | core   | Brand wordmark at the sidebar top (the only Zilla Slab surface)                                                                            |
 | `ShellAccountMenu` | module | Lower-shell account trigger (avatar + username), shared between desktop sidebar footer and mobile drawer                                   |
 | `AppNavDrawer`     | module | Mobile burger drawer — the single primary mobile navigation                                                                                |
-| `ThemeToggle`      | core   | Compact light/dark control in the top bar                                                                                                  |
+| `ThemeToggle`      | core   | Light/dark control in the top bar, compact (26px segments) from `md` up and 44px segments below it, where the touch floor applies          |
 | `LangToggle`       | core   | `es` / `en` switch in the top bar                                                                                                          |
-| `AppPageHero`      | module | Private-app page intro header, rendered by the workspaces _inside_ the content frame (not by the shell)                                    |
+| (page hero)        | n/a    | Private-app page intro header, rendered by the workspaces _inside_ the content frame (not by the shell). The shared `AppPageHero` component was removed as dead code: listing pages now use a bare `h1` at the shared hero scale and detail pages use a route-local hero (e.g. `OrderDetailHero.tsx`) — see [interface-patterns.md](../../../design/interface-patterns.md) |
 
 > **Deleted, not merely unmounted:** `FAB` and `MobileTabBar` — see the removed list in §2.4.
 > Neither component exists in the repo any more, and neither appears in the component catalog.
@@ -397,10 +399,12 @@ specifically for the shell:
 
 ## 9. Sources & provenance
 
-> **Dead code (do not treat as authoritative):** `AppLayout/AppSidebar.tsx` is unused (no
-> importers), and `AppLayout/useSidebarState.ts` is a stale local copy that lacks
-> `floatingOpen` — the shell uses `src/hooks/useSidebarState.ts`. The hook test under
-> `AppLayout/_tests/useSidebarState.test.ts` targets the dead local copy, not the live hook.
+> **Dead code (removed):** the three files this note used to warn about are gone. `AppLayout/AppSidebar.tsx`
+> had no importers; `AppLayout/ContentHeader.tsx` had none either (the shell mounts
+> `src/components/modules/Header.tsx`, and the similarly named `*SegmentContentHeader` components are
+> unrelated); `AppLayout/useSidebarState.ts` was a stale local copy lacking `floatingOpen`, imported
+> only by its own test, which therefore passed against a hook that shipped nowhere. The live hook is
+> `src/hooks/useSidebarState.ts`. Read that one.
 
 - **Pixel truth:** [`./prototype/collector-app-shell.html`](./prototype/collector-app-shell.html)
   (self-contained; opens standalone in light + dark; default palette Velvet; renders the full

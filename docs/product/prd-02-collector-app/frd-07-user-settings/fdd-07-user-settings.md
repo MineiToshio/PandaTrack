@@ -286,7 +286,7 @@ components**; it must not fork or reinvent any of them.
 | ------------------------------------------------------ | ------ | ---------------------------------------------------------------------------------------------- |
 | `Sidebar`, `Header`                                    | module | App shell chrome; lower-shell account menu owned by FRD-03                                     |
 | `SettingsShell` / `SettingsNav`                        | module | Single-route layout + vertical tabs (desktop) / segmented (mobile)                             |
-| `SegmentedControl`                                     | core   | Mobile pane switcher, theme & language toggles                                                 |
+| `SegmentedToggle`                                      | route-local (`settings/_components/SegmentedToggle.tsx`) | Mobile pane switcher, theme & language toggles. Never promoted to a `core` primitive; no `SegmentedControl` exists |
 | `Eyebrow` (chip variant) + `SectionCard` (`topAccent`) | core   | Chip-Eyebrow + Top-Accent section headers (interface-patterns §7)                              |
 | `Avatar`                                               | core   | `s8-avatar-hero` gradient fallback with username initial                                       |
 | `MonoCode`                                             | core   | `@username` identifier                                                                         |

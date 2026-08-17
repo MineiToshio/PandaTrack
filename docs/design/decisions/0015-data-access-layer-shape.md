@@ -87,5 +87,5 @@ The audit flagged this as undocumented drift (ARCH-1/ARCH-3, deferred; ARCH-6, t
 - `.agents/rules/project-structure.mdc` (Prisma queries section, updated in the same change as this ADR)
 - `docs/development/file-organization.md` (updated in the same change as this ADR)
 - `.agents/rules/prisma-data-layer.mdc`, `.agents/rules/data-layer-user-id-duplication.mdc`
-- Example `src/queries/` files: `src/queries/store.ts`, `src/queries/account.ts`
+- Example `src/queries/` files **as they existed when this ADR was written** (the folder was fully migrated and no longer exists — see the update note at the top): `src/queries/store.ts`, `src/queries/account.ts`
 - Example `src/lib/data/` domains: `src/lib/data/orders/`, `src/lib/data/deliveries/`, `src/lib/data/dashboard/`

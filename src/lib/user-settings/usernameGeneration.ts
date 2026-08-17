@@ -113,7 +113,3 @@ export async function isUsernameNormalizedTaken(normalized: string): Promise<boo
   const row = await findUserIdByUsername(normalizeUsernameForUniqueness(normalized));
   return row !== null;
 }
-
-export async function isUsernameTaken(username: string): Promise<boolean> {
-  return isUsernameNormalizedTaken(username);
-}

@@ -20,7 +20,7 @@ Describe the technical layer that captures public behavior through PostHog and u
 
 ## Runtime Components
 
-- `src/lib/constants.ts` — `POSTHOG_EVENTS` (111 events, 8 categories) and `FEATURE_FLAGS` (runtime PostHog flags)
+- `src/lib/constants.ts` — `POSTHOG_EVENTS` (185 events, 12 categories) and `FEATURE_FLAGS` (runtime PostHog flags)
 - `src/lib/analytics/posthogDataAttributes.ts` — `getPosthogDataAttributes()` and `serializePosthogProps()` helpers
 - `src/lib/analytics/posthog-server.ts` — `getPostHogClient()` singleton for server-side capture via `posthog-node`
 - `src/instrumentation-client.ts` — PostHog browser init + delegated click delegate; Sentry client init + `onRouterTransitionStart`

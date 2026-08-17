@@ -160,14 +160,6 @@ export async function getOgFonts(): Promise<OgFontsResult> {
   return { fonts, loaded };
 }
 
-/** @deprecated Use getOgFonts() and OG_FONT_NAMES. */
-export async function getOgLogoFont(): Promise<OgFontDescriptor | null> {
-  const { fonts } = await getOgFonts();
-  return fonts.find((f) => f.name === OG_FONT_NAMES.logo) ?? null;
-}
-
-export const LOGO_FONT_NAME = OG_FONT_NAMES.logo;
-
 // --- Image data (copy + fonts per segment) ---
 
 export type OgImageNamespace = "landing" | "terms" | "privacy";
