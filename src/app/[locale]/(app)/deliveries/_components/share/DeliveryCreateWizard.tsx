@@ -25,6 +25,7 @@ import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 import { WIZARD_CONFIRM_PANEL_CLASSNAME } from "@/lib/styles";
 import { formatAmountSymbolOnly, formatAmountWithSymbol } from "@/lib/currency";
 import { isValidNonNegativeDecimal, isValidRate } from "@/lib/decimalInput";
+import { toLocalIsoDateString } from "@/lib/domainDate";
 import type { DeliverySourceOrder, EligibleProductsResult } from "@/lib/data/deliveries/deliveryQueries";
 import type { DeliveryCreateActionResult } from "../../new/_actions/createDeliveryAction";
 import DeliveryDataFields, { type DeliveryDataErrors, type DeliveryDataValues } from "./DeliveryDataFields";
@@ -39,14 +40,6 @@ export type DeliveryCreateWizardProps = {
   baseCurrencyCode: string | null;
   sourceOrder: DeliverySourceOrder | null;
 };
-
-function toIsoDate(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-}
-
 
 /** Fresh paso-3 defaults. Cost stays empty so the field shows its placeholder
  * instead of a literal 0 the user would have to clear (shipping is rarely free). */
@@ -248,9 +241,9 @@ export default function DeliveryCreateWizard({
     (form: HTMLFormElement): FormData => {
       const fd = new FormData(form);
       if (storeId) fd.set("storeId", storeId);
-      if (data.deliveryDate) fd.set("deliveryDate", toIsoDate(data.deliveryDate));
-      if (data.arrivalFrom) fd.set("expectedArrivalFrom", toIsoDate(data.arrivalFrom));
-      if (data.arrivalTo) fd.set("expectedArrivalTo", toIsoDate(data.arrivalTo));
+      if (data.deliveryDate) fd.set("deliveryDate", toLocalIsoDateString(data.deliveryDate));
+      if (data.arrivalFrom) fd.set("expectedArrivalFrom", toLocalIsoDateString(data.arrivalFrom));
+      if (data.arrivalTo) fd.set("expectedArrivalTo", toLocalIsoDateString(data.arrivalTo));
       fd.set("cost", data.cost);
       fd.set("currencyCode", data.currencyCode);
       if (showExchangeRate) fd.set("exchangeRate", data.exchangeRate);

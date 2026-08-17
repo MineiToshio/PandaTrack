@@ -22,7 +22,7 @@ import StoreAvatar from "@/components/core/StoreAvatar";
 import { AsideSummary, AsideSummaryRow } from "@/components/modules/AsideSummary";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 import { formatAmountWithSymbol, formatCentsForInput } from "@/lib/currency";
-import { utcDomainDateToLocal } from "@/lib/domainDate";
+import { toLocalIsoDateString, utcDomainDateToLocal } from "@/lib/domainDate";
 import { isValidNonNegativeDecimal, isValidRate } from "@/lib/decimalInput";
 import type { EligibleProductsResult } from "@/lib/data/deliveries/deliveryQueries";
 import type { DeliveryCreateActionResult } from "../../new/_actions/createDeliveryAction";
@@ -52,13 +52,6 @@ export type DeliveryEditFormProps = {
   products: EligibleProductsResult;
   baseCurrencyCode: string | null;
 };
-
-function toIsoDate(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-}
 
 function sameIdSet(a: string[], b: string[]): boolean {
   if (a.length !== b.length) return false;
@@ -213,9 +206,9 @@ export default function DeliveryEditForm({
       if (!validate()) return;
       const fd = new FormData(event.currentTarget);
       fd.set("deliveryId", initialDelivery.id);
-      if (data.deliveryDate) fd.set("deliveryDate", toIsoDate(data.deliveryDate));
-      if (data.arrivalFrom) fd.set("expectedArrivalFrom", toIsoDate(data.arrivalFrom));
-      if (data.arrivalTo) fd.set("expectedArrivalTo", toIsoDate(data.arrivalTo));
+      if (data.deliveryDate) fd.set("deliveryDate", toLocalIsoDateString(data.deliveryDate));
+      if (data.arrivalFrom) fd.set("expectedArrivalFrom", toLocalIsoDateString(data.arrivalFrom));
+      if (data.arrivalTo) fd.set("expectedArrivalTo", toLocalIsoDateString(data.arrivalTo));
       fd.set("cost", data.cost);
       fd.set("currencyCode", data.currencyCode);
       if (showExchangeRate) fd.set("exchangeRate", data.exchangeRate);

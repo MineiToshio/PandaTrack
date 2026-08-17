@@ -386,17 +386,18 @@ export default function OrderCreateForm({ stores, productTypeKeys, baseCurrencyC
         }));
       fd.set("items", JSON.stringify(serializedItems));
       if (storeId) fd.set("storeId", storeId);
-      if (orderDate) fd.set("orderDate", orderDate.toISOString().split("T")[0]!);
-      if (deliveryFrom) fd.set("expectedDeliveryFrom", deliveryFrom.toISOString().split("T")[0]!);
-      if (deliveryTo) fd.set("expectedDeliveryTo", deliveryTo.toISOString().split("T")[0]!);
+      // All four date fields below read the picker's LOCAL calendar day. `toISOString()` converts
+      // to UTC first, which for any viewer EAST of UTC (Madrid, Tokyo) rolls local midnight back
+      // into the previous day and silently saves it: "10 Aug" becomes "9 Aug". Lima is west of UTC,
+      // so the wrong serializer happened to produce the right day here and the defect stayed latent.
+      if (orderDate) fd.set("orderDate", toLocalIsoDateString(orderDate));
+      if (deliveryFrom) fd.set("expectedDeliveryFrom", toLocalIsoDateString(deliveryFrom));
+      if (deliveryTo) fd.set("expectedDeliveryTo", toLocalIsoDateString(deliveryTo));
       fd.set("currencyCode", currencyCode);
       if (showExchangeRate) fd.set("exchangeRate", exchangeRate);
       fd.set("totalCost", totalCost);
       if (initialPaymentAmount.trim() !== "" && initialPaymentDateValue) {
         fd.set("initialPaymentAmount", initialPaymentAmount);
-        // `DatePickerInput` emits local midnight — `toLocalIsoDateString` reads it with local
-        // getters. `toISOString().split("T")[0]` (used elsewhere on this form for its pre-existing
-        // fields) converts to UTC first, which shifts the calendar day for any viewer west of UTC.
         fd.set("initialPaymentDate", toLocalIsoDateString(initialPaymentDateValue));
       }
       return fd;

@@ -33,6 +33,27 @@ export const itemSchema = z.object({
 export type ItemInput = z.infer<typeof itemSchema>;
 ```
 
+## Domain dates (mandatory)
+
+A domain date is a calendar-day field — `orderDate`, `paymentDate`, `receivedDate`, `deliveryDate`, `expectedArrival*`, `expectedDelivery*` — persisted at **UTC midnight**. Declare every one of them with `domainDateSchema` from `@/lib/domainDateSchema`, never with a bare `z.coerce.date()`:
+
+```typescript
+import { domainDateSchema } from "@/lib/domainDateSchema";
+
+export const storePaymentCreateSchema = z.object({
+  paymentDate: domainDateSchema.refine((d) => d <= new Date(), { message: "PAYMENT_DATE_IN_FUTURE" }),
+});
+```
+
+Why a bare `z.coerce.date()` is not enough: it is safe for the `yyyy-mm-dd` TEXT that `FormData` routes send (coercion reads a date-only string as UTC midnight) and silently wrong for a real `Date` sent by a Server Action, which crosses the RSC boundary as its exact instant — a picker's local midnight becomes `05:00Z` from Lima. Nothing in the type system separates the two cases, and this shipped three times: `store_payment`, `order_payment` and `delivery.receivedDate` all collected rows five hours off every other date in the collection.
+
+The contract has two halves and both are required:
+
+- **Client:** convert with `toDomainDate(...)` from `@/lib/domainDate` before handing a `Date` to a Server Action (or send `toLocalIsoDateString(...)` text). Normalization belongs on the client because only the client knows which civil day the user picked — the server cannot rebuild it from the instant alone.
+- **Server:** `domainDateSchema` refuses a non-midnight `Date` with `DATE_NOT_UTC_MIDNIGHT` rather than truncating it, so a client that forgets fails loudly instead of drifting.
+
+`src/test/domain-date-guard.test.ts` enforces the server half statically; it derives the field vocabulary from `prisma/schema.prisma`, so a new calendar-day column is covered as soon as it exists. In tests, build fixtures with `src/test/domainDateFixtures.ts` — `new Date()` is a clock reading, not a calendar day.
+
 ## Logging by environment
 
 In development you may use `console.log` / `console.error` with discretion. In production, do not expose sensitive errors or internal data in logs that reach the client. If Sentry (or similar) is integrated, capture exceptions in production and rethrow when appropriate.

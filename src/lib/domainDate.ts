@@ -1,14 +1,23 @@
 /**
  * Formatting + conversion helpers for *domain dates* — calendar-day values such as
  * `orderDate`, `deliveryDate`, `expectedArrival*`/`expectedDelivery*`, `receivedDate`,
- * and `paymentDate`. These are persisted as `DateTime` at midnight UTC: the form sends a
- * `yyyy-mm-dd` string and Zod's `z.coerce.date` interprets it as UTC midnight. The stored
- * instant carries no meaningful time-of-day — only its UTC calendar day matters.
+ * and `paymentDate`. These are persisted as `DateTime` at midnight UTC. The stored instant
+ * carries no meaningful time-of-day — only its UTC calendar day matters.
  *
- * Any surface that DISPLAYS a server-loaded domain date MUST format it with
- * `timeZone: "UTC"` so the day shown matches the day the user entered, regardless of the
- * viewer's timezone. Without it, viewers west of UTC (the Americas) see the previous day
- * (off-by-one).
+ * MANDATORY, for every domain date, on both sides of the wire:
+ *
+ *  1. WRITING. A client that hands a `Date` to a Server Action MUST convert it with
+ *     `toDomainDate` (or send the `yyyy-mm-dd` text from `toLocalIsoDateString`) FIRST.
+ *     A `Date` survives the RSC boundary as the exact instant it holds, so a picker's
+ *     local-midnight value arrives as that day at 05:00Z in Lima, 03:00Z in Madrid — a
+ *     row that is silently off the midnight all the other rows sit on. Normalizing has to
+ *     happen on the CLIENT: only the client knows which civil day the user picked, so the
+ *     server cannot rebuild it from the instant alone. The server side of that contract is
+ *     `domainDateSchema` (`src/lib/domainDateSchema.ts`), which refuses a `Date` that did
+ *     not go through this step instead of persisting the skew.
+ *  2. READING. Any surface that DISPLAYS a server-loaded domain date MUST format it with
+ *     `timeZone: "UTC"` (i.e. via `formatDomainDate`) so the day shown matches the day the
+ *     user entered. Without it, viewers west of UTC (the Americas) see the previous day.
  *
  * Do NOT use these for true timestamps (`createdAt`, `updatedAt`, audit-log instants) —
  * those represent real moments and should render in the viewer's local time. For
@@ -61,9 +70,12 @@ export function domainDateToIsoString(date: Date | undefined): string | undefine
 /**
  * Serialize a picker's LOCAL-midnight `Date` (as emitted by `DatePickerInput`) to its `yyyy-mm-dd`
  * string using local getters, never `toISOString()`. `toISOString()` first converts to UTC, which
- * shifts the calendar day for any viewer west of UTC (the Americas) — a picker selection of "8 Aug"
- * silently becomes "7 Aug" once it crosses the wire. Use this at every form boundary that reads a
- * `DatePickerInput` value and needs it as text for a domain date field (`paymentDate`, etc.).
+ * shifts the calendar day backward for any viewer EAST of UTC (Europe, most of Asia) — a picker
+ * selection of "8 Aug" silently becomes "7 Aug" once it crosses the wire. Viewers west of UTC (the
+ * Americas, including Lima) are unaffected by this specific defect: local midnight converts FORWARD
+ * into the same UTC day, so the wrong serializer happens to read back the right one there, which is
+ * exactly why it can ship unnoticed from a Lima-only test pass. Use this at every form boundary that
+ * reads a `DatePickerInput` value and needs it as text for a domain date field (`paymentDate`, etc.).
  */
 export function toLocalIsoDateString(date: Date): string {
   const year = date.getFullYear();
@@ -78,4 +90,22 @@ export function toLocalIsoDateString(date: Date): string {
  */
 export function toDomainDate(date: Date): Date {
   return new Date(`${toLocalIsoDateString(date)}T00:00:00.000Z`);
+}
+
+/**
+ * Whether a `Date` sits exactly on UTC midnight, i.e. whether it is shaped like a domain date at
+ * all. This is the predicate `domainDateSchema` refuses on: a value that fails it reached the
+ * server without going through `toDomainDate`, and persisting it would put the row on a different
+ * instant than every other domain date in the collection.
+ *
+ * Kept here, next to the writers, and deliberately free of any Zod import: this module is pulled
+ * into ~20 client bundles for `formatDomainDate`, and none of them should carry a validator.
+ */
+export function isUtcMidnight(date: Date): boolean {
+  return (
+    date.getUTCHours() === 0 &&
+    date.getUTCMinutes() === 0 &&
+    date.getUTCSeconds() === 0 &&
+    date.getUTCMilliseconds() === 0
+  );
 }

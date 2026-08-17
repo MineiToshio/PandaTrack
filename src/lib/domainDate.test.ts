@@ -74,12 +74,33 @@ describe("domainDate (negative-offset timezone)", () => {
   it("domainDateToIsoString passes through undefined", () => {
     expect(domainDateToIsoString(undefined)).toBeUndefined();
   });
+});
+
+/**
+ * `toLocalIsoDateString` / `toDomainDate` serialize a picker's LOCAL-midnight `Date`. The defect
+ * they exist to prevent (`toISOString().split("T")[0]`, which converts to UTC first) only shows up
+ * for a viewer EAST of UTC: local midnight converts BACKWARD into the previous UTC day there. West
+ * of UTC (the block above, America/New_York) local midnight converts FORWARD into the same UTC day,
+ * so the buggy serializer reads back the right answer by accident — which is why this suite must run
+ * under a positive-offset zone to actually exercise the regression (see
+ * `OrderCreateFormDomainDates.test.tsx`, which caught the real-world instance of this under Tokyo).
+ */
+describe("domainDate (positive-offset timezone)", () => {
+  const originalTz = process.env.TZ;
+
+  beforeAll(() => {
+    process.env.TZ = "Asia/Tokyo";
+  });
+
+  afterAll(() => {
+    process.env.TZ = originalTz;
+  });
 
   it("toLocalIsoDateString reads the picker's LOCAL calendar day, not the UTC one", () => {
     // A DatePickerInput selection of "12 June" arrives as local midnight. Serializing it with
-    // `toISOString().split("T")[0]` (the bug) would convert to UTC first and read back as the
-    // 11th under this negative-offset timezone — the exact regression this helper exists to avoid.
-    const localMidnight = new Date(2026, 5, 12); // June 12, 2026, local midnight
+    // `toISOString().split("T")[0]` (the bug) converts to UTC first and reads back as the 11th
+    // under this positive-offset timezone — the exact regression this helper exists to avoid.
+    const localMidnight = new Date(2026, 5, 12); // June 12, 2026, local midnight in Tokyo
     expect(toLocalIsoDateString(localMidnight)).toBe("2026-06-12");
   });
 
