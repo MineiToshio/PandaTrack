@@ -101,6 +101,45 @@ describe("buildDashboardData - cash obligations", () => {
     expect(list.map((payment) => payment.orderId)).toEqual(["sooner", "later"]);
     expect(list[0]).toMatchObject({ outstandingMinor: 1500, baseOutstandingMinor: 1500, isFxPending: false });
   });
+
+  /**
+   * A delivered pedido that still owes money is real debt, but it is not "upcoming": its arrival
+   * date is in the past, so ascending by that date it sits at the top of the list forever and
+   * pushes out everything the collector actually has coming. That is exactly how five rows of
+   * years-old delivered pedidos filled this widget. It must leave the LIST without leaving the
+   * TOTALS, which are a debt figure and would understate the debt if it did.
+   */
+  it("keeps completed orders out of the upcoming payments list but inside the obligation totals", () => {
+    const data = build([
+      makeOrder({
+        id: "deliveredLongAgo",
+        status: "COMPLETED",
+        expectedDeliveryFrom: utc(2022, 2, 1),
+        totalCost: 8000,
+      }),
+      makeOrder({ id: "stillComing", expectedDeliveryFrom: utc(2026, 7, 20), totalCost: 2000 }),
+    ]);
+
+    expect(data.cashObligations.upcomingPayments.map((payment) => payment.orderId)).toEqual(["stillComing"]);
+    expect(data.cashObligations.totalOutstanding.totalMinor).toBe(10000);
+    expect(data.cashObligations.overdue.totalMinor).toBe(8000);
+  });
+
+  it("derives each row's due state from its own date, not from its position in the list", () => {
+    // The old widget labelled row 0 "vence pronto" whatever its date was, so the topmost row could
+    // claim a payment was near while being months past due.
+    const data = build([
+      makeOrder({ id: "past", expectedDeliveryFrom: utc(2026, 0, 1), totalCost: 1000 }),
+      makeOrder({ id: "withinWindow", expectedDeliveryFrom: utc(2026, 6, 30), totalCost: 1000 }),
+      makeOrder({ id: "farOut", expectedDeliveryFrom: utc(2026, 9, 1), totalCost: 1000 }),
+    ]);
+
+    expect(data.cashObligations.upcomingPayments.map((payment) => [payment.orderId, payment.dueState])).toEqual([
+      ["past", "overdue"],
+      ["withinWindow", "soon"],
+      ["farOut", "scheduled"],
+    ]);
+  });
 });
 
 describe("buildDashboardData - spend and budget", () => {

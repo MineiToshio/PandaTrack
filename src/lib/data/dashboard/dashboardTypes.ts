@@ -108,7 +108,17 @@ export type UpcomingPayment = {
   outstandingMinor: number;
   baseOutstandingMinor: number | null;
   isFxPending: boolean;
+  /**
+   * How the due date sits relative to today. Derived here, from the date, rather than in the widget
+   * from the row's index: the previous "the first row is the urgent one" rule made the chip state a
+   * fact about the sort order while wording it as a fact about time, so the topmost row read "vence
+   * pronto" even when its date was months past.
+   */
+  dueState: UpcomingPaymentDueState;
 };
+
+/** `overdue`: due date already past. `soon`: within `DASHBOARD_UPCOMING_ARRIVAL_DAYS`. */
+export type UpcomingPaymentDueState = "overdue" | "soon" | "scheduled";
 
 export type CashObligationsBlock = {
   /** Due this month: current-month obligations with overdue balances folded in. */
