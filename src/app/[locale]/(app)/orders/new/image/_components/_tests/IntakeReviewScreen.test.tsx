@@ -972,3 +972,327 @@ describe("IntakeReviewScreen: correcting the draft", () => {
     expect((screen.getByLabelText(/payments.amountLabel/) as HTMLInputElement).value).toBe("150");
   });
 });
+
+/**
+ * The chat can leave a total unstated while still pricing every product it lists ("100 el primero,
+ * 50 el segundo", no closing figure). This screen owes the collector that sum instead of an empty
+ * field, but only when it is a fact: every row priced, nothing estimated (`BR-11-02`, `BR-11-23`).
+ * The fixture's default draft (`buildDraft()`) prices its two products at 90.00 and 60.00, so a
+ * derived total is 150.00 minor-unit-scaled to 15000.
+ */
+describe("IntakeReviewScreen: total derived from priced products", () => {
+  it("prefills the total with the sum of the priced products when the chat gave none", () => {
+    renderScreen(buildDraft({ totalCost: field(null, null) }));
+
+    expect((screen.getByLabelText(/fields.total/) as HTMLInputElement).value).toBe("150.00");
+  });
+
+  it("marks the derived total with its own word, not the generic assumed or missing one", () => {
+    renderScreen(buildDraft({ totalCost: field(null, null) }));
+
+    expect(screen.getByText("provenance.derived")).toBeTruthy();
+    expect(screen.queryByText("provenance.assumed")).toBeNull();
+  });
+
+  it("never treats a derived total as one the chat stated", () => {
+    renderScreen(buildDraft({ totalCost: field(null, null) }));
+
+    // A "read" value carries no marker at all (see `ProvenanceValue`'s own tests): a derived total
+    // must still carry one, so the collector is never told this figure came straight from the chat.
+    expect(screen.getByText("provenance.derived")).toBeTruthy();
+  });
+
+  it("does not derive a total when any priced row is missing its price", () => {
+    renderScreen(
+      buildDraft({
+        totalCost: field(null, null),
+        groups: [
+          {
+            sourcePhrase: "el pack chase de Gojo",
+            reason: "split",
+            doubtful: false,
+            priceSplit: "none",
+            products: [
+              { name: "Gojo", unitPrice: null, suggestedProductTypeKey: null, referenceUrl: null },
+              { name: "Gojo (chase)", unitPrice: 6000, suggestedProductTypeKey: null, referenceUrl: null },
+            ],
+          },
+        ],
+      }),
+    );
+
+    expect((screen.getByLabelText(/fields.total/) as HTMLInputElement).value).toBe("");
+    expect(screen.getAllByText("provenance.missing").length).toBeGreaterThan(0);
+  });
+
+  it("does not derive a total from a draft with no products at all", () => {
+    renderScreen(buildDraft({ totalCost: field(null, null), groups: [] }));
+
+    expect((screen.getByLabelText(/fields.total/) as HTMLInputElement).value).toBe("");
+  });
+
+  it("leaves a total the chat actually stated exactly as read, never recomputing it", () => {
+    renderScreen(buildDraft());
+
+    expect((screen.getByLabelText(/fields.total/) as HTMLInputElement).value).toBe("480.00");
+    expect(screen.queryByText("provenance.derived")).toBeNull();
+  });
+
+  it("saves the derived total as the draft's own value, over the collector's confirmation", () => {
+    const onSave = vi.fn();
+    render(
+      <IntakeReviewScreen
+        initialDraft={buildDraft({ totalCost: field(null, null) })}
+        baseCurrencyCode={BASE_CURRENCY}
+        storeOptions={STORE_OPTIONS}
+        productTypeKeys={PRODUCT_TYPE_KEYS}
+        isSaving={false}
+        onSave={onSave}
+        onManualClick={vi.fn()}
+        spentPhotoCount={2}
+        remainingPhotos={null}
+        onAddProductSheet={vi.fn()}
+      />,
+    );
+
+    desktopSubmit().click();
+
+    expect(onSave).toHaveBeenCalledTimes(1);
+    expect((onSave.mock.calls[0][0] as ImageIntakeDraft).totalCost).toEqual({ value: 15000, source: "assumed" });
+  });
+
+  it("lets the collector overwrite the derived total, and saves their own figure instead", () => {
+    const onSave = vi.fn();
+    render(
+      <IntakeReviewScreen
+        initialDraft={buildDraft({ totalCost: field(null, null) })}
+        baseCurrencyCode={BASE_CURRENCY}
+        storeOptions={STORE_OPTIONS}
+        productTypeKeys={PRODUCT_TYPE_KEYS}
+        isSaving={false}
+        onSave={onSave}
+        onManualClick={vi.fn()}
+        spentPhotoCount={2}
+        remainingPhotos={null}
+        onAddProductSheet={vi.fn()}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText(/fields.total/), { target: { value: "999" } });
+    desktopSubmit().click();
+
+    expect(onSave).toHaveBeenCalledTimes(1);
+    expect((onSave.mock.calls[0][0] as ImageIntakeDraft).totalCost).toEqual({ value: 99900, source: "read" });
+  });
+
+  it("does not recompute the derived total in place when a product price changes afterward, and instead flags the mismatch", () => {
+    // The screen's whole provenance model is frozen at arrival, on purpose (see the `provenance`
+    // `useMemo` above): recomputing the figure live would fight the same freeze every other marked
+    // field already relies on. The existing totals-mismatch banner is what catches the collector's
+    // attention instead, once a later price edit no longer matches the total still on screen.
+    renderScreen(buildDraft({ totalCost: field(null, null) }));
+
+    expect(screen.queryByText(/totals.mismatchTitle/)).toBeNull();
+
+    fireEvent.change(screen.getAllByLabelText("itemUnitPriceLabel")[0], { target: { value: "999" } });
+
+    expect(screen.getByText(/totals.mismatchTitle/)).toBeTruthy();
+  });
+});
+
+/**
+ * `saveOrderFromDraftAction` refuses a draft with no store, no order date, or no total. Before this,
+ * the review screen only found that out from the server, which read as a generic top-level banner
+ * ("No pudimos continuar / Escribe el total del pedido antes de guardar.") with nothing on the field
+ * itself. These fields are now caught before `onSave` is ever called, which is also what keeps that
+ * banner (owned by `ImageIntakeScreen`, driven only by extraction failures and real save failures)
+ * out of this path entirely: it is never reached, because the round trip that used to trigger it is
+ * never made.
+ */
+describe("IntakeReviewScreen: required-field validation before save", () => {
+  it("marks the total field invalid and blocks the save when it is missing", () => {
+    const onSave = vi.fn();
+    render(
+      <IntakeReviewScreen
+        initialDraft={buildDraft({ totalCost: field(null, null), groups: [] })}
+        baseCurrencyCode={BASE_CURRENCY}
+        storeOptions={STORE_OPTIONS}
+        productTypeKeys={PRODUCT_TYPE_KEYS}
+        isSaving={false}
+        onSave={onSave}
+        onManualClick={vi.fn()}
+        spentPhotoCount={2}
+        remainingPhotos={null}
+        onAddProductSheet={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(desktopSubmit());
+
+    expect(onSave).not.toHaveBeenCalled();
+    const totalInput = screen.getByLabelText(/fields.total/) as HTMLInputElement;
+    expect(totalInput.getAttribute("aria-invalid")).toBe("true");
+    expect(screen.getByText("saveTotalRequired")).toBeTruthy();
+  });
+
+  it("clears the total's error the instant the collector types a value, before it is even valid", () => {
+    render(
+      <IntakeReviewScreen
+        initialDraft={buildDraft({ totalCost: field(null, null), groups: [] })}
+        baseCurrencyCode={BASE_CURRENCY}
+        storeOptions={STORE_OPTIONS}
+        productTypeKeys={PRODUCT_TYPE_KEYS}
+        isSaving={false}
+        onSave={vi.fn()}
+        onManualClick={vi.fn()}
+        spentPhotoCount={2}
+        remainingPhotos={null}
+        onAddProductSheet={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(desktopSubmit());
+    expect(screen.getByText("saveTotalRequired")).toBeTruthy();
+
+    fireEvent.change(screen.getByLabelText(/fields.total/), { target: { value: "1" } });
+
+    expect(screen.queryByText("saveTotalRequired")).toBeNull();
+    expect((screen.getByLabelText(/fields.total/) as HTMLInputElement).getAttribute("aria-invalid")).toBeNull();
+  });
+
+  it("marks the order date field invalid and blocks the save when it is missing", () => {
+    const onSave = vi.fn();
+    render(
+      <IntakeReviewScreen
+        initialDraft={buildDraft({ orderDate: field(null, null) })}
+        baseCurrencyCode={BASE_CURRENCY}
+        storeOptions={STORE_OPTIONS}
+        productTypeKeys={PRODUCT_TYPE_KEYS}
+        isSaving={false}
+        onSave={onSave}
+        onManualClick={vi.fn()}
+        spentPhotoCount={2}
+        remainingPhotos={null}
+        onAddProductSheet={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(desktopSubmit());
+
+    expect(onSave).not.toHaveBeenCalled();
+    const dateInput = screen.getByLabelText(/fields.orderDate/) as HTMLInputElement;
+    expect(dateInput.getAttribute("aria-invalid")).toBe("true");
+    expect(screen.getByText("saveOrderDateRequired")).toBeTruthy();
+  });
+
+  it("marks the store field invalid and blocks the save when no store is matched", () => {
+    const onSave = vi.fn();
+    render(
+      <IntakeReviewScreen
+        initialDraft={buildDraft({
+          store: { matchedStoreId: null, name: field(null, null), phone: field(null, null), candidates: [] },
+        })}
+        baseCurrencyCode={BASE_CURRENCY}
+        storeOptions={STORE_OPTIONS}
+        productTypeKeys={PRODUCT_TYPE_KEYS}
+        isSaving={false}
+        onSave={onSave}
+        onManualClick={vi.fn()}
+        spentPhotoCount={2}
+        remainingPhotos={null}
+        onAddProductSheet={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(desktopSubmit());
+
+    expect(onSave).not.toHaveBeenCalled();
+    expect(screen.getByText("saveStoreRequired")).toBeTruthy();
+  });
+
+  it("never reaches the save handler, so no server round trip and no top-level banner is triggered", () => {
+    // The top-level failure banner (`ImageIntakeScreen`) is only ever populated from an extraction
+    // failure or a real `saveOrderFromDraftAction` failure. Proving `onSave` is never called for a
+    // draft missing a required field is the same thing as proving that banner path is unreachable
+    // through this screen now, since nothing else in `ImageIntakeScreen` can set it.
+    const onSave = vi.fn();
+    render(
+      <IntakeReviewScreen
+        initialDraft={buildDraft({ totalCost: field(null, null), groups: [] })}
+        baseCurrencyCode={BASE_CURRENCY}
+        storeOptions={STORE_OPTIONS}
+        productTypeKeys={PRODUCT_TYPE_KEYS}
+        isSaving={false}
+        onSave={onSave}
+        onManualClick={vi.fn()}
+        spentPhotoCount={2}
+        remainingPhotos={null}
+        onAddProductSheet={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(desktopSubmit());
+    fireEvent.click(mobileSubmit());
+
+    expect(onSave).not.toHaveBeenCalled();
+  });
+
+  it("focuses the first invalid field in the screen's own visual order when several are missing", () => {
+    render(
+      <IntakeReviewScreen
+        initialDraft={buildDraft({
+          store: { matchedStoreId: null, name: field(null, null), phone: field(null, null), candidates: [] },
+          totalCost: field(null, null),
+          groups: [],
+        })}
+        baseCurrencyCode={BASE_CURRENCY}
+        storeOptions={STORE_OPTIONS}
+        productTypeKeys={PRODUCT_TYPE_KEYS}
+        isSaving={false}
+        onSave={vi.fn()}
+        onManualClick={vi.fn()}
+        spentPhotoCount={2}
+        remainingPhotos={null}
+        onAddProductSheet={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(desktopSubmit());
+
+    // Store is first in the screen's own layout (section 1, row 1), ahead of order date and total,
+    // so it is the field that ends up focused even though `findMissingRequiredIntakeFields` also
+    // flags the total. Queried by id, not role, because the currency `<Select>` trigger is a
+    // `combobox` too.
+    expect(document.activeElement).toBe(document.getElementById("intake-store-change"));
+  });
+
+  it("still blocks the save on a plain field the parser cannot read a valid total from", () => {
+    // Not a required-field gap: the collector typed something, but it is not a number the money
+    // parser accepts, which already held the save before this change (`groupsWithInvalidPrice`'s
+    // own sibling check). Kept here to show the new required-field gate does not paper over it.
+    const onSave = vi.fn();
+    render(
+      <IntakeReviewScreen
+        initialDraft={buildDraft()}
+        baseCurrencyCode={BASE_CURRENCY}
+        storeOptions={STORE_OPTIONS}
+        productTypeKeys={PRODUCT_TYPE_KEYS}
+        isSaving={false}
+        onSave={onSave}
+        onManualClick={vi.fn()}
+        spentPhotoCount={2}
+        remainingPhotos={null}
+        onAddProductSheet={vi.fn()}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText(/fields.total/), { target: { value: "no es un número" } });
+    fireEvent.click(desktopSubmit());
+
+    // `handleTotalChange` records an unparseable total as `{ value: null, source: null }`, which the
+    // new required-field gate now catches (it did not reach the server as a distinct case before
+    // either: the draft would have failed `orderCreateSchema` and come back as `saveInvalidDraft`).
+    expect(onSave).not.toHaveBeenCalled();
+    expect(screen.getByText("saveTotalRequired")).toBeTruthy();
+  });
+});

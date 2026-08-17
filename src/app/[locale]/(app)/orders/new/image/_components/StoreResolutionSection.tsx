@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import Button from "@/components/core/Button/Button";
+import FieldErrorMsg from "@/components/core/FieldErrorMsg";
 import Input from "@/components/core/Input";
 import Label from "@/components/core/Label";
 import { cn } from "@/lib/styles";
@@ -235,11 +236,17 @@ export default function StoreResolutionSection({
   if (resolvedDisplay) {
     return (
       // Same label geometry as `<ProvenanceValue>` (`space-y-1.5` + a 1.625rem minimum), so the
-      // store field's control lines up with whatever field shares its row, chip or no chip.
-      <section className={cn("space-y-1.5", className)}>
+      // store field's control lines up with whatever field shares its row, chip or no chip. The id
+      // is what `IntakeReviewScreen` scrolls and focuses into when the collector tries to save
+      // without a store: every shape of this component carries it on its own root, since there is
+      // no single control common to all three.
+      <section id="intake-store-field" className={cn("space-y-1.5", className)}>
         <label
           htmlFor="intake-store-change"
-          className="flex min-h-[1.625rem] items-center text-[13px] font-medium [color:var(--text-secondary)]"
+          className={cn(
+            "flex min-h-[1.625rem] items-center text-[13px] font-medium",
+            error ? "[color:var(--destructive)]" : "[color:var(--text-secondary)]",
+          )}
         >
           {tStore("label")}
         </label>
@@ -255,6 +262,7 @@ export default function StoreResolutionSection({
           listAriaLabel={tStore("listLabel")}
           error={error}
         />
+        {error && <FieldErrorMsg>{tErrors("saveStoreRequired")}</FieldErrorMsg>}
         <button
           type="button"
           onClick={handleSwitchToCreate}
@@ -273,9 +281,14 @@ export default function StoreResolutionSection({
     ];
 
     return (
-      <section className={cn("flex flex-col gap-[var(--space-2)] md:col-span-2", className)}>
+      <section id="intake-store-field" className={cn("flex flex-col gap-[var(--space-2)] md:col-span-2", className)}>
         <fieldset className="flex flex-col gap-[var(--space-2)]">
-          <legend className="[font-size:var(--text-caption)] [font-weight:var(--font-weight-medium)] [color:var(--text-primary)]">
+          <legend
+            className={cn(
+              "[font-size:var(--text-caption)] [font-weight:var(--font-weight-medium)]",
+              error ? "[color:var(--destructive)]" : "[color:var(--text-primary)]",
+            )}
+          >
             {t("ambiguousPrompt")}
           </legend>
           <Radio
@@ -293,6 +306,7 @@ export default function StoreResolutionSection({
   // "creating": the original shape was "unknown", or an ambiguous list pivoted to "Ninguna, crear una nueva".
   return (
     <section
+      id="intake-store-field"
       className={cn(
         "flex flex-col gap-[var(--space-2)] rounded-xl p-3 md:col-span-2",
         "[background:var(--surface-elevated)] [border:1px_solid_var(--border)]",
@@ -305,6 +319,13 @@ export default function StoreResolutionSection({
         </span>
         <p className="[font-size:var(--text-caption)] [color:var(--text-secondary)]">{t("createIntro")}</p>
       </div>
+
+      {/*
+        This shape has no single field to red-border: the collector still has to pick a candidate or
+        finish naming a new store, and either action resolves `matchedStoreId`. The message says so
+        instead of pointing at a control that would not, on its own, explain what is missing.
+      */}
+      {error && <FieldErrorMsg>{tErrors("saveStoreRequired")}</FieldErrorMsg>}
 
       <div className="flex flex-col gap-[var(--space-1)]">
         <Label htmlFor="intake-store-create-name" size="sm" className="mb-0">

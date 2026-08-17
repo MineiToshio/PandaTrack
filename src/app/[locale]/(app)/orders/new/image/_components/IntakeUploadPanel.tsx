@@ -50,16 +50,33 @@ export type IntakeUploadPanelProps = {
   remainingPhotos: number | null;
   /** Photos that must be removed for the batch to fit; `null` when it already fits. */
   overflowExcess: number | null;
+  /**
+   * True when at least one attached photo was already measured and refused. The banner above names
+   * them; this is what stops the collector from paying a compression pass and an upload to be told
+   * the same thing again.
+   */
+  hasUnreadablePhotos: boolean;
   /** Shown once per device, the first time the collector reaches this surface. */
   showFirstTimeExplainer: boolean;
 };
 
-/** Shared chrome for the two reorder controls, so the pair cannot drift apart visually. */
+/**
+ * Shared chrome for the two reorder controls, so the pair cannot drift apart visually.
+ *
+ * Tap target >=44x44 on mobile via the `::before` pseudo (same mechanism as
+ * `IconButton`/`StorePaymentRow`): padding inside the fixed `size-7` box never grows it, so
+ * `inset:-8px` expands the hit area outward instead. `md:before:inset-0` drops the extra area on
+ * desktop. No extra clearance needed between the pair: they sit at opposite ends of the tile via
+ * `justify-between`, and even the narrowest supported tile (two columns on a 320px viewport)
+ * leaves tens of pixels between the expanded boxes, well past the 16px (8+8) that would overlap.
+ */
 const REORDER_BUTTON_CLASS = cn(
-  "flex size-7 items-center justify-center rounded-full",
+  "relative flex size-7 items-center justify-center rounded-full",
   "[color:var(--text-secondary)] [background:var(--surface-elevated)] [border:1px_solid_var(--border-strong)]",
+  "before:absolute before:[inset:-8px] before:content-['']",
   "hover:[color:var(--text-primary)]",
   "focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
+  "md:before:inset-0",
 );
 
 /**
@@ -155,6 +172,7 @@ export default function IntakeUploadPanel({
   onSubmit,
   remainingPhotos,
   overflowExcess,
+  hasUnreadablePhotos,
   showFirstTimeExplainer,
 }: IntakeUploadPanelProps) {
   const t = useTranslations("imageIntake.upload");
@@ -522,11 +540,17 @@ export default function IntakeUploadPanel({
                   type="button"
                   onClick={() => onRemove(attachment.id)}
                   aria-label={t("removeOne", { name: attachment.file.name })}
+                  // Tap target >=44x44 on mobile via the `::before` pseudo (same mechanism as
+                  // `IconButton`/`StorePaymentRow`): `inset:-8px` expands the fixed `size-7` box's
+                  // hit area outward. `md:before:inset-0` drops it on desktop. No neighbor above,
+                  // below, or beside it inside the tile's corner to overlap with.
                   className={cn(
                     "absolute top-1 right-1 flex size-7 items-center justify-center rounded-full",
                     "[color:var(--text-secondary)] [background:var(--surface-elevated)] [border:1px_solid_var(--border-strong)]",
+                    "before:absolute before:[inset:-8px] before:content-['']",
                     "hover:[color:var(--text-primary)]",
                     "focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
+                    "md:before:inset-0",
                   )}
                 >
                   <X size={14} aria-hidden />
@@ -609,7 +633,7 @@ export default function IntakeUploadPanel({
         <p className="[font-size:var(--text-caption)] [color:var(--text-muted)]">{t("helper")}</p>
       </div>
 
-      <Button type="button" variant="primary" size="lg" fullWidth onClick={onSubmit} disabled={overflowExcess !== null}>
+      <Button type="button" variant="primary" size="lg" fullWidth onClick={onSubmit} disabled={overflowExcess !== null || hasUnreadablePhotos}>
         {t("submit")}
       </Button>
     </div>

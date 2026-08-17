@@ -37,6 +37,7 @@ function renderPanel(attachments: IntakeAttachment[]) {
       onSubmit={vi.fn()}
       remainingPhotos={17}
       overflowExcess={null}
+      hasUnreadablePhotos={false}
       showFirstTimeExplainer={false}
     />,
   );

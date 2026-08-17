@@ -276,3 +276,51 @@ describe("StoreResolutionSection · unknown", () => {
     expect(screen.queryByText("createSubmit")).toBeNull();
   });
 });
+
+describe("StoreResolutionSection · error state", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("marks the picker invalid and shows the required message when no store is matched", () => {
+    render(<StoreResolutionSection store={buildStore()} options={OPTIONS} onChange={vi.fn()} error />);
+
+    const combobox = screen.getByRole("combobox");
+    expect(combobox.getAttribute("aria-invalid")).toBe("true");
+    expect(screen.getByText("saveStoreRequired")).toBeTruthy();
+  });
+
+  it("marks the candidate list invalid and shows the required message", () => {
+    render(
+      <StoreResolutionSection
+        store={buildStore({ candidates: [{ storeId: "store-1", name: "Pop Dealer" }] })}
+        options={OPTIONS}
+        onChange={vi.fn()}
+        error
+      />,
+    );
+
+    expect(screen.getByRole("radiogroup").getAttribute("aria-invalid")).toBe("true");
+    expect(screen.getByText("saveStoreRequired")).toBeTruthy();
+  });
+
+  it("keeps explaining the missing store while the collector is still creating one", () => {
+    render(<StoreResolutionSection store={buildStore()} options={OPTIONS} onChange={vi.fn()} error />);
+
+    fireEvent.click(screen.getByText("switchToCreate"));
+
+    // This shape has no single control to red-border (a name field plus a submit action), so the
+    // message is what tells the collector a store still needs to be finished, not a border alone.
+    expect(screen.getByText("saveStoreRequired")).toBeTruthy();
+  });
+
+  it("shows no required-store message at all once a store is resolved", () => {
+    render(
+      <StoreResolutionSection
+        store={buildStore({ matchedStoreId: "store-1", name: field("Pop Dealer", "read") })}
+        options={OPTIONS}
+        onChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByText("saveStoreRequired")).toBeNull();
+  });
+});

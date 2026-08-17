@@ -48,6 +48,11 @@ export type ImageIntakeExtractErrorCode =
   // deterministic. Split from `provider-error` for one reason only, that the copy must not tell
   // the collector to try again in a minute when every attempt will fail the same way.
   | "provider-rejected"
+  // The model's answer hit the output ceiling and came back cut off mid-document. Split from
+  // `provider-error` because the honest advice is the opposite one: the request was fine and the
+  // model did answer, so retrying the same photos spends the same money to be cut off at the same
+  // place. What resolves it is a smaller submission, and only a code of its own can say that.
+  | "response-too-long"
   | "ledger-error"
   | "product-ceiling-exceeded"
   // The images were read and carried no purchase at all (a pet, a landscape, an unrelated
@@ -73,6 +78,20 @@ export type ImageIntakeExtractResult =
       remaining?: number;
       /** ISO instant the bag refills on, so the exhausted copy can state a real date. */
       renewalAtIso?: string;
+      /**
+       * Position of the offending upload inside this submission, on a per-file refusal only.
+       *
+       * It is an index into the uploaded images, which is not the same thing as an index into the
+       * photos the collector attached: one tall screenshot is uploaded as several segments. Only the
+       * client holds that mapping, which is why the server reports the position it does know and the
+       * screen translates it back into the photo it came from. The alternative, sending each source
+       * file's name along with its bytes, would put a user's filenames on the wire for no reason the
+       * flow needs, next to a compression step whose whole purpose is to strip what the file carries.
+       */
+      imageIndex?: number;
+      /** What the offending image actually measured, so the copy can quote it instead of the rule. */
+      imageWidth?: number;
+      imageHeight?: number;
     };
 
 /** Every reason confirming a reviewed draft can fail. */
@@ -86,7 +105,22 @@ export type ImageIntakeSaveErrorCode =
   | "server-error";
 
 export type ImageIntakeSaveResult =
-  | { ok: true; orderId: string; paymentsRecorded: number; paymentsSkipped: number }
+  | {
+      ok: true;
+      orderId: string;
+      paymentsRecorded: number;
+      paymentsSkipped: number;
+      /**
+       * Payment rows that carried a breakdown and were not written, as indexes into `draft.payments`.
+       *
+       * It exists because a dropped row costs more than it used to: a payment the server refuses is
+       * two fields the collector can retype, but a payment with a breakdown is up to N hand-typed
+       * lines, and dropping those in silence is the failure this field makes impossible.
+       */
+      skippedBreakdownIndexes: number[];
+      /** Rows written WITHOUT their breakdown because a position no longer resolved. Money went in. */
+      breakdownDropped: number;
+    }
   | { ok: false; code: ImageIntakeSaveErrorCode };
 
 /**

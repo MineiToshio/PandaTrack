@@ -42,13 +42,25 @@ vi.mock("@/lib/pwa/shareStash", async (importOriginal) => {
 });
 
 vi.mock("@/lib/images/compressForIntake", () => ({
-  compressForIntake: vi.fn().mockResolvedValue({
+  prepareSubmissionForIntake: vi.fn().mockImplementation(async (files: File[]) => {
+    const results =
+    files.map(() => ({
     segments: [{ blob: new Blob(["x"], { type: "image/png" }), mimeType: "image/png" }],
+    // A real iPhone screenshot: the coordinator now judges the prepared photo from what the
+    // compression step decoded, so a mock without these dimensions would not exercise the real path.
+    source: { width: 1179, height: 2556 },
+    }));
+    const totalBytes = results.flatMap((r) => r.segments).reduce((sum, s) => sum + s.blob.size, 0);
+    return {
+      results,
+      totalBytes,
+      webpQuality: 0.85,
+      usedFallbackQuality: false,
+      // Derived, never hardcoded: a suite that stubs an oversized prepared segment needs
+      // the stub to agree with it rather than to claim the submission fits.
+      fits: totalBytes <= 3.5 * 1024 * 1024,
+    };
   }),
-}));
-
-vi.mock("@/lib/imageIntake/clientPrecheck", () => ({
-  precheckIntakeSubmission: () => ({ ok: true as const }),
 }));
 
 const writeManualPrefillStashMock = vi.fn();
@@ -81,20 +93,11 @@ vi.mock("../IntakeUploadPanel", () => ({
     onSubmit: () => void;
   }) => (
     <div>
-      <button
-        type="button"
-        onClick={() => {
-          onFilesAdded([new File(["x"], "receipt.png", { type: "image/png" })]);
-          onSubmit();
-        }}
-      >
-        attach-and-extract
-      </button>
       <button type="button" onClick={() => onFilesAdded([new File(["x"], "extra.png", { type: "image/png" })])}>
         attach-one
       </button>
-      {/* Separate from `attach-and-extract`, which submits the batch as it was before its own
-          attach: a test about how many photos a read spent needs the two steps apart. */}
+      {/* Attach and submit stay separate, as they are in the real panel: a stub doing both in one
+          handler submits the attachments as they were before its own attach, an empty batch. */}
       <button type="button" onClick={() => onSubmit()}>
         extract-only
       </button>
@@ -207,7 +210,8 @@ describe("ImageIntakeScreen manual hand-off", () => {
 
     render(<ImageIntakeScreen storeOptions={[]} quota={QUOTA_WITH_ROOM} baseCurrencyCode="PEN" productTypeKeys={[]} />);
 
-    await user.click(screen.getByRole("button", { name: "attach-and-extract" }));
+    await user.click(screen.getByRole("button", { name: "attach-one" }));
+    await user.click(screen.getByRole("button", { name: "extract-only" }));
     const manualButton = await screen.findByRole("button", { name: "review-manual" });
     expect(reviewScreenReceivedDraft).toEqual(draft);
 
