@@ -155,7 +155,8 @@
     "STORE_NOT_FOUND": "The selected store does not exist.",
     "NO_PRODUCTS_SELECTED": "Select at least one product.",
     "PRODUCTS_FROM_DIFFERENT_STORE": "All products in a delivery must come from the selected store.",
-    "PRODUCT_NOT_ELIGIBLE": "One or more products are no longer eligible. Refresh and try again."
+    "PRODUCT_NOT_ELIGIBLE": "One or more products are no longer eligible. Refresh and try again.",
+    "ORDER_CANCELLED": "One of the products belongs to a cancelled order. Remove it from the selection and try again."
   },
   "detail": {
     "metaTitle": "Delivery detail",
@@ -178,7 +179,8 @@
       "costWithConversion": "shipping cost {cost} (≈ {converted} {base})",
       "costFxPending": "shipping cost {cost} · conversion pending",
       "chipFxPending": "FX update pending",
-      "progressAria": "In transit, {pct}% of the window"
+      "progressAria": "In transit, {pct}% of the window",
+      "progressValueText": "In transit, {pct} percent of the arrival window elapsed"
     },
     "products": {
       "title": "Products",

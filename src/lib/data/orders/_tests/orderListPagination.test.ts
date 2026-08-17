@@ -1,11 +1,26 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import type { OrderStatus } from "../../../../../generated/prisma/client";
 
-const { prismaMock } = vi.hoisted(() => ({
-  prismaMock: {
-    order: { findMany: vi.fn(), count: vi.fn() },
-  },
-}));
+/**
+ * `order.fields.*` is Prisma's column reference, the only way a `where` can compare two columns of
+ * the same row in SQL. The mock stands in for the real `FieldRef` object so the assertions below
+ * can prove the query passes THAT and not a literal; the real reference was exercised against the
+ * dev database directly (`totalCost > allocatedAmountMinor` returns the same set the in-memory
+ * derivation does).
+ */
+const { prismaMock, ALLOCATED_FIELD_REF } = vi.hoisted(() => {
+  const allocatedFieldRef = { __fieldRef: "Order.allocatedAmountMinor" };
+  return {
+    ALLOCATED_FIELD_REF: allocatedFieldRef,
+    prismaMock: {
+      order: {
+        findMany: vi.fn(),
+        count: vi.fn(),
+        fields: { allocatedAmountMinor: allocatedFieldRef },
+      },
+    },
+  };
+});
 
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 
@@ -154,6 +169,58 @@ describe("getOrdersList delivery-lateness filters", () => {
     expect(where.status).toEqual({ notIn: ["COMPLETED", "CANCELLED"] });
   });
 
+  /**
+   * T10d — the filter and the row chips sit on the same page, so they have to agree about which
+   * orders are late. Once `isOrderArrivalObserved` stopped the chip flagging an order whose every
+   * product is already at the store, a filter that kept matching it would put that order in the
+   * "Entrega atrasada" results with no chip on it, which is the same pairing failure the civil-day
+   * guard exists to prevent in the timezone dimension.
+   */
+  it("narrows deliveryLateOnly to orders that still have a product waiting", async () => {
+    await getOrdersList("user-1", baseFilters({ deliveryLateOnly: true }));
+
+    const where = findManyArgs().where as Record<string, unknown> & {
+      AND?: Array<{ OR?: Array<Record<string, unknown>> }>;
+    };
+    const itemsGroup = (where.AND ?? []).find((group) => Array.isArray(group.OR));
+    // "Waiting" spelled the way `deriveItemDeliveryState` derives it: still at NONE **and** not
+    // carried by a live delivery. `deliveryState: "NONE"` alone would call an in-transit product
+    // waiting, because a delivery does not rewrite the item's own column.
+    expect(itemsGroup?.OR).toContainEqual({
+      items: {
+        some: {
+          deliveryState: "NONE",
+          deliveryItems: { none: { delivery: { status: { not: "CANCELLED" } } } },
+        },
+      },
+    });
+  });
+
+  /**
+   * H1 — `items: { some: { ...waiting } }` on its own can never match an order with zero items, so
+   * an itemless order past its window kept the amber "Atrasado" chip
+   * (`isOrderArrivalObserved([]) === false`, see orderDerivedState.ts) while silently dropping out of
+   * these results: the two readings of the same order disagreeing, resolved oppositely by the chip
+   * and by the filter. `items: { none: {} }` is the SQL reading of that same `false`.
+   */
+  it("also keeps an itemless order in deliveryLateOnly, the same way its chip stays amber", async () => {
+    await getOrdersList("user-1", baseFilters({ deliveryLateOnly: true }));
+
+    const where = findManyArgs().where as Record<string, unknown> & {
+      AND?: Array<{ OR?: Array<Record<string, unknown>> }>;
+    };
+    const itemsGroup = (where.AND ?? []).find((group) => Array.isArray(group.OR));
+    expect(itemsGroup?.OR).toContainEqual({ items: { none: {} } });
+  });
+
+  it("adds no such narrow to the looser 'Por recibir' filter", async () => {
+    // The control: `deliveryOverdueOnly` answers "is the window open", a question the products do
+    // not settle, so copying the narrow across would silently hide rows from a different filter.
+    await getOrdersList("user-1", baseFilters({ deliveryOverdueOnly: true }));
+
+    expect((findManyArgs().where as Record<string, unknown>).items).toBeUndefined();
+  });
+
   it("lets deliveryLateOnly win over deliveryOverdueOnly when both are set", async () => {
     await getOrdersList("user-1", baseFilters({ deliveryLateOnly: true, deliveryOverdueOnly: true }));
 
@@ -162,11 +229,28 @@ describe("getOrdersList delivery-lateness filters", () => {
     expect(where.expectedDeliveryFrom).toBeUndefined();
   });
 
-  it("intersects deliveryLateOnly with explicit statuses instead of forcing notIn", async () => {
+  /**
+   * H2 — `isOrderOverdue` hard-zeroes COMPLETED/CANCELLED whatever the caller's own status
+   * selection says (orderDerivedState.ts), so the `notIn` narrow has to hold even when the caller
+   * passes explicit statuses, not only when it omits them. Before this, ticking "Cancelado" alongside
+   * "Atrasados" skipped the narrow entirely and could return a cancelled order with a waiting product
+   * and no overdue chip on it — the same pairing failure as the itemless case above.
+   */
+  it("intersects deliveryLateOnly with the still-pending statuses even when explicit statuses are set", async () => {
     await getOrdersList("user-1", baseFilters({ deliveryLateOnly: true, statuses: ["IN_TRANSIT"] }));
 
     const where = findManyArgs().where as Record<string, unknown>;
-    expect(where.status).toEqual({ in: ["IN_TRANSIT"] });
+    expect(where.status).toEqual({ in: ["IN_TRANSIT"], notIn: ["COMPLETED", "CANCELLED"] });
+  });
+
+  it("leaves nothing to match when the caller combines Cancelado with Atrasados", async () => {
+    await getOrdersList("user-1", baseFilters({ deliveryLateOnly: true, statuses: ["CANCELLED"] }));
+
+    const where = findManyArgs().where as Record<string, unknown>;
+    // `in: ["CANCELLED"]` intersected with `notIn: ["COMPLETED", "CANCELLED"]` is the empty set by
+    // construction: Prisma resolves the AND itself, so asserting the shape sent to it is as far as
+    // this mock-based test can go, and is the behaviour the SQL narrow is meant to guarantee.
+    expect(where.status).toEqual({ in: ["CANCELLED"], notIn: ["COMPLETED", "CANCELLED"] });
   });
 
   it("still applies the looser deliveryOverdueOnly ('Por recibir') window-started predicate on its own", async () => {
@@ -175,5 +259,44 @@ describe("getOrdersList delivery-lateness filters", () => {
     const where = findManyArgs().where as Record<string, unknown>;
     expect(where.expectedDeliveryFrom).toEqual({ lte: expect.any(Date) });
     expect(where.OR).toBeUndefined();
+  });
+});
+
+/**
+ * "Con saldo pendiente" (`FR-05-35`'s companion filter). ADR 0025 retired the paid/partial/unpaid
+ * filter because a per-order percentage stopped being a fact under store-level payments; whether an
+ * order's declared allocations cover its own total never stopped being one.
+ */
+describe("getOrdersList con saldo pendiente filter", () => {
+  function balanceGroup() {
+    return (findManyArgs().where.AND ?? []).find((group) => "totalCost" in group) as
+      { totalCost: { gt: unknown }; status: { not: string } } | undefined;
+  }
+
+  it("adds no balance condition when the filter is off", async () => {
+    await getOrdersList("user-1", baseFilters());
+    expect(balanceGroup()).toBeUndefined();
+  });
+
+  it("compares totalCost against the allocation cache column, not a literal", async () => {
+    await getOrdersList("user-1", baseFilters({ withBalanceOnly: true }));
+
+    // A literal here (`{ gt: 0 }`) would return every order with a price, which is the whole list.
+    expect(balanceGroup()?.totalCost.gt).toBe(ALLOCATED_FIELD_REF);
+  });
+
+  it("always excludes cancelled orders, which owe nothing whatever their total says", async () => {
+    await getOrdersList("user-1", baseFilters({ withBalanceOnly: true, statuses: ["CANCELLED", "COMPLETED"] }));
+
+    // ADR 0025 defines store debt as `Σ committed (non-cancelled) − Σ paid`; the filter has to
+    // agree with that formula even when the collector explicitly ticks the Cancelado pill.
+    expect(balanceGroup()?.status).toEqual({ not: "CANCELLED" });
+  });
+
+  it("counts the same rows it lists", async () => {
+    await getOrdersList("user-1", baseFilters({ withBalanceOnly: true }));
+
+    // Pagination breaks the moment the count and the page read different `where`s.
+    expect(prismaMock.order.count.mock.calls[0][0]).toEqual({ where: findManyArgs().where });
   });
 });

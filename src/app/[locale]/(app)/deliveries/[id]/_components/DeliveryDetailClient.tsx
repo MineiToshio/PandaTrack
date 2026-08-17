@@ -24,6 +24,8 @@ type DeliveryDetailClientProps = {
   delivery: DeliveryDetail;
   baseCurrencyCode: string | null;
   locale: string;
+  /** The collector's civil day, resolved on the server so the hero's lateness matches the list's. */
+  today: Date;
   /** Server-wrapped note card (autosave is independent from the lifecycle state). */
   noteCard: ReactNode;
 };
@@ -48,6 +50,7 @@ export default function DeliveryDetailClient({
   delivery,
   baseCurrencyCode,
   locale,
+  today,
   noteCard,
 }: DeliveryDetailClientProps) {
   const router = useRouter();
@@ -245,6 +248,7 @@ export default function DeliveryDetailClient({
           receivedDate={receivedDate}
           baseCurrencyCode={baseCurrencyCode}
           locale={locale}
+          today={today}
         />
         <DeliveryProductsCard
           sourceOrders={delivery.sourceOrders}

@@ -42,7 +42,9 @@ export default async function OrdersDetailPage({ params, searchParams }: Props) 
 
   const [order, user] = await Promise.all([
     getOrderDetail(id, userId),
-    prisma.user.findUnique({ where: { id: userId }, select: { baseCurrencyCode: true } }),
+    // `timezone` rides along with the currency the page already reads: the overdue banner compares
+    // against midnight-UTC domain dates, so it needs the collector's civil day, not a wall clock.
+    prisma.user.findUnique({ where: { id: userId }, select: { baseCurrencyCode: true, timezone: true } }),
   ]);
 
   if (!order) notFound();
@@ -61,6 +63,7 @@ export default async function OrdersDetailPage({ params, searchParams }: Props) 
       backHref={backHref}
       detailHref={detailHref}
       storeDebtMinor={storeDebtMinor}
+      timeZone={user?.timezone ?? null}
     />
   );
 }
