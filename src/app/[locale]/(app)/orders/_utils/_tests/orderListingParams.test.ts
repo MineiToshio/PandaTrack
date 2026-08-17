@@ -1,14 +1,35 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildOrderListFilterUrl,
   DEFAULT_ACTIVE_STATUSES,
   DEFAULT_ORDER_LIST_VIEW,
   hasOnlyDefaultActiveFilters,
   isDefaultActiveStatusSet,
   parseOrderListingParams,
+  parseStoreViewQuery,
   resolveOrderListView,
 } from "../orderListingParams";
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 import { ORDER_LIST_SORT_VALUES } from "@/lib/orders/orderListSort";
+import type { OrderListActiveFilters } from "../orderListingParams";
+
+const BASE_FILTERS: OrderListActiveFilters = {
+  nameQuery: undefined,
+  productTypeKeys: [],
+  storeId: undefined,
+  statuses: [],
+  fxPendingOnly: false,
+  sort: "recent",
+  appliedDefaultStatuses: false,
+  dateFromIso: undefined,
+  dateToIso: undefined,
+  deliveryFromIso: undefined,
+  deliveryToIso: undefined,
+  deliveryOverdueOnly: false,
+  deliveryLateOnly: false,
+  withBalanceOnly: false,
+  perPage: DEFAULT_PAGE_SIZE,
+};
 
 describe("parseOrderListingParams", () => {
   it("leaves statuses empty when no status param is present (defaults live in the nav href)", () => {
@@ -111,6 +132,25 @@ describe("resolveOrderListView", () => {
   });
 });
 
+describe("parseStoreViewQuery", () => {
+  it("trims the store view's own search text", () => {
+    expect(parseStoreViewQuery("  nendoroid  ")).toBe("nendoroid");
+    expect(parseStoreViewQuery(["amazon"])).toBe("amazon");
+  });
+
+  it("treats a missing or blank value as no search", () => {
+    expect(parseStoreViewQuery(undefined)).toBeUndefined();
+    expect(parseStoreViewQuery("   ")).toBeUndefined();
+  });
+
+  it("is independent from the order view's ?q=", () => {
+    const parsed = parseOrderListingParams({ q: "order text", sq: "store text" });
+
+    expect(parsed.nameQuery).toBe("order text");
+    expect(parseStoreViewQuery("store text")).toBe("store text");
+  });
+});
+
 describe("isDefaultActiveStatusSet", () => {
   it("returns true for exactly the default four statuses", () => {
     expect(isDefaultActiveStatusSet(["OPEN", "PARTIALLY_IN_TRANSIT", "IN_TRANSIT", "PARTIALLY_DELIVERED"])).toBe(true);
@@ -146,6 +186,7 @@ describe("hasOnlyDefaultActiveFilters", () => {
         deliveryToIso: undefined,
         deliveryOverdueOnly: false,
         deliveryLateOnly: false,
+        withBalanceOnly: false,
         perPage: DEFAULT_PAGE_SIZE,
       }),
     ).toBe(true);
@@ -167,8 +208,46 @@ describe("hasOnlyDefaultActiveFilters", () => {
         deliveryToIso: undefined,
         deliveryOverdueOnly: false,
         deliveryLateOnly: false,
+        withBalanceOnly: false,
         perPage: DEFAULT_PAGE_SIZE,
       }),
+    ).toBe(false);
+  });
+});
+
+/**
+ * The door back to the pedidos ADR 0025 made unfindable: the paid/partial/unpaid filter it retired
+ * was a percentage question, this one is the binary "still owes money" question.
+ */
+describe("con saldo pendiente filter", () => {
+  it("parses ?balance=true", () => {
+    expect(parseOrderListingParams({ balance: "true" }).withBalanceOnly).toBe(true);
+    expect(parseOrderListingParams({ balance: "1" }).withBalanceOnly).toBe(true);
+  });
+
+  it("defaults to off and ignores a junk value", () => {
+    expect(parseOrderListingParams({}).withBalanceOnly).toBe(false);
+    expect(parseOrderListingParams({ balance: "yes" }).withBalanceOnly).toBe(false);
+  });
+
+  it("round-trips through the filter URL builder alongside a status", () => {
+    const url = buildOrderListFilterUrl("/es/orders", BASE_FILTERS, {
+      withBalanceOnly: true,
+      statuses: ["COMPLETED"],
+    });
+    // The pair that answers the collector's actual question: delivered, and still owing.
+    expect(url).toContain("balance=true");
+    expect(url).toContain("status=COMPLETED");
+    expect(parseOrderListingParams({ balance: "true", status: "COMPLETED" })).toMatchObject({
+      withBalanceOnly: true,
+      statuses: ["COMPLETED"],
+    });
+  });
+
+  it("counts as a resettable filter", () => {
+    expect(hasOnlyDefaultActiveFilters({ ...BASE_FILTERS, statuses: DEFAULT_ACTIVE_STATUSES })).toBe(true);
+    expect(
+      hasOnlyDefaultActiveFilters({ ...BASE_FILTERS, statuses: DEFAULT_ACTIVE_STATUSES, withBalanceOnly: true }),
     ).toBe(false);
   });
 });

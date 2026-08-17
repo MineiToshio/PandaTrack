@@ -11,7 +11,12 @@ export type CreateDeliveryResult =
   | { ok: true; deliveryId: string; productCount: number; orderCount: number }
   | {
       ok: false;
-      error: "STORE_NOT_FOUND" | "NO_PRODUCTS_SELECTED" | "PRODUCTS_FROM_DIFFERENT_STORE" | "PRODUCT_NOT_ELIGIBLE";
+      error:
+        | "STORE_NOT_FOUND"
+        | "NO_PRODUCTS_SELECTED"
+        | "PRODUCTS_FROM_DIFFERENT_STORE"
+        | "PRODUCT_NOT_ELIGIBLE"
+        | "ORDER_CANCELLED";
       /** OrderItem ids that were no longer eligible — drives the client retry copy. */
       ineligibleProductIds?: string[];
     };
@@ -71,8 +76,9 @@ export async function persistDerivedOrderStatuses(tx: Prisma.TransactionClient, 
  * - the quick-arrival flow passes `receivedDate`, so the delivery is born DELIVERED and its
  *   products jump straight to DELIVERED, collapsing both steps into one write.
  *
- * They are deliberately not two functions: the store check, the eligibility compare-and-swap,
- * the identifier, the FX base stamp and the order-status re-derivation must never drift apart.
+ * They are deliberately not two functions: the store check, the cancelled-order refusal, the
+ * eligibility compare-and-swap, the identifier, the FX base stamp and the order-status
+ * re-derivation must never drift apart.
  */
 export async function createDelivery(userId: string, input: DeliveryCreateInput): Promise<CreateDeliveryResult> {
   const uniqueProductIds = [...new Set(input.productIds)];
@@ -104,6 +110,7 @@ export async function createDelivery(userId: string, input: DeliveryCreateInput)
             select: {
               storeId: true,
               userId: true,
+              status: true,
             },
           },
         },
@@ -123,6 +130,17 @@ export async function createDelivery(userId: string, input: DeliveryCreateInput)
       );
       if (hasDifferentStore) {
         return { ok: false, error: "PRODUCTS_FROM_DIFFERENT_STORE" };
+      }
+
+      // A cancelled order is outside the delivery lifecycle: `persistDerivedOrderStatuses` refuses
+      // to re-derive it, so a delivery built from its products would move the item states and then
+      // leave the order frozen at CANCELLED, with no surface able to explain the mismatch. The
+      // check lives here rather than in one caller because a store-scoped selection spans N orders
+      // and because the create wizard's product picker does not filter cancelled orders either.
+      // Decided before the first write on purpose: a `return` from a `$transaction` callback
+      // commits (ADR 0022), so every refusal has to be reachable while nothing has been written.
+      if (selectedItems.some((item) => item.order.status === OrderStatus.CANCELLED)) {
+        return { ok: false, error: "ORDER_CANCELLED" };
       }
 
       const eligibleStates: OrderItemDeliveryState[] = [

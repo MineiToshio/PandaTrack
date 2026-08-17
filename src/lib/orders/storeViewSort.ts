@@ -98,33 +98,36 @@ function groupMaxDebtMinor(group: PendingProductsByStoreGroup): number {
   return group.debts.reduce((max, debt) => Math.max(max, debt.debtMinor), Number.NEGATIVE_INFINITY);
 }
 
+/**
+ * The store ranking, with `store.id` as the tie-break that makes it total.
+ *
+ * `diff` is checked for FINITENESS, not only for zero: every aggregate key here can legitimately be
+ * infinite (`+Infinity` for a store with no arrival window on any product, `-Infinity` for a store
+ * with no debt row), and `Infinity - Infinity` is `NaN`. `Array.prototype.sort` reads a `NaN`
+ * comparator as 0, which does not fall through to the tie-break — it skips it, degenerating into
+ * "keep whatever order the input happened to arrive in". Two lists holding the same groups in a
+ * different order (the server's payload and this view's optimistic patch) would then render them
+ * differently, which is exactly what the client-side re-sort exists to prevent.
+ */
+function withStoreTieBreak(diff: number, a: PendingProductsByStoreGroup, b: PendingProductsByStoreGroup): number {
+  return Number.isFinite(diff) && diff !== 0 ? diff : a.store.id.localeCompare(b.store.id);
+}
+
 function compareGroups(a: PendingProductsByStoreGroup, b: PendingProductsByStoreGroup, sort: StoreViewSort): number {
   switch (sort) {
-    case "recent": {
-      const diff = groupOrderDateExtreme(b, -1) - groupOrderDateExtreme(a, -1);
-      return diff !== 0 ? diff : a.store.id.localeCompare(b.store.id);
-    }
-    case "oldest": {
-      const diff = groupOrderDateExtreme(a, 1) - groupOrderDateExtreme(b, 1);
-      return diff !== 0 ? diff : a.store.id.localeCompare(b.store.id);
-    }
-    case "store-asc": {
-      const diff = a.store.name.localeCompare(b.store.name);
-      return diff !== 0 ? diff : a.store.id.localeCompare(b.store.id);
-    }
-    case "store-desc": {
-      const diff = b.store.name.localeCompare(a.store.name);
-      return diff !== 0 ? diff : a.store.id.localeCompare(b.store.id);
-    }
-    case "total-desc": {
-      const diff = groupMaxDebtMinor(b) - groupMaxDebtMinor(a);
-      return diff !== 0 ? diff : a.store.id.localeCompare(b.store.id);
-    }
+    case "recent":
+      return withStoreTieBreak(groupOrderDateExtreme(b, -1) - groupOrderDateExtreme(a, -1), a, b);
+    case "oldest":
+      return withStoreTieBreak(groupOrderDateExtreme(a, 1) - groupOrderDateExtreme(b, 1), a, b);
+    case "store-asc":
+      return withStoreTieBreak(a.store.name.localeCompare(b.store.name), a, b);
+    case "store-desc":
+      return withStoreTieBreak(b.store.name.localeCompare(a.store.name), a, b);
+    case "total-desc":
+      return withStoreTieBreak(groupMaxDebtMinor(b) - groupMaxDebtMinor(a), a, b);
     case "arrival-asc":
-    default: {
-      const diff = groupArrivalKey(a) - groupArrivalKey(b);
-      return diff !== 0 ? diff : a.store.id.localeCompare(b.store.id);
-    }
+    default:
+      return withStoreTieBreak(groupArrivalKey(a) - groupArrivalKey(b), a, b);
   }
 }
 

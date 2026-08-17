@@ -36,6 +36,7 @@ vi.mock("@sentry/nextjs", () => ({
 }));
 
 import { quickArrivalAction, type QuickArrivalActionInput } from "../quickArrivalAction";
+import { addUtcDays, utcMidnightToday } from "@/test/domainDateFixtures";
 
 const AUTHENTICATED_SESSION = { user: { id: "user-1" } };
 const VALID_ORDER_ID = "clh1234567890abcdefghijk";
@@ -114,7 +115,7 @@ describe("quickArrivalAction", () => {
   });
 
   it("refuses a future arrival date", async () => {
-    const future = new Date(Date.now() + 86_400_000);
+    const future = addUtcDays(utcMidnightToday(), 1);
 
     const result = await quickArrivalAction(buildInput({ receivedDate: future }));
 
@@ -131,7 +132,13 @@ describe("quickArrivalAction", () => {
     expect(createDeliveryMock).not.toHaveBeenCalled();
   });
 
-  it("refuses a cancelled order", async () => {
+  /**
+   * The cancelled-order refusal moved into `createDelivery`, so every entry point into a delivery
+   * inherits it (the create wizard's product picker never filtered cancelled orders either). This
+   * action must therefore relay it rather than pre-empt it: a second copy up here would be the
+   * thing that drifts once the two paths change independently.
+   */
+  it("relays the cancelled-order refusal now owned by the data layer", async () => {
     getDeliverySourceOrderMock.mockResolvedValue({
       orderId: VALID_ORDER_ID,
       orderHumanReadableId: "PED-001",
@@ -139,11 +146,13 @@ describe("quickArrivalAction", () => {
       storeName: "AmiAmi",
       status: "CANCELLED",
     });
+    createDeliveryMock.mockResolvedValue({ ok: false, error: "ORDER_CANCELLED" });
 
     const result = await quickArrivalAction(buildInput());
 
     expect(result).toEqual({ ok: false, error: "ORDER_CANCELLED" });
-    expect(createDeliveryMock).not.toHaveBeenCalled();
+    // The refusal is decided inside the transaction, against the products' real orders.
+    expect(createDeliveryMock).toHaveBeenCalledTimes(1);
   });
 
   it("requires a rate when the cost currency differs from the collector base", async () => {

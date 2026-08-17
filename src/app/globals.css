@@ -110,7 +110,6 @@
   --z-sticky: 10;
   --z-sidebar: 20;
   --z-header: 30;
-  --z-mascot: 35;
   --z-fab: 38;
   --z-popover: 40;
   --z-drawer: 50;
@@ -556,32 +555,6 @@
   }
 }
 
-/* ───────────────────────────────────────────────────────────
-   Mascot context menu — subtle pop-in from the bubble corner.
-   Reduced-motion → none (the menu still appears, just instant).
-   ─────────────────────────────────────────────────────────── */
-@keyframes mascot-menu-pop {
-  from {
-    opacity: 0;
-    transform: translateY(4px) scale(0.96);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-.animate-mascot-menu {
-  transform-origin: bottom right;
-  animation: mascot-menu-pop var(--motion-fast) var(--ease-out-expressive) both;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .animate-mascot-menu {
-    animation: none;
-  }
-}
-
 /* Hand-rolled check/dot zoom for Checkbox & Radio — replaces the inert
    `animate-in zoom-in-50` (tailwindcss-animate not installed; ADR 0010 / cross-cutting
    S12.1). Matches the zoom-in-50 feel: scale 0.5 → 1 + fade in. */
@@ -602,6 +575,29 @@
 
 @media (prefers-reduced-motion: reduce) {
   .animate-check-zoom {
+    animation: none;
+  }
+}
+
+/* Entrance of the store group's batch-selection bar. Transform and opacity only: the bar is
+   `sticky` inside a card whose rows must not reflow while it appears. */
+@keyframes selection-bar-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-selection-bar-in {
+  animation: selection-bar-in var(--motion-base) var(--ease-out-expressive) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-selection-bar-in {
     animation: none;
   }
 }
@@ -766,9 +762,16 @@ body {
   border-radius: 999px;
   padding: 2px;
 }
+/*
+ * Segment size is breakpoint-driven for the same reason `core/ThemeToggle.tsx` is: a segmented
+ * control cannot reach the 44x44 touch floor with the ::before hit-area recipe, because the two
+ * segments sit 2px apart and each expansion would swallow its neighbour. So the segment itself is
+ * 44x44 below `md` and compact only from `md` up. This toggle is touched on phones: the landing
+ * header hides it under 900px, but the burger sheet and the auth/legal minibar both render it.
+ */
 .mk-theme button {
-  width: 28px;
-  height: 26px;
+  width: 44px;
+  height: 44px;
   display: grid;
   place-items: center;
   border: 0;
@@ -777,8 +780,18 @@ body {
   color: var(--text-muted);
 }
 .mk-theme button svg {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
+}
+@media (min-width: 48rem) {
+  .mk-theme button {
+    width: 28px;
+    height: 26px;
+  }
+  .mk-theme button svg {
+    width: 14px;
+    height: 14px;
+  }
 }
 .mk-theme button[aria-pressed="true"] {
   background: var(--surface);

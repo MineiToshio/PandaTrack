@@ -219,13 +219,13 @@ describe("createDelivery", () => {
             id: "item-1",
             orderId: "order-1",
             deliveryState: OrderItemDeliveryState.NONE,
-            order: { storeId: "store-1", userId: "user-1" },
+            order: { storeId: "store-1", userId: "user-1", status: OrderStatus.OPEN },
           },
           {
             id: "item-2",
             orderId: "order-1",
             deliveryState: OrderItemDeliveryState.ARRIVED_AT_STORE,
-            order: { storeId: "store-1", userId: "user-1" },
+            order: { storeId: "store-1", userId: "user-1", status: OrderStatus.OPEN },
           },
         ]),
         updateMany: vi.fn().mockResolvedValue({ count: 2 }),
@@ -333,7 +333,7 @@ describe("createDelivery", () => {
             id: "item-1",
             orderId: "order-1",
             deliveryState: OrderItemDeliveryState.NONE,
-            order: { storeId: "store-2", userId: "user-1" },
+            order: { storeId: "store-2", userId: "user-1", status: OrderStatus.OPEN },
           },
         ]),
         updateMany: vi.fn(),
@@ -357,7 +357,7 @@ describe("createDelivery", () => {
             id: "item-1",
             orderId: "order-1",
             deliveryState: OrderItemDeliveryState.IN_TRANSIT,
-            order: { storeId: "store-1", userId: "user-1" },
+            order: { storeId: "store-1", userId: "user-1", status: OrderStatus.OPEN },
           },
         ]),
         updateMany: vi.fn(),
@@ -382,7 +382,7 @@ describe("createDelivery", () => {
             id: "item-1",
             orderId: "order-1",
             deliveryState: OrderItemDeliveryState.NONE,
-            order: { storeId: "store-1", userId: "user-1" },
+            order: { storeId: "store-1", userId: "user-1", status: OrderStatus.OPEN },
           },
         ]),
         updateMany: vi.fn(),
@@ -507,6 +507,193 @@ describe("createDelivery", () => {
         data: expect.objectContaining({ status: DeliveryStatus.IN_TRANSIT, receivedDate: null }),
         select: { id: true },
       });
+    });
+  });
+
+  /**
+   * The heart of the store-scoped arrival: one physical box, one `Delivery` row, whatever number
+   * of orders its contents came from (`FR-08-02`, `BR-08-12`). One row per order would mean N
+   * `DLV-*` identifiers and N shipping-cost questions for a cost that belongs to the box.
+   */
+  describe("across several orders of the same store", () => {
+    function makeCrossOrderTx(): Prisma.TransactionClient {
+      return makeCreateTx({
+        orderItem: {
+          findMany: vi.fn().mockResolvedValue([
+            {
+              id: "item-1",
+              orderId: "order-1",
+              deliveryState: OrderItemDeliveryState.NONE,
+              order: { storeId: "store-1", userId: "user-1", status: OrderStatus.OPEN },
+            },
+            {
+              id: "item-2",
+              orderId: "order-2",
+              deliveryState: OrderItemDeliveryState.ARRIVED_AT_STORE,
+              order: { storeId: "store-1", userId: "user-1", status: OrderStatus.PARTIALLY_DELIVERED },
+            },
+            {
+              id: "item-3",
+              orderId: "order-2",
+              deliveryState: OrderItemDeliveryState.NONE,
+              order: { storeId: "store-1", userId: "user-1", status: OrderStatus.PARTIALLY_DELIVERED },
+            },
+          ]),
+          updateMany: vi.fn().mockResolvedValue({ count: 3 }),
+        } as unknown as Prisma.TransactionClient["orderItem"],
+        deliveryOrderItem: {
+          createMany: vi.fn().mockResolvedValue({ count: 3 }),
+        } as unknown as Prisma.TransactionClient["deliveryOrderItem"],
+        order: {
+          // Post-update states: order-1 is now fully delivered, order-2 still has a product out.
+          findMany: vi.fn().mockResolvedValue([
+            {
+              id: "order-1",
+              status: OrderStatus.OPEN,
+              items: [{ id: "item-1", deliveryState: OrderItemDeliveryState.DELIVERED }],
+            },
+            {
+              id: "order-2",
+              status: OrderStatus.OPEN,
+              items: [
+                { id: "item-2", deliveryState: OrderItemDeliveryState.DELIVERED },
+                { id: "item-3", deliveryState: OrderItemDeliveryState.DELIVERED },
+                { id: "item-4", deliveryState: OrderItemDeliveryState.NONE },
+              ],
+            },
+          ]),
+          updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+        } as unknown as Prisma.TransactionClient["order"],
+      });
+    }
+
+    const crossOrderInput = {
+      ...input,
+      receivedDate: new Date("2026-05-02T00:00:00.000Z"),
+      productIds: ["item-1", "item-2", "item-3"],
+    };
+
+    it("writes exactly one Delivery, one DeliveryOrderItem per product, and re-derives every order", async () => {
+      const tx = makeCrossOrderTx();
+      prismaMock.$transaction.mockImplementation(async (callback: (tx: Prisma.TransactionClient) => unknown) =>
+        callback(tx),
+      );
+
+      const result = await createDelivery("user-1", crossOrderInput);
+
+      // One row, and the caller is told the selection spanned two orders.
+      expect(tx.delivery.create).toHaveBeenCalledTimes(1);
+      expect(result).toEqual({ ok: true, deliveryId: "delivery-1", productCount: 3, orderCount: 2 });
+
+      // One association per product, all pointing at that single delivery.
+      expect(tx.deliveryOrderItem.createMany).toHaveBeenCalledTimes(1);
+      expect(tx.deliveryOrderItem.createMany).toHaveBeenCalledWith({
+        data: [
+          { deliveryId: "delivery-1", orderItemId: "item-1" },
+          { deliveryId: "delivery-1", orderItemId: "item-2" },
+          { deliveryId: "delivery-1", orderItemId: "item-3" },
+        ],
+      });
+
+      // Both source orders re-derived in the same transaction, each to its own new status.
+      expect(tx.order.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: { in: ["order-1", "order-2"] } } }),
+      );
+      expect(tx.order.updateMany).toHaveBeenCalledWith({
+        where: { id: { in: ["order-1"] } },
+        data: { status: OrderStatus.COMPLETED },
+      });
+      expect(tx.order.updateMany).toHaveBeenCalledWith({
+        where: { id: { in: ["order-2"] } },
+        data: { status: OrderStatus.PARTIALLY_DELIVERED },
+      });
+    });
+
+    it("moves every selected product to DELIVERED in a single compare-and-swap", async () => {
+      const tx = makeCrossOrderTx();
+      prismaMock.$transaction.mockImplementation(async (callback: (tx: Prisma.TransactionClient) => unknown) =>
+        callback(tx),
+      );
+
+      await createDelivery("user-1", crossOrderInput);
+
+      expect(tx.orderItem.updateMany).toHaveBeenCalledTimes(1);
+      expect(tx.orderItem.updateMany).toHaveBeenCalledWith({
+        where: {
+          id: { in: ["item-1", "item-2", "item-3"] },
+          userId: "user-1",
+          deliveryState: { in: [OrderItemDeliveryState.NONE, OrderItemDeliveryState.ARRIVED_AT_STORE] },
+        },
+        data: { deliveryState: OrderItemDeliveryState.DELIVERED },
+      });
+    });
+  });
+
+  /**
+   * A cancelled order is outside the delivery lifecycle (`persistDerivedOrderStatuses` refuses to
+   * re-derive it), so its products can never join a delivery. The check lives here rather than in
+   * one caller: a store-scoped selection spans N orders, and the create wizard's product picker
+   * does not filter cancelled orders either.
+   */
+  describe("cancelled source order", () => {
+    function makeCancelledTx(): Prisma.TransactionClient {
+      return makeCreateTx({
+        orderItem: {
+          findMany: vi.fn().mockResolvedValue([
+            {
+              id: "item-1",
+              orderId: "order-1",
+              deliveryState: OrderItemDeliveryState.NONE,
+              order: { storeId: "store-1", userId: "user-1", status: OrderStatus.OPEN },
+            },
+            {
+              id: "item-2",
+              orderId: "order-2",
+              deliveryState: OrderItemDeliveryState.NONE,
+              order: { storeId: "store-1", userId: "user-1", status: OrderStatus.CANCELLED },
+            },
+          ]),
+          updateMany: vi.fn(),
+        } as unknown as Prisma.TransactionClient["orderItem"],
+      });
+    }
+
+    it("refuses the whole selection when any product belongs to a cancelled order", async () => {
+      const tx = makeCancelledTx();
+      prismaMock.$transaction.mockImplementation(async (callback: (tx: Prisma.TransactionClient) => unknown) =>
+        callback(tx),
+      );
+
+      const result = await createDelivery("user-1", { ...input, productIds: ["item-1", "item-2"] });
+
+      expect(result).toEqual({ ok: false, error: "ORDER_CANCELLED" });
+    });
+
+    it("decides the refusal before the first write, so a returned refusal cannot commit anything", async () => {
+      const tx = makeCancelledTx();
+      prismaMock.$transaction.mockImplementation(async (callback: (tx: Prisma.TransactionClient) => unknown) =>
+        callback(tx),
+      );
+
+      await createDelivery("user-1", { ...input, productIds: ["item-1", "item-2"] });
+
+      // A `return` from a $transaction callback commits (ADR 0022): nothing may have been written.
+      expect(generateDeliveryHumanReadableIdMock).not.toHaveBeenCalled();
+      expect(tx.delivery.create).not.toHaveBeenCalled();
+      expect(tx.orderItem.updateMany).not.toHaveBeenCalled();
+      expect(tx.deliveryOrderItem.createMany).not.toHaveBeenCalled();
+      expect(tx.order.updateMany).not.toHaveBeenCalled();
+    });
+
+    it("lets a selection through when every source order is still standing", async () => {
+      const tx = makeCreateTx();
+      prismaMock.$transaction.mockImplementation(async (callback: (tx: Prisma.TransactionClient) => unknown) =>
+        callback(tx),
+      );
+
+      const result = await createDelivery("user-1", input);
+
+      expect(result).toEqual({ ok: true, deliveryId: "delivery-1", productCount: 2, orderCount: 1 });
     });
   });
 });

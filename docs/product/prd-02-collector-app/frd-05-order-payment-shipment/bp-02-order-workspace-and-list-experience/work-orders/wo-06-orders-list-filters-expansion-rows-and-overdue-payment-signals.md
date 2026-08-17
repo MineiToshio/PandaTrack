@@ -89,7 +89,7 @@ WO-06 does not introduce any Prisma migration. It adds `getOrdersList` to the ex
 | ------------------ | ---------------------------------------- | ------------------------------------- |
 | `/[locale]/orders` | `src/app/[locale]/(app)/orders/page.tsx` | Server-rendered paginated orders list |
 
-The existing `page.tsx` currently renders `AppPlaceholderPage` and is replaced entirely by this slice.
+Before this slice, `page.tsx` rendered the generic `AppPlaceholderPage` stub; this slice replaced it entirely. That stub component no longer exists anywhere in the tree.
 
 ## Module Structure
 
@@ -134,7 +134,7 @@ export const DEFAULT_ACTIVE_STATUSES: OrderStatus[] = [
 
 ### Page header
 
-`AppPageHero` with no `BackNavLink` (orders is a root-level workspace):
+An inline page heading with no `BackNavLink` (orders is a root-level workspace). The shared `AppPageHero` component this originally named was removed as dead code; listing pages render a bare `h1` at the shared hero scale ([interface-patterns.md](../../../../../design/interface-patterns.md)):
 
 - Title (ES): "Órdenes" · (EN): "Orders"
 - Primary action: `Button` → `/orders/new` · (ES): "Nuevo pedido" · (EN): "New order"
@@ -170,7 +170,7 @@ Each card in the list renders the following sections:
 
 **Payment bar:** thin progress bar from 0% to 100% using theme-aware semantic tokens
 
-**Status row:** `OrderStatusBadge` · `Impago` / `Unpaid` pill when `status === "COMPLETED"` and `hasUnpaidBalance === true` (`FR-05-35`) · `Atrasada` / `Overdue` warning chip when `isOrderOverdue` returns `true`
+**Status row:** the localized status chip · `Impago` / `Unpaid` pill when `status === "COMPLETED"` and `hasUnpaidBalance === true` (`FR-05-35`) · `Atrasada` / `Overdue` warning chip when `isOrderOverdue` returns `true`. All three chips are described by the shared helper module `_components/share/orderListStatusChip.ts` (`describeOrderListChip`, `describeOrderListBalanceChip`, `describeOverdueDays` + `getOrderListChipToneClassName`) and rendered by `OrderCard.tsx` / `OrdersTable.tsx`. The standalone `OrderStatusBadge` component this work order originally specified was superseded by that descriptor helper, and the orphan has been deleted.
 
 **Delivery row:** expected delivery range formatted per locale; when overdue the range text renders in warning color
 

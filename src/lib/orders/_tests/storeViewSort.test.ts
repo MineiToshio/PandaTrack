@@ -14,11 +14,14 @@ function makeProduct(overrides: Partial<PendingProductRow> = {}): PendingProduct
     deliveryState: "open",
     unitPrice: 1000,
     allocatedMinor: 0,
-    settled: false,
+    paidDeclared: false,
     orderId: "order-1",
+    orderHumanReadableId: "PED-001",
     orderDate: new Date("2026-01-01T00:00:00.000Z"),
     expectedDeliveryFrom: null,
     expectedDeliveryTo: null,
+    orderAllocatedAmountMinor: 0,
+    orderHasUndetailedMoney: false,
     orderTotalCost: 1000,
     orderItemCount: 1,
     currencyCode: "PEN",
@@ -32,7 +35,7 @@ function makeGroup(
   pendingProducts: PendingProductRow[],
   debts: PendingProductsByStoreGroup["debts"] = [],
 ): PendingProductsByStoreGroup {
-  return { store, openOrdersCount: 1, pendingProducts, debts };
+  return { store, openOrdersCount: 1, pendingProducts, debts, undetailedByOrder: [] };
 }
 
 describe("parseStoreViewSort", () => {
@@ -121,6 +124,27 @@ describe("sortStoreGroups store-asc / store-desc", () => {
 
     const desc = sortStoreGroups([groupZ, groupA], "store-desc");
     expect(desc.map((g) => g.store.id)).toEqual(["z", "a"]);
+  });
+});
+
+describe("sortStoreGroups tie-break when the aggregate key is infinite", () => {
+  // Every group aggregate can legitimately be infinite: `+Infinity` when no product of the store
+  // has an arrival window, `-Infinity` when the store has no debt row at all. `Infinity - Infinity`
+  // is `NaN`, and `Array.prototype.sort` reads a `NaN` comparator as 0 WITHOUT falling through to
+  // the tie-break, so the result degenerates into "keep the input order". The client's optimistic
+  // patch and the server's payload do not hold the groups in the same order, which is exactly the
+  // divergence the client-side re-sort exists to prevent.
+  const zzz = () => makeGroup(makeStore("zzz", "Zzz Store"), [makeProduct({ itemId: "z1" })]);
+  const aaa = () => makeGroup(makeStore("aaa", "Aaa Store"), [makeProduct({ itemId: "a1" })]);
+
+  it("orders two stores with no arrival window at all by store id, whatever the input order", () => {
+    expect(sortStoreGroups([zzz(), aaa()], "arrival-asc").map((g) => g.store.id)).toEqual(["aaa", "zzz"]);
+    expect(sortStoreGroups([aaa(), zzz()], "arrival-asc").map((g) => g.store.id)).toEqual(["aaa", "zzz"]);
+  });
+
+  it("orders two stores with no debt row by store id, whatever the input order (total-desc)", () => {
+    expect(sortStoreGroups([zzz(), aaa()], "total-desc").map((g) => g.store.id)).toEqual(["aaa", "zzz"]);
+    expect(sortStoreGroups([aaa(), zzz()], "total-desc").map((g) => g.store.id)).toEqual(["aaa", "zzz"]);
   });
 });
 

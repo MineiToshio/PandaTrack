@@ -18,6 +18,7 @@ const DEFAULT_FILTERS: OrderListActiveFilters = {
   deliveryToIso: undefined,
   deliveryOverdueOnly: false,
   deliveryLateOnly: false,
+  withBalanceOnly: false,
   perPage: DEFAULT_PAGE_SIZE,
 };
 

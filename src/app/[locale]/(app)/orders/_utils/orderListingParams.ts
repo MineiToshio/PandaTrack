@@ -36,6 +36,8 @@ export type ParsedOrderListingParams = {
   deliveryOverdueOnly: boolean;
   /** "Atrasados": strict overdue — see `deliveryLateOnly` in `orderQueries.ts`. */
   deliveryLateOnly: boolean;
+  /** "Con saldo pendiente": `totalCost > allocatedAmountMinor`, cancelled orders excluded. */
+  withBalanceOnly: boolean;
   page: number;
   /** Desktop page-size selector value — one of `PAGE_SIZE_OPTIONS`. */
   perPage: number;
@@ -55,6 +57,7 @@ export type OrderListActiveFilters = {
   deliveryToIso: string | undefined;
   deliveryOverdueOnly: boolean;
   deliveryLateOnly: boolean;
+  withBalanceOnly: boolean;
   perPage: number;
 };
 
@@ -83,6 +86,7 @@ export function parseOrderListingParams(raw: Record<string, string | string[] | 
   const deliveryTo = parseDateParam(raw.deliveryTo);
   const deliveryOverdueOnly = parseBoolean(raw.delOverdue);
   const deliveryLateOnly = parseBoolean(raw.delLate);
+  const withBalanceOnly = parseBoolean(raw.balance);
 
   const page = parsePositiveInteger(raw.page);
   const perPage = parsePageSize(raw.perPage);
@@ -103,6 +107,7 @@ export function parseOrderListingParams(raw: Record<string, string | string[] | 
     deliveryTo,
     deliveryOverdueOnly,
     deliveryLateOnly,
+    withBalanceOnly,
     page,
     perPage,
   };
@@ -138,6 +143,7 @@ export function buildOrderListFilterUrl(
     deliveryOverdueOnly:
       "deliveryOverdueOnly" in overrides ? Boolean(overrides.deliveryOverdueOnly) : filters.deliveryOverdueOnly,
     deliveryLateOnly: "deliveryLateOnly" in overrides ? Boolean(overrides.deliveryLateOnly) : filters.deliveryLateOnly,
+    withBalanceOnly: "withBalanceOnly" in overrides ? Boolean(overrides.withBalanceOnly) : filters.withBalanceOnly,
     perPage: "perPage" in overrides ? overrides.perPage! : filters.perPage,
   };
 
@@ -157,6 +163,7 @@ export function buildOrderListFilterUrl(
   if (next.deliveryToIso) params.set("deliveryTo", next.deliveryToIso);
   if (next.deliveryOverdueOnly) params.set("delOverdue", "true");
   if (next.deliveryLateOnly) params.set("delLate", "true");
+  if (next.withBalanceOnly) params.set("balance", "true");
   if (next.perPage !== DEFAULT_PAGE_SIZE) params.set("perPage", String(next.perPage));
 
   const targetPage = overrides.page ?? 1;
@@ -177,6 +184,7 @@ export function hasOnlyDefaultActiveFilters(filters: OrderListActiveFilters): bo
     !filters.deliveryToIso &&
     !filters.deliveryOverdueOnly &&
     !filters.deliveryLateOnly &&
+    !filters.withBalanceOnly &&
     !filters.fxPendingOnly &&
     filters.sort === DEFAULT_ORDER_LIST_SORT &&
     isDefaultActiveStatusSet(filters.statuses)
@@ -217,6 +225,20 @@ function parseDateParam(value: string | string[] | undefined): Date | undefined 
 function parseBoolean(value: string | string[] | undefined): boolean {
   const first = Array.isArray(value) ? value[0] : value;
   return first === "true" || first === "1";
+}
+
+/**
+ * The "Por tienda" view's own search text (`?sq=`).
+ *
+ * Deliberately NOT the order view's `?q=`: the two search different things (this one matches store
+ * and product names in memory, `q` also matches order codes and drives the paginated SQL query) and
+ * each view carries the other's params forward inert, so one input's text must never silently
+ * re-filter the other view's body.
+ */
+export function parseStoreViewQuery(raw: string | string[] | undefined): string | undefined {
+  const first = Array.isArray(raw) ? raw[0] : raw;
+  const trimmed = first?.trim();
+  return trimmed ? trimmed : undefined;
 }
 
 /** The Orders list has two views: grouped by store (pending products) or the classic per-order list. */

@@ -92,6 +92,15 @@ export default function OrderListFilterChips({ basePath, locale, filters, stores
       onRemove: () => pushOverride({ fxPendingOnly: false }, "fxPending"),
     });
   }
+  // Binary "this order still owes money" (`FR-05-35`). Not a payment percentage: ADR 0025 retired
+  // that idea, and this chip says nothing about how much of the total is covered.
+  if (filters.withBalanceOnly) {
+    chips.push({
+      key: "withBalance",
+      label: t("chips.withBalance"),
+      onRemove: () => pushOverride({ withBalanceOnly: false }, "withBalance"),
+    });
+  }
   // Stricter than "Por recibir" — the delivery window has fully closed, not just started.
   // No drawer toggle surfaces this yet; it's reachable only via the dashboard's "Atrasados" link.
   if (filters.deliveryLateOnly) {

@@ -142,8 +142,7 @@ export default function OrderListRowActions({
         <QuickArrivalModal
           isOpen={quickArrival.isOpen}
           onClose={quickArrival.close}
-          orderHumanReadableId={order.humanReadableId}
-          storeName={order.store.name}
+          subtitle={`${order.humanReadableId} · ${order.store.name}`}
           items={quickArrivalItems}
           settledItemCount={settledItemCount}
           baseCurrencyCode={baseCurrencyCode}
