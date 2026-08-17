@@ -115,7 +115,7 @@ class InvalidProductTypeRollback extends Error {
 ### Enforcement
 
 - `.agents/rules/prisma-data-layer.mdc` carries the rule for agents and reviewers.
-- `src/test/transaction-refusal-guard.test.ts` is a static guard: it flags a literal `return { ok: false … }` positioned after the first `tx.*` write within a transaction scope. Its known blind spot is a refusal returned through a variable (`return applied`) rather than an object literal — the shape `applyBaseCurrencyChange` had. The guard is a net, not a proof; the rule is the contract.
+- `src/test/transaction-refusal-guard.test.ts` is a static guard: it flags a literal `return { ok: false … }` positioned after the first write within a transaction scope. A write counts whether it is issued directly as `tx.*` or through a same-file helper taking a `Prisma.TransactionClient`, so extracting a write behind such a helper does not take the mutation out of the scan. Two known blind spots remain: a refusal returned through a variable (`return applied`) rather than an object literal — the shape `applyBaseCurrencyChange` had — and a write reached through a helper declared in another file or more than one hop down, for which `parseAndApplyCollectorPreferencesPatch` is covered behaviourally by `src/lib/data/user-settings/_tests/collectorPreferencesRefusalOrder.test.ts` instead. The guard is a net, not a proof; the rule is the contract.
 - `src/lib/data/orders/_tests/orderTransactionRollback.test.ts` covers the four repaired sites behaviourally.
 
 ## Alternatives considered
