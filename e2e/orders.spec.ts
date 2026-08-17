@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { signInAndLandOnDashboard, skipUnlessAuthenticatedEnv } from "./_helpers/auth";
-import { deleteOrdersById } from "./_helpers/dbCleanup";
+import { deleteDeliveriesById, deleteOrdersById } from "./_helpers/dbCleanup";
 
 const E2E_ITEM_NAME = `E2E Order Item ${Date.now()}`;
 
@@ -14,11 +14,22 @@ let createdOrderIds: string[] = [];
 /** Also restore this if a test changes it and fails before undoing the change itself. */
 let baseCurrencyToRestore: string | null = null;
 
+/**
+ * A `Delivery` has no FK to `Order` (it links through `DeliveryOrderItem`), so deleting the seed
+ * orders leaves it behind as an orphan. Anything a test logs an arrival for goes in here.
+ */
+let createdDeliveryIds: string[] = [];
+
 test.afterEach(async ({ page }) => {
   if (baseCurrencyToRestore) {
     const codeToRestore = baseCurrencyToRestore;
     baseCurrencyToRestore = null;
     await changeBaseCurrency(page, codeToRestore).catch(() => {});
+  }
+  if (createdDeliveryIds.length > 0) {
+    const ids = createdDeliveryIds;
+    createdDeliveryIds = [];
+    await deleteDeliveriesById(ids);
   }
   if (createdOrderIds.length > 0) {
     const ids = createdOrderIds;
@@ -28,8 +39,9 @@ test.afterEach(async ({ page }) => {
 });
 
 /** Creates a minimal order through the create wizard (in the account's base currency) and
- *  returns its detail URL. Mirrors the helper in `deliveries.spec.ts`. */
-async function createOrderWithOneItem(page: Page): Promise<string> {
+ *  returns its detail URL. Mirrors the helper in `deliveries.spec.ts`.
+ *  `itemName` lets a spec create two orders it can tell apart in the "Por tienda" list. */
+async function createOrderWithOneItem(page: Page, itemName: string = E2E_ITEM_NAME): Promise<string> {
   await page.goto("/en/orders/new");
   await expect(page).toHaveURL(/\/en\/orders\/new/);
 
@@ -47,7 +59,7 @@ async function createOrderWithOneItem(page: Page): Promise<string> {
   await page
     .getByLabel(/^name$/i)
     .first()
-    .fill(E2E_ITEM_NAME);
+    .fill(itemName);
   await page.getByLabel(/^total/i).fill("10.00");
   await page
     .getByRole("button", { name: /^continue$/i })
@@ -370,5 +382,61 @@ test.describe("Orders toolbar layout", () => {
         `Group by x position stays within 2px between views at ${viewport.width}px`,
       ).toBeLessThanOrEqual(2);
     }
+  });
+});
+
+test.describe("Store view batch arrival", () => {
+  test("marks two products of different orders as arrived in one delivery", async ({ page }) => {
+    skipUnlessAuthenticatedEnv();
+    test.setTimeout(180_000);
+    await signInAndLandOnDashboard(page);
+
+    // Two orders, same store (the wizard always picks the combobox's first option), one product
+    // each: the shape the whole feature exists for, and the one the modal has to name as a single
+    // delivery spanning several orders (`FR-08-38` / `BR-08-12`).
+    const stamp = Date.now();
+    const firstItem = `E2E Batch A ${stamp}`;
+    const secondItem = `E2E Batch B ${stamp}`;
+    await createOrderWithOneItem(page, firstItem);
+    await createOrderWithOneItem(page, secondItem);
+
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto("/en/orders?view=store");
+    await expect(page.getByText(firstItem).first()).toBeVisible({ timeout: 15_000 });
+
+    // The tile is a real checkbox named after its product; both trees render, so take the first.
+    await page
+      .getByRole("checkbox", { name: `Select ${firstItem}` })
+      .first()
+      .check();
+    await page
+      .getByRole("checkbox", { name: `Select ${secondItem}` })
+      .first()
+      .check();
+
+    const bar = page.getByRole("toolbar", { name: /Actions for the selected products/i });
+    await expect(bar).toBeVisible();
+    await expect(bar.getByText(/2 products from 2 orders/i)).toBeVisible();
+
+    await bar.getByRole("button", { name: /Log the arrival of the selected products/i }).click();
+
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+    // The count and the list are the confirmation contract, and the notice is what warns that one
+    // delivery is about to hold products from two orders.
+    await expect(dialog.getByText(/A single delivery will be created/i)).toBeVisible();
+    await dialog.getByRole("button", { name: /Log the arrival of 2 products/i }).click();
+
+    // Optimistic Confirmation: the dialog dismisses on submit and the rows leave on the spot.
+    await expect(page.getByText(firstItem)).toHaveCount(0, { timeout: 15_000 });
+    await expect(page.getByText(secondItem)).toHaveCount(0);
+
+    // Follow the success toast to the delivery it created, both to prove one row was written for
+    // the pair and to learn the id `afterEach` has to delete (nothing else links it to the orders).
+    await page.getByRole("button", { name: /view delivery/i }).click();
+    await expect(page).toHaveURL(/\/en\/deliveries\/[a-z0-9]+$/i, { timeout: 15_000 });
+    createdDeliveryIds.push(page.url().split("/").pop()!);
+    await expect(page.getByText(firstItem).first()).toBeVisible();
+    await expect(page.getByText(secondItem).first()).toBeVisible();
   });
 });
