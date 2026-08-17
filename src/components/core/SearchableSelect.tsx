@@ -217,6 +217,13 @@ export default function SearchableSelect({
             onKeyDown={handleKeyDown}
           />
         )}
+        {/*
+          Trailing cluster — one touch target at a time (see `docs/design/interface-patterns.md`
+          §12, "A field's trailing cluster holds one touch target"). The clear is a real 44×44
+          box below `md` and drops to its 18px desktop box from `md` up; the chevron is
+          decoration (the input and the value trigger both open the list), so it steps aside
+          below `md` rather than sharing 4px of clearance with a 44px neighbour.
+        */}
         <div className="flex shrink-0 items-center gap-1 pr-2 [color:var(--text-muted)]">
           {clearable && selected ? (
             <button
@@ -224,12 +231,12 @@ export default function SearchableSelect({
               onClick={clear}
               disabled={disabled}
               aria-label={clearLabel}
-              className="rounded p-0.5 hover:[color:var(--text-primary)] focus-visible:[outline:2px_solid_var(--focus-ring)] focus-visible:outline-offset-1 disabled:pointer-events-none"
+              className="grid size-11 place-items-center rounded hover:[color:var(--text-primary)] focus-visible:[outline:2px_solid_var(--focus-ring)] focus-visible:outline-offset-1 disabled:pointer-events-none md:size-[18px]"
             >
               <X size={14} aria-hidden />
             </button>
           ) : null}
-          <span aria-hidden className="flex items-center px-0.5">
+          <span aria-hidden className={cn("items-center px-0.5", clearable && selected ? "hidden md:flex" : "flex")}>
             <ChevronDown size={16} />
           </span>
         </div>

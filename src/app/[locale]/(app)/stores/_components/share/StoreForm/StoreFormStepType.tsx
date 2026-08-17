@@ -100,8 +100,15 @@ export default function StoreFormStepType({
                 aria-checked={isPrivate}
                 aria-labelledby="store-private-label"
                 onClick={handleTogglePrivate}
+                // Tap target ≥44×44 on mobile via the `::before` pseudo (same mechanism as
+                // `IconButton` and `InlineSwitch`): padding inside the fixed 38×22 track never
+                // grows the track, so the hit area is expanded outward instead (22 + 2×11 = 44
+                // tall, 38 + 2×3 = 44 wide). Clearance: the seller-type tiles above are `pt-4`
+                // plus this `mt-0.5` away (18px > 11px) and the description beside it is `gap-3`
+                // (12px > 3px). `md:before:inset-0` drops the extra area on desktop.
                 className={cn(
                   "relative mt-0.5 h-[22px] w-[38px] flex-shrink-0 cursor-pointer rounded-full transition-colors",
+                  "before:absolute before:[inset:-11px_-3px] before:content-[''] md:before:inset-0",
                   "focus-visible:[outline:2px_solid_var(--focus-ring)] focus-visible:[outline-offset:2px]",
                   isPrivate ? "[background:var(--accent)]" : "[background:var(--border-strong)]",
                 )}

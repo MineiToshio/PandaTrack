@@ -185,10 +185,17 @@ export default function MultiTagAutocomplete({
           {selectedOptions.map((option) => (
             <Chip key={option.value} variant="neutral" size="sm">
               {renderOptionContent(option)}
+              {/*
+                Removable-chip contract (`docs/design/interface-patterns.md` §12): 44×44 box below
+                `md`, its negative margins matching `Chip size="sm"`'s own `px-[--space-2]
+                py-[--space-0_5]`, then back to the 15px desktop box. Never a `::before` — these
+                chips wrap at `gap-1.5`, and overlapping expansions would let one chip's remove
+                take the band over its neighbour's.
+              */}
               <button
                 type="button"
                 onClick={() => removeOption(option.value)}
-                className="cursor-pointer rounded p-0.5 [color:var(--text-muted)] hover:[color:var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:[outline-color:var(--focus-ring)]"
+                className="-my-[var(--space-0_5)] -mr-[var(--space-2)] grid size-11 cursor-pointer place-items-center rounded [color:var(--text-muted)] hover:[color:var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:[outline-color:var(--focus-ring)] md:m-0 md:size-[15px]"
                 aria-label={removeItemAriaLabel(option.label)}
               >
                 <X size={11} aria-hidden />

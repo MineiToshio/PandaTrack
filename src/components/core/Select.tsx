@@ -465,7 +465,12 @@ function ControlledSelect({
                 }
               }}
               className={cn(
-                "rounded-sm p-0.5",
+                // 44×44 touch box below `md`, back to the 18px desktop box from `md` up. Written
+                // as a box on both sides (never padding inside a pinned box) and never as a
+                // `::before`: the chevron 4px away would lose the contested band to it.
+                // `size="sm"` (a 32px trigger) has no `onClear` consumer; if one appears, the
+                // touch box has to come off the trigger's own height, not this class.
+                "grid size-11 place-items-center rounded-sm md:size-[18px]",
                 "[color:var(--text-muted)] hover:[color:var(--text-primary)]",
                 "transition-colors [transition-duration:var(--motion-fast)]",
                 "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1",
@@ -489,6 +494,10 @@ function ControlledSelect({
               className={cn(
                 "transition-transform [transition-duration:var(--motion-fast)] [transition-timing-function:var(--ease-emphasis)]",
                 open && "rotate-180",
+                // Decoration, not a control: the trigger button underneath already opens the
+                // list. Below `md` it steps aside so the clear's 44px box is the only thing in
+                // the cluster; the placeholder state (no clear) still shows it at every width.
+                selectedOption && onClear && "hidden md:block",
               )}
             />
           )}

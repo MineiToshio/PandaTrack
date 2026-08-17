@@ -257,7 +257,11 @@ const StoreAddressEditor = forwardRef<StoreAddressEditorHandle, StoreAddressEdit
                   type="button"
                   onClick={() => handleStartEdit(entry)}
                   aria-label={labels.edit}
-                  className="flex size-7 items-center justify-center rounded [color:var(--text-muted)] hover:[color:var(--text-primary)] focus-visible:[outline:2px_solid_var(--focus-ring)]"
+                  // Tap target >=44x44 on mobile via the `::before` pseudo (same mechanism as
+                  // `IconButton`/`StorePaymentRow`): padding inside a fixed `size-7` box never
+                  // grows the box, so `inset:-8px` expands the hit area outward instead.
+                  // `md:before:inset-0` drops the extra area on desktop.
+                  className="relative flex size-7 items-center justify-center rounded [color:var(--text-muted)] before:absolute before:[inset:-8px] before:content-[''] hover:[color:var(--text-primary)] focus-visible:[outline:2px_solid_var(--focus-ring)] md:before:inset-0"
                 >
                   <Pencil size={13} aria-hidden />
                 </button>
@@ -265,7 +269,12 @@ const StoreAddressEditor = forwardRef<StoreAddressEditorHandle, StoreAddressEdit
                   type="button"
                   onClick={() => onRemove(entry.id)}
                   aria-label={labels.remove}
-                  className="flex size-7 items-center justify-center rounded [color:var(--text-muted)] hover:[color:var(--text-primary)] focus-visible:[outline:2px_solid_var(--focus-ring)]"
+                  // Same mechanism as the edit button above, plus `ml-2`: the row's `gap-3` (12px)
+                  // plus each button's `inset:-8px` expansion needs 16px of clearance between the
+                  // two boxes or the later element in the DOM (this one) claims the overlap and the
+                  // edit button loses part of its 44px. `ml-2` adds 8px, for 20px total. Dropped on
+                  // desktop, where `md:before:inset-0` removes the expansion.
+                  className="relative ml-2 flex size-7 items-center justify-center rounded [color:var(--text-muted)] before:absolute before:[inset:-8px] before:content-[''] hover:[color:var(--text-primary)] focus-visible:[outline:2px_solid_var(--focus-ring)] md:ml-0 md:before:inset-0"
                 >
                   <X size={13} aria-hidden />
                 </button>
@@ -286,7 +295,11 @@ const StoreAddressEditor = forwardRef<StoreAddressEditorHandle, StoreAddressEdit
               type="button"
               onClick={handleCancelForm}
               aria-label={labels.cancel}
-              className="flex size-6 flex-shrink-0 items-center justify-center rounded [color:var(--text-muted)] hover:[color:var(--text-primary)] focus-visible:[outline:2px_solid_var(--focus-ring)]"
+              // Same `::before` mechanism as the row buttons above, at `inset:-10px` because this
+              // box is `size-6` (24 + 2×10 = 44). Its only neighbour is the non-interactive helper
+              // `<Typography>` pushed to the other side by `justify-between`, so no extra clearance
+              // is needed. `md:before:inset-0` drops the extra area on desktop.
+              className="relative flex size-6 flex-shrink-0 items-center justify-center rounded [color:var(--text-muted)] before:absolute before:[inset:-10px] before:content-[''] hover:[color:var(--text-primary)] focus-visible:[outline:2px_solid_var(--focus-ring)] md:before:inset-0"
             >
               <X size={14} aria-hidden />
             </button>

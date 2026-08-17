@@ -24,15 +24,7 @@ export type StoreComboboxOption = {
  * `StoreAvatar` takes a discriminated union: a logo is either present with its aspect or the whole
  * key is absent. This keeps that branch in one place instead of at each of the four call sites.
  */
-function StoreOptionAvatar({
-  name,
-  logoUrl,
-  size,
-}: {
-  name: string;
-  logoUrl?: string | null;
-  size: 24 | 32;
-}) {
+function StoreOptionAvatar({ name, logoUrl, size }: { name: string; logoUrl?: string | null; size: 24 | 32 }) {
   // Branch here rather than building the subject inline: `StoreAvatar` takes a discriminated union
   // (logo present with its aspect, or the key absent), and TypeScript will not distribute a
   // pre-built union across the JSX prop.
@@ -296,12 +288,21 @@ export default function StoreCombobox({
               }}
             />
           )}
+          {/*
+            Trailing cluster — one control, always: the clear and the list toggle are the two arms
+            of one ternary, never siblings, so each can take the full 44×44 touch box with nothing
+            to collide with. The compact box comes back at `lg`, not at `md`: this whole branch is
+            gated on `!isMobile` (≥768px), so its touch band is the 768-1023px tablet range, and
+            `lg` is where this repo already assumes a precise pointer (`DELIBERATELY_SMALL` in
+            `src/test/tap-target-guard.test.ts`). The negative margin is the wrapper's own `px-3`,
+            so the target reaches the field's edge without widening the cluster.
+          */}
           {clearable && selected ? (
             <button
               type="button"
               onClick={handleClear}
               aria-label={clearLabel}
-              className="shrink-0 rounded p-0.5 [color:var(--text-muted)] hover:[color:var(--text-primary)] focus-visible:[box-shadow:0_0_0_2px_var(--focus-ring)] focus-visible:outline-none"
+              className="-mr-3 grid size-11 shrink-0 place-items-center rounded [color:var(--text-muted)] hover:[color:var(--text-primary)] focus-visible:[box-shadow:0_0_0_2px_var(--focus-ring)] focus-visible:outline-none lg:m-0 lg:size-[17px]"
             >
               <X size={13} aria-hidden />
             </button>
@@ -311,7 +312,7 @@ export default function StoreCombobox({
               tabIndex={-1}
               onClick={() => (open ? closeCombobox() : openCombobox())}
               aria-hidden
-              className="shrink-0 rounded p-0.5 [color:var(--text-muted)]"
+              className="-mr-3 grid size-11 shrink-0 place-items-center rounded [color:var(--text-muted)] lg:m-0 lg:size-[19px]"
             >
               <ChevronsUpDown size={15} aria-hidden />
             </button>
