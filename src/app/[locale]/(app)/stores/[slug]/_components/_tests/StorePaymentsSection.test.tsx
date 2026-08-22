@@ -2,6 +2,7 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import type { StorePaymentAllocationLine, StorePaymentListRow } from "@/lib/data/orders/storePaymentQueries";
+import type { StoreReconciliationAdjustmentRow } from "../StoreReconciliationProvider";
 import StorePaymentsSection from "../StorePaymentsSection";
 
 vi.mock("next/navigation", () => ({
@@ -29,6 +30,36 @@ const state = {
 vi.mock("../StorePaymentStateProvider", () => ({
   useStorePaymentState: () => state,
 }));
+
+const reconciliationState = {
+  adjustments: [] as StoreReconciliationAdjustmentRow[],
+  deleteAdjustment: vi.fn(),
+};
+
+vi.mock("../StoreReconciliationProvider", () => ({
+  useStoreReconciliationState: () => reconciliationState,
+  isOptimisticAdjustmentId: (adjustmentId: string) => adjustmentId.startsWith("temp-adjustment-"),
+}));
+
+function adjustmentRow(overrides: Partial<StoreReconciliationAdjustmentRow> = {}): StoreReconciliationAdjustmentRow {
+  return {
+    id: "adjustment-1",
+    adjustmentDate: new Date("2026-08-20T00:00:00.000Z"),
+    reason: "no identificado",
+    magnitudeMinor: 18000,
+    currencyCode: "PEN",
+    lines: [
+      {
+        orderId: "order-1",
+        amountMinor: 18000,
+        orderDate: new Date("2026-06-01T00:00:00.000Z"),
+        orderHumanReadableId: "ORD-20260601-01",
+        orderActive: true,
+      },
+    ],
+    ...overrides,
+  };
+}
 
 /** Exactly the shape `getStorePaymentsForStore` emits, so the row is tested against real data. */
 function allocationLine(overrides: Partial<StorePaymentAllocationLine> = {}): StorePaymentAllocationLine {
@@ -63,7 +94,10 @@ function paymentRow(overrides: Partial<StorePaymentListRow> = {}): StorePaymentL
   };
 }
 
-function renderSection(overrides: Partial<typeof state> = {}) {
+function renderSection(
+  overrides: Partial<typeof state> = {},
+  reconciliationOverrides: Partial<typeof reconciliationState> = {},
+) {
   Object.assign(state, {
     storePayments: [],
     storePaymentsTotalCount: 0,
@@ -73,6 +107,7 @@ function renderSection(overrides: Partial<typeof state> = {}) {
     hasLoadAllStorePaymentsError: false,
     ...overrides,
   });
+  Object.assign(reconciliationState, { adjustments: [], deleteAdjustment: vi.fn(), ...reconciliationOverrides });
   return render(<StorePaymentsSection locale="es" />);
 }
 
@@ -250,5 +285,102 @@ describe("StorePaymentsSection - what each row says the payment covers", () => {
     });
 
     expect(screen.getAllByText(/payments.unassignedBadge/).length).toBeGreaterThan(0);
+  });
+});
+
+describe('StorePaymentsSection - "Ajustes de cuadre" history block (WO-11, ADR 0034)', () => {
+  it("renders nothing at all when there is neither a payment nor an adjustment", () => {
+    const { container } = renderSection({ storePayments: [] }, { adjustments: [] });
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it("renders the history block even with zero payments, when an adjustment exists", () => {
+    renderSection({ storePayments: [] }, { adjustments: [adjustmentRow()] });
+
+    expect(screen.getByText("stores.redesign.detail.reconciliation.historyTitle")).toBeInTheDocument();
+    // "Pagos a esta tienda" must not appear: there are no payments to list.
+    expect(screen.queryByText("stores.redesign.detail.paymentsTitle")).not.toBeInTheDocument();
+  });
+
+  it("keeps the adjustment history in its OWN block, never interleaved into the payments list", () => {
+    renderSection({ storePayments: [paymentRow()], storePaymentsTotalCount: 1 }, { adjustments: [adjustmentRow()] });
+
+    expect(screen.getByText("stores.redesign.detail.paymentsTitle")).toBeInTheDocument();
+    expect(screen.getByText("stores.redesign.detail.reconciliation.historyTitle")).toBeInTheDocument();
+    // The payments list itself has exactly the one payment row, not the adjustment folded in.
+    const paymentsList = screen.getAllByRole("list")[0];
+    expect(within(paymentsList).getAllByRole("listitem")).toHaveLength(1);
+  });
+
+  it("names each entry's date, derived magnitude, reason and every order it named by DATE", () => {
+    renderSection(
+      { storePayments: [] },
+      {
+        adjustments: [
+          adjustmentRow({
+            reason: "el precio cambió después",
+            lines: [
+              {
+                orderId: "order-9",
+                amountMinor: 18000,
+                orderDate: new Date("2026-06-01T00:00:00.000Z"),
+                orderHumanReadableId: "ORD-20260601-09",
+                orderActive: true,
+              },
+            ],
+          }),
+        ],
+      },
+    );
+
+    expect(screen.getByText("el precio cambió después")).toBeInTheDocument();
+    // Named by date (FR-05-67), not by its ORD- code alone.
+    expect(
+      screen.getByText('stores.redesign.detail.reconciliation.historyLineOrder:{"date":"1 jun 2026"}'),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("ORD-20260601-09")).not.toBeInTheDocument();
+  });
+
+  it("deletes an adjustment optimistically behind a destructive confirm", async () => {
+    const user = userEvent.setup();
+    const deleteAdjustment = vi.fn().mockResolvedValue({ ok: true });
+    renderSection({ storePayments: [] }, { adjustments: [adjustmentRow()], deleteAdjustment });
+
+    await user.click(screen.getByRole("button", { name: /historyDeleteAria/ }));
+    const dialog = screen.getByRole("alertdialog");
+    await user.click(within(dialog).getByText("stores.redesign.detail.reconciliation.historyDeleteConfirm"));
+
+    expect(deleteAdjustment).toHaveBeenCalledWith("adjustment-1");
+  });
+
+  it("surfaces an error and keeps the entry when the delete is refused", async () => {
+    const user = userEvent.setup();
+    const deleteAdjustment = vi.fn().mockResolvedValue({ ok: false, error: "NOT_FOUND" });
+    renderSection({ storePayments: [] }, { adjustments: [adjustmentRow()], deleteAdjustment });
+
+    await user.click(screen.getByRole("button", { name: /historyDeleteAria/ }));
+    const dialog = screen.getByRole("alertdialog");
+    await user.click(within(dialog).getByText("stores.redesign.detail.reconciliation.historyDeleteConfirm"));
+
+    expect(screen.getByText("stores.redesign.detail.reconciliation.historyDeleteError")).toBeInTheDocument();
+    // The entry itself is still listed: rollback of the OPTIMISTIC removal is the provider's job
+    // (see `StoreReconciliationProvider`'s own tests), and this component only reflects whatever
+    // `adjustments` it is handed.
+    expect(screen.getByText("stores.redesign.detail.reconciliation.historyTitle")).toBeInTheDocument();
+  });
+
+  it("disables the delete control on an adjustment row that is still a local stand-in (MINOR-6)", () => {
+    // A row the server has not answered for yet has no real id to delete by: clicking it would send
+    // an id the server has never seen and answer NOT_FOUND for an adjustment that WAS in fact
+    // recorded, mirroring `StorePaymentRow`'s own `isAwaitingServerId` guard.
+    renderSection({ storePayments: [] }, { adjustments: [adjustmentRow({ id: "temp-adjustment-123" })] });
+
+    expect(screen.getByRole("button", { name: /historyDeleteAria/ })).toBeDisabled();
+  });
+
+  it("keeps the delete control enabled once the row carries its real server id", () => {
+    renderSection({ storePayments: [] }, { adjustments: [adjustmentRow({ id: "adjustment-real-1" })] });
+
+    expect(screen.getByRole("button", { name: /historyDeleteAria/ })).toBeEnabled();
   });
 });

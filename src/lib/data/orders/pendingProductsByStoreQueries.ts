@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { DeliveryStatus, type SellerType, type StoreStatus } from "../../../../generated/prisma/client";
 import type { ItemDeliveryState } from "@/lib/orders/orderState";
 import { resolveBasePagableMinor } from "@/lib/orders/productPaymentState";
+import { openBalanceMinorByOrderId } from "./orderOpenBalance";
 import { deriveItemDeliveryState } from "./orderQueries";
 import { getStoreDebtByCurrency, type StoreDebtRow } from "./storePaymentQueries";
 
@@ -50,7 +51,16 @@ export type PendingProductRow = {
   basePagableMinor: number | null;
 };
 
-export type StoreDebtEntry = { currencyCode: string; debtMinor: number };
+export type StoreDebtEntry = {
+  currencyCode: string;
+  debtMinor: number;
+  /**
+   * `StoreDebtRow.openOrderDebtMinor` (`BR-05-26` / `FR-05-61`, `ADR 0033`): "Pendiente en pedidos
+   * abiertos" alongside the unchanged lifetime `debtMinor`. Required: always filled in by this
+   * module, straight off the now-required `StoreDebtRow.openOrderDebtMinor`.
+   */
+  openOrderDebtMinor: number;
+};
 
 /**
  * One order of this group that received money without naming a product, and still owes something.
@@ -128,6 +138,12 @@ export async function getPendingProductsByStore(userId: string): Promise<Pending
     orderBy: [{ orderDate: "asc" }, { id: "asc" }],
   });
 
+  // The net open balance (BR-05-32, ADR 0034 §3.1), never the gross `totalCost - allocatedAmountMinor`:
+  // the undetailed-money block below must agree with the `openOrderDebtMinor` chip rendered right
+  // above it on the same screen, which is already net of any `StoreAccountAdjustmentLine` (F6,
+  // 2026-08-20 review). One batched read for the whole set of contributing orders.
+  const openBalanceByOrderId = await openBalanceMinorByOrderId(prisma, userId, orders);
+
   const groupsByStore = new Map<string, PendingProductsByStoreGroup>();
   const draftsByItemId = new Map<string, PendingProductRow>();
   /** Every order that contributed at least one pending row, so `orderHasUndetailedMoney` can be
@@ -151,7 +167,13 @@ export async function getPendingProductsByStore(userId: string): Promise<Pending
     }
     group.openOrdersCount += 1;
 
-    if (order.totalCost - order.allocatedAmountMinor > 0) {
+    // The batch form guarantees an entry per input order (see `openBalanceMinorByOrderId`'s doc); a
+    // miss here is a programming error, not a figure to silently degrade to the gross remainder.
+    const openBalance = openBalanceByOrderId.get(order.id);
+    if (openBalance === undefined) {
+      throw new Error(`openBalanceMinorByOrderId missing entry for order ${order.id}`);
+    }
+    if (openBalance > 0) {
       const indebted = indebtedOrdersByStore.get(order.store.id) ?? new Map();
       indebted.set(order.id, { humanReadableId: order.humanReadableId, currencyCode: order.currencyCode });
       indebtedOrdersByStore.set(order.store.id, indebted);
@@ -257,6 +279,7 @@ export async function getPendingProductsByStore(userId: string): Promise<Pending
     group.debts = (debtsByStore.get(group.store.id) ?? []).map((debt) => ({
       currencyCode: debt.currencyCode,
       debtMinor: debt.debtMinor,
+      openOrderDebtMinor: debt.openOrderDebtMinor,
     }));
   }
 

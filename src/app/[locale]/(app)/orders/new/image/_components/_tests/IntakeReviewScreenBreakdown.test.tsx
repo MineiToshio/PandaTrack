@@ -156,6 +156,12 @@ function paymentsSection(): HTMLElement {
 
 function submit() {
   fireEvent.click(screen.getAllByRole("button", { name: "Crear pedido" })[0]);
+  // Rows that are all priced and do not add up to the stated total now raise the same totals
+  // confirmation the manual forms raise. `TWO_PRICED` is deliberately in that state (150,00 for
+  // rows worth 150,00 only when the fixture says so), and none of the cases here is about that
+  // gate, so the question is answered and the case gets on with what it is actually asserting.
+  const confirm = screen.queryByRole("button", { name: "Guardar de todos modos" });
+  if (confirm !== null) fireEvent.click(confirm);
 }
 
 /** Two priced products against a total of 150,00: the fixture every arithmetic case below uses. */

@@ -287,7 +287,7 @@ Single reading column, ordered by what the user is most likely to need to fix:
 | Part               | Example                                                         |
 | ------------------ | --------------------------------------------------------------- |
 | What we did        | "Lo separamos en 2 productos."                                  |
-| What the chat said | `Del chat: "el pack chase de Gojo"`                             |
+| What the photos said | `De las fotos: "el pack chase de Gojo"`                             |
 | Why                | "Los vendieron juntos, pero pueden llegarte en días distintos." |
 | The way back       | `[Unir en uno]`                                                 |
 
@@ -380,7 +380,7 @@ The marker alone was not enough. Everything on this screen came out of a photo, 
 a synonym for the whole feature rather than as a distinction, and the group chips named a verdict
 ("Verificar") without ever naming its cause. Both now explain themselves where they appear: a marked
 field carries a hint under it saying the chat did not state the value and we filled it in, and the
-group chips name the reason instead of the verdict, `Del chat` / `Precio repartido` / `No estamos
+group chips name the reason instead of the verdict, `De las fotos` / `Precio repartido` / `No estamos
 seguros`. A hint under the field rather than a tooltip, because the tooltip would be unreachable on
 the surface where most of these drafts are reviewed.
 
@@ -547,7 +547,7 @@ The feature introduces no new tokens. It applies existing ones from
 | Role                                            | Token              | Where                                                                             |
 | ----------------------------------------------- | ------------------ | --------------------------------------------------------------------------------- |
 | Read value                                      | `--text-primary`   | Plain-text attribute values on the review screen                                  |
-| Supporting label and source quote               | `--text-secondary` | Attribute labels, the `Del chat: "..."` line                                      |
+| Supporting label and source quote               | `--text-secondary` | Attribute labels, the `De las fotos: "..."` line                                      |
 | Confident group                                 | `--text-secondary` | Group chip when the split is clean, in the neutral chip variant                   |
 | Assumed value, price-split warning, low balance | `--warning`        | The assumed chip, the equal-split note, "Te quedan 6 fotos este mes."             |
 | Doubtful group, quota overflow                  | `--warning`        | Doubtful group chip, the overflow banner                                          |
@@ -797,27 +797,27 @@ The word is always **foto**. Never "extracción", "crédito", or "token".
 | Surface                      | es                                                                                                                                                                                                                                     |
 | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Header, with doubts          | Encontramos 6 productos por S/ 480.00. Revisa 2 datos y guarda.                                                                                                                                                                        |
-| Header, clean                | Todo salió limpio del chat. Revísalo y guarda.                                                                                                                                                                                         |
-| Split group                  | Lo separamos en 2 productos. Del chat: "el pack chase de Gojo". Los vendieron juntos, pero pueden llegarte en días distintos. [Unir en uno]                                                                                            |
-| Sealed pack                  | Lo dejamos como un solo producto. El chat dice "Pack Tokyo Revengers 1 y 2 sellado". Viene sellado de editorial, así que llega completo o no llega. [Separar en 2 productos]                                                           |
-| Split with doubt             | Lo separamos, pero no estamos seguros. Del chat: "pack de Kenshin". Si viene sellado de editorial, únelo en uno. [Unir en uno]                                                                                                         |
-| Not nameable                 | No supimos qué trae. El chat dice "pack de 5 chibis sorpresa" sin decir cuáles. Lo guardamos como un producto. [Separar]                                                                                                               |
+| Header, clean                | Todo salió limpio de las fotos. Revísalo y guarda.                                                                                                                                                                                         |
+| Split group                  | Lo separamos en 2 productos. De las fotos: "el pack chase de Gojo". Los vendieron juntos, pero pueden llegarte en días distintos. [Unir en uno]                                                                                            |
+| Sealed pack                  | Lo dejamos como un solo producto. Las fotos dicen "Pack Tokyo Revengers 1 y 2 sellado". Viene sellado de editorial, así que llega completo o no llega. [Separar en 2 productos]                                                           |
+| Split with doubt             | Lo separamos, pero no estamos seguros. De las fotos: "pack de Kenshin". Si viene sellado de editorial, únelo en uno. [Unir en uno]                                                                                                         |
+| Not nameable                 | No supimos qué trae. Las fotos dicen "pack de 5 chibis sorpresa" sin decir cuáles. Lo guardamos como un producto. [Separar]                                                                                                               |
 | Categories are suggestions   | Las categorías son sugerencias nuestras. Cámbialas si no encajan.                                                                                                                                                                      |
 | Category, absent             | Sin categoría                                                                                                                                                                                                                          |
 | Category, collapsed          | Manga · Se aplica a los 50 productos (or "Categorías distintas" when the rows disagree)                                                                                                                                                |
 | Reference link               | mercadolibre.com.pe (aria: Abrir el enlace del producto en mercadolibre.com.pe, en una pestaña nueva)                                                                                                                                  |
 | Naming offer, title          | Podemos nombrar mejor este producto                                                                                                                                                                                                    |
-| Naming offer, host-only name | Del enlace solo sacamos el dominio: "mercadolibre.com.pe". El chat no dice qué producto es.                                                                                                                                            |
+| Naming offer, host-only name | Del enlace solo sacamos el dominio: "mercadolibre.com.pe". Las fotos no dicen qué producto es.                                                                                                                                            |
 | Naming offer, doubtful       | Leímos "Figura Gojo?" del enlace de mercadolibre.com.pe, pero no estamos seguros de qué es.                                                                                                                                            |
-| Naming offer, what helps     | Adjunta una captura de su ficha en la tienda y lo nombramos de ahí. El precio y el total siguen saliendo del chat, nunca de la ficha.                                                                                                  |
+| Naming offer, what helps     | Adjunta una captura de su ficha en la tienda y lo nombramos de ahí. El precio y el total siguen saliendo de la compra, nunca de la ficha.                                                                                                  |
 | Naming offer, cost           | Volver a leer gasta otra vez las 3 fotos que ya subiste, más la que añadas: la lectura es una sola pasada sobre todas las fotos. Te quedan 7 este mes.                                                                                 |
 | Naming offer, no balance     | Volver a leer costaría 4 fotos (las que ya subiste más la nueva) y te quedan 2 este mes.                                                                                                                                               |
 | Naming offer, action         | [Añadir la captura de la ficha]                                                                                                                                                                                                        |
 | Naming offer, way out        | No es obligatorio: puedes guardar así y cambiarle el nombre después.                                                                                                                                                                   |
 | Equal price split            | Repartimos S/ 180.00 en partes iguales. Ajusta si una pieza vale más que la otra                                                                                                                                                       |
 | Blank product name           | El producto 3 se quedó sin nombre. Escríbele uno para poder guardar el pedido.                                                                                                                                                         |
-| Totals mismatch              | Los productos no suman el total · Los productos suman S/ 480.00 y el total del pedido dice S/ 110.00. Guardamos el total tal como está: revisa cuál de los dos es el correcto.                                                         |
-| Shipping cost                | Costo de envío · Lo leímos del chat, pero se guarda recién cuando registres la entrega.                                                                                                                                                |
+| Totals mismatch              | Los productos no suman el total · Los productos suman S/ 480.00 y el total del pedido dice S/ 110.00. Guardamos el total tal como está: revisa cuál de los dos es el correcto. Pressing save then raises the shared `DiscrepancyModal` (`FR-11-58a`).                                                         |
+| Shipping cost                | Costo de envío · Lo leímos de las fotos, pero se guarda recién cuando registres la entrega.                                                                                                                                                |
 | Breakdown cleared            | Cambiaste los productos, así que quitamos el desglose de los pagos. Vuelve a marcarlos.                                                                                                                                                |
 | Breakdown, missing amount    | Ponle importe a este pago para poder guardar su desglose.                                                                                                                                                                              |
 | Breakdown, missing date      | Ponle fecha a este pago para poder guardar su desglose.                                                                                                                                                                                |
@@ -825,7 +825,7 @@ The word is always **foto**. Never "extracción", "crédito", or "token".
 | Breakdown, date in future    | La fecha del pago no puede ser futura.                                                                                                                                                                                                 |
 | Breakdown, over the balance  | Con los pagos anteriores, este pago supera el total del pedido. Ajusta los importes.                                                                                                                                                   |
 | Breakdown lost on save       | No pudimos registrar 1 pago con desglose. Anótalo en el pedido con su desglose.                                                                                                                                                        |
-| Product ceiling              | Son demasiados productos para un pedido. El chat pide 240 y un pedido admite 200. Únelos en un solo producto o divide la compra en dos pedidos.                                                                                        |
+| Product ceiling              | Son demasiados productos para un pedido. Las fotos piden 240 y un pedido admite 200. Únelos en un solo producto o divide la compra en dos pedidos.                                                                                        |
 | No order found               | No encontramos ningún pedido en esas fotos. Suele pasar cuando la foto es solo del producto: necesitamos ver la conversación o el recibo, donde salgan los productos y los montos. Quita la foto que no corresponde y prueba con otra. |
 | Multiple orders              | Esas fotos parecen de varias compras distintas. Cada pedido se sube por separado, aunque tenga varios productos. Quita las fotos que sobran y deja solo las de una compra.                                                             |
 
@@ -878,7 +878,21 @@ and the copy is never allowed to offer one that cannot.
 | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Provider unavailable (5xx, timeout) | No pudimos leer las fotos en este momento. Inténtalo de nuevo en un minuto.                                                                                    |
 | Answer cut off at the output ceiling | La lectura se hizo demasiado larga y se cortó. Envía menos fotos por vez, o registra el pedido a mano.                                                        |
-| Provider rejected the request (4xx) | Hubo un problema al leer las fotos. No se soluciona reintentando: ya estamos avisados y lo vamos a arreglar. Mientras tanto puedes registrar el pedido a mano. |
+| Provider rejected the request (4xx, excluding 408 and 429) | Hubo un problema al leer las fotos. No se soluciona reintentando: ya estamos avisados y lo vamos a arreglar. Mientras tanto puedes registrar el pedido a mano. |
+
+`408` and `429` are deliberately NOT in that last row. A request the provider abandoned and a rate
+limit are 4xx statuses that describe the moment rather than the request, so they take the first
+row's copy and its retry, and telling their owner that a bug report had been filed was simply
+false (`FR-11-84a`).
+
+Under any of these three, and under `invalidModelResponse` and `ledgerError` below, the banner ends
+with one muted line: "Referencia del fallo: `provider-error`. Compártela si necesitas que lo
+revisemos." It is the fixed failure code and nothing else. The full diagnosis exists (`FR-11-86`)
+but it lives in the server log and in Sentry, where the person reading the error cannot go, and one
+message covers four different causes, so without this a report of "no me deja subir la foto" cannot
+be answered (`FR-11-86c`). A refusal the collector can act on, a spent quota, too many photos, no
+order in the images, never carries one: those explain themselves, and a code under them would read
+as a malfunction.
 
 The second one owns the failure ("hubo un problema", not "tus fotos"), states plainly that
 retrying is not the remedy, says someone already knows, and leaves the collector a way forward that
@@ -902,7 +916,7 @@ Two rules carry the whole tone of the feature:
 1. **Admit the guess instead of hiding it.** The equal price split says outright that a piece
    may be worth more. Copy that pretends to certainty it does not have is worse than a
    slightly awkward sentence.
-2. **Quote the user's own words back.** "Del chat: ..." is what turns a claim into evidence
+2. **Quote the user's own words back.** "De las fotos: ..." is what turns a claim into evidence
    and lets the user judge in one glance.
 
 ---

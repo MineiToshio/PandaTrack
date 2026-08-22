@@ -179,6 +179,14 @@ async function openAllocationPanel() {
 }
 
 /**
+ * The explicit "no sé todavía" action (WO-09): parks the draft's current remainder. Requires the
+ * allocation panel to be open, since that is the only surface the affordance renders on.
+ */
+async function parkRemainder() {
+  await userEvent.click(screen.getByRole("button", { name: /allocations\.parkRemainderAria/ }));
+}
+
+/**
  * Lets one animation frame pass. The reveal runs inside `requestAnimationFrame`, so asserting that
  * a reveal did NOT happen has to outlive the frame it would have happened in.
  */
@@ -534,9 +542,15 @@ describe('StorePaymentSheet — "Saldada" derivada (C2)', () => {
 describe("StorePaymentSheet — envío", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("closes synchronously with no allocations (Optimistic Confirmation)", async () => {
+  it("closes synchronously with no allocations, fully parked (Optimistic Confirmation, WO-09)", async () => {
+    // Updated for WO-09 (`FR-05-58`): "on account" (nothing declared) is no longer a default this
+    // surface falls into silently — the collector has to choose it explicitly through "no sé
+    // todavía", which parks the whole amount. The optimistic-close behavior on that path is
+    // otherwise unchanged.
     const { onSubmit, onClose } = renderSheet();
     await typeAmount("100");
+    await openAllocationPanel();
+    await parkRemainder();
 
     await userEvent.click(screen.getByRole("button", { name: "submit" }));
 
@@ -545,6 +559,7 @@ describe("StorePaymentSheet — envío", () => {
     expect(payload.amount).toBe(10000);
     expect(payload.currencyCode).toBe("PEN");
     expect(payload.allocations).toEqual([]);
+    expect(payload.parkedAmountMinor).toBe(10000);
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
@@ -553,12 +568,16 @@ describe("StorePaymentSheet — envío", () => {
     await typeAmount("100");
     await openAllocationPanel();
     await userEvent.type(screen.getByLabelText(/allocations\.amountAria.*Nendoroid Miku/), "40");
+    // WO-09 (`FR-05-58`): 40.00 of the 100.00 payment is still unaccounted for, so the equality
+    // gate keeps the CTA shut until the rest is either named or, as here, parked on purpose.
+    await parkRemainder();
 
     await userEvent.click(screen.getByRole("button", { name: "submit" }));
 
     expect(onSubmit.mock.calls[0][0].allocations).toEqual([
       { orderId: "order-1", orderItemId: "item-1", amountMinor: 4000 },
     ]);
+    expect(onSubmit.mock.calls[0][0].parkedAmountMinor).toBe(6000);
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
@@ -571,6 +590,8 @@ describe("StorePaymentSheet — envío", () => {
     await typeAmount("100");
     await openAllocationPanel();
     await userEvent.type(screen.getByLabelText(/allocations\.amountAria.*Nendoroid Miku/), "40");
+    // WO-09 (`FR-05-58`): closes the equality gate so the click below actually reaches the handler.
+    await parkRemainder();
     await userEvent.click(screen.getByRole("button", { name: "submit" }));
 
     expect(onClose).not.toHaveBeenCalled();
@@ -594,6 +615,8 @@ describe("StorePaymentSheet — envío", () => {
     await typeAmount("100");
     await openAllocationPanel();
     await userEvent.type(screen.getByLabelText(/allocations\.amountAria.*Nendoroid Miku/), "40");
+    // WO-09 (`FR-05-58`): closes the equality gate so the click below actually reaches the handler.
+    await parkRemainder();
     await userEvent.click(screen.getByRole("button", { name: "submit" }));
 
     // Every way out of the modal is still there: the X, Esc/backdrop (both gated on the same
@@ -628,6 +651,8 @@ describe("StorePaymentSheet — envío", () => {
     await typeAmount("100");
     await openAllocationPanel();
     await userEvent.type(screen.getByLabelText(/allocations\.amountAria.*Nendoroid Miku/), "40");
+    // WO-09 (`FR-05-58`): closes the equality gate so the click below actually reaches the handler.
+    await parkRemainder();
     await userEvent.click(screen.getByRole("button", { name: "submit" }));
 
     await waitFor(() => expect(screen.getByRole("button", { name: "Close" })).toBeInTheDocument());
@@ -640,7 +665,10 @@ describe("StorePaymentSheet — envío", () => {
     const onSubmit = vi.fn<SubmitHandler>(() => Promise.resolve({ ok: false, error: "STORE_DEBT_EXCEEDED" }));
     renderSheet({ onSubmit });
 
-    await typeAmount("100");
+    // WO-09 (`FR-05-58`): the typed amount matches the line's own amount throughout, so the draft
+    // stays fully declared (equality) at every step without needing the "no sé todavía" affordance,
+    // which is not what this test is about.
+    await typeAmount("40");
     await openAllocationPanel();
     await userEvent.type(screen.getByLabelText(/allocations\.amountAria.*Nendoroid Miku/), "40");
     await userEvent.click(screen.getByRole("button", { name: "submit" }));
@@ -656,10 +684,11 @@ describe("StorePaymentSheet — envío", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("error.STORE_DEBT_EXCEEDED");
     expect(screen.getByRole("button", { name: "submit" })).toBeDisabled();
 
-    // Changing the amount does: that is the number the refusal was about.
+    // Changing the amount does: that is the number the refusal was about. Matches the line's own
+    // 30.00 so the equality gate is satisfied too, for the same reason as above.
     await userEvent.click(screen.getByRole("button", { name: "allocations.back" }));
     await userEvent.clear(screen.getByLabelText(/amountLabel/));
-    await userEvent.type(screen.getByLabelText(/amountLabel/), "90");
+    await userEvent.type(screen.getByLabelText(/amountLabel/), "30");
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "submit" })).toBeEnabled();
     expect(onSubmit).toHaveBeenCalledTimes(1);
@@ -673,7 +702,9 @@ describe("StorePaymentSheet — envío", () => {
     const onSubmit = vi.fn<SubmitHandler>(() => Promise.resolve({ ok: false, error: "STORE_DEBT_EXCEEDED" }));
     renderSheet({ onSubmit });
 
-    await typeAmount("100");
+    // WO-09 (`FR-05-58`): matches the line's own amount so the equality gate is already satisfied,
+    // which is not what this test is about.
+    await typeAmount("40");
     await openAllocationPanel();
     await userEvent.type(screen.getByLabelText(/allocations\.amountAria.*Nendoroid Miku/), "40");
     await userEvent.click(screen.getByRole("button", { name: "submit" }));
@@ -698,7 +729,8 @@ describe("StorePaymentSheet — envío", () => {
     });
     view.current = renderSheet({ onSubmit });
 
-    await typeAmount("100");
+    // WO-09 (`FR-05-58`): matches the line's own amount so the equality gate is already satisfied.
+    await typeAmount("30");
     await openAllocationPanel();
     await userEvent.type(screen.getByLabelText(/allocations\.amountAria.*Figma Rem/), "30");
     await userEvent.click(screen.getByRole("button", { name: "submit" }));
@@ -1243,6 +1275,8 @@ describe("StorePaymentSheet — el pedido que todavía no volvió", () => {
         onFill={vi.fn()}
         onToggleDeclared={vi.fn()}
         onClear={vi.fn()}
+        onParkRemainder={vi.fn()}
+        onUnpark={vi.fn()}
         onEditPayment={vi.fn()}
         onEditDate={vi.fn()}
         revealRequest={null}
@@ -1278,7 +1312,8 @@ describe("StorePaymentSheet — estados de la lista", () => {
     // Submitting there would take the no-declarations path and close optimistically, having sent
     // a payment the collector never asked for.
     const { rerender, props } = renderSheet();
-    await typeAmount("100");
+    // WO-09 (`FR-05-58`): matches the line's own amount so the equality gate is already satisfied.
+    await typeAmount("40");
     await openAllocationPanel();
     await userEvent.type(screen.getByLabelText(/allocations\.amountAria.*Nendoroid Miku/), "40");
     expect(screen.getByRole("button", { name: "submit" })).toBeEnabled();
@@ -1344,7 +1379,9 @@ describe("StorePaymentSheet — la lista se encoge bajo un borrador vivo (GRAVE 
 
   it("says which money fell away, and shuts the CTA on it", async () => {
     const view = renderSheet();
-    await typeAmount("100");
+    // WO-09 (`FR-05-58`): 70.00 matches the two lines' own sum (40 + 30) so the equality gate is
+    // already satisfied, which is not what this test is about.
+    await typeAmount("70");
     await openAllocationPanel();
     await userEvent.type(screen.getByLabelText(/allocations\.amountAria.*Nendoroid Miku/), "40");
     await userEvent.type(screen.getByLabelText(/allocations\.amountAria.*Figma Rem/), "30");
@@ -1382,7 +1419,9 @@ describe("StorePaymentSheet — la lista se encoge bajo un borrador vivo (GRAVE 
 
   it("clears on its own dismissal, which keeps every line still on screen", async () => {
     const view = renderSheet();
-    await typeAmount("100");
+    // WO-09 (`FR-05-58`): 30.00 matches what survives the shrink below (Figma Rem's own 30.00), so
+    // the equality gate is satisfied once the vanished line is dismissed, with no park needed.
+    await typeAmount("30");
     await openAllocationPanel();
     await userEvent.type(screen.getByLabelText(/allocations\.amountAria.*Nendoroid Miku/), "40");
     await userEvent.type(screen.getByLabelText(/allocations\.amountAria.*Figma Rem/), "30");
@@ -1406,6 +1445,9 @@ describe("StorePaymentSheet — la lista se encoge bajo un borrador vivo (GRAVE 
     await typeAmount("100");
     await openAllocationPanel();
     await userEvent.type(screen.getByLabelText(/allocations\.amountAria.*Nendoroid Miku/), "0");
+    // WO-09 (`FR-05-58`): 0 is not money, so the whole 100.00 is still unaccounted for — park it
+    // the same way an everyday "on account" payment now has to.
+    await parkRemainder();
 
     shrinkToSecondItemOnly(view);
 
@@ -1465,6 +1507,9 @@ describe("StorePaymentSheet — la lista se encoge bajo un borrador vivo (GRAVE 
 
     await userEvent.click(screen.getByRole("button", { name: "droppedDraftLinesDismiss" }));
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    // WO-09 (`FR-05-58`): the dismissed line took its 18.00 with it, so the payment is back to
+    // "nothing declared" — park the remainder the same way an everyday on-account payment would.
+    await parkRemainder();
     expect(screen.getByRole("button", { name: "submit" })).toBeEnabled();
   });
 
@@ -1482,7 +1527,8 @@ describe("StorePaymentSheet — la lista se encoge bajo un borrador vivo (GRAVE 
     });
     view.current = renderSheet({ onSubmit });
 
-    await typeAmount("100");
+    // WO-09 (`FR-05-58`): matches the line's own amount so the equality gate is already satisfied.
+    await typeAmount("30");
     await openAllocationPanel();
     await userEvent.type(screen.getByLabelText(/allocations\.amountAria.*Figma Rem/), "30");
     await userEvent.click(screen.getByRole("button", { name: "submit" }));
@@ -1551,6 +1597,9 @@ describe("StorePaymentSheet — una fila que vuelve SALDADA con dinero dentro (G
 
     // Emptied, it locks again: a settled line still takes no NEW money.
     expect(culprit).toHaveAttribute("readonly");
+    // WO-09 (`FR-05-58`): clearing the field left the whole 100.00 unaccounted for again — park it,
+    // exactly the recovery path "the money can still be taken back out" now goes through.
+    await parkRemainder();
     expect(screen.getByRole("button", { name: "submit" })).toBeEnabled();
   });
 
@@ -1600,6 +1649,8 @@ describe("StorePaymentSheet — una fila que vuelve SALDADA con dinero dentro (G
     await userEvent.clear(culprit);
     expect(culprit).toHaveAttribute("readonly");
 
+    // WO-09 (`FR-05-58`): clearing the line left the whole 100.00 unaccounted for again.
+    await parkRemainder();
     await userEvent.click(screen.getByRole("button", { name: "submit" }));
     expect(view.onSubmit.mock.calls[0][0].allocations).toEqual([]);
   });
@@ -1728,7 +1779,9 @@ describe("StorePaymentSheet — cobertura declarada", () => {
     });
     const { onSubmit } = renderSheet({ orders: [order] });
 
-    await typeAmount("50.00");
+    // WO-09 (`FR-05-58`): matches the line's own typed amount so the equality gate is already
+    // satisfied, with no park needed for a test that is about the field staying editable.
+    await typeAmount("20.00");
     await openAllocationPanel();
 
     const [amountField] = screen.getAllByLabelText(/allocations\.amountAria/);
@@ -1764,13 +1817,19 @@ describe("StorePaymentSheet — cobertura declarada", () => {
 
     const before = screen.getAllByText(/allocations\.totalsUnassigned/).length;
     await userEvent.click(screen.getAllByRole("button", { name: /allocations\.markPaidAria/ })[0]);
+    // The mark moves no money: the totals line is unaffected by it, before parking touches it too.
     expect(screen.getAllByText(/allocations\.totalsUnassigned/).length).toBe(before);
 
+    // WO-09 (`FR-05-58`): the mark alone never satisfies the equality gate (it is a different axis,
+    // see the two axes' own doc comment) — the unpriced product has nowhere to receive money, so
+    // the only way to submit is to park the whole amount on purpose.
+    await parkRemainder();
     await userEvent.click(screen.getByRole("button", { name: /submit/ }));
 
     // Marks travel on their own axis: no allocation line, and the money is untouched.
     expect(onSubmit.mock.calls[0][0].allocations).toEqual([]);
     expect(onSubmit.mock.calls[0][0].declarePaidItemIds).toEqual(["item-1"]);
+    expect(onSubmit.mock.calls[0][0].parkedAmountMinor).toBe(5000);
   });
 
   it("offers the mark only where no price is on record", async () => {
@@ -1824,8 +1883,135 @@ describe("StorePaymentSheet — cobertura declarada", () => {
     const { onSubmit } = renderSheet({ orders: [order] });
 
     await typeAmount("50.00");
+    // WO-09 (`FR-05-58`): nothing to declare here (the product is already marked server-side, so it
+    // is not re-declared, and it has no price to receive money against) — park the whole amount, the
+    // same "on account" path an everyday payment with nothing to name now goes through explicitly.
+    await openAllocationPanel();
+    await parkRemainder();
     await userEvent.click(screen.getByRole("button", { name: /submit/ }));
 
     expect(onSubmit.mock.calls[0][0].declarePaidItemIds).toEqual([]);
+  });
+});
+
+/**
+ * The explicit "no sé todavía" affordance itself (WO-09, `FR-05-58`/`FR-05-60`, `ADR 0033`): the
+ * client mirror of the store-level equality rule, and the one control that lets a draft with money
+ * left over become submittable without naming a product.
+ */
+describe("StorePaymentSheet — no sé todavía (WO-09)", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("offers the affordance next to the remaining amount, and choosing it enables submit and shows the parked amount", async () => {
+    renderSheet();
+    await typeAmount("100");
+    await openAllocationPanel();
+    await userEvent.type(screen.getByLabelText(/allocations\.amountAria.*Nendoroid Miku/), "40");
+
+    // Leftover money (60.00), nothing parked yet: the CTA is shut and the affordance is offered,
+    // naming the exact amount it would park in its own accessible name.
+    expect(screen.getByRole("button", { name: "submit" })).toBeDisabled();
+    const parkButton = screen.getByRole("button", { name: /allocations\.parkRemainderAria/ });
+    expect(parkButton).toHaveAccessibleName(expect.stringContaining("60.00"));
+    expect(screen.getByText(/allocations\.totalsUnassigned.*60\.00/)).toBeInTheDocument();
+
+    await userEvent.click(parkButton);
+
+    // Choosing it: the submit control opens up, "Sin asignar" gives way to "Aparcado", and the
+    // affordance itself is replaced by its own undo.
+    expect(screen.getByRole("button", { name: "submit" })).toBeEnabled();
+    expect(screen.getByText(/allocations\.totalsParked.*60\.00/)).toBeInTheDocument();
+    expect(screen.queryByText(/allocations\.totalsUnassigned/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /allocations\.parkRemainderAria/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "allocations.unparkAria" })).toBeInTheDocument();
+  });
+
+  it("submits the parked figure alongside the named allocations", async () => {
+    const { onSubmit } = renderSheet();
+    await typeAmount("100");
+    await openAllocationPanel();
+    await userEvent.type(screen.getByLabelText(/allocations\.amountAria.*Nendoroid Miku/), "40");
+    await parkRemainder();
+
+    await userEvent.click(screen.getByRole("button", { name: "submit" }));
+
+    expect(onSubmit.mock.calls[0][0].allocations).toEqual([
+      { orderId: "order-1", orderItemId: "item-1", amountMinor: 4000 },
+    ]);
+    expect(onSubmit.mock.calls[0][0].parkedAmountMinor).toBe(6000);
+  });
+
+  it("resets the parked choice, and shuts the CTA again, once the amount changes afterward", async () => {
+    renderSheet();
+    await typeAmount("100");
+    await openAllocationPanel();
+    await userEvent.type(screen.getByLabelText(/allocations\.amountAria.*Nendoroid Miku/), "40");
+    await parkRemainder();
+    expect(screen.getByRole("button", { name: "submit" })).toBeEnabled();
+
+    // The remainder a park closed was about THIS amount. A different amount has a different
+    // remainder, so the choice has to be re-made on purpose rather than silently reinterpreted.
+    await userEvent.click(screen.getByRole("button", { name: "allocations.back" }));
+    await userEvent.clear(screen.getByLabelText(/amountLabel/));
+    await userEvent.type(screen.getByLabelText(/amountLabel/), "50");
+
+    expect(screen.getByRole("button", { name: "submit" })).toBeDisabled();
+    await openAllocationPanel();
+    expect(screen.getByText(/allocations\.totalsUnassigned/)).toBeInTheDocument();
+    expect(screen.queryByText(/allocations\.totalsParked/)).not.toBeInTheDocument();
+  });
+
+  it("resets the parked choice once a line is edited afterward, not just the amount", async () => {
+    renderSheet();
+    await typeAmount("100");
+    await openAllocationPanel();
+    await userEvent.type(screen.getByLabelText(/allocations\.amountAria.*Nendoroid Miku/), "40");
+    await parkRemainder();
+    expect(screen.getByRole("button", { name: "submit" })).toBeEnabled();
+
+    // Typing into ANY line moves the remainder the park was about, not only the amount field.
+    await userEvent.type(screen.getByLabelText(/allocations\.amountAria.*Figma Rem/), "1");
+
+    expect(screen.getByRole("button", { name: "submit" })).toBeDisabled();
+    expect(screen.getByText(/allocations\.totalsUnassigned/)).toBeInTheDocument();
+  });
+
+  it('undoes a park choice through "Quitar", so the collector can name the money after all', async () => {
+    renderSheet();
+    await typeAmount("100");
+    await openAllocationPanel();
+    await userEvent.type(screen.getByLabelText(/allocations\.amountAria.*Nendoroid Miku/), "40");
+    await parkRemainder();
+    expect(screen.getByRole("button", { name: "submit" })).toBeEnabled();
+
+    await userEvent.click(screen.getByRole("button", { name: "allocations.unparkAria" }));
+
+    expect(screen.getByRole("button", { name: "submit" })).toBeDisabled();
+    expect(screen.getByText(/allocations\.totalsUnassigned.*60\.00/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /allocations\.parkRemainderAria/ })).toBeInTheDocument();
+  });
+
+  it("offers no affordance once the draft already overshoots the payment", async () => {
+    renderSheet();
+    await typeAmount("50");
+    await openAllocationPanel();
+    await userEvent.type(screen.getByLabelText(/allocations\.amountAria.*Nendoroid Miku/), "60");
+
+    // Over the payment is a different mistake (lower a line), never something to park.
+    expect(screen.queryByRole("button", { name: /allocations\.parkRemainderAria/ })).not.toBeInTheDocument();
+  });
+
+  it("can submit fully parked, with nothing named against any order (spec §3.4)", async () => {
+    const { onSubmit, onClose } = renderSheet();
+    await typeAmount("100");
+    await openAllocationPanel();
+    await parkRemainder();
+
+    expect(screen.getByRole("button", { name: "submit" })).toBeEnabled();
+    await userEvent.click(screen.getByRole("button", { name: "submit" }));
+
+    expect(onSubmit.mock.calls[0][0].allocations).toEqual([]);
+    expect(onSubmit.mock.calls[0][0].parkedAmountMinor).toBe(10000);
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 });

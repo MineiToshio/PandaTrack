@@ -87,9 +87,22 @@ type OrderDetailClientProps = {
   isOverdue: boolean;
   overdueDays: number;
   locale: string;
-  /** The store's debt in this order's currency, read server-side. Surfaced by the hero only when
-      this order has nothing allocated to it yet. */
+  /** The store's LIFETIME debt in this order's currency, read server-side. Feeds the "in credit"
+      branch of the hero's link (`FR-05-63`) and the `STORE_DEBT_EXCEEDED` refusal copy below
+      (the payment-validation ceiling, unchanged, lifetime-wide). */
   storeDebtMinor: number;
+  /** `StoreDebtRow.openOrderDebtMinor` (`ADR 0033`): the figure the hero's positive-debt link
+      prints, in place of the lifetime `storeDebtMinor`. Surfaced by the hero only when this order
+      has nothing allocated to it yet. */
+  openOrderDebtMinor: number;
+  /**
+   * This order's own canonical NET balance (`BR-05-32`, `ADR 0034`), read server-side. Threaded
+   * straight through to the inline payment form's writable ceiling (both the desktop aside card and
+   * the mobile sheet render the same form). The order's own GROSS balance (`summary.remainingAmount`
+   * below) keeps driving every OTHER figure on this page ("Falta", the "still owed" chip): a
+   * reconciliation adjustment squares the store's account, it does not pay the order (`FR-05-35`).
+   */
+  openBalanceMinor: number;
   /** Products still eligible for a delivery; an empty list hides the quick-arrival action. */
   quickArrivalItems: QuickArrivalItem[];
   /** Forwarded to `QuickArrivalModal`; see its own prop. */
@@ -119,6 +132,8 @@ export default function OrderDetailClient({
   overdueDays,
   locale,
   storeDebtMinor,
+  openOrderDebtMinor,
+  openBalanceMinor,
   quickArrivalItems,
   settledItemCount,
   canCreateDelivery,
@@ -228,9 +243,17 @@ export default function OrderDetailClient({
   function describeAddPaymentError(error: string): string {
     switch (error) {
       case "EXCEEDS_BALANCE":
-        return t("detail.payments.amountExceedsBalance", {
-          remaining: formatAmountSymbolOnly(summary.remainingAmount, order.currencyCode, locale),
-        });
+        // Mirrors `OrderInlinePaymentForm`'s own `describeRefusal` (`BR-05-32`, `FR-05-35`): this
+        // branch fires for the SAME refusal on the OPTIMISTIC path (no breakdown draft to await),
+        // where the toast, not the form's inline error, is what the collector reads. A write-off
+        // narrowed this order's NET ceiling (`openBalanceMinor`) below its own GROSS balance, so
+        // the plain "amount exceeds the balance ({remaining})" copy would quote a figure the
+        // collector's own typed amount never actually crossed.
+        return openBalanceMinor < summary.remainingAmount
+          ? t("detail.payments.amountExceedsBalanceReconciled")
+          : t("detail.payments.amountExceedsBalance", {
+              remaining: formatAmountSymbolOnly(summary.remainingAmount, order.currencyCode, locale),
+            });
       case "STORE_DEBT_EXCEEDED":
         return describeStoreDebtExceeded();
       case "DATE_BEFORE_ORDER":
@@ -350,6 +373,7 @@ export default function OrderDetailClient({
           isOverdue={isOverdue}
           overdueDays={overdueDays}
           storeDebtMinor={storeDebtMinor}
+          openOrderDebtMinor={openOrderDebtMinor}
           locale={locale}
         />
         {mainColumnExtras}
@@ -374,6 +398,7 @@ export default function OrderDetailClient({
           undetailedPaidMinor={order.undetailedPaidMinor}
           breakdownItems={breakdownItems}
           totalCost={order.totalCost}
+          openBalanceMinor={openBalanceMinor}
           markReconciliation={markReconciliation}
           onAddPayment={handleAddPayment}
           onDeletePayment={handleDeletePayment}
@@ -399,6 +424,7 @@ export default function OrderDetailClient({
           undetailedPaidMinor={order.undetailedPaidMinor}
           breakdownItems={breakdownItems}
           totalCost={order.totalCost}
+          openBalanceMinor={openBalanceMinor}
           markReconciliation={markReconciliation}
           onAddPayment={handleAddPayment}
           onDeletePayment={handleDeletePayment}
@@ -447,6 +473,7 @@ export default function OrderDetailClient({
         breakdownItems={breakdownItems}
         totalCost={order.totalCost}
         undetailedPaidMinor={order.undetailedPaidMinor}
+        openBalanceMinor={openBalanceMinor}
         onSubmit={handleAddPayment}
       />
 
@@ -485,6 +512,8 @@ export default function OrderDetailClient({
           settledItemCount={settledItemCount}
           baseCurrencyCode={baseCurrencyCode}
           locale={locale}
+          orderId={order.id}
+          storeName={order.storeName}
           onSubmit={quickArrival.submit}
         />
       )}

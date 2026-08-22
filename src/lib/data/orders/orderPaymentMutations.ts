@@ -124,6 +124,13 @@ function mapStorePaymentError(error: CreateStorePaymentError): AddOrderPaymentEr
       return "STORE_DEBT_EXCEEDED";
     case "ALLOCATION_SUM_EXCEEDS_PAYMENT":
       return "ALLOCATION_SUM_EXCEEDS_PAYMENT";
+    // Unreachable from this door: `addOrderPayment` never sets `requireFullAllocation`, so
+    // `createStorePayment` never has a reason to raise this against it (WO-09). Mapped rather than
+    // left to fall through, so the switch stays exhaustive against `CreateStorePaymentError` and a
+    // future caller of this wrapper that DID set the flag would still get a code the order-scoped
+    // form already knows how to render, instead of a silent type error.
+    case "ALLOCATION_SUM_BELOW_PAYMENT":
+      return "ALLOCATION_SUM_EXCEEDS_PAYMENT";
     case "ALLOCATION_AMOUNT_INVALID":
       return "ALLOCATION_AMOUNT_INVALID";
     case "EXCEEDS_ITEM_BASE":

@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { buildNeedsFxReconciliationWhere, needsFxReconciliation, resolveExchangeRateBaseCode } from "../reconciliation";
+import {
+  buildNeedsFxReconciliationWhere,
+  needsFxReconciliation,
+  resolveExchangeRateBaseCode,
+  resolveFxPair,
+} from "../reconciliation";
 
 describe("needsFxReconciliation", () => {
   it("is false when no base currency is configured yet", () => {
@@ -88,5 +93,32 @@ describe("resolveExchangeRateBaseCode", () => {
 
   it("is null when the collector has no base currency yet", () => {
     expect(resolveExchangeRateBaseCode(3.4, null)).toBeNull();
+  });
+});
+
+describe("resolveFxPair", () => {
+  it("drops a submitted rate for a row already in the base currency", () => {
+    // A rate on a base-currency row is dead weight while the base stays put, and a wrong
+    // "already reconciled" claim if the base ever moves to the stored target.
+    expect(resolveFxPair("PEN", 1.1, "PEN")).toEqual({ exchangeRate: null, exchangeRateBaseCode: null });
+  });
+
+  it("keeps a usable rate for a foreign-currency row and stamps the base", () => {
+    expect(resolveFxPair("USD", 3.393232, "PEN")).toEqual({
+      exchangeRate: 3.393232,
+      exchangeRateBaseCode: "PEN",
+    });
+  });
+
+  it("keeps a null rate as the unset pair for a foreign-currency row", () => {
+    expect(resolveFxPair("USD", null, "PEN")).toEqual({ exchangeRate: null, exchangeRateBaseCode: null });
+  });
+
+  it("clears the base code for a non-positive rate, matching resolveExchangeRateBaseCode", () => {
+    expect(resolveFxPair("USD", 0, "PEN")).toEqual({ exchangeRate: 0, exchangeRateBaseCode: null });
+  });
+
+  it("passes the rate through with no base code when no base currency is configured", () => {
+    expect(resolveFxPair("USD", 3.4, null)).toEqual({ exchangeRate: 3.4, exchangeRateBaseCode: null });
   });
 });

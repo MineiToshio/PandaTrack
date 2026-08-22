@@ -7,7 +7,17 @@ import { useToast, NEUTRAL_UNDO_DURATION_MS } from "@/contexts/ToastContext";
 import { ROUTES } from "@/lib/constants";
 import type { DeliveryStatus } from "../../../../../../../generated/prisma/client";
 import type { DeliveryDetail } from "@/lib/data/deliveries/deliveryQueries";
+import type { RevertedStorePaymentSnapshot } from "@/lib/data/deliveries/deliveryMutations";
 import { cancelDeliveryAction, markDeliveredAction, reopenDeliveryAction } from "../_actions/deliveryLifecycleActions";
+import { retrySettlementAction, undoReopenAction } from "@/app/[locale]/(app)/_actions/settlementActions";
+import { domainDateToIsoString } from "@/lib/domainDate";
+import {
+  clearPendingSettlement,
+  formatSettledTotals,
+  readPendingSettlement,
+  writePendingSettlement,
+  type PendingSettlementEntry,
+} from "@/lib/deliveries/pendingSettlementStore";
 import DeliveryDetailHero from "./DeliveryDetailHero";
 import DeliveryProductsCard from "./DeliveryProductsCard";
 import DeliverySummaryCard from "./DeliverySummaryCard";
@@ -18,7 +28,13 @@ import MarkDeliveredModal from "./MarkDeliveredModal";
 import DeliveryCancelModal from "./DeliveryCancelModal";
 import DeliveryDeleteModal from "./DeliveryDeleteModal";
 
-type LifecycleSnapshot = { status: DeliveryStatus; receivedDate: Date | null };
+type LifecycleSnapshot = {
+  status: DeliveryStatus;
+  receivedDate: Date | null;
+  /** Settlement payments a reopen just reverted (`WO-08`), so "Deshacer" can restore them verbatim
+      rather than recomputing a new settlement. Empty when this delivery never produced one. */
+  revertedSettlementPayments: RevertedStorePaymentSnapshot[];
+};
 
 type DeliveryDetailClientProps = {
   delivery: DeliveryDetail;
@@ -62,6 +78,10 @@ export default function DeliveryDetailClient({
   const [modal, setModal] = useState<"markDelivered" | "cancel" | "delete" | null>(null);
   const [actionsSheetOpen, setActionsSheetOpen] = useState(false);
   const [isReopening, setIsReopening] = useState(false);
+  // A pending money-transaction retry (`WO-08`, `FR-08-42`): persisted in `pendingSettlementStore`
+  // so the affordance survives navigation. `null` means nothing is pending for this delivery.
+  const [pendingEntry, setPendingEntry] = useState<PendingSettlementEntry | null>(null);
+  const [isRetrying, setIsRetrying] = useState(false);
 
   // Last reopen's pre-state — consumed by the toast "Deshacer" action and the Z shortcut.
   const undoSnapshotRef = useRef<LifecycleSnapshot | null>(null);
@@ -69,6 +89,13 @@ export default function DeliveryDetailClient({
   // Latest-ref so the global key listener and the toast action never call a stale closure.
   // (Re-assigned after `handleUndoReopen` is defined, further down.)
   const undoHandlerRef = useRef<() => void>(() => {});
+
+  useEffect(() => {
+    // Hydrate after mount only: `localStorage` does not exist during SSR, and a mismatch here
+    // would just flicker the Retry affordance in, never desync anything server-derived.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional client-only hydration from localStorage
+    setPendingEntry(readPendingSettlement(delivery.id));
+  }, [delivery.id]);
 
   useEffect(
     () => () => {
@@ -92,7 +119,7 @@ export default function DeliveryDetailClient({
   }, []);
 
   function snapshot(): LifecycleSnapshot {
-    return { status, receivedDate };
+    return { status, receivedDate, revertedSettlementPayments: [] };
   }
 
   function applySnapshot(prev: LifecycleSnapshot) {
@@ -119,6 +146,27 @@ export default function DeliveryDetailClient({
         applySnapshot(prev);
         addToast(t("detail.toast.markDeliveredError"), { variant: "error" });
         return;
+      }
+      // Order-close consumption (`FR-08-46`) can fail after the arrival already committed, the
+      // same independent-transaction gap `WO-08` covers for the checkbox launchers. This flow
+      // never enables a settlement of its own, so the retry entry carries `settleRemainder: false`
+      // — only the consumption half is ever retried from here.
+      if (result.moneyTransactionPending) {
+        const entry: PendingSettlementEntry = {
+          deliveryId: delivery.id,
+          settleRemainder: false,
+          // `date` is already a domain date (UTC midnight, `toDomainDate`-normalized by
+          // `MarkDeliveredModal` before it ever reaches this handler): `domainDateToIsoString`
+          // reads its UTC calendar day directly (MAJOR F5, 2026-08-20 review). The old
+          // `toLocalIsoDateString` used local getters instead, which shifts the day backward for any
+          // collector whose timezone sits west of UTC (e.g. `America/Lima`) — the exact off-box this
+          // fix closes.
+          settlementDate: domainDateToIsoString(date) ?? "",
+          settlementIntents: [],
+          createdAt: new Date().toISOString(),
+        };
+        writePendingSettlement(entry);
+        setPendingEntry(entry);
       }
       router.refresh();
     });
@@ -160,12 +208,69 @@ export default function DeliveryDetailClient({
     }
 
     router.refresh();
-    undoSnapshotRef.current = prev;
+
+    // MAJOR F8, 2026-08-20 review: a reopen invalidates any money-transaction retry that was still
+    // pending for this delivery — the order this delivery closed is no longer closed, so there is
+    // nothing left for that stale entry's `Retry` to re-attempt against (a subsequent
+    // `retrySettlementAction` call would itself report `noLongerPending`, but leaving the banner up
+    // until the collector clicks it to find that out is a needless dead click).
+    clearPendingSettlement(delivery.id);
+    setPendingEntry(null);
+
+    // Carries the reverted settlement snapshot forward so "Deshacer" can restore it verbatim
+    // (`FR-08-43`) instead of recomputing a new settlement.
+    undoSnapshotRef.current = { ...prev, revertedSettlementPayments: result.revertedSettlements.payments };
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
     undoTimerRef.current = setTimeout(() => {
       undoSnapshotRef.current = null;
     }, UNDO_TOAST_DURATION_MS);
-    addToast(t("detail.toast.reopened"), {
+
+    // Two-amount reopen copy (`WO-08` UX Notes). The settlement half reopen just deleted is
+    // nameable via `revertedSettlements.totalAmountMinor`; the amount of pre-existing unassigned
+    // money this same close ALSO consumed, and that survives the reopen untouched, is nameable via
+    // `revertedSettlements.survivingConsumedMinor` (its provenance is the `consumedByDeliveryId`
+    // stamp `consumeUnassignedStoreMoneyOnOrderClose` writes, closing the gap this component used
+    // to document here). The two figures are independent: either can be zero, positive, or both
+    // positive at once, which is why each has its own currency-aware label below.
+    const revertedTotal = result.revertedSettlements.totalAmountMinor;
+    // Grouped by each reverted payment's OWN currency (not the delivery's shipping-cost
+    // currency, which can differ): `formatSettledTotals` sums per currency and joins, exactly as
+    // the arrival's own confirmation toast does for the settled side of this same feature.
+    const revertedLabel = formatSettledTotals(
+      result.revertedSettlements.payments.map((payment) => ({
+        status: "settled",
+        settledAmountMinor: payment.amount,
+        currencyCode: payment.currencyCode,
+      })),
+      locale,
+    );
+    const survivingConsumedMinor = result.revertedSettlements.survivingConsumedMinor;
+    const survivingConsumedLabel = formatSettledTotals(
+      result.revertedSettlements.survivingConsumedAllocations.map((allocation) => ({
+        status: "settled",
+        settledAmountMinor: allocation.amountMinor,
+        currencyCode: allocation.currencyCode,
+      })),
+      locale,
+    );
+    const hasRevertedSettlement = revertedTotal > 0 && revertedLabel !== null;
+    const hasSurvivingConsumption = survivingConsumedMinor > 0 && survivingConsumedLabel !== null;
+
+    let reopenToastMessage: string;
+    if (hasRevertedSettlement && revertedLabel && hasSurvivingConsumption && survivingConsumedLabel) {
+      reopenToastMessage = t("detail.toast.reopenedWithSettlementAndConsumption", {
+        settlementAmount: revertedLabel,
+        consumedAmount: survivingConsumedLabel,
+      });
+    } else if (hasRevertedSettlement && revertedLabel) {
+      reopenToastMessage = t("detail.toast.reopenedWithSettlement", { amount: revertedLabel });
+    } else if (hasSurvivingConsumption && survivingConsumedLabel) {
+      reopenToastMessage = t("detail.toast.reopenedWithSurvivingConsumption", { amount: survivingConsumedLabel });
+    } else {
+      reopenToastMessage = t("detail.toast.reopened");
+    }
+
+    addToast(reopenToastMessage, {
       variant: "neutral",
       duration: UNDO_TOAST_DURATION_MS,
       action: { label: t("detail.toast.undo"), onClick: () => undoHandlerRef.current() },
@@ -180,27 +285,111 @@ export default function DeliveryDetailClient({
     const current = snapshot();
     applySnapshot(prev);
 
-    // Inverse mutation: the reopen already persisted, so restoring DELIVERED re-runs
-    // markDelivered with the previous received date; restoring CANCELLED re-runs cancel.
-    const inverse =
-      prev.status === "DELIVERED" && prev.receivedDate
-        ? markDeliveredAction(delivery.id, prev.receivedDate)
-        : cancelDeliveryAction(delivery.id);
-
-    void inverse.then((result) => {
-      if (!result.ok) {
+    // BLOCKER F1, 2026-08-20 review: ONE sequential Server Action, never two independent dispatches
+    // racing each other. The old code fired `undoReopenSettlementAction` (`void`, fire-and-forget)
+    // and the inverse lifecycle mutation (`markDeliveredAction`/`cancelDeliveryAction`) from two
+    // separate promise chains with no ordering between them — `undoReopenAction` restores the
+    // settlement snapshot FIRST and only then re-applies the previous lifecycle state server-side,
+    // so this handler now calls exactly one action.
+    void undoReopenAction({
+      deliveryId: delivery.id,
+      previousStatus: prev.status === "CANCELLED" ? "CANCELLED" : "DELIVERED",
+      receivedDate: prev.status === "CANCELLED" ? null : prev.receivedDate,
+      // `RestoreSettlementPaymentSnapshot.exchangeRate` is `string | null` (BLOCKER F6): the raw
+      // `Prisma.Decimal` this snapshot carries is stringified once here, at the client boundary,
+      // rather than parsed down to a `number` and losing precision on the round trip.
+      snapshot: prev.revertedSettlementPayments.map((payment) => ({
+        storeId: payment.storeId,
+        amount: payment.amount,
+        paymentDate: payment.paymentDate,
+        currencyCode: payment.currencyCode,
+        note: payment.note,
+        exchangeRate: payment.exchangeRate ? payment.exchangeRate.toString() : null,
+        exchangeRateBaseCode: payment.exchangeRateBaseCode,
+        settledByDeliveryId: payment.settledByDeliveryId,
+        allocations: payment.allocations.map((allocation) => ({
+          orderId: allocation.orderId,
+          orderItemId: allocation.orderItemId,
+          amountMinor: allocation.amountMinor,
+        })),
+      })),
+    }).then(
+      (result) => {
+        if (!result.ok) {
+          applySnapshot(current);
+          addToast(t("detail.toast.undoError"), { variant: "error" });
+          return;
+        }
+        router.refresh();
+      },
+      () => {
+        // A REJECTED promise is not a refusal the server described, it is no answer at all — same
+        // treatment as `ok: false` above (the established pattern, `StoreGroupedView`'s own
+        // `handleSubmitArrival`/`handleSubmitPayment`). Deliberately the SECOND argument of `then`,
+        // never a chained `catch`, which would also swallow whatever the success handler throws.
         applySnapshot(current);
         addToast(t("detail.toast.undoError"), { variant: "error" });
-        return;
-      }
-      router.refresh();
-    });
+      },
+    );
   }
 
   // Keep the latest closure available to the global Z listener + toast action.
   useEffect(() => {
     undoHandlerRef.current = handleUndoReopen;
   });
+
+  /**
+   * Re-attempts a pending money transaction (`WO-08`, `FR-08-42`): re-reads the delivery's own
+   * current status server-side and refuses (clearing the affordance) if it is no longer
+   * `DELIVERED` — the collector already reopened it in the meantime, which is itself the signal
+   * that the original settlement no longer applies.
+   */
+  function handleRetrySettlement() {
+    if (!pendingEntry || isRetrying) return;
+    setIsRetrying(true);
+    void retrySettlementAction({
+      deliveryId: pendingEntry.deliveryId,
+      settleRemainder: pendingEntry.settleRemainder,
+      settlementDate: new Date(`${pendingEntry.settlementDate}T00:00:00.000Z`),
+      settlementIntents: pendingEntry.settlementIntents,
+    }).then(
+      (result) => {
+        setIsRetrying(false);
+        if (!result.ok) {
+          addToast(t("detail.toast.retrySettlementError"), { variant: "error" });
+          return;
+        }
+        if (result.noLongerPending) {
+          clearPendingSettlement(pendingEntry.deliveryId);
+          setPendingEntry(null);
+          addToast(t("detail.toast.retryNoLongerPending"), { variant: "neutral" });
+          return;
+        }
+        const stillFailing = result.outcomes.some((outcome) => outcome.status !== "settled");
+        if (stillFailing) {
+          addToast(t("detail.toast.retrySettlementError"), { variant: "error" });
+          return;
+        }
+        clearPendingSettlement(pendingEntry.deliveryId);
+        setPendingEntry(null);
+        const settledLabel = formatSettledTotals(result.outcomes, locale);
+        addToast(
+          settledLabel ? t("detail.toast.retrySettled", { amount: settledLabel }) : t("detail.toast.retrySettledPlain"),
+          { variant: "success" },
+        );
+        router.refresh();
+      },
+      () => {
+        // A REJECTED promise is not a refusal the server described, it is no answer at all — same
+        // treatment as `ok: false` above. Before this, a rejection here left `isRetrying` (and the
+        // disabled Retry button) stuck forever, since nothing ever cleared it. Deliberately the
+        // SECOND argument of `then`, never a chained `catch`, which would also swallow whatever the
+        // success handler above throws. The pending entry is left in place for another retry.
+        setIsRetrying(false);
+        addToast(t("detail.toast.retrySettlementError"), { variant: "error" });
+      },
+    );
+  }
 
   const editHref = `/${locale}${ROUTES.deliveries}/${delivery.id}/edit`;
   const sourceOrderCodes = delivery.sourceOrders.map((group) => group.orderHumanReadableId);
@@ -229,6 +418,25 @@ export default function DeliveryDetailClient({
     <>
       {/* Main column — hero + products read the live status so chips/pills flip optimistically. */}
       <div className="space-y-4 lg:col-start-1 lg:row-start-1">
+        {/* Pending settlement Retry affordance (`WO-08`, spec §10 risk 4): visible whenever a money
+            transaction failed after the arrival already committed, and must survive navigation —
+            hidden the moment a reopen leaves nothing DELIVERED left to settle against. */}
+        {pendingEntry && status === "DELIVERED" && (
+          <div
+            role="status"
+            className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border [border-color:color-mix(in_oklch,var(--warning)_35%,var(--border))] p-4 [background:color-mix(in_oklch,var(--warning)_10%,var(--surface-elevated))]"
+          >
+            <p className="text-[13px] [color:var(--text-primary)]">{t("detail.settlement.pendingNotice")}</p>
+            <button
+              type="button"
+              onClick={handleRetrySettlement}
+              disabled={isRetrying}
+              className="shrink-0 rounded-[var(--radius-sm)] px-3 py-1.5 text-[13px] font-medium [color:var(--accent-foreground)] [background:var(--accent)] disabled:opacity-60"
+            >
+              {isRetrying ? t("detail.settlement.retrying") : t("detail.settlement.retry")}
+            </button>
+          </div>
+        )}
         <DeliveryDetailHero
           delivery={{
             id: delivery.id,

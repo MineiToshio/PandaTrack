@@ -95,6 +95,14 @@ runs — dev, staging, or production — never only "because it's not prod."
 - If the feature under test also mutates real account state (base currency, preferences, and
   similar), track the original value the same way and restore it from `afterEach` too — a leaked
   mutation on the shared dev account is as much a hygiene violation as a leaked row.
+- A bulk action exercised in an E2E test must be **pinned to the test's own seeded fixtures** and
+  must **assert its affected count before committing** (for example press the apply button located
+  by its exact `…to 1 order` label, not by a `\d+` pattern). Restoring account state afterwards
+  does not undo a bulk write that already landed on real rows. Seed the fixture in a dimension the
+  account's real data never occupies (a currency no real order uses, a unique prefix) so the
+  feature's own grouping can never pool real rows into the test's write — this is the rule ADR
+  0031 generalizes from the FX 1.1 incident, where a pair-wide apply stamped a placeholder rate
+  onto every real base-currency order.
 - Prefer a direct-DB delete (see `e2e/_helpers/dbCleanup.ts`) as the cleanup mechanism, not a
   UI-driven flow: a UI delete can itself be broken by the same failure that skipped the test's own
   cleanup step, or may not exist at all (for example a moderation "remove" action is a soft

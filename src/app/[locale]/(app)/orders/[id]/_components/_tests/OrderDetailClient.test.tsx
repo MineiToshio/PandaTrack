@@ -65,9 +65,19 @@ const TWO_PRODUCTS = [
   { id: "item-2", name: "Berserk deluxe", paidDeclared: false, basePagableMinor: 20500, allocatedMinor: 0 },
 ];
 
-function renderDetail(overrides: { totalCost?: number; initialPaid?: number; items?: typeof TWO_PRODUCTS } = {}) {
+function renderDetail(
+  overrides: {
+    totalCost?: number;
+    initialPaid?: number;
+    items?: typeof TWO_PRODUCTS;
+    /** This order's own canonical NET balance (`BR-05-32`). Defaults to the gross remaining
+        balance, i.e. no reconciliation write-off, matching every pre-existing test in this file. */
+    openBalanceMinor?: number;
+  } = {},
+) {
   const totalCost = overrides.totalCost ?? TOTAL_COST;
   const initialPaid = overrides.initialPaid ?? 0;
+  const openBalanceMinor = overrides.openBalanceMinor ?? Math.max(0, totalCost - initialPaid);
 
   render(
     <OrderDetailClient
@@ -112,6 +122,8 @@ function renderDetail(overrides: { totalCost?: number; initialPaid?: number; ite
       overdueDays={0}
       locale="es"
       storeDebtMinor={0}
+      openOrderDebtMinor={0}
+      openBalanceMinor={openBalanceMinor}
       quickArrivalItems={[]}
       canCreateDelivery={false}
       baseCurrencyCode="PEN"
@@ -178,6 +190,40 @@ describe("desktop inline panel folds optimistically", () => {
       expect(addToastMock).toHaveBeenCalledWith("detail.payments.storeDebtExceeded", { variant: "error" }),
     );
     expect(refreshMock).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * The real-world reproduction of the bug report: a single-item order (no breakdown panel, so
+ * `awaitsVerdict` is always false) whose balance was written off by a store reconciliation
+ * adjustment. The panel already folded on submit (optimistic confirmation), so this refusal is
+ * reported by the coordinator's OWN toast (`describeAddPaymentError`), never by the form's inline
+ * error. Mirrors the `STORE_DEBT_EXCEEDED` toast test above, for the EXCEEDS_BALANCE refusal.
+ */
+describe("EXCEEDS_BALANCE toast names the write-off, not a self-contradicting figure", () => {
+  it("uses the reconciled copy when the order's net balance sits below its gross one", async () => {
+    addPaymentMock.mockResolvedValue({ ok: false, error: "EXCEEDS_BALANCE" });
+    // Gross 410.00, net 200.00: a reconciliation adjustment narrowed what this order can still take.
+    renderDetail({ openBalanceMinor: 20000 });
+    // Typed within the NET ceiling, so the client gate lets the click through to the server at all
+    // (this test is about how the SERVER's own refusal is worded, not the client gate itself).
+    submitPayment("100.00");
+
+    await waitFor(() =>
+      expect(addToastMock).toHaveBeenCalledWith("detail.payments.amountExceedsBalanceReconciled", {
+        variant: "error",
+      }),
+    );
+  });
+
+  it("keeps the ordinary copy when the order carries no write-off (regression)", async () => {
+    addPaymentMock.mockResolvedValue({ ok: false, error: "EXCEEDS_BALANCE" });
+    renderDetail(); // `openBalanceMinor` defaults to the gross remaining balance: no write-off.
+    submitPayment("100.00");
+
+    await waitFor(() =>
+      expect(addToastMock).toHaveBeenCalledWith("detail.payments.amountExceedsBalance", { variant: "error" }),
+    );
   });
 });
 

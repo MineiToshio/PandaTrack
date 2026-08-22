@@ -62,9 +62,17 @@ const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 /** An order enriched with the derivations every block shares. Amounts stay in order currency. */
 type DerivedOrder = {
   input: DashboardOrderInput;
+  /**
+   * Older, gross balance: `totalCost - Σ payments`, never net of a `StoreAccountAdjustmentLine`.
+   * Read only by "pagado vs pendiente" (`FR-06-19`, `BR-06-08`'s one deliberate exception) and the
+   * per-order `OrderSummary` rows, so their paid-plus-pendiente identity keeps holding. Every
+   * open-orders figure and the diagnostic figure read `openBalanceMinor` below instead.
+   */
   outstandingMinor: number;
   paidMinor: number;
   hasArrived: boolean;
+  /** Canonical open balance (`BR-06-08`), computed upstream; see `DashboardOrderInput.openBalanceMinor`. */
+  openBalanceMinor: number;
 };
 
 function deriveOrder(input: DashboardOrderInput): DerivedOrder {
@@ -73,6 +81,7 @@ function deriveOrder(input: DashboardOrderInput): DerivedOrder {
     outstandingMinor: computeOutstandingMinor(input.totalCost, input.payments),
     paidMinor: computePaidMinor(input.payments),
     hasArrived: hasOrderArrived(input.items),
+    openBalanceMinor: input.openBalanceMinor,
   };
 }
 
@@ -126,6 +135,15 @@ function buildOrderSummary(order: DerivedOrder, baseCurrencyCode: string | null)
   };
 }
 
+/**
+ * `FR-06-02`, `FR-06-03`, `FR-06-04`, `FR-06-05`, `FR-06-21` (`FR-06-27`, `BR-06-08`, `ADR 0033`).
+ *
+ * `orders` must already be scoped to **open** orders (`status != COMPLETED`) by the caller: the
+ * exclusion is applied once, in `buildDashboardData`, mirroring how the FX-reconciliation exclusion
+ * is centralized (`FR-06-13`) rather than re-derived per zone. Every sum below reads the canonical
+ * `openBalanceMinor` (`BR-06-08`), never the older `outstandingMinor`, so a partially written-off
+ * order contributes only its post-write-off remainder.
+ */
 function buildCashObligations(
   orders: DerivedOrder[],
   baseCurrencyCode: string | null,
@@ -134,14 +152,14 @@ function buildCashObligations(
 ): CashObligationsBlock {
   const monthRange = getCalendarMonthRange(now, timeZone);
   const todayStart = getTodayStart(now, timeZone);
-  const outstandingOrders = orders.filter((order) => order.outstandingMinor > 0);
+  const outstandingOrders = orders.filter((order) => order.openBalanceMinor > 0);
   const datedOutstanding = outstandingOrders.filter((order) => order.input.expectedDeliveryFrom !== null);
 
   // "Due this month" = orders whose expected arrival falls in the current month, plus every
   // overdue balance folded in. Both collapse to "expected arrival before next month".
   const currentMonthItems = datedOutstanding
     .filter((order) => order.input.expectedDeliveryFrom!.getTime() < monthRange.end.getTime())
-    .map((order) => toRollupItem(order.input, order.outstandingMinor));
+    .map((order) => toRollupItem(order.input, order.openBalanceMinor));
   const currentMonth = rollUpToBaseCurrency(currentMonthItems, baseCurrencyCode);
 
   // The overdue slice of that figure: expected arrival already past, surfaced so the
@@ -149,7 +167,7 @@ function buildCashObligations(
   const overdue = rollUpToBaseCurrency(
     datedOutstanding
       .filter((order) => order.input.expectedDeliveryFrom!.getTime() < todayStart.getTime())
-      .map((order) => toRollupItem(order.input, order.outstandingMinor)),
+      .map((order) => toRollupItem(order.input, order.openBalanceMinor)),
     baseCurrencyCode,
   );
 
@@ -159,21 +177,21 @@ function buildCashObligations(
     const monthKey = getMonthKeyAhead(now, timeZone, monthsAhead);
     const monthItems = datedOutstanding
       .filter((order) => isSameMonth(toMonthKey(order.input.expectedDeliveryFrom!), monthKey))
-      .map((order) => toRollupItem(order.input, order.outstandingMinor));
+      .map((order) => toRollupItem(order.input, order.openBalanceMinor));
     const monthTotal = rollUpToBaseCurrency(monthItems, baseCurrencyCode);
     upcomingMonthsIsPartial = upcomingMonthsIsPartial || monthTotal.isPartial;
     upcomingMonths.push({ ...monthKey, totalMinor: monthTotal.totalMinor });
   }
 
   const totalOutstanding = rollUpToBaseCurrency(
-    outstandingOrders.map((order) => toRollupItem(order.input, order.outstandingMinor)),
+    outstandingOrders.map((order) => toRollupItem(order.input, order.openBalanceMinor)),
     baseCurrencyCode,
   );
 
   const noDateOutstanding = rollUpToBaseCurrency(
     outstandingOrders
       .filter((order) => order.input.expectedDeliveryFrom === null)
-      .map((order) => toRollupItem(order.input, order.outstandingMinor)),
+      .map((order) => toRollupItem(order.input, order.openBalanceMinor)),
     baseCurrencyCode,
   );
 
@@ -200,13 +218,15 @@ function resolveUpcomingPaymentDueState(dueDate: Date, todayStart: Date): Upcomi
 /**
  * "Lo que toca pagar": per-order balances the collector still has ahead of them.
  *
- * `COMPLETED` orders are excluded from this LIST even though they stay in every obligation total
- * above. A delivered pedido that still owes money is real debt (so it must keep counting in
- * `totalOutstanding` / `overdue` / `currentMonth`), but it is not "upcoming": its arrival date is
- * in the past and, sorted ascending by that date, those rows sit permanently at the top and push
- * out everything the collector actually has coming. That is how a set of years-old delivered
- * pedidos occupied all five rows of this widget. Those balances now have their own door: the
- * orders list "Con saldo pendiente" filter, and the warning chip on their own rows (`FR-05-35`).
+ * `COMPLETED` orders never reach this function: `buildCashObligations`'s caller already scopes
+ * `orders` to open orders (`FR-06-27`), the same exclusion every figure in this block shares. A
+ * delivered pedido that still owes money is real debt in a broader sense (it is real, just not
+ * "open debt" anymore, see `ADR 0033`), but it would never have been "upcoming" here either way:
+ * its arrival date is in the past and, sorted ascending by that date, those rows would sit
+ * permanently at the top and push out everything the collector actually has coming. That is how a
+ * set of years-old delivered pedidos once occupied all five rows of this widget. Those balances
+ * have their own door now: the "pagos que no registraste" diagnostic (`FR-06-28`), the orders list
+ * "Con saldo pendiente" filter, and the warning chip on their own rows (`FR-05-35`).
  */
 function buildUpcomingPayments(
   datedOutstanding: DerivedOrder[],
@@ -214,13 +234,12 @@ function buildUpcomingPayments(
   todayStart: Date,
 ): UpcomingPayment[] {
   return datedOutstanding
-    .filter((order) => order.input.status !== "COMPLETED")
     .slice()
     .sort((a, b) => a.input.expectedDeliveryFrom!.getTime() - b.input.expectedDeliveryFrom!.getTime())
     .map((order) => {
       const fxPending = baseCurrencyCode ? needsFxReconciliation(order.input, baseCurrencyCode) : true;
       const baseOutstandingMinor = baseCurrencyCode
-        ? convertOrderAmount(order.input, order.outstandingMinor, baseCurrencyCode)
+        ? convertOrderAmount(order.input, order.openBalanceMinor, baseCurrencyCode)
         : null;
       return {
         orderId: order.input.id,
@@ -229,7 +248,7 @@ function buildUpcomingPayments(
         storeLogoUrl: order.input.store.logoUrl,
         dueDate: order.input.expectedDeliveryFrom!,
         currencyCode: order.input.currencyCode,
-        outstandingMinor: order.outstandingMinor,
+        outstandingMinor: order.openBalanceMinor,
         baseOutstandingMinor,
         isFxPending: fxPending,
         dueState: resolveUpcomingPaymentDueState(order.input.expectedDeliveryFrom!, todayStart),
@@ -336,9 +355,14 @@ function buildSpend(
 }
 
 /**
- * Outstanding debt trend: the outstanding balance as it stood at the close of each
- * month in the range. An order contributes only once it has been placed, and only the payments
- * settled by that month-end reduce it, so the series reconstructs the debt at each point in time.
+ * Outstanding debt trend ("deuda viva"), `FR-06-21` (`FR-06-27`, `BR-06-08`): the open balance as
+ * it stood at the close of each month in the range. `orders` must already be scoped to open orders
+ * by the caller, the same exclusion every other figure in `buildCashObligations` shares.
+ *
+ * An order contributes only once it has been placed, and only the payments AND any
+ * `StoreAccountAdjustmentLine` settled/written by that month-end reduce it (both bucketed by their
+ * own date, mirroring each other), so the series reconstructs `openBalanceMinor` at each point in
+ * time rather than only its current value.
  */
 function buildOutstandingTrend(
   orders: DerivedOrder[],
@@ -356,7 +380,11 @@ function buildOutstandingTrend(
           (sum, payment) => (payment.paymentDate.getTime() < monthEnd ? sum + payment.amount : sum),
           0,
         );
-        return toRollupItem(order.input, Math.max(0, order.input.totalCost - paidByThen));
+        const writtenOffByThen = order.input.adjustmentLines.reduce(
+          (sum, line) => (line.createdAt.getTime() < monthEnd ? sum + line.amountMinor : sum),
+          0,
+        );
+        return toRollupItem(order.input, Math.max(0, order.input.totalCost - paidByThen - writtenOffByThen));
       });
     const monthTotal = rollUpToBaseCurrency(items, baseCurrencyCode);
     isPartial = isPartial || monthTotal.isPartial;
@@ -731,6 +759,26 @@ function buildLostOnCancelled(orders: DashboardOrderInput[], baseCurrencyCode: s
 }
 
 /**
+ * "Pagos que no registraste" / "Payments you never recorded" (`FR-06-28`, `BR-06-13`, `ADR 0033`):
+ * Σ `openBalanceMinor` over `COMPLETED` orders that still carry a balance, in base currency,
+ * `FR-06-13`-compliant. Not debt: since a store in this market never hands the product over before
+ * it is paid in full (`ADR 0032`'s axiom), a delivered order with a lingering balance is, by
+ * definition, a payment the collector forgot to record. Net of any `StoreAccountAdjustmentLine`
+ * regardless of when it was written (`BR-06-13`, round-4 arbitration), so an order a reconciliation
+ * already resolved contributes 0, whether the write-off happened before or after delivery. Follows
+ * the same placement pattern as `buildLostOnCancelled` (`BR-06-12`): a quiet line, rendered only
+ * when greater than 0, that never enters the disbursed-spend series or changes a historical rollup
+ * retroactively.
+ */
+function buildUnrecordedPayments(orders: DerivedOrder[], baseCurrencyCode: string | null): BaseCurrencyTotal {
+  const items = orders
+    .filter((order) => order.input.status === "COMPLETED")
+    .map((order) => toRollupItem(order.input, order.openBalanceMinor))
+    .filter((item) => item.amountMinor > 0);
+  return rollUpToBaseCurrency(items, baseCurrencyCode);
+}
+
+/**
  * Pure aggregation entry point: turns raw orders plus the collector's currency/budget/timezone
  * context into the single `DashboardData` payload consumed by every zone. Deterministic given its
  * inputs (including `now`), so it is unit-tested directly without a database.
@@ -742,6 +790,11 @@ export function buildDashboardData(input: BuildDashboardDataInput): DashboardDat
 
   const nonCancelled = orders.filter((order) => !isCancelled(order.status)).map(deriveOrder);
   const nonCancelledDeliveries = deliveries.filter((delivery) => !isCancelledDelivery(delivery.status));
+  // The open-orders exclusion (`FR-06-27`, `ADR 0033`) is applied ONCE here, mirroring how the
+  // FX-reconciliation exclusion is already centralized (`FR-06-13`), rather than re-derived inside
+  // each figure below. Every obligation/debt figure this WO scopes reads `openOrders`; the figures
+  // that deliberately stay unscoped (`FR-06-19`, and every other block) keep reading `nonCancelled`.
+  const openOrders = nonCancelled.filter((order) => order.input.status !== "COMPLETED");
 
   return {
     baseCurrencyCode,
@@ -749,15 +802,18 @@ export function buildDashboardData(input: BuildDashboardDataInput): DashboardDat
     timezone: timeZone,
     generatedAt: now,
     range,
-    cashObligations: buildCashObligations(nonCancelled, baseCurrencyCode, now, timeZone),
+    cashObligations: buildCashObligations(openOrders, baseCurrencyCode, now, timeZone),
     budget: buildBudget(nonCancelled, baseCurrencyCode, budgetAmountMinor, now, timeZone, budgetResetDayOfMonth),
     spend: buildSpend(nonCancelled, nonCancelledDeliveries, baseCurrencyCode, range, now, timeZone),
     committedTrend: buildCommittedTrend(nonCancelled, baseCurrencyCode, range),
-    outstandingTrend: buildOutstandingTrend(nonCancelled, baseCurrencyCode, range),
+    outstandingTrend: buildOutstandingTrend(openOrders, baseCurrencyCode, range),
     activity: buildActivity(nonCancelled, baseCurrencyCode, range, now, timeZone),
     collection: buildCollection(nonCancelled, baseCurrencyCode),
     paidVsOutstanding: buildPaidVsOutstanding(nonCancelled, baseCurrencyCode),
     // Computed from the FULL orders list — the only figure that reads cancelled orders (`BR-06-10`).
     lostOnCancelled: buildLostOnCancelled(orders, baseCurrencyCode),
+    // Computed from every non-cancelled order (open AND COMPLETED), then narrowed to COMPLETED
+    // inside: a COMPLETED order was never in `openOrders` to begin with (`FR-06-28`).
+    unrecordedPayments: buildUnrecordedPayments(nonCancelled, baseCurrencyCode),
   };
 }

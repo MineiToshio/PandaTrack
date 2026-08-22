@@ -20,6 +20,9 @@ export default defineConfig({
   // `next dev` compiles routes lazily, and an uncompiled route makes the first test that touches it
   // pay the compile out of its own timeout budget.
   globalSetup: "./e2e/_helpers/globalSetup.ts",
+  // Fails the run if the suite deleted or modified any row that existed before it started. The dev
+  // database holds the collector's real imported history, not fixtures. See `e2e/_helpers/dataGuard.ts`.
+  globalTeardown: "./e2e/_helpers/globalTeardown.ts",
   // Timeouts below are sized for `next dev`, not for a production build. `webServer` runs
   // `npm run dev`, so a route's first request pays a Turbopack compile *plus* the first Neon
   // round-trip for every query the route's server components issue (the `(app)` layout alone

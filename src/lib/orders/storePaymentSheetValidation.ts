@@ -51,6 +51,18 @@ export type StorePaymentSheetDraft = {
   /** The payment's own date. `null` while the collector has not picked one yet. */
   paymentDate: Date | null;
   orders: SheetOrderDraft[];
+  /**
+   * The deliberate "no sé todavía" amount (WO-09, `ADR 0033` §5b): money this payment leaves
+   * unattributed on purpose, chosen through the panel's own action rather than typed. Optional and
+   * defaulting to 0 everywhere it is read, so every existing draft literal stays valid unchanged.
+   *
+   * Never a partial, hand-typed figure: the only writer is "park the current remainder", so this is
+   * either 0 or exactly what closes the gap between {@link sumAllOrders} and `paymentAmountMinor` at
+   * the moment it was chosen. It is the caller's job (`StorePaymentSheet`) to reset it back to 0 the
+   * moment the amount or any allocation line changes afterward — the choice must be re-made on
+   * purpose, never carried over onto a draft it was never about.
+   */
+  parkedAmountMinor?: number;
 };
 
 /** Stable identity of the "Resto del pedido" line of an order. */
@@ -73,9 +85,14 @@ export function sumAllOrders(orders: SheetOrderDraft[]): number {
   return orders.reduce((sum, order) => sum + sumOrderDraft(order), 0);
 }
 
-/** "Sin asignar": what's left of the payment once every declaration line is accounted for. Never negative — an over-allocation is surfaced as an error, not a negative counter. */
+/**
+ * "Sin asignar": what's left of the payment once every declaration line AND the parked slice are
+ * accounted for. Never negative — an over-allocation is surfaced as an error, not a negative
+ * counter. Reads to 0 once the collector parks the remainder, at which point the parked amount is
+ * what explains it, not this figure.
+ */
 export function computeUnallocatedMinor(draft: StorePaymentSheetDraft): number {
-  return Math.max(0, draft.paymentAmountMinor - sumAllOrders(draft.orders));
+  return Math.max(0, draft.paymentAmountMinor - sumAllOrders(draft.orders) - (draft.parkedAmountMinor ?? 0));
 }
 
 /** True once this order's own declarations (its rest line + its products' lines) outrun its balance. */
@@ -247,11 +264,32 @@ export function computeFillableMinor(input: ComputeFillableInput): number {
   return Math.max(0, Math.min(...ceilings));
 }
 
+/**
+ * Whether the draft's declared total (named allocations plus whatever is deliberately parked)
+ * lands exactly on the payment's own amount (WO-09, `FR-05-58`, `ADR 0033`).
+ *
+ * This is the store-level surface's own equality hardening of the plain `<=` ceiling
+ * ({@link doesAllocationSumExceedPayment}): every minor unit of the payment must either name a
+ * product/order or be sent to the parked pool through the explicit "no sé todavía" action, so an
+ * amount left over with nothing parked is exactly as invalid here as one that overshoots.
+ */
+export function isDeclaredTotalCompleteAgainstPayment(draft: StorePaymentSheetDraft): boolean {
+  return sumAllOrders(draft.orders) + (draft.parkedAmountMinor ?? 0) === draft.paymentAmountMinor;
+}
+
 export type StorePaymentSheetValidation = {
   sumAllocatedMinor: number;
+  /** Echoes `draft.parkedAmountMinor`, defaulted to 0, so a caller need not re-apply the default. */
+  parkedAmountMinor: number;
   unallocatedMinor: number;
   exceedsDebt: boolean;
   allocationExceedsAmount: boolean;
+  /**
+   * True once the named allocations plus whatever is parked land exactly on the payment's amount.
+   * `false` on a draft that still has money neither declared nor parked, which is a legal,
+   * non-error state (unlike `allocationExceedsAmount`): it just is not submittable yet.
+   */
+  isDeclaredTotalComplete: boolean;
   /** ids of orders whose own declared total outran their assignable balance. */
   orderErrors: ReadonlySet<string>;
   /** ids of products whose own declared amount outran their remaining base. */
@@ -267,11 +305,13 @@ export type StorePaymentSheetValidation = {
  * Runs every client-side rule against a draft and rolls the result into one object the sheet can
  * read directly: which fields to mark invalid, what banner to show, and whether the primary CTA
  * may be enabled. `canSubmit` requires a positive amount, a debt that covers it, an allocation sum
- * that fits inside it, every order/item line inside its own ceiling, and no declared order dated
- * before it was placed.
+ * that fits inside it, every order/item line inside its own ceiling, no declared order dated before
+ * it was placed, AND (WO-09) a declared total — named allocations plus whatever is parked — that
+ * lands exactly on the payment's own amount, mirroring the server's hardened equality rule.
  */
 export function validateStorePaymentSheetDraft(draft: StorePaymentSheetDraft): StorePaymentSheetValidation {
   const sumAllocatedMinor = sumAllOrders(draft.orders);
+  const parkedAmountMinor = draft.parkedAmountMinor ?? 0;
   const orderErrors = new Set(draft.orders.filter(isOrderOverAssignable).map((order) => order.orderId));
   const itemErrors = new Set(
     draft.orders.flatMap((order) => order.items.filter(isItemOverRemainingBase).map((item) => item.itemId)),
@@ -281,21 +321,25 @@ export function validateStorePaymentSheetDraft(draft: StorePaymentSheetDraft): S
   );
   const exceedsDebt = doesPaymentExceedDebt(draft.paymentAmountMinor, draft.debtMinor);
   const allocationExceedsAmount = doesAllocationSumExceedPayment(draft);
+  const isDeclaredTotalComplete = isDeclaredTotalCompleteAgainstPayment(draft);
   const hasPositiveAmount = draft.paymentAmountMinor > 0;
 
   const canSubmit =
     hasPositiveAmount &&
     !exceedsDebt &&
     !allocationExceedsAmount &&
+    isDeclaredTotalComplete &&
     orderErrors.size === 0 &&
     itemErrors.size === 0 &&
     dateErrors.size === 0;
 
   return {
     sumAllocatedMinor,
-    unallocatedMinor: Math.max(0, draft.paymentAmountMinor - sumAllocatedMinor),
+    parkedAmountMinor,
+    unallocatedMinor: computeUnallocatedMinor(draft),
     exceedsDebt,
     allocationExceedsAmount,
+    isDeclaredTotalComplete,
     orderErrors,
     itemErrors,
     dateErrors,

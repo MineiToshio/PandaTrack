@@ -57,6 +57,7 @@ function deliveryFixture(currentItemIds: string[]) {
     id: "dlv-1",
     status: DeliveryStatus.IN_TRANSIT,
     storeId: STORE_ID,
+    currencyCode: "USD",
     orderItems: currentItemIds.map((id) => ({ orderItem: { id, orderId: `ord-of-${id}` } })),
   };
 }
@@ -212,6 +213,28 @@ describe("editDelivery", () => {
     expect(tx.delivery.update).toHaveBeenCalledWith({
       where: { id: "dlv-1" },
       data: expect.objectContaining({ exchangeRate: 1.1, exchangeRateBaseCode: "PEN" }),
+    });
+  });
+
+  it("drops a submitted rate when the edit leaves the delivery in the base currency", async () => {
+    const tx = makeTx({
+      delivery: deliveryFixture(["kept"]),
+      selectedItems: [selectedItem("kept", OrderItemDeliveryState.IN_TRANSIT)],
+      baseCurrencyCode: "PEN",
+    });
+    useTx(tx);
+
+    const result = await editDelivery("dlv-1", USER_ID, {
+      ...BASE_INPUT,
+      currencyCode: "PEN",
+      exchangeRate: 1.1,
+      productIds: ["kept"],
+    });
+
+    expect(result.ok).toBe(true);
+    expect(tx.delivery.update).toHaveBeenCalledWith({
+      where: { id: "dlv-1" },
+      data: expect.objectContaining({ exchangeRate: null, exchangeRateBaseCode: null }),
     });
   });
 

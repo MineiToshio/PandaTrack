@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import OrderInlinePaymentForm, { type OrderInlinePaymentSubmission } from "../OrderInlinePaymentForm";
 
@@ -301,5 +301,129 @@ describe("OrderInlinePaymentForm has no coverage axis at all", () => {
     expect(submission.amount).toBe(4000);
     expect(submission.allocations).toEqual([]);
     expect(submission.splitMode).toBe("none");
+  });
+});
+
+/**
+ * The write-off ceiling (`BR-05-32`, `ADR 0034`): a store reconciliation adjustment can narrow what
+ * an order can still TAKE (`openBalanceMinor`) below what it still nominally OWES
+ * (`remainingAmount`, the GROSS figure). Before this fix the form only ever knew the gross figure,
+ * so a fully written-off order (180 gross, 0 net) let the collector type the full 180, and only the
+ * server refused it (correctly), quoting the ORDER's own gross balance back at the collector in a
+ * self-contradicting sentence: "180 exceeds 180".
+ */
+describe("OrderInlinePaymentForm reconciled write-off ceiling", () => {
+  it("disables the field and submit, and shows the reconciled copy, once a write-off has zeroed the net balance", () => {
+    // Same order as the bug report: gross 180.00, net 0 (fully squared with the store).
+    renderForm({ remainingAmount: 18000, openBalanceMinor: 0, initialAmountMinor: 18000 });
+
+    // The prefill still lands in the field (nothing about opening the panel changed), but nothing
+    // can be done with it: BR-05-32 says this order can no longer take ANY payment.
+    expect(amountField().value).toBe("180.00");
+    expect(amountField()).toBeDisabled();
+    expect(screen.getByRole("button", { name: /Registrar/ })).toBeDisabled();
+    // No quick-pick chip is offered either: there is nothing left for one to pay.
+    expect(screen.queryByRole("button", { name: "detail.payments.quickPickAllAria" })).toBeNull();
+    expect(screen.getByText("detail.payments.amountExceedsBalanceReconciled")).toBeTruthy();
+  });
+
+  it("offers the NET figure on the Todo quick-pick, never the order's own written-off gross balance", () => {
+    // A PARTIAL write-off: gross 180.00, net 50.00 (a 130.00 adjustment). The order can still take
+    // up to 50.00, so the field and quick-picks stay live, capped at that lower figure.
+    renderForm({ remainingAmount: 18000, openBalanceMinor: 5000 });
+
+    const all = screen.getByRole("button", { name: "detail.payments.quickPickAllAria" });
+    expect(all).toHaveTextContent("Todo · $50.00");
+
+    fireEvent.click(all);
+    expect(amountField().value).toBe("50.00");
+
+    // The percentage chips are percentages of the same NET ceiling, never the gross balance.
+    const [half] = screen.getAllByRole("button", { name: "detail.payments.quickPickPercentAria" });
+    expect(half).toHaveTextContent("50%");
+    fireEvent.click(half);
+    expect(amountField().value).toBe("25.00");
+  });
+
+  it("blocks a typed amount inside the gross balance but above the net one, with the reconciled copy", () => {
+    renderForm({ remainingAmount: 18000, openBalanceMinor: 5000 });
+
+    // 100.00 is well within the order's own gross balance (180.00) but above what the write-off
+    // left payable (50.00): the exact gap the bug report describes.
+    fireEvent.change(amountField(), { target: { value: "100.00" } });
+
+    expect(screen.getByText("detail.payments.amountExceedsBalanceReconciled")).toBeTruthy();
+    expect(screen.queryByText("detail.payments.amountExceedsBalance")).toBeNull();
+    expect(screen.getByRole("button", { name: /Registrar/ })).toBeDisabled();
+  });
+
+  it("regression: keeps the ordinary over-amount copy when the order carries no write-off at all", () => {
+    // 180 gross / 180 net (no adjustment): `openBalanceMinor` defaults to `remainingAmount`, so this
+    // reproduces the form's pre-existing behaviour byte-for-byte.
+    renderForm({ remainingAmount: 18000 });
+
+    fireEvent.change(amountField(), { target: { value: "200.00" } });
+
+    expect(screen.getByText("detail.payments.amountExceedsBalance")).toBeTruthy();
+    expect(screen.queryByText("detail.payments.amountExceedsBalanceReconciled")).toBeNull();
+    expect(screen.getByRole("button", { name: /Registrar/ })).toBeDisabled();
+  });
+});
+
+/**
+ * The SAME `hasReconciledGap` branch, now exercised on the SERVER's own refusal rather than the
+ * client gate: a breakdown draft keeps this form mounted awaiting the verdict (`awaitsVerdict`), so
+ * an `EXCEEDS_BALANCE` refusal is read back through `describeRefusal` here, in the form itself,
+ * rather than through the coordinator's toast.
+ */
+describe("OrderInlinePaymentForm server EXCEEDS_BALANCE refusal", () => {
+  const TWO_PRICED_ITEMS = [
+    { itemId: "item-1", name: "Kingdom 23", basePagableMinor: 9000, allocatedMinor: 0, paidDeclared: false },
+    { itemId: "item-2", name: "Berserk deluxe", basePagableMinor: 9000, allocatedMinor: 0, paidDeclared: false },
+  ];
+
+  /**
+   * Types an amount, opens the (collapsed-by-default) breakdown panel, then selects the first line
+   * to draft an allocation against it.
+   */
+  function draftAgainstFirstLine(amount: string) {
+    fireEvent.change(amountField(), { target: { value: amount } });
+    fireEvent.click(screen.getByRole("button", { name: "toggle" }));
+    fireEvent.click(screen.getAllByRole("checkbox")[0]);
+  }
+
+  it("maps to the reconciled copy when the refused order carries a write-off", async () => {
+    const onSubmit = vi.fn<SubmitHandler>(async () => ({ ok: false, error: "EXCEEDS_BALANCE" }));
+    renderForm({
+      remainingAmount: 18000,
+      openBalanceMinor: 15000,
+      items: TWO_PRICED_ITEMS,
+      orderTotalCostMinor: 18000,
+      onSubmit,
+    });
+
+    draftAgainstFirstLine("90.00");
+    fireEvent.click(screen.getByRole("button", { name: /Registrar/ }));
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
+    expect(await screen.findByText("detail.payments.amountExceedsBalanceReconciled")).toBeTruthy();
+  });
+
+  it("maps to the ordinary copy when the refused order carries no write-off", async () => {
+    const onSubmit = vi.fn<SubmitHandler>(async () => ({ ok: false, error: "EXCEEDS_BALANCE" }));
+    renderForm({
+      remainingAmount: 18000,
+      // No `openBalanceMinor` override: defaults to `remainingAmount`, i.e. no write-off.
+      items: TWO_PRICED_ITEMS,
+      orderTotalCostMinor: 18000,
+      onSubmit,
+    });
+
+    draftAgainstFirstLine("90.00");
+    fireEvent.click(screen.getByRole("button", { name: /Registrar/ }));
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
+    expect(await screen.findByText("detail.payments.amountExceedsBalance")).toBeTruthy();
+    expect(screen.queryByText("detail.payments.amountExceedsBalanceReconciled")).toBeNull();
   });
 });

@@ -147,6 +147,8 @@ export default function OrderListRowActions({
           settledItemCount={settledItemCount}
           baseCurrencyCode={baseCurrencyCode}
           locale={locale}
+          orderId={order.id}
+          storeName={order.store.name}
           onSubmit={quickArrival.submit}
         />
       )}

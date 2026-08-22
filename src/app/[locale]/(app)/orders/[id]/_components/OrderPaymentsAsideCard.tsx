@@ -98,6 +98,13 @@ type OrderPaymentsAsideCardProps = {
   breakdownItems: BreakdownItem[];
   /** The order's own total. The denominator of the breakdown's by-price percentage. */
   totalCost: number;
+  /**
+   * This order's own canonical NET balance (`BR-05-32`, `ADR 0034`), threaded into the inline
+   * payment form's writable ceiling. Optional and defaulting to `summary.remainingAmount` (the
+   * GROSS balance this card already renders everywhere else): most callers carry no reconciliation
+   * write-off, and a caller that never asks about one gets the pre-existing behaviour unchanged.
+   */
+  openBalanceMinor?: number;
   /** Coverage marks against this order's items, computed over EVERY item (see the pure rule). */
   markReconciliation: OrderMarkReconciliation;
   /** Handlers are owned by the parent; this card only triggers them via UI events. */
@@ -132,6 +139,7 @@ const OrderPaymentsAsideCard = forwardRef<OrderPaymentsAsideCardHandle, OrderPay
       undetailedPaidMinor,
       breakdownItems,
       totalCost,
+      openBalanceMinor,
       markReconciliation,
       onAddPayment,
       onDeletePayment,
@@ -356,6 +364,7 @@ const OrderPaymentsAsideCard = forwardRef<OrderPaymentsAsideCardHandle, OrderPay
             items={breakdownItems}
             orderTotalCostMinor={totalCost}
             undetailedPaidMinor={undetailedPaidMinor}
+            openBalanceMinor={openBalanceMinor ?? summary.remainingAmount}
             onCancel={closeForm}
             onSubmit={onAddPayment}
             onSubmitted={closeForm}

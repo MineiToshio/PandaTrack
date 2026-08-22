@@ -13,6 +13,13 @@ vi.mock("@/app/[locale]/(app)/_actions/quickArrivalAction", () => ({
   quickArrivalAction: quickArrivalActionMock,
 }));
 
+// The settlement preview (WO-08) fetches on open; a real `getSession()` call would throw outside
+// a request scope, so it is stubbed to "nothing to settle" for every test that does not care about it.
+vi.mock("@/app/[locale]/(app)/_actions/settlementActions", () => ({
+  getSettlementContextAction: vi.fn().mockResolvedValue({ ok: true, contexts: [] }),
+  retrySettlementAction: vi.fn(),
+}));
+
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), refresh: refreshMock }),
 }));
@@ -48,7 +55,12 @@ const BASE_PROPS = {
 describe("DashboardActivityQuickArrival", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    quickArrivalActionMock.mockResolvedValue({ ok: true, deliveryId: "delivery-1" });
+    quickArrivalActionMock.mockResolvedValue({
+      ok: true,
+      deliveryId: "delivery-1",
+      productCount: 1,
+      moneyOutcomes: [],
+    });
   });
 
   it("shows a labelled control and keeps the modal closed until it is used", () => {

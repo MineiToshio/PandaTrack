@@ -39,13 +39,13 @@ function paymentSheet(page: Page) {
  * from anywhere on the page: the fixture's first item costs exactly 60.00, so a bare text match on
  * the amount would pass on a price while the debt behind it is wrong.
  *
- * Reads the payment progress block's headline ("Remaining {amount}", `FR-04-59`). It used to read
- * the flat "Outstanding debt" `SummaryStatRow`, which `FR-04-55` deleted when the block replaced
- * it. The `^remaining ` anchor keeps it off the payment sheet's own "Remaining" labels, which are
- * a bare word and are not on screen with the sheet closed anyway.
+ * Reads the payment progress block's headline ("Outstanding on open orders {amount}", `ADR 0033`,
+ * `WO-09`). It used to read "Remaining {amount}" before the headline was promoted to
+ * `openOrderDebtMinor`. The `^outstanding on open orders ` anchor keeps it off any other figure on
+ * the page.
  */
 function remainingDebt(page: Page) {
-  return page.getByText(/^remaining\s/i).first();
+  return page.getByText(/^outstanding on open orders\s/i).first();
 }
 
 /**
@@ -157,11 +157,19 @@ test.describe("Store-level payments", () => {
     const sheet = paymentSheet(page);
     await expect(sheet).toBeVisible();
 
-    // Nothing declared: the amount alone is a legitimate payment, recorded on the store's account.
+    // Nothing declared against an order or product: the amount is money on the store's account.
+    // The store-level equality hardening (WO-09, `ADR 0033` §5a) refuses to submit a draft with
+    // money neither declared nor parked, so the explicit "I don't know yet" affordance is what
+    // reaches the same "on account" result now — the collector opens the allocation panel and
+    // parks the whole 10.00 on purpose, rather than typing an amount and leaving nothing declared.
     await page.locator("#store-payment-amount").fill("10.00");
+    await sheet.getByRole("button", { name: /^assign$/i }).click();
+    await sheet.getByRole("button", { name: /mark .* as parked money/i }).click();
     await sheet.getByRole("button", { name: /^register payment$/i }).click();
 
-    // Optimistic Confirmation: the sheet is gone before the server has answered.
+    // Optimistic Confirmation: the sheet is gone before the server has answered. A parked slice is
+    // request-shape only (never persisted), so the payment still lands with zero allocations and the
+    // coordinator still takes the "nothing declared" close-immediately path.
     await expect(sheet).toBeHidden({ timeout: 5_000 });
 
     // And the debt really moved, not just on screen: a fresh server render says 90.00.
@@ -170,10 +178,11 @@ test.describe("Store-level payments", () => {
       await expect(remainingDebt(page)).toHaveText(/\b90\.00\b/, { timeout: 3_000 });
     }).toPass({ timeout: 30_000 });
 
-    // This fixture is exactly the shape `FR-04-59`'s "On account" line exists for: the headline
-    // says 90.00 is missing while the bar's own pair says 100.00 is, because none of the 10.00 was
-    // declared against the order. Without the line nothing on the page names the difference.
-    await expect(page.getByText(/on account\s+10\.00/i).first()).toBeVisible();
+    // This fixture is exactly the shape the "unassigned money" line exists for (`BR-05-27`,
+    // `FR-05-60`, `ADR 0033`): the headline says 90.00 is outstanding while the bar's own pair says
+    // 100.00 is, because none of the 10.00 was declared against the order. Without the line nothing
+    // on the page names the difference.
+    await expect(page.getByText(/10\.00\s+already paid and not assigned/i).first()).toBeVisible();
   });
 
   test("a payment declared across two product lines waits for the server and lowers the debt", async ({ page }) => {

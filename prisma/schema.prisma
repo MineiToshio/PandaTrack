@@ -137,17 +137,17 @@ enum ImageIntakeUsageStatus {
 }
 
 model User {
-  id                          String                     @id
+  id                          String                       @id
   name                        String
-  email                       String                     @unique
+  email                       String                       @unique
   emailVerified               Boolean
   /// When set, the 7-day credential verification grace window counts from this time (e.g. immediate email change). Otherwise `createdAt` is used.
   unverifiedGraceStartsAt     DateTime?
   image                       String?
-  username                    String                     @unique
+  username                    String                       @unique
   usernameChangedAt           DateTime?
   preferredCountryCode        String?
-  preferredCountry            Country?                   @relation(fields: [preferredCountryCode], references: [code], onDelete: SetNull, onUpdate: Cascade)
+  preferredCountry            Country?                     @relation(fields: [preferredCountryCode], references: [code], onDelete: SetNull, onUpdate: Cascade)
   baseCurrencyCode            String?
   /// Minor units of `baseCurrencyCode`, like `Order.totalCost` and `OrderPayment.amount`.
   /// Always a whole number of major units (a DB check enforces `% 100 = 0`); the settings
@@ -165,7 +165,7 @@ model User {
   aiMonthlyPhotoLimit         Int?
   /// Moderation role backing the better-auth admin plugin. Non-null with a `user` default so
   /// every account resolves to a concrete role; only the plugin's server-gated endpoint elevates it.
-  role                        String                     @default("user")
+  role                        String                       @default("user")
   /// better-auth admin plugin ban fields. No ban surface ships in this release; the columns exist
   /// so the plugin's forward-compatible shape is present.
   banned                      Boolean?
@@ -175,26 +175,28 @@ model User {
   updatedAt                   DateTime
   sessions                    Session[]
   accounts                    Account[]
-  createdStores               Store[]                    @relation("StoreCreator")
-  approvedStores              Store[]                    @relation("StoreApprover")
+  createdStores               Store[]                      @relation("StoreCreator")
+  approvedStores              Store[]                      @relation("StoreApprover")
   storeReviews                StoreReview[]
   storeNotes                  StoreNote[]
   storeReports                StoreReport[]
   storeProductTypeRequests    StoreProductTypeRequest[]
   storeChangeRequests         StoreChangeRequest[]
-  reviewedStoreChangeRequests StoreChangeRequest[]       @relation("StoreChangeRequestReviewer")
+  reviewedStoreChangeRequests StoreChangeRequest[]         @relation("StoreChangeRequestReviewer")
   orders                      Order[]
   orderItems                  OrderItem[]
   orderPayments               OrderPayment[]
   storePayments               StorePayment[]
   paymentAllocations          PaymentAllocation[]
+  storeAccountAdjustments     StoreAccountAdjustment[]
+  storeAccountAdjustmentLines StoreAccountAdjustmentLine[]
   orderHistory                OrderHistory[]
   preferredProductTypes       UserPreferredProductType[]
   deliveries                  Delivery[]
   pushSubscriptions           PushSubscription[]
   notificationDeliveries      NotificationDelivery[]
   notificationPreference      NotificationPreference?
-  adminAuditLogs              AdminAuditLog[]            @relation("AdminAuditLogActor")
+  adminAuditLogs              AdminAuditLog[]              @relation("AdminAuditLogActor")
   imageIntakeUsages           ImageIntakeUsage[]
   imageIntakePeriods          ImageIntakePeriod[]
 
@@ -278,46 +280,47 @@ model Country {
 }
 
 model Store {
-  id                     String                       @id @default(cuid())
-  slug                   String                       @unique
-  name                   String
+  id                      String                       @id @default(cuid())
+  slug                    String                       @unique
+  name                    String
   // Diacritic-stripped, lowercased, punctuation-collapsed copy of `name` (JS `normalizeStoreName`).
   // Lets duplicate detection pre-filter in SQL with `contains` on normalized terms instead of
   // scanning rows and scoring every name in memory. Written on every create/name edit.
-  searchName             String                       @default("")
-  description            String?
-  logoUrl                String?
-  sellerType             SellerType
-  status                 StoreStatus                  @default(PENDING)
-  visibility             StoreVisibility              @default(PUBLIC)
-  isActive               Boolean                      @default(true)
-  isPrivate              Boolean                      @default(false)
-  hasStock               Boolean?
-  receivesOrders         Boolean?
-  countryCode            String
-  averageRating          Float?
-  reviewCount            Int                          @default(0)
-  createdByUserId        String
-  approvedByUserId       String?
-  approvedAt             DateTime?
-  removalReason          StoreRemovalReason?
-  createdAt              DateTime                     @default(now())
-  updatedAt              DateTime                     @updatedAt
-  country                Country                      @relation(fields: [countryCode], references: [code], onDelete: Restrict)
-  createdByUser          User                         @relation("StoreCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
-  approvedByUser         User?                        @relation("StoreApprover", fields: [approvedByUserId], references: [id], onDelete: SetNull)
-  presences              StorePresence[]
-  contactChannels        StoreContactChannel[]
-  addresses              StoreAddress[]
-  importCountries        StoreImportCountry[]
-  productTypeAssignments StoreProductTypeAssignment[]
-  reviews                StoreReview[]
-  notes                  StoreNote[]
-  reports                StoreReport[]
-  changeRequests         StoreChangeRequest[]
-  orders                 Order[]
-  deliveries             Delivery[]
-  storePayments          StorePayment[]
+  searchName              String                       @default("")
+  description             String?
+  logoUrl                 String?
+  sellerType              SellerType
+  status                  StoreStatus                  @default(PENDING)
+  visibility              StoreVisibility              @default(PUBLIC)
+  isActive                Boolean                      @default(true)
+  isPrivate               Boolean                      @default(false)
+  hasStock                Boolean?
+  receivesOrders          Boolean?
+  countryCode             String
+  averageRating           Float?
+  reviewCount             Int                          @default(0)
+  createdByUserId         String
+  approvedByUserId        String?
+  approvedAt              DateTime?
+  removalReason           StoreRemovalReason?
+  createdAt               DateTime                     @default(now())
+  updatedAt               DateTime                     @updatedAt
+  country                 Country                      @relation(fields: [countryCode], references: [code], onDelete: Restrict)
+  createdByUser           User                         @relation("StoreCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  approvedByUser          User?                        @relation("StoreApprover", fields: [approvedByUserId], references: [id], onDelete: SetNull)
+  presences               StorePresence[]
+  contactChannels         StoreContactChannel[]
+  addresses               StoreAddress[]
+  importCountries         StoreImportCountry[]
+  productTypeAssignments  StoreProductTypeAssignment[]
+  reviews                 StoreReview[]
+  notes                   StoreNote[]
+  reports                 StoreReport[]
+  changeRequests          StoreChangeRequest[]
+  orders                  Order[]
+  deliveries              Delivery[]
+  storePayments           StorePayment[]
+  storeAccountAdjustments StoreAccountAdjustment[]
 
   @@index([countryCode])
   @@index([createdByUserId])
@@ -520,46 +523,47 @@ model StoreChangeRequest {
 }
 
 model Order {
-  id                   String              @id @default(cuid())
-  storeId              String
-  userId               String
-  humanReadableId      String              @unique
-  orderDate            DateTime
-  expectedDeliveryFrom DateTime?
-  expectedDeliveryTo   DateTime?
-  currencyCode         String
-  exchangeRate         Decimal?            @db.Decimal(18, 8)
+  id                          String                       @id @default(cuid())
+  storeId                     String
+  userId                      String
+  humanReadableId             String                       @unique
+  orderDate                   DateTime
+  expectedDeliveryFrom        DateTime?
+  expectedDeliveryTo          DateTime?
+  currencyCode                String
+  exchangeRate                Decimal?                     @db.Decimal(18, 8)
   // The base currency `exchangeRate` converts INTO, captured whenever a rate is written. Makes
   // "this order still needs FX reconciliation" fully derivable (currency differs from the user's
   // base AND no rate, or a rate stored against a different base), so no boolean flag has to be
   // kept in sync. See ADR 0024.
-  exchangeRateBaseCode String?
-  totalCost            Int
+  exchangeRateBaseCode        String?
+  totalCost                   Int
   // Denormalized payment cache kept transactionally in sync by the payment/total mutations.
   // Payments stay the source of truth (single-order views recompute from them); these fields
   // exist so the orders list can filter by payment state and sort by paid ratio entirely in
   // SQL, instead of fetching every order to derive the percentage in memory. `paymentPercent`
   // is the same floor(paid/total*100) value the UI shows, so filter/sort/display never diverge.
   /// DEPRECATED under store-level payments: frozen legacy cache, no longer maintained; kept for trial reversibility
-  paidAmountMinor      Int                 @default(0)
+  paidAmountMinor             Int                          @default(0)
   /// DEPRECATED under store-level payments: frozen legacy cache, no longer maintained; kept for trial reversibility
-  paymentPercent       Int                 @default(0)
+  paymentPercent              Int                          @default(0)
   /// Denormalized cache of the money declared against this order under store-level payments:
   /// the sum of `payment_allocation.amountMinor` for this order. Kept transactionally in sync by
   /// the payment mutations, exactly as the legacy `paidAmountMinor` cache was, so the orders list
   /// can filter and sort on declared money in SQL. Allocations remain the source of truth.
-  allocatedAmountMinor Int                 @default(0)
-  note                 String?
-  status               OrderStatus         @default(OPEN)
-  cancellationReason   String?
-  createdAt            DateTime            @default(now())
-  updatedAt            DateTime            @updatedAt
-  store                Store               @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  user                 User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items                OrderItem[]
-  payments             OrderPayment[]
-  paymentAllocations   PaymentAllocation[]
-  history              OrderHistory[]
+  allocatedAmountMinor        Int                          @default(0)
+  note                        String?
+  status                      OrderStatus                  @default(OPEN)
+  cancellationReason          String?
+  createdAt                   DateTime                     @default(now())
+  updatedAt                   DateTime                     @updatedAt
+  store                       Store                        @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  user                        User                         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items                       OrderItem[]
+  payments                    OrderPayment[]
+  paymentAllocations          PaymentAllocation[]
+  storeAccountAdjustmentLines StoreAccountAdjustmentLine[]
+  history                     OrderHistory[]
 
   @@index([storeId])
   @@index([userId])
@@ -637,16 +641,22 @@ model StorePayment {
   /// Provenance of the one-to-one backfill from `order_payment` only, never read by business
   /// logic. Null on every payment recorded through the app.
   migratedFromOrderId  String?
+  /// The delivery whose arrival settled this payment (ADR 0032). Null for a payment recorded
+  /// outside that flow. Restrict on delete: a delivery that settled a payment cannot be removed
+  /// without first reassigning or deleting the payment it produced.
+  settledByDeliveryId  String?
   createdAt            DateTime            @default(now())
   updatedAt            DateTime            @updatedAt
   store                Store               @relation(fields: [storeId], references: [id], onDelete: Cascade)
   user                 User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  settledByDelivery    Delivery?           @relation(fields: [settledByDeliveryId], references: [id], onDelete: Restrict)
   allocations          PaymentAllocation[]
 
   @@index([storeId])
   @@index([userId])
   @@index([userId, paymentDate])
   @@index([userId, storeId, currencyCode])
+  @@index([settledByDeliveryId])
   @@map("store_payment")
 }
 
@@ -657,32 +667,92 @@ model StorePayment {
 /// `userId` is duplicated here (see data-layer-user-id-duplication.mdc) so an allocation can be
 /// authorized and queried directly, without joining back to `StorePayment` or `Order`.
 model PaymentAllocation {
-  id            String       @id @default(cuid())
-  paymentId     String
-  orderId       String
-  orderItemId   String?
-  userId        String
+  id                   String       @id @default(cuid())
+  paymentId            String
+  orderId              String
+  orderItemId          String?
+  userId               String
   /// Minor units of the parent payment's currency, always >= 0. Zero is only meaningful together
   /// with `settlesTarget`, which declares the target covered without naming an amount.
-  amountMinor   Int          @default(0)
+  amountMinor          Int          @default(0)
   /// DEPRECATED, read-tolerant / write-strict. "Settled in full" declaration, without an amount.
   /// No writer has existed since the `20260808215744` migration backfilled every legacy row to
   /// `false`, and `createStorePayment` now refuses `true` outright: an amount-less declaration is
   /// `OrderItem.paidDeclaredAt`, which is editable and does not leave a phantom 0.00 row in an
   /// order's payment history. Reads still honor a `true` row so one arriving out of band renders as
   /// "Saldado" rather than as that phantom.
-  settlesTarget Boolean      @default(false)
-  createdAt     DateTime     @default(now())
-  payment       StorePayment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
-  order         Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  orderItem     OrderItem?   @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
-  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  settlesTarget        Boolean      @default(false)
+  /// Provenance for a `consumeUnassignedStoreMoneyOnOrderClose` (`WO-09`, `ADR 0033 §4`) write: the
+  /// delivery whose arrival closed the order and triggered this consumption. Null for every other
+  /// allocation (a collector's own declared payment, or a settlement StorePayment's own allocation,
+  /// which already carries its provenance on `StorePayment.settledByDeliveryId` instead). `SetNull`
+  /// on delete: this row represents money paid to the store BEFORE the delivery ever existed, so
+  /// deleting the delivery must neither cascade into it nor be blocked by it (`WO-08` UX Notes,
+  /// "known gap" closure) — only the provenance link is cleared, the allocation itself survives.
+  consumedByDeliveryId String?
+  createdAt            DateTime     @default(now())
+  payment              StorePayment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  order                Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderItem            OrderItem?   @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  user                 User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  consumedByDelivery   Delivery?    @relation(fields: [consumedByDeliveryId], references: [id], onDelete: SetNull)
 
   @@index([paymentId])
   @@index([orderId])
   @@index([orderItemId])
   @@index([userId])
+  @@index([consumedByDeliveryId])
   @@map("payment_allocation")
+}
+
+/// A collector's declaration that a store's account is squared beyond what the app can otherwise
+/// see (`ADR 0034`). Carries one line per order it writes off (`StoreAccountAdjustmentLine`); it
+/// is never a `StorePayment` and its lines are never `PaymentAllocation` rows, because an
+/// adjustment must stay outside every allocation-based figure (`BR-06-04`). Stores no total: the
+/// magnitude is the sum of its own lines, derived at read time so an order-deletion cascade can
+/// never leave a stale header behind it (`ADR 0034` §5).
+model StoreAccountAdjustment {
+  id             String                       @id @default(cuid())
+  storeId        String
+  userId         String
+  currencyCode   String
+  adjustmentDate DateTime
+  reason         String
+  createdAt      DateTime                     @default(now())
+  updatedAt      DateTime                     @updatedAt
+  store          Store                        @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  user           User                         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lines          StoreAccountAdjustmentLine[]
+
+  @@index([userId])
+  @@index([storeId])
+  @@index([userId, storeId, currencyCode])
+  @@index([userId, adjustmentDate])
+  @@map("store_account_adjustment")
+}
+
+/// What one `StoreAccountAdjustment` writes off, on one order. `amountMinor` is always > 0
+/// (enforced by a hand-written `CHECK` in the migration; Prisma cannot express one) and never
+/// greater than that order's own `openBalanceMinor` at write time, which is enforced by the
+/// mutation, not the schema. Never related to `PaymentAllocation`: a line records that a balance
+/// was written off, not that money arrived. `userId` is duplicated here (see
+/// data-layer-user-id-duplication.mdc) so the debt figures can read lines by order without
+/// joining back through the adjustment header.
+model StoreAccountAdjustmentLine {
+  id           String                 @id @default(cuid())
+  adjustmentId String
+  orderId      String
+  userId       String
+  amountMinor  Int
+  createdAt    DateTime               @default(now())
+  adjustment   StoreAccountAdjustment @relation(fields: [adjustmentId], references: [id], onDelete: Cascade)
+  order        Order                  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user         User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([adjustmentId, orderId])
+  @@index([userId, orderId])
+  @@index([adjustmentId])
+  @@map("store_account_adjustment_line")
 }
 
 model OrderHistory {
@@ -720,6 +790,11 @@ model Delivery {
   store                Store               @relation(fields: [storeId], references: [id], onDelete: Cascade)
   user                 User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   orderItems           DeliveryOrderItem[]
+  settlementPayments   StorePayment[]
+  /// Inverse of `PaymentAllocation.consumedByDeliveryId`: allocations whose close-time consumption
+  /// (`FR-08-46`) this delivery triggered. Not deleted or touched when the delivery is reopened or
+  /// removed (`onDelete: SetNull` on the child field) — that money stays applied to its order.
+  consumedAllocations  PaymentAllocation[]
 
   @@index([storeId])
   @@index([userId])

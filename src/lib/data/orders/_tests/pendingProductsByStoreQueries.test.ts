@@ -4,6 +4,7 @@ const { prismaMock, getStoreDebtByCurrencyMock } = vi.hoisted(() => ({
   prismaMock: {
     order: { findMany: vi.fn() },
     paymentAllocation: { findMany: vi.fn(), groupBy: vi.fn() },
+    storeAccountAdjustmentLine: { groupBy: vi.fn() },
   },
   getStoreDebtByCurrencyMock: vi.fn(),
 }));
@@ -57,6 +58,7 @@ describe("getPendingProductsByStore", () => {
     vi.clearAllMocks();
     prismaMock.paymentAllocation.findMany.mockResolvedValue([]);
     prismaMock.paymentAllocation.groupBy.mockResolvedValue([]);
+    prismaMock.storeAccountAdjustmentLine.groupBy.mockResolvedValue([]);
     getStoreDebtByCurrencyMock.mockResolvedValue([]);
   });
 
@@ -78,6 +80,36 @@ describe("getPendingProductsByStore", () => {
       ["item-1", "PED-001"],
       ["item-2", "PED-002"],
     ]);
+  });
+
+  /**
+   * `StoreDebtEntry` gained `openOrderDebtMinor` alongside the unchanged lifetime `debtMinor`
+   * (WO-09): this module trusts whatever `getStoreDebtByCurrency` returns and maps both fields
+   * straight through, so a store's row must carry both rather than silently dropping the new one.
+   */
+  it("maps openOrderDebtMinor alongside debtMinor onto each store's debt entry", async () => {
+    prismaMock.order.findMany.mockResolvedValue([
+      orderRow("order-1", "PED-001", [{ id: "item-1", name: "Nendoroid Miku" }]),
+    ]);
+    getStoreDebtByCurrencyMock.mockResolvedValue([
+      {
+        storeId: "store-1",
+        currencyCode: "PEN",
+        committedMinor: 5000,
+        paidMinor: 0,
+        debtMinor: 5000,
+        lostMinor: 0,
+        activeCommittedMinor: 5000,
+        activePaidMinor: 0,
+        openOrderDebtMinor: 3000,
+        unrecordedPaymentsMinor: 0,
+        unassignedMinor: 0,
+      },
+    ]);
+
+    const groups = await getPendingProductsByStore("user-1");
+
+    expect(groups[0].debts).toEqual([{ currencyCode: "PEN", debtMinor: 5000, openOrderDebtMinor: 3000 }]);
   });
 
   it("asks the database for the order code rather than deriving it", async () => {
@@ -175,6 +207,39 @@ describe("getPendingProductsByStore", () => {
   });
 
   /**
+   * MAJOR F6 (eighth-consumer audit, 2026-08-20 review): the same undetailed block above filtered
+   * "still owes money" on the GROSS remainder (`totalCost - allocatedAmountMinor`), contradicting the
+   * `openOrderDebtMinor` chip rendered right above it on the same screen, which is already net of any
+   * `StoreAccountAdjustmentLine`. An order a store reconciliation wrote off in full still read as
+   * "owing" here and could show an undetailed-money line for money that no longer represents a debt.
+   *
+   * Red-first: against the pre-fix gross filter, "order-written-off" (gross remainder 10000, net 0)
+   * still passed the `> 0` gate and showed up in `undetailedByOrder`. Captured failure (pre-fix):
+   *   expect(received).toEqual(expected)
+   *   Expected: []
+   *   Received: [{ orderId: 'order-written-off', humanReadableId: 'PED-WRITTEN-OFF', ... }]
+   */
+  it("nets a StoreAccountAdjustmentLine out of the undetailed block's own balance test, aligning it with the openOrderDebtMinor chip", async () => {
+    prismaMock.order.findMany.mockResolvedValue([
+      orderRow("order-written-off", "PED-WRITTEN-OFF", [{ id: "item-1", name: "Nendoroid Miku" }], {
+        totalCost: 60000,
+        allocatedAmountMinor: 50000,
+      }),
+    ]);
+    prismaMock.paymentAllocation.groupBy.mockResolvedValue([
+      { orderId: "order-written-off", _sum: { amountMinor: 10000 } },
+    ]);
+    // Fully written off: net balance is 60000 - 50000 - 10000 = 0.
+    prismaMock.storeAccountAdjustmentLine.groupBy.mockResolvedValue([
+      { orderId: "order-written-off", _sum: { amountMinor: 10000 } },
+    ]);
+
+    const groups = await getPendingProductsByStore("user-1");
+
+    expect(groups[0].undetailedByOrder).toEqual([]);
+  });
+
+  /**
    * D7 in the data layer, and the part that does not announce itself.
    *
    * `PendingProductRow` cannot DERIVE this: it carries the line's own `allocatedMinor` and the
@@ -243,9 +308,7 @@ describe("getPendingProductsByStore", () => {
 
     const groups = await getPendingProductsByStore("user-1");
 
-    expect(
-      groups[0].pendingProducts.map((product) => [product.orderId, product.orderHasUndetailedMoney]),
-    ).toEqual([
+    expect(groups[0].pendingProducts.map((product) => [product.orderId, product.orderHasUndetailedMoney])).toEqual([
       ["order-pozo", true],
       ["order-clean", false],
     ]);

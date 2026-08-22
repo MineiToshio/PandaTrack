@@ -13,6 +13,13 @@ vi.mock("@/app/[locale]/(app)/_actions/quickArrivalAction", () => ({
   quickArrivalAction: quickArrivalActionMock,
 }));
 
+// The settlement preview (WO-08) fetches on open; a real `getSession()` call would throw outside
+// a request scope, so it is stubbed to "nothing to settle" for every test that does not care about it.
+vi.mock("@/app/[locale]/(app)/_actions/settlementActions", () => ({
+  getSettlementContextAction: vi.fn().mockResolvedValue({ ok: true, contexts: [] }),
+  retrySettlementAction: vi.fn(),
+}));
+
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), prefetch: vi.fn(), refresh: refreshMock }),
 }));
@@ -84,7 +91,12 @@ function renderActions(order: OrdersListPageItem, surface: "table" | "card" = "t
 describe("OrderListRowActions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    quickArrivalActionMock.mockResolvedValue({ ok: true, deliveryId: "delivery-1" });
+    quickArrivalActionMock.mockResolvedValue({
+      ok: true,
+      deliveryId: "delivery-1",
+      productCount: 1,
+      moneyOutcomes: [],
+    });
   });
 
   it("offers both delivery affordances while a product can still join a delivery", () => {
@@ -138,7 +150,6 @@ describe("OrderListRowActions", () => {
     expect(screen.getByRole("checkbox", { name: "Listo en tienda" })).toBeInTheDocument();
     expect(screen.queryByRole("checkbox", { name: "Ya entregado" })).not.toBeInTheDocument();
   });
-
 
   it("drops the detail link on a card, whose whole surface is already that link", () => {
     renderActions(makeOrder(), "card");

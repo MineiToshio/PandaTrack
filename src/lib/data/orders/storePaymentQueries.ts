@@ -1,5 +1,6 @@
 import { OrderStatus, type Prisma } from "../../../../generated/prisma/client";
 import { prisma } from "@/lib/prisma";
+import { openBalanceMinorByOrderId } from "./orderOpenBalance";
 
 /**
  * What the collector owes one store in one currency.
@@ -45,6 +46,42 @@ export type StoreDebtRow = {
    * only one where "0 of X" and "X of X" both mean what they say.
    */
   activePaidMinor: number;
+  /**
+   * "Pendiente en pedidos abiertos" (`BR-05-26` / `FR-05-61`, `ADR 0033`): the sum of the canonical
+   * `openBalanceMinor` (`BR-05-32`, `ADR 0034`) over this pair's still-active orders
+   * ({@link ACTIVE_ORDER_STATUSES}). Reads the per-order figure net of any
+   * `StoreAccountAdjustmentLine`, so an active order already partly written off in a store
+   * reconciliation is never overstated here. This is the figure every "Debes / Falta" surface is
+   * promoted to render, in place of the lifetime `debtMinor` (which stays the validation ceiling,
+   * unchanged, `FR-05-63`). NEVER clamped at zero: see `openBalanceMinorByOrderId`'s own doc for why
+   * a negative reading here must stay visible rather than be silenced.
+   *
+   * Required: `getStoreDebtByCurrency` always fills it in, and a caller that silently defaulted a
+   * missing value to zero would hide exactly the kind of gap `BR-05-32` forbids papering over.
+   */
+  openOrderDebtMinor: number;
+  /**
+   * "Pagos que no registraste" at this pair's own scope (store/currency, no FX handling), a
+   * diagnostic, never debt (`ADR 0033` §3). Sum of `openBalanceMinor` over this pair's `COMPLETED`
+   * orders: since this market never lets a store hand over goods before it is paid in full, a
+   * delivered order still carrying a balance is a payment that was made and never entered. NOT the
+   * figure `FRD-06 · WO-07` renders on the dashboard: that one is global, base-currency,
+   * FX-reconciliation-excluded, and defined independently there (`FR-06-28` / `BR-06-13`).
+   *
+   * Required for the same reason as {@link openOrderDebtMinor}: always filled in by
+   * `getStoreDebtByCurrency`.
+   */
+  unrecordedPaymentsMinor: number;
+  /**
+   * The exact "parked" pool (`BR-05-27` / `FR-05-60`): money that left the collector's hands for
+   * this store/currency pair and is not yet declared against any non-cancelled order,
+   * `(Σ StorePayment.amount − lostMinor) − Σ Order.allocatedAmountMinor` over every non-cancelled
+   * order of the pair. Unaffected by a `StoreAccountAdjustmentLine`: an adjustment reduces what an
+   * order is shown to owe, never what a payment is shown to have paid.
+   *
+   * Required for the same reason as {@link openOrderDebtMinor}.
+   */
+  unassignedMinor: number;
 };
 
 /**
@@ -127,72 +164,112 @@ async function sumLostAllocationsByKey(
 export async function getStoreDebtByCurrency(userId: string, storeId?: string): Promise<StoreDebtRow[]> {
   const storeFilter = storeId ? { storeId } : {};
 
-  // Grouped by status as well as by store and currency, so one round trip yields both the
-  // store-level committed total (every standing order) and the active-only slice the progress bar
-  // measures. A second `groupBy` filtered to the active statuses would read the same rows twice.
-  const committedGroups = await prisma.order.groupBy({
-    by: ["storeId", "currencyCode", "status"],
+  // Individual order rows, not a `groupBy` aggregate: `openOrderDebtMinor` and
+  // `unrecordedPaymentsMinor` both read the canonical `openBalanceMinor` (`BR-05-32`, `ADR 0034`)
+  // PER ORDER, which needs each order's own id to join against its `StoreAccountAdjustmentLine`
+  // rows. The store-level and active-only aggregates below are folded from this same list in
+  // memory rather than re-read from a second `groupBy`, so this is still exactly one query for the
+  // order side, not one groupBy plus N order reads.
+  const orders = await prisma.order.findMany({
     where: { userId, status: { not: OrderStatus.CANCELLED }, ...storeFilter },
-    _sum: { totalCost: true, allocatedAmountMinor: true },
+    select: { id: true, storeId: true, currencyCode: true, status: true, totalCost: true, allocatedAmountMinor: true },
   });
 
-  const paidGroups = await prisma.storePayment.groupBy({
-    by: ["storeId", "currencyCode"],
-    where: { userId, ...storeFilter },
-    _sum: { amount: true },
-  });
-
-  const lostMinorByKey = await sumLostAllocationsByKey(prisma, userId, storeId);
+  // Three independent reads (MINOR-8): none of them depends on another's result, only
+  // `openBalanceMinorByOrderId` depends on `orders` above, which is already resolved by the time
+  // this runs.
+  const [paidGroups, lostMinorByKey, openBalanceByOrderId] = await Promise.all([
+    prisma.storePayment.groupBy({
+      by: ["storeId", "currencyCode"],
+      where: { userId, ...storeFilter },
+      _sum: { amount: true },
+    }),
+    sumLostAllocationsByKey(prisma, userId, storeId),
+    // ONE batched read for every order's adjustment lines, regardless of how many orders or how many
+    // stores this call spans (see `openBalanceMinorByOrderId`'s own doc). This is the single new
+    // query this work order adds to the function.
+    openBalanceMinorByOrderId(prisma, userId, orders),
+  ]);
 
   const rowsByKey = new Map<DebtKey, StoreDebtRow>();
+  // `Σ Order.allocatedAmountMinor` over every non-cancelled order of the pair, the second term
+  // `unassignedMinor` needs (BR-05-27 / FR-05-60). Kept apart from `activePaidMinor`, which only
+  // covers the still-active slice.
+  const allocatedAllByKey = new Map<DebtKey, number>();
+  // `Σ StoreAccountAdjustmentLine.amountMinor` over every non-cancelled order of the pair (WO-11):
+  // the ceiling's own subtrahend (see `validationCeilingMinor` in the work order). Derived from data
+  // already in hand rather than a second query: `openBalanceByOrderId` already read every line's sum
+  // per order to compute `openBalance`, so `totalCost - allocatedAmountMinor - openBalance` recovers
+  // that same per-order line sum with no extra round trip.
+  const lineMinorAllByKey = new Map<DebtKey, number>();
 
-  for (const group of committedGroups) {
-    const key = debtKey(group.storeId, group.currencyCode);
-    const committedMinor = group._sum.totalCost ?? 0;
-    const isActive = isActiveOrderStatus(group.status);
-    const existing = rowsByKey.get(key);
-    if (existing) {
-      existing.committedMinor += committedMinor;
-      existing.debtMinor += committedMinor;
-      if (isActive) {
-        existing.activeCommittedMinor += committedMinor;
-        existing.activePaidMinor += group._sum.allocatedAmountMinor ?? 0;
-      }
-      continue;
+  function ensureRow(orderStoreId: string, currencyCode: string): StoreDebtRow {
+    const key = debtKey(orderStoreId, currencyCode);
+    let row = rowsByKey.get(key);
+    if (!row) {
+      row = {
+        storeId: orderStoreId,
+        currencyCode,
+        committedMinor: 0,
+        paidMinor: 0,
+        debtMinor: 0,
+        lostMinor: lostMinorByKey.get(key) ?? 0,
+        activeCommittedMinor: 0,
+        activePaidMinor: 0,
+        openOrderDebtMinor: 0,
+        unrecordedPaymentsMinor: 0,
+        unassignedMinor: 0,
+      };
+      rowsByKey.set(key, row);
     }
-    rowsByKey.set(key, {
-      storeId: group.storeId,
-      currencyCode: group.currencyCode,
-      committedMinor,
-      paidMinor: 0,
-      debtMinor: committedMinor,
-      lostMinor: lostMinorByKey.get(key) ?? 0,
-      activeCommittedMinor: isActive ? committedMinor : 0,
-      activePaidMinor: isActive ? (group._sum.allocatedAmountMinor ?? 0) : 0,
-    });
+    return row;
+  }
+
+  for (const order of orders) {
+    const key = debtKey(order.storeId, order.currencyCode);
+    const row = ensureRow(order.storeId, order.currencyCode);
+    row.committedMinor += order.totalCost;
+    allocatedAllByKey.set(key, (allocatedAllByKey.get(key) ?? 0) + order.allocatedAmountMinor);
+
+    // The batch form guarantees an entry per input order (see `openBalanceMinorByOrderId`'s doc);
+    // this figure must never be silently degraded to a gross balance, so no `?? 0` fallback here.
+    const openBalance = openBalanceByOrderId.get(order.id);
+    if (openBalance === undefined) {
+      throw new Error(`openBalanceMinorByOrderId missing entry for order ${order.id}`);
+    }
+
+    // This order's own share of `Σ StoreAccountAdjustmentLine.amountMinor`, recovered algebraically
+    // from the batch already read: `openBalance = totalCost - allocatedAmountMinor - lineMinor`.
+    const lineMinor = order.totalCost - order.allocatedAmountMinor - openBalance;
+    lineMinorAllByKey.set(key, (lineMinorAllByKey.get(key) ?? 0) + lineMinor);
+
+    if (isActiveOrderStatus(order.status)) {
+      row.activeCommittedMinor += order.totalCost;
+      row.activePaidMinor += order.allocatedAmountMinor;
+      row.openOrderDebtMinor += openBalance;
+    } else if (order.status === OrderStatus.COMPLETED) {
+      row.unrecordedPaymentsMinor += openBalance;
+    }
   }
 
   for (const group of paidGroups) {
-    const key = debtKey(group.storeId, group.currencyCode);
-    const lostMinor = lostMinorByKey.get(key) ?? 0;
+    const lostMinor = lostMinorByKey.get(debtKey(group.storeId, group.currencyCode)) ?? 0;
     const paidMinor = (group._sum.amount ?? 0) - lostMinor;
-    const existing = rowsByKey.get(key);
-    if (existing) {
-      existing.paidMinor = paidMinor;
-      existing.debtMinor = existing.committedMinor - paidMinor;
-      existing.lostMinor = lostMinor;
-      continue;
-    }
-    rowsByKey.set(key, {
-      storeId: group.storeId,
-      currencyCode: group.currencyCode,
-      committedMinor: 0,
-      paidMinor,
-      debtMinor: -paidMinor,
-      lostMinor,
-      activeCommittedMinor: 0,
-      activePaidMinor: 0,
-    });
+    const row = ensureRow(group.storeId, group.currencyCode);
+    row.paidMinor = paidMinor;
+    row.lostMinor = lostMinor;
+  }
+
+  for (const row of rowsByKey.values()) {
+    const key = debtKey(row.storeId, row.currencyCode);
+    const allocatedAllMinor = allocatedAllByKey.get(key) ?? 0;
+    row.unassignedMinor = computeUnassignedMinor(row.paidMinor, allocatedAllMinor);
+    // The validation ceiling (`STORE_DEBT_EXCEEDED`, FR-05-43 / FR-05-63): lifetime debt over
+    // non-cancelled orders at face value, minus every adjustment line written against that same set
+    // (WO-11's `validationCeilingMinor`). Unclamped, like every other figure in this module: see
+    // `openBalanceMinorByOrderId`'s doc for why a negative reading must stay visible.
+    const lineMinorAll = lineMinorAllByKey.get(key) ?? 0;
+    row.debtMinor = row.committedMinor - row.paidMinor - lineMinorAll;
   }
 
   return [...rowsByKey.values()];
@@ -203,6 +280,13 @@ export async function getStoreDebtByCurrency(userId: string, storeId?: string): 
  * transaction so the check and the write it guards see the same snapshot. Same derivation as
  * `getStoreDebtByCurrency`, narrowed to one pair, including the same exclusion of money left
  * declared `lost` against a cancelled order.
+ *
+ * Also subtracts `Σ StoreAccountAdjustmentLine.amountMinor` written against this store/currency
+ * pair's own non-cancelled orders (WO-11's `validationCeilingMinor`, FR-05-43 / FR-05-63): this
+ * base is not built per order (unlike `openOrderDebtMinor`, which inherits the line term for free
+ * through `openBalanceMinor`), so a written-off balance needs its own explicit subtrahend here or it
+ * could be paid a second time, before or after the order is delivered. Unclamped, like every other
+ * term of this figure.
  */
 export async function getStoreDebtMinor(
   tx: Prisma.TransactionClient,
@@ -222,9 +306,102 @@ export async function getStoreDebtMinor(
     where: { userId, payment: { storeId, currencyCode }, order: { status: OrderStatus.CANCELLED } },
     _sum: { amountMinor: true },
   });
+  const writtenOff = await tx.storeAccountAdjustmentLine.aggregate({
+    where: { userId, order: { storeId, currencyCode, status: { not: OrderStatus.CANCELLED } } },
+    _sum: { amountMinor: true },
+  });
 
   const paidMinor = (paid._sum.amount ?? 0) - (lost._sum.amountMinor ?? 0);
-  return (committed._sum.totalCost ?? 0) - paidMinor;
+  return (committed._sum.totalCost ?? 0) - paidMinor - (writtenOff._sum.amountMinor ?? 0);
+}
+
+/**
+ * The unassigned ("parked") pool arithmetic (`BR-05-27` / `FR-05-60`), written once and shared by
+ * both `StoreDebtRow.unassignedMinor` (the batch form, folded per store/currency key above) and
+ * {@link getUnassignedStoreMoneyMinor} (the transactional single-pair form): what left the
+ * collector's hands for the pair, already net of anything left declared `lost` against a cancelled
+ * order, minus whatever of it is already declared against a still-standing order.
+ */
+function computeUnassignedMinor(paidMinor: number, allocatedAgainstStandingOrdersMinor: number): number {
+  return paidMinor - allocatedAgainstStandingOrdersMinor;
+}
+
+/** One `StorePayment`'s own remainder, as {@link getStorePaymentRemainders} reads it. */
+export type StorePaymentRemainder = {
+  paymentId: string;
+  paymentDate: Date;
+  /**
+   * `amount − Σ its own PaymentAllocation.amountMinor`, over EVERY allocation of the payment
+   * regardless of the target order's status. Deliberately NOT clamped at zero: a negative reading
+   * means this one payment is over-allocated (more was declared against it than it is worth), which
+   * can only happen if a ceiling elsewhere was bypassed. `BR-05-32`'s spirit applies here too — this
+   * function reports the true figure; a caller that wants to spend the pool decides separately
+   * whether a negative reading should stop it (see `consumeUnassignedStoreMoneyOnOrderClose`).
+   */
+  remainderMinor: number;
+};
+
+/**
+ * The single source of the per-payment remainder arithmetic, shared by every reader of the
+ * unassigned pool (`BR-05-27` / `FR-05-60`, `MINOR-5/6`): {@link getUnassignedStoreMoneyMinor} (the
+ * scalar total) and `consumeUnassignedStoreMoneyOnOrderClose` (`WO-08`, which drains the rows
+ * oldest-first). Before this helper existed the two had independent derivations of the same number,
+ * which is exactly the shape a silent drift goes unnoticed in.
+ *
+ * Ordered `paymentDate` ASC, `id` ASC — the same "oldest money first" order the settle-on-arrival
+ * batch consumption relies on (`FR-08-45`).
+ */
+export async function getStorePaymentRemainders(
+  tx: Prisma.TransactionClient,
+  userId: string,
+  storeId: string,
+  currencyCode: string,
+): Promise<StorePaymentRemainder[]> {
+  const payments = await tx.storePayment.findMany({
+    where: { userId, storeId, currencyCode },
+    select: { id: true, amount: true, paymentDate: true },
+    orderBy: [{ paymentDate: "asc" }, { id: "asc" }],
+  });
+  if (payments.length === 0) return [];
+
+  const paymentIds = payments.map((payment) => payment.id);
+  // Every allocation of every one of these payments, regardless of the target order's status: an
+  // allocation already made to a CANCELLED order is lost money, not available money, and is exactly
+  // as much "no longer this payment's to give" as one made to a live order.
+  const allocatedGroups = await tx.paymentAllocation.groupBy({
+    by: ["paymentId"],
+    where: { userId, paymentId: { in: paymentIds } },
+    _sum: { amountMinor: true },
+  });
+  const allocatedByPaymentId = new Map(allocatedGroups.map((group) => [group.paymentId, group._sum.amountMinor ?? 0]));
+
+  return payments.map((payment) => ({
+    paymentId: payment.id,
+    paymentDate: payment.paymentDate,
+    remainderMinor: payment.amount - (allocatedByPaymentId.get(payment.id) ?? 0),
+  }));
+}
+
+/**
+ * The transactional single-pair form of `StoreDebtRow.unassignedMinor` (`BR-05-27` / `FR-05-60`),
+ * read inside the caller's own transaction so a write that consumes the pool
+ * (`consumeUnassignedStoreMoneyOnOrderClose`, `WO-08`) and a write that reconciles it
+ * (`WO-11`) both see the same snapshot they act on.
+ *
+ * Sum of {@link getStorePaymentRemainders}, unclamped. Algebraically identical to the batch form's
+ * three-term derivation above (`computeUnassignedMinor`): summing `amount − Σ allocations` over
+ * every payment of the pair nets out to `Σ amount − Σ lost(cancelled) − Σ allocated(non-cancelled)`,
+ * because every allocation is against either a cancelled order (the "lost" term) or a non-cancelled
+ * one (the "allocated" term) and this sums both in one pass instead of two separate aggregates.
+ */
+export async function getUnassignedStoreMoneyMinor(
+  tx: Prisma.TransactionClient,
+  userId: string,
+  storeId: string,
+  currencyCode: string,
+): Promise<number> {
+  const remainders = await getStorePaymentRemainders(tx, userId, storeId, currencyCode);
+  return remainders.reduce((sum, remainder) => sum + remainder.remainderMinor, 0);
 }
 
 /**
@@ -391,4 +568,28 @@ export async function resolveInheritedStoreCurrency(
     distinct: ["currencyCode"],
   });
   return rows.length === 1 ? rows[0].currencyCode : null;
+}
+
+/**
+ * Plain-Prisma wrapper around {@link openBalanceMinorByOrderId} (`BR-05-32`, `ADR 0034` §3.1) for
+ * callers (Server Actions) that need the net open balance of a known set of orders but do not
+ * already own a `Prisma.TransactionClient` of their own (`D1` support, 2026-08-20 review): the whole
+ * point is that such a caller never has to reach for `prisma` directly to read this figure.
+ *
+ * Does the `Order.findMany` read itself, scoped to `{ id: { in: orderIds }, userId }`, then hands the
+ * result straight to the batch form: one bounded read for the orders plus the one `groupBy`
+ * `openBalanceMinorByOrderId` already performs internally, never N+1 regardless of how many order ids
+ * are passed. An id the caller does not own (or that no longer exists) simply has no entry in the
+ * returned map, mirroring `findMany`'s own silent-omission semantics; the caller decides what a
+ * missing id means for its own surface.
+ */
+export async function getOpenBalanceMinorByOrderIds(userId: string, orderIds: string[]): Promise<Map<string, number>> {
+  if (orderIds.length === 0) return new Map();
+
+  const orders = await prisma.order.findMany({
+    where: { id: { in: orderIds }, userId },
+    select: { id: true, totalCost: true, allocatedAmountMinor: true },
+  });
+
+  return openBalanceMinorByOrderId(prisma, userId, orders);
 }

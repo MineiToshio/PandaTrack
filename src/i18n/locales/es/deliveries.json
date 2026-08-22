@@ -260,12 +260,24 @@
     },
     "toast": {
       "reopened": "Entrega reabierta: los productos vuelven a En camino.",
+      "reopenedWithSettlement": "Entrega reabierta y {amount} devueltos al saldo pendiente.",
+      "reopenedWithSettlementAndConsumption": "Entrega reabierta. {settlementAmount} de la liquidación volvieron al saldo pendiente. {consumedAmount} pagados antes siguen aplicados a este pedido.",
+      "reopenedWithSurvivingConsumption": "{amount} pagados antes siguen aplicados a este pedido.",
       "undo": "Deshacer",
       "undoError": "No se pudo deshacer. Intenta de nuevo.",
       "reopenError": "No se pudo reabrir la entrega. Intenta de nuevo.",
       "reopenConflict": "No se puede reabrir: algunos productos ya están en otra entrega.",
       "markDeliveredError": "No se pudo registrar la llegada. Intenta de nuevo.",
-      "cancelError": "No se pudo cancelar la entrega. Intenta de nuevo."
+      "cancelError": "No se pudo cancelar la entrega. Intenta de nuevo.",
+      "retrySettlementError": "No se pudo registrar el pago pendiente. Intenta de nuevo.",
+      "retryNoLongerPending": "Ya no hay nada pendiente por registrar: la entrega se reabrió mientras tanto.",
+      "retrySettled": "{amount} registrados como pago.",
+      "retrySettledPlain": "Pago pendiente resuelto."
+    },
+    "settlement": {
+      "pendingNotice": "Falta registrar un pago de esta entrega.",
+      "retry": "Reintentar",
+      "retrying": "Reintentando…"
     }
   },
   "list": {

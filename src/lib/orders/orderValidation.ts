@@ -285,9 +285,27 @@ const storePaymentAllocationSchema = z.object({
 });
 
 /**
+ * The deliberate "no sé todavía" amount (WO-09, `FR-05-58`/`FR-05-60`, `ADR 0033`), imitating
+ * {@link paymentAmountSchema} but allowing 0 (the default, and the only legal value on any surface
+ * that has not offered the "no sé todavía" action at all): the collector never TYPES this figure,
+ * the store payment sheet only ever writes it as "the exact current remainder", but a crafted
+ * client payload must still be bounded the same way any other minor-units amount on this boundary
+ * is.
+ */
+const parkedAmountMinorSchema = z
+  .number()
+  .int({ message: "AMOUNT_MUST_BE_INTEGER" })
+  .min(0, { message: "AMOUNT_TOO_LOW" })
+  .max(MAX_PAYMENT_AMOUNT, { message: "AMOUNT_TOO_HIGH" });
+
+/**
  * A payment to a store, with its optional "what this covers" declaration. `currencyCode` is
  * omitted when the store's standing orders agree on one; the mutation inherits it in that case and
  * refuses with `CURRENCY_REQUIRED` otherwise.
+ *
+ * `parkedAmountMinor` travels through this boundary (WO-09), but `requireFullAllocation` never
+ * does: only `createStorePaymentAction` sets that flag, itself, after this schema has already
+ * parsed the request, so a client can never request the hardened equality rule (or opt out of it).
  */
 export const storePaymentCreateSchema = z.object({
   storeId: z.string().cuid({ message: "INVALID_STORE_ID" }),
@@ -297,6 +315,7 @@ export const storePaymentCreateSchema = z.object({
   note: z.string().max(2000).nullable().optional(),
   allocations: z.array(storePaymentAllocationSchema).max(MAX_PAYMENT_ALLOCATIONS).optional(),
   declarePaidItemIds: declarePaidItemIdsSchema,
+  parkedAmountMinor: parkedAmountMinorSchema.optional(),
 });
 
 /** The "Marcar pagado" control's payload: one product, and which way the mark is going. */

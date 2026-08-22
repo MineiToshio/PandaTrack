@@ -49,6 +49,7 @@ const DELIVERIES_PAGE = "src/app/[locale]/(app)/deliveries/page.tsx";
 const DELIVERY_QUERIES = "src/lib/data/deliveries/deliveryQueries.ts";
 const DELIVERY_DETAIL_PAGE = "src/app/[locale]/(app)/deliveries/[id]/page.tsx";
 const DELIVERY_DETAIL_HERO = "src/app/[locale]/(app)/deliveries/[id]/_components/DeliveryDetailHero.tsx";
+const STORE_ACCOUNT_ADJUSTMENT_MUTATIONS = "src/lib/data/orders/storeAccountAdjustmentMutations.ts";
 
 /** Comments are masked first so prose about the defect is never read as the defect. */
 function readSource(relativePath: string): string {
@@ -61,9 +62,12 @@ const WALL_CLOCK_NOW = /const\s+now\s*=\s*new Date\(\s*\)/;
 
 /**
  * Files that resolve the civil day themselves. `anchors` are strings the file must still contain for
- * the scan to mean anything — see the self-verification test below.
+ * the scan to mean anything — see the self-verification test below. `needle` overrides the literal
+ * scanned for by `countCalls`, for a resolver that goes through a named wrapper
+ * (`resolveTodayStart`, `src/lib/notifications/reminderWindows.ts`) rather than calling
+ * `getTodayStart` itself; it defaults to `"getTodayStart("`.
  */
-const RESOLVERS: Array<{ path: string; calls: number; anchors: string[] }> = [
+const RESOLVERS: Array<{ path: string; calls: number; anchors: string[]; needle?: string }> = [
   // Two sections, two call sites. Anchoring on the identifier `today` instead would not restrict
   // `StoreViewDataSection` at all: it has no local of that name, it passes the value as a prop.
   { path: ORDERS_PAGE, calls: 2, anchors: ["StoreViewDataSection", "getOrdersList("] },
@@ -74,6 +78,15 @@ const RESOLVERS: Array<{ path: string; calls: number; anchors: string[] }> = [
   { path: DELIVERY_QUERIES, calls: 1, anchors: ["overdueOnly", "expectedArrivalTo"] },
   // Resolves it for the hero three levels down, because the hero is a Client Component.
   { path: DELIVERY_DETAIL_PAGE, calls: 1, anchors: ["DeliveryDetailContent"] },
+  // The "cuadrar cuenta" write (WO-11): `adjustmentDate` is the collector's own civil day, read
+  // from `User.timezone` inside the same transaction, never the wall-clock instant a bare
+  // `new Date()` would have stored (BR-05-29's "never rewrites the past" reads the CALENDAR day).
+  {
+    path: STORE_ACCOUNT_ADJUSTMENT_MUTATIONS,
+    calls: 1,
+    anchors: ["storeAccountAdjustment.create", "resolveTodayStart("],
+    needle: "resolveTodayStart(",
+  },
 ];
 
 /** Files handed the civil day as a prop, which must not build one of their own. */
@@ -104,8 +117,8 @@ describe("civil-day guard", () => {
     anchors.forEach((anchor) => expect(source).toContain(anchor));
   });
 
-  it.each(RESOLVERS)("resolves the collector's civil day in $path", ({ path, calls }) => {
-    expect(countCalls(readSource(path), "getTodayStart(")).toBe(calls);
+  it.each(RESOLVERS)("resolves the collector's civil day in $path", ({ path, calls, needle }) => {
+    expect(countCalls(readSource(path), needle ?? "getTodayStart(")).toBe(calls);
   });
 
   it.each(RESOLVERS)("never derives today from a wall-clock instant in $path", ({ path }) => {

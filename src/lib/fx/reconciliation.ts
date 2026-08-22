@@ -64,3 +64,21 @@ export function resolveExchangeRateBaseCode(
   if (exchangeRate === null || exchangeRate <= 0) return null;
   return baseCurrencyCode;
 }
+
+/**
+ * The FX pair to persist for a row denominated in `currencyCode`. A row already in the base
+ * currency never carries a rate — there is nothing to convert — so any submitted rate is dropped
+ * to the natural unset state instead of being stored. A stored rate on a base-currency row is
+ * invisible to `needsFxReconciliation` while the base stays put, but turns into a silently wrong
+ * "already reconciled" claim the moment the base currency changes to the stored target.
+ */
+export function resolveFxPair(
+  currencyCode: string,
+  exchangeRate: number | null,
+  baseCurrencyCode: string | null,
+): { exchangeRate: number | null; exchangeRateBaseCode: string | null } {
+  if (baseCurrencyCode !== null && currencyCode === baseCurrencyCode) {
+    return { exchangeRate: null, exchangeRateBaseCode: null };
+  }
+  return { exchangeRate, exchangeRateBaseCode: resolveExchangeRateBaseCode(exchangeRate, baseCurrencyCode) };
+}

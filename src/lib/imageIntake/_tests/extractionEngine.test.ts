@@ -6,6 +6,7 @@ vi.mock("@sentry/nextjs", () => ({ captureException: captureExceptionMock }));
 import {
   EXTRACTION_MAX_TRANSPORT_RETRIES,
   EXTRACTION_REQUEST_TIMEOUT_MS,
+  EXTRACTION_RETRY_BACKOFF_MS,
   ProviderRequestError,
   ProviderTransportError,
   SpendGuardBlockedError,
@@ -282,7 +283,13 @@ describe("extract", () => {
     expect(generateDraft).toHaveBeenCalledOnce();
   });
 
-  it("retries exactly once on a transport error, then succeeds", async () => {
+  /** Drains the backoff between attempts, which fake timers otherwise leave pending forever. */
+  async function settleWithRetries<T>(pending: Promise<T>): Promise<T> {
+    await vi.advanceTimersByTimeAsync(EXTRACTION_RETRY_BACKOFF_MS * (EXTRACTION_MAX_TRANSPORT_RETRIES + 1));
+    return pending;
+  }
+
+  it("retries a transport error and succeeds on the next attempt", async () => {
     const generateDraft = vi
       .fn<ExtractionProvider["generateDraft"]>()
       .mockRejectedValueOnce(new ProviderTransportError({ reason: "network" }))
@@ -290,20 +297,50 @@ describe("extract", () => {
     const provider: ExtractionProvider = { generateDraft };
     const spendGuard = buildSpendGuard();
 
-    const outcome = await extract(buildImages(), buildContext(), { provider, spendGuard }, MODEL_ID);
+    const outcome = await settleWithRetries(
+      extract(buildImages(), buildContext(), { provider, spendGuard }, MODEL_ID),
+    );
+
+    expect(outcome.status).toBe("ok");
+    // Stops the moment one attempt works: the retries are a budget, not a quota to spend.
+    expect(generateDraft).toHaveBeenCalledTimes(2);
+  });
+
+  /**
+   * The case this retry budget exists for. The live API was measured refusing roughly one request
+   * in three with a `503` and answering the very next identical one, so a submission has to survive
+   * more than a single bad draw.
+   */
+  it("survives transport errors up to the retry budget and still returns a draft", async () => {
+    const generateDraft = vi.fn<ExtractionProvider["generateDraft"]>();
+    for (let attempt = 0; attempt < EXTRACTION_MAX_TRANSPORT_RETRIES; attempt += 1) {
+      generateDraft.mockRejectedValueOnce(new ProviderTransportError({ reason: "server-error", status: 503 }));
+    }
+    generateDraft.mockResolvedValueOnce({ raw: buildValidRawDraft(), usage: { inputTokens: 1, outputTokens: 1 } });
+    const spendGuard = buildSpendGuard();
+
+    const outcome = await settleWithRetries(
+      extract(buildImages(), buildContext(), { provider: { generateDraft }, spendGuard }, MODEL_ID),
+    );
 
     expect(outcome.status).toBe("ok");
     expect(generateDraft).toHaveBeenCalledTimes(1 + EXTRACTION_MAX_TRANSPORT_RETRIES);
+    // The reservation is settled once, as a success: repeated attempts must never bill twice, spend
+    // extra photos, or leave a stray failed row behind.
+    expect(spendGuard.recordUsage).toHaveBeenCalledOnce();
+    expect(spendGuard.recordFailure).not.toHaveBeenCalled();
   });
 
-  it("stops after the single retry when transport errors persist, and records one failure", async () => {
+  it("stops after the last retry when transport errors persist, and records one failure", async () => {
     const generateDraft = vi
       .fn<ExtractionProvider["generateDraft"]>()
       .mockRejectedValue(new ProviderTransportError({ reason: "network" }));
     const provider: ExtractionProvider = { generateDraft };
     const spendGuard = buildSpendGuard();
 
-    const outcome = await extract(buildImages(), buildContext(), { provider, spendGuard }, MODEL_ID);
+    const outcome = await settleWithRetries(
+      extract(buildImages(), buildContext(), { provider, spendGuard }, MODEL_ID),
+    );
 
     expect(outcome.status).toBe("provider-error");
     expect(generateDraft).toHaveBeenCalledTimes(1 + EXTRACTION_MAX_TRANSPORT_RETRIES);
@@ -367,10 +404,12 @@ describe("extract", () => {
 
     const outcomePromise = extract(buildImages(), buildContext(), { provider, spendGuard }, MODEL_ID);
 
-    // First attempt times out at 30s, triggering the single retry; the retried attempt also
-    // never resolves, so it times out again at the next 30s mark with nothing left to retry.
-    await vi.advanceTimersByTimeAsync(EXTRACTION_REQUEST_TIMEOUT_MS);
-    await vi.advanceTimersByTimeAsync(EXTRACTION_REQUEST_TIMEOUT_MS);
+    // Every attempt times out at 30s and is followed by the backoff before the next one starts,
+    // until the retries run out.
+    for (let attempt = 0; attempt <= EXTRACTION_MAX_TRANSPORT_RETRIES; attempt += 1) {
+      await vi.advanceTimersByTimeAsync(EXTRACTION_REQUEST_TIMEOUT_MS);
+      await vi.advanceTimersByTimeAsync(EXTRACTION_RETRY_BACKOFF_MS);
+    }
 
     const outcome = await outcomePromise;
     expect(outcome.status).toBe("provider-error");
@@ -397,15 +436,19 @@ describe("extract", () => {
     );
 
     await vi.advanceTimersByTimeAsync(EXTRACTION_REQUEST_TIMEOUT_MS);
+    await vi.advanceTimersByTimeAsync(EXTRACTION_RETRY_BACKOFF_MS);
     // The first attempt's signal must be aborted before the retry starts, so the abandoned
     // request is cancelled instead of running (and being billed) alongside the retry.
     expect(signals[0]?.aborted).toBe(true);
     expect(signals[1]?.aborted).toBe(false);
 
-    await vi.advanceTimersByTimeAsync(EXTRACTION_REQUEST_TIMEOUT_MS);
+    for (let attempt = 1; attempt <= EXTRACTION_MAX_TRANSPORT_RETRIES; attempt += 1) {
+      await vi.advanceTimersByTimeAsync(EXTRACTION_REQUEST_TIMEOUT_MS);
+      await vi.advanceTimersByTimeAsync(EXTRACTION_RETRY_BACKOFF_MS);
+    }
     await outcomePromise;
     expect(signals).toHaveLength(1 + EXTRACTION_MAX_TRANSPORT_RETRIES);
-    expect(signals[1]?.aborted).toBe(true);
+    expect(signals.every((signal) => signal?.aborted)).toBe(true);
   });
 
   it("does not abort the signal when the provider answers in time", async () => {

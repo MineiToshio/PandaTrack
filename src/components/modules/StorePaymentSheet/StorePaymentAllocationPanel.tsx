@@ -54,6 +54,10 @@ export type StorePaymentAllocationPanelProps = {
   onFill: (line: AllocationLine, fillableMinor: number) => void;
   onToggleDeclared: (line: AllocationLine) => void;
   onClear: () => void;
+  /** The explicit "no sé todavía" action (WO-09): parks the draft's current remainder on purpose. */
+  onParkRemainder: () => void;
+  /** Undoes a park choice, so the collector can name the money after all. */
+  onUnpark: () => void;
   onEditPayment: () => void;
   onEditDate: () => void;
   /** Bumped token asking the panel to clear its filter and scroll one line into view. */
@@ -104,6 +108,8 @@ export default function StorePaymentAllocationPanel({
   onFill,
   onToggleDeclared,
   onClear,
+  onParkRemainder,
+  onUnpark,
   onEditPayment,
   onEditDate,
   revealRequest,
@@ -277,16 +283,38 @@ export default function StorePaymentAllocationPanel({
   const dateBlockedOrder = orders.find((order) => validation.dateErrors.has(order.orderId)) ?? null;
   const overMinor = validation.sumAllocatedMinor - paymentAmountMinor;
 
+  // WO-09 (`FR-05-58`/`FR-05-60`, `ADR 0033`): once the collector parks the remainder, "Sin
+  // asignar" reads 0 (nothing left unaccounted, see `computeUnallocatedMinor`) and the parked
+  // amount is what explains the gap instead — so the totals line names it explicitly rather than
+  // silently disappearing into a suspiciously-complete "Asignado: X de X".
+  const hasParkedMoney = validation.parkedAmountMinor > 0;
+  // The affordance itself: offered only on the neutral, non-error incomplete state — never while the
+  // draft already overshoots (that is a different mistake, fixed by lowering a line, not by parking)
+  // or while nothing is left to park.
+  const canParkRemainder =
+    status === "ready" &&
+    paymentAmountMinor > 0 &&
+    !validation.allocationExceedsAmount &&
+    !hasParkedMoney &&
+    validation.unallocatedMinor > 0;
+
   const totalsText = validation.allocationExceedsAmount
     ? t("allocations.totalsOver", { amount: formatAmountWithSymbol(overMinor, currencyCode || "USD", locale) })
     : dateBlockedOrder
       ? t("allocations.dateBeforeOrderLine", { order: dateBlockedOrder.humanReadableId })
-      : `${t("allocations.totalsAssigned", {
-          assigned: formatAmountWithSymbol(validation.sumAllocatedMinor, currencyCode || "USD", locale),
-          payment: formatAmountWithSymbol(paymentAmountMinor, currencyCode || "USD", locale),
-        })} · ${t("allocations.totalsUnassigned", {
-          amount: formatAmountWithSymbol(validation.unallocatedMinor, currencyCode || "USD", locale),
-        })}`;
+      : hasParkedMoney
+        ? `${t("allocations.totalsAssigned", {
+            assigned: formatAmountWithSymbol(validation.sumAllocatedMinor, currencyCode || "USD", locale),
+            payment: formatAmountWithSymbol(paymentAmountMinor, currencyCode || "USD", locale),
+          })} · ${t("allocations.totalsParked", {
+            amount: formatAmountWithSymbol(validation.parkedAmountMinor, currencyCode || "USD", locale),
+          })}`
+        : `${t("allocations.totalsAssigned", {
+            assigned: formatAmountWithSymbol(validation.sumAllocatedMinor, currencyCode || "USD", locale),
+            payment: formatAmountWithSymbol(paymentAmountMinor, currencyCode || "USD", locale),
+          })} · ${t("allocations.totalsUnassigned", {
+            amount: formatAmountWithSymbol(validation.unallocatedMinor, currencyCode || "USD", locale),
+          })}`;
 
   // Announced only once typing settles: the running total changes on every character in any of up
   // to dozens of fields, and a live region that fires on each one is unusable rather than helpful.
@@ -501,15 +529,40 @@ export default function StorePaymentAllocationPanel({
               payment: formatAmountWithSymbol(paymentAmountMinor, currencyCode || "USD", locale),
             })}
             {" · "}
-            {t("allocations.totalsUnassigned", {
-              amount: formatAmountWithSymbol(validation.unallocatedMinor, currencyCode || "USD", locale),
-            })}
+            {hasParkedMoney
+              ? t("allocations.totalsParked", {
+                  amount: formatAmountWithSymbol(validation.parkedAmountMinor, currencyCode || "USD", locale),
+                })
+              : t("allocations.totalsUnassigned", {
+                  amount: formatAmountWithSymbol(validation.unallocatedMinor, currencyCode || "USD", locale),
+                })}
           </span>
         )}
         <span className="flex shrink-0 items-center gap-1">
           {validation.allocationExceedsAmount && culpritKey && (
             <Button variant="ghost" size="sm" onClick={() => revealLine(culpritKey)}>
               {t("allocations.viewLine")}
+            </Button>
+          )}
+          {/* The explicit "no sé todavía" affordance (WO-09, `FR-05-58`/`FR-05-60`): choosing it
+              parks exactly the current remainder, on purpose, never a default. Lives next to the
+              remaining-amount figure it resolves, and flips to an undo once chosen so the collector
+              can still name the money after all. */}
+          {canParkRemainder && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onParkRemainder}
+              aria-label={t("allocations.parkRemainderAria", {
+                amount: formatAmountWithSymbol(validation.unallocatedMinor, currencyCode || "USD", locale),
+              })}
+            >
+              {t("allocations.parkRemainder")}
+            </Button>
+          )}
+          {hasParkedMoney && !validation.allocationExceedsAmount && !dateBlockedOrder && (
+            <Button variant="ghost" size="sm" onClick={onUnpark} aria-label={t("allocations.unparkAria")}>
+              {t("allocations.unpark")}
             </Button>
           )}
           {validation.sumAllocatedMinor > 0 && (

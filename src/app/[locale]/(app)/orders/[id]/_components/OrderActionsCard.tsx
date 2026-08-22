@@ -266,6 +266,8 @@ export default function OrderActionsCard({
           settledItemCount={settledItemCount}
           baseCurrencyCode={baseCurrencyCode}
           locale={locale}
+          orderId={orderId}
+          storeName={storeName}
           onSubmit={quickArrival.submit}
         />
       )}

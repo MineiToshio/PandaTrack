@@ -5,6 +5,7 @@ import { MAX_IMAGE_FILE_BYTES } from "@/lib/imageIntake/constants";
 import {
   dimensionIssueMessage,
   extractErrorMessageKey,
+  extractErrorReference,
   fileTooLargeMessage,
   serverDimensionMessage,
 } from "../intakeErrorCopy";
@@ -28,7 +29,8 @@ describe("intake error copy", () => {
     expect(extractErrorMessageKey("no-order-found")).toBe("noOrderFound");
     expect(esErrors.noOrderFound).toBe(
       "No encontramos ningún pedido en esas fotos. Suele pasar cuando la foto es solo del producto: " +
-        "necesitamos ver la conversación o el recibo, donde salgan los productos y los montos. " +
+        "necesitamos ver la compra (el chat, el correo, la página del pedido o el recibo), " +
+        "donde salgan los productos y los montos. " +
         "Quita la foto que no corresponde y prueba con otra.",
     );
     expect(enErrors.noOrderFound).toBeTruthy();
@@ -131,5 +133,38 @@ describe("intake error copy", () => {
     expect(esErrors.attachmentsKept).toBe("Tus fotos siguen adjuntas.");
     expect(esErrors.noOrderFound).not.toContain(esErrors.attachmentsKept);
     expect(enErrors.noOrderFound).not.toContain(enErrors.attachmentsKept);
+  });
+});
+
+/**
+ * The reference exists because this feature destroys its own evidence: zero retention means the
+ * images and the model's answer are gone when the request ends, so a report of "it failed" has
+ * nothing behind it. A real failure went undiagnosable for exactly this reason.
+ */
+describe("failure reference", () => {
+  it("prints a reference for the failures whose cause the collector cannot see", () => {
+    expect(extractErrorReference("provider-error")).toBe("provider-error");
+    expect(extractErrorReference("provider-rejected")).toBe("provider-rejected");
+    expect(extractErrorReference("invalid-model-response")).toBe("invalid-model-response");
+    expect(extractErrorReference("response-too-long")).toBe("response-too-long");
+    expect(extractErrorReference("ledger-error")).toBe("ledger-error");
+    expect(extractErrorReference("server-error")).toBe("server-error");
+  });
+
+  it("prints none for a refusal that already explains itself and its remedy", () => {
+    // A reference under these would read as a malfunction where there is none: each of them is a
+    // rule the collector can act on, stated in its own message.
+    expect(extractErrorReference("no-order-found")).toBeNull();
+    expect(extractErrorReference("multiple-orders")).toBeNull();
+    expect(extractErrorReference("quota-exceeded")).toBeNull();
+    expect(extractErrorReference("daily-cap-exceeded")).toBeNull();
+    expect(extractErrorReference("too-many-images")).toBeNull();
+    expect(extractErrorReference("budget-blocked")).toBeNull();
+    expect(extractErrorReference("missing-base-currency")).toBeNull();
+  });
+
+  it("carries a copy line able to state the reference in both locales", () => {
+    expect(esErrors.reference).toContain("{reference}");
+    expect(enErrors.reference).toContain("{reference}");
   });
 });

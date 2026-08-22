@@ -30,6 +30,8 @@ export type IntakeErrorState = {
   values?: Record<string, number | string>;
   /** Per-photo detail lines, when the failure could be attributed to specific photos. */
   photos?: IntakePhotoIssueMessage[];
+  /** Fixed failure code shown to the collector, for the failures nothing else can identify later. */
+  reference?: string;
 };
 
 /** Bytes as the megabytes the copy quotes, at one decimal, which is the precision a person reads. */
@@ -155,8 +157,42 @@ const SAVE_ERROR_KEYS: Record<ImageIntakeSaveErrorCode, string> = {
   "server-error": "serverError",
 };
 
+/**
+ * The failures whose cause lives entirely on the server and is gone by the time anyone asks about
+ * it.
+ *
+ * Zero retention (`BR-11-13`) means the images are discarded when the request ends and the model's
+ * answer is never stored, so a collector reporting "it did not work" leaves nothing to look at: the
+ * ledger row says a request failed, never why. The full diagnosis is written at the moment of
+ * failure (see `reportImageIntakeFailure`), but it goes to the server log and to Sentry, which is
+ * not somewhere the person in front of the screen can reach, and their copy is deliberately
+ * plain-language and identical across several distinct causes ("provider-error" covers a network
+ * drop, a 5xx, a rate limit, and a timeout alike).
+ *
+ * Showing the fixed code closes that gap: it costs the collector nothing to quote, and it turns
+ * "the photo upload failed" into an answerable report. Only these codes get one. A refusal the
+ * collector can act on (too many photos, quota spent, no order in the images) explains itself, and
+ * a reference under it would read as a malfunction where there is none.
+ *
+ * The value is a code from a fixed union, never anything derived from a source image, so it carries
+ * no content out of the photos.
+ */
+const DIAGNOSABLE_EXTRACT_ERROR_CODES = new Set<ImageIntakeExtractErrorCode>([
+  "invalid-model-response",
+  "provider-error",
+  "provider-rejected",
+  "response-too-long",
+  "ledger-error",
+  "server-error",
+]);
+
 export function extractErrorMessageKey(code: ImageIntakeExtractErrorCode): string {
   return EXTRACT_ERROR_KEYS[code];
+}
+
+/** The reference to print under an opaque failure, or `null` when the message already explains itself. */
+export function extractErrorReference(code: ImageIntakeExtractErrorCode): string | null {
+  return DIAGNOSABLE_EXTRACT_ERROR_CODES.has(code) ? code : null;
 }
 
 export function clientErrorMessageKey(code: IntakeClientErrorCode): string {

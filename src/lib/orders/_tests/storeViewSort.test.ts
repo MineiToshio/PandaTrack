@@ -164,14 +164,14 @@ describe("sortStoreGroups total-desc", () => {
     const groupA = makeGroup(
       makeStore("a", "Store A"),
       [makeProduct({ itemId: "a1" })],
-      [{ currencyCode: "PEN", debtMinor: 1000 }],
+      [{ currencyCode: "PEN", debtMinor: 1000, openOrderDebtMinor: 1000 }],
     );
     const groupB = makeGroup(
       makeStore("b", "Store B"),
       [makeProduct({ itemId: "b1" })],
       [
-        { currencyCode: "USD", debtMinor: 200 },
-        { currencyCode: "EUR", debtMinor: 5000 },
+        { currencyCode: "USD", debtMinor: 200, openOrderDebtMinor: 200 },
+        { currencyCode: "EUR", debtMinor: 5000, openOrderDebtMinor: 5000 },
       ],
     );
 
@@ -180,5 +180,25 @@ describe("sortStoreGroups total-desc", () => {
     // Store B's max debt (5000 EUR) outranks Store A's single 1000 PEN debt, even though the
     // currencies differ — the documented multi-currency simplification.
     expect(sorted.map((g) => g.store.id)).toEqual(["b", "a"]);
+  });
+
+  it("ranks by openOrderDebtMinor, the figure the chip actually displays, not the lifetime debtMinor (FIX D)", () => {
+    // A registration-gap store: a huge lifetime `debtMinor` (an unregistered balance on a COMPLETED
+    // order, `unrecordedPaymentsMinor`) but nothing open right now. Ranking on `debtMinor` would put
+    // it ahead of a store that genuinely owes money today.
+    const registrationGap = makeGroup(
+      makeStore("gap", "Registration Gap Store"),
+      [makeProduct({ itemId: "gap-1" })],
+      [{ currencyCode: "PEN", debtMinor: 100000, openOrderDebtMinor: 0 }],
+    );
+    const genuinelyOwing = makeGroup(
+      makeStore("owing", "Owing Store"),
+      [makeProduct({ itemId: "owing-1" })],
+      [{ currencyCode: "PEN", debtMinor: 500, openOrderDebtMinor: 8000 }],
+    );
+
+    const sorted = sortStoreGroups([registrationGap, genuinelyOwing], "total-desc");
+
+    expect(sorted.map((g) => g.store.id)).toEqual(["owing", "gap"]);
   });
 });

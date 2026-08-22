@@ -171,8 +171,14 @@ export async function recalculateOrderAllocationCache(
   const allocatedByOrderId = new Map(grouped.map((row) => [row.orderId, row._sum.amountMinor ?? 0]));
 
   for (const orderId of uniqueOrderIds) {
-    await tx.order.update({
-      where: { id: orderId },
+    // `updateMany` rather than `update` (defense in depth, `data-layer-user-id-duplication.mdc`):
+    // every caller already resolved this order against `{ userId, ... }` earlier in its own
+    // transaction, so this never let a cross-account write happen in practice, but the write itself
+    // should not rely solely on an earlier read to stay scoped. `updateMany` silently affects zero
+    // rows on a mismatch instead of throwing, which is fine here: there is nothing to refuse this far
+    // into a transaction whose other writes already committed under the same ownership assumption.
+    await tx.order.updateMany({
+      where: { id: orderId, userId },
       data: { allocatedAmountMinor: allocatedByOrderId.get(orderId) ?? 0 },
     });
   }

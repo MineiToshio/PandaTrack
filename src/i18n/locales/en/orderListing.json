@@ -154,7 +154,7 @@
       "label": "Search stores or products",
       "placeholder": "Store or product (Amazon, Nendoroid…)"
     },
-    "debtAmount": "You owe {amount}",
+    "openOrderDebtAmount": "Outstanding on open orders {amount}",
     "creditAmount": "Credit {amount}",
     "registerPayment": "Register payment",
     "registerPaymentDisabledHint": "No outstanding balance with this store",

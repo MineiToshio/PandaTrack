@@ -109,7 +109,7 @@ export default function StorePendingProductCard({
               // route into the order and is now replaced by the arrival window. The name is the
               // primary identifier, the natural destination, and on touch a far bigger target than
               // a caption-sized date was. It is NOT inside the select toggle's `<label>` (that
-              // wraps only the `sr-only` input and three `aria-hidden` spans), so the checkbox
+              // wraps only the invisible input and three `aria-hidden` spans), so the checkbox
               // markup is untouched.
               //
               // The hit area is grown with a `::before` rather than with height, because the row's

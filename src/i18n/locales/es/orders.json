@@ -397,6 +397,8 @@
         "noAmountNotice": "Ingresa el monto del pago para poder asignarlo.",
         "open": "Asignar",
         "overCulprit": "Revisa {name}.",
+        "parkRemainder": "No sé todavía",
+        "parkRemainderAria": "Marcar {amount} como dinero aparcado, sin asignarlo a ningún pedido",
         "recapEdit": "Editar la asignación",
         "orderBalance": "Falta {amount}",
         "restAmountAria": "Monto para el resto del pedido {order}",
@@ -415,7 +417,10 @@
         "summaryNone": "Sin asignar todavía",
         "totalsAssigned": "Asignado: {assigned} de {payment}",
         "totalsOver": "Te pasaste por {amount}",
+        "totalsParked": "Aparcado: {amount}",
         "totalsUnassigned": "Sin asignar: {amount}",
+        "unpark": "Quitar",
+        "unparkAria": "Quitar el dinero aparcado, para poder asignarlo",
         "viewLine": "Ver la línea",
         "markPaid": "Marcar pagado",
         "markPaidAria": "Marcar {name} como pagado, sin asignarle monto",
@@ -429,6 +434,7 @@
         "CURRENCY_REQUIRED": "Indica en qué moneda es este pago.",
         "STORE_DEBT_EXCEEDED": "El monto supera lo que debes a esta tienda.",
         "ALLOCATION_SUM_EXCEEDS_PAYMENT": "Lo declarado supera el monto del pago.",
+        "ALLOCATION_SUM_BELOW_PAYMENT": "Lo declarado no cubre el pago completo. Asigna el resto o marca \"No sé todavía\".",
         "ORDER_NOT_FOUND": "No encontramos uno de los pedidos.",
         "STORE_MISMATCH": "Uno de los pedidos no pertenece a esta tienda.",
         "ORDER_CANCELLED": "Uno de los pedidos está cancelado.",
@@ -554,6 +560,7 @@
       "amountLabel": "Monto",
       "amountPlaceholder": "0.00",
       "amountExceedsBalance": "El monto supera el saldo pendiente ({remaining}).",
+      "amountExceedsBalanceReconciled": "El saldo de este pedido se cuadró con la tienda: ya no admite este pago.",
       "quickPickAll": "Todo · {amount}",
       "quickPickAllAria": "Pagar todo el saldo, {amount}",
       "quickPickPercent": "{pct}%",
@@ -708,6 +715,7 @@
       "validation": {
         "itemsRequired": "Marca al menos un producto.",
         "receivedRequired": "Indica cuándo llegó.",
+        "settlementDateRequired": "Indica cuándo pagaste.",
         "shippedAfterReceived": "No pudo salir después de haber llegado.",
         "costInvalid": "Escribe un monto válido.",
         "currencyRequired": "Elige la moneda del costo.",
@@ -734,7 +742,27 @@
         "RECEIVED_DATE_IN_FUTURE": "La fecha de llegada no puede ser futura.",
         "DELIVERY_DATE_IN_FUTURE": "La fecha de salida no puede ser futura."
       },
-      "settledNotListed": "{count, plural, one {No aparece 1 producto que ya salió o llegó.} other {No aparecen # productos que ya salieron o llegaron.}}"
+      "settledNotListed": "{count, plural, one {No aparece 1 producto que ya salió o llegó.} other {No aparecen # productos que ya salieron o llegaron.}}",
+      "settlement": {
+        "checkboxLabel": "Ya pagué el resto",
+        "help": "Desmárcalo si todavía debes ese dinero.",
+        "dateLabel": "¿Cuándo pagaste?",
+        "detail": "Se registrará un pago de {amount} con fecha {date}.",
+        "partialCoverage": "Cubre los {count} productos que estás recibiendo.",
+        "reasonMissingPrice": "No tengo el precio de estos productos, así que dime cuánto pagaste.",
+        "reasonUndetailedMoney": "No sé cuánto de lo ya pagado es de estos productos, así que dime cuánto pagaste.",
+        "reference": "Del pedido entero faltan {amount}.",
+        "appliedUnassigned": "{amount} de este pago ya estaba pagado a la tienda.",
+        "unassignedNotice": "En {store} tienes {amount} pagados sin asignar.",
+        "confirmation": "Llegada anotada y {amount} registrados como pago.",
+        "loading": "Calculando el pago…",
+        "retry": "Reintentar",
+        "retryFailed": "No se pudo registrar el pago. Reintenta.",
+        "noLongerPending": "Ya no hay nada pendiente: la entrega se reabrió.",
+        "validation": {
+          "amountRequired": "Escribe cuánto pagaste."
+        }
+      }
     }
   }
 }

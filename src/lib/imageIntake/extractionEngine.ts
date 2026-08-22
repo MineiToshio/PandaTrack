@@ -91,7 +91,7 @@ export interface ExtractionProvider {
  */
 export const HTTP_SERVER_ERROR_STATUS_MIN = 500;
 
-export const PROVIDER_TRANSPORT_REASONS = ["network", "server-error", "timeout"] as const;
+export const PROVIDER_TRANSPORT_REASONS = ["network", "server-error", "overloaded", "timeout"] as const;
 export type ProviderTransportReason = (typeof PROVIDER_TRANSPORT_REASONS)[number];
 
 /**
@@ -333,9 +333,36 @@ export type ExtractionOutcome =
   | { status: "quota-exceeded"; remaining: number }
   | { status: "daily-cap-exceeded"; remaining: number };
 
-/** Transport-layer requests get exactly one retry; per ADR 0020's hard spend guard. */
 export const EXTRACTION_REQUEST_TIMEOUT_MS = 30_000;
-export const EXTRACTION_MAX_TRANSPORT_RETRIES = 1;
+
+/**
+ * Retries a transport failure gets before the submission is given up on.
+ *
+ * Two, not one. A single retry was sized for the assumption that a transport failure is rare; it is
+ * not. Measured against the live API on 2026-08-21, `gemini-3.1-flash-lite` answered one request in
+ * three with a `503`, one of them only after 34 seconds, while the very next identical request
+ * succeeded in four. At that rate a two-attempt submission fails outright several times in a
+ * hundred, which is what a collector experiences as "the photo upload just does not work", and the
+ * ledger records it as a failed attempt with no token usage: the exact signature of the failure this
+ * change came from.
+ *
+ * Retrying is close to free here and never doubles the spend. A `503` is the provider refusing
+ * before it generated anything, so there is nothing to bill, and the reservation is settled exactly
+ * once whatever the attempt count (see `SpendGuard`), so extra attempts add no ledger rows, consume
+ * no extra photo quota, and cannot move the global ceiling. What they cost is the collector's time,
+ * which is why the count stays small and the per-attempt timeout stays where it is.
+ */
+export const EXTRACTION_MAX_TRANSPORT_RETRIES = 2;
+
+/**
+ * Pause before a retried attempt.
+ *
+ * An immediate retry is the wrong answer to the two failures most likely to be waiting: a model that
+ * is momentarily overloaded and a rate limit that is measured over a window. Both need a moment
+ * more than they need another request, and firing instantly mostly buys a second copy of the same
+ * refusal. It is kept short because a collector is watching a spinner while it elapses.
+ */
+export const EXTRACTION_RETRY_BACKOFF_MS = 700;
 
 /**
  * USD per 1,000,000 tokens for `gemini-3.1-flash-lite` on the paid tier. Verified against
@@ -418,6 +445,7 @@ async function callProviderWithRetry(
       const isTransportError = error instanceof ProviderTransportError;
       const hasRetryLeft = attempt <= EXTRACTION_MAX_TRANSPORT_RETRIES;
       if (isTransportError && hasRetryLeft) {
+        await new Promise((resolve) => setTimeout(resolve, EXTRACTION_RETRY_BACKOFF_MS));
         continue;
       }
       return {

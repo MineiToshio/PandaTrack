@@ -63,6 +63,8 @@ export default function DashboardActivityQuickArrival({
         items={items}
         baseCurrencyCode={baseCurrencyCode}
         locale={locale}
+        orderId={orderId}
+        storeName={storeName}
         onSubmit={quickArrival.submit}
       />
     </>

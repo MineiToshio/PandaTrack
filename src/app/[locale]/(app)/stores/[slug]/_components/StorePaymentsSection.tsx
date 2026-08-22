@@ -2,13 +2,22 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Wallet } from "lucide-react";
+import { Scale, Trash2, Wallet } from "lucide-react";
 import Button from "@/components/core/Button/Button";
 import Eyebrow from "@/components/core/Eyebrow";
+import Typography from "@/components/core/Typography";
 import CollapsibleSection from "@/components/modules/CollapsibleSection";
+import { Modal } from "@/components/modules/Modal";
 import { POSTHOG_EVENTS } from "@/lib/constants";
+import { formatAmountSymbolOnly } from "@/lib/currency";
+import { formatDomainDate } from "@/lib/domainDate";
 import StorePaymentRow from "./StorePaymentRow";
 import { useStorePaymentState } from "./StorePaymentStateProvider";
+import {
+  isOptimisticAdjustmentId,
+  useStoreReconciliationState,
+  type StoreReconciliationAdjustmentRow,
+} from "./StoreReconciliationProvider";
 
 type StorePaymentsSectionProps = {
   locale: string;
@@ -43,6 +52,7 @@ export default function StorePaymentsSection({ locale }: StorePaymentsSectionPro
     isLoadingAllStorePayments,
     hasLoadAllStorePaymentsError,
   } = useStorePaymentState();
+  const { adjustments, deleteAdjustment } = useStoreReconciliationState();
 
   const listRef = useRef<HTMLUListElement>(null);
   // "See all" asks for focus to land on the first newly revealed row, i.e. on the index equal to
@@ -106,7 +116,7 @@ export default function StorePaymentsSection({ locale }: StorePaymentsSectionPro
     if (firstNewRow instanceof HTMLElement) firstNewRow.focus();
   }, [focusRequest, storePayments.length, hasLoadAllStorePaymentsError, isLoadingAllStorePayments]);
 
-  if (storePayments.length === 0) return null;
+  if (storePayments.length === 0 && adjustments.length === 0) return null;
 
   const hasHiddenPayments = storePayments.length < storePaymentsTotalCount;
 
@@ -121,52 +131,196 @@ export default function StorePaymentsSection({ locale }: StorePaymentsSectionPro
   }
 
   return (
-    <CollapsibleSection
-      eyebrow={
-        <Eyebrow variant="chip" tone="accent" icon={Wallet}>
-          {tStores("redesign.detail.paymentsTitle")}
-        </Eyebrow>
-      }
-      // The TRUE total, not the number of rows rendered: a store with 38 payments showing its
-      // first 20 used to label the section "20".
-      count={storePaymentsTotalCount}
-      topAccent="accent"
-    >
-      <ul role="list" ref={listRef} className="flex flex-col">
-        {storePayments.map((payment) => (
-          <StorePaymentRow key={payment.id} payment={payment} locale={locale} onConfirmDelete={deleteStorePayment} />
-        ))}
-      </ul>
+    <>
+      {storePayments.length > 0 && (
+        <CollapsibleSection
+          eyebrow={
+            <Eyebrow variant="chip" tone="accent" icon={Wallet}>
+              {tStores("redesign.detail.paymentsTitle")}
+            </Eyebrow>
+          }
+          // The TRUE total, not the number of rows rendered: a store with 38 payments showing its
+          // first 20 used to label the section "20".
+          count={storePaymentsTotalCount}
+          topAccent="accent"
+        >
+          <ul role="list" ref={listRef} className="flex flex-col">
+            {storePayments.map((payment) => (
+              <StorePaymentRow
+                key={payment.id}
+                payment={payment}
+                locale={locale}
+                onConfirmDelete={deleteStorePayment}
+              />
+            ))}
+          </ul>
 
-      {hasHiddenPayments && (
-        <div className="mt-2 flex flex-col items-start gap-1">
-          {hasLoadAllStorePaymentsError && (
-            <p role="alert" className="text-destructive [font-size:var(--text-caption)]">
-              {tStores("redesign.detail.payments.seeAllError")}
-            </p>
+          {hasHiddenPayments && (
+            <div className="mt-2 flex flex-col items-start gap-1">
+              {hasLoadAllStorePaymentsError && (
+                <p role="alert" className="text-destructive [font-size:var(--text-caption)]">
+                  {tStores("redesign.detail.payments.seeAllError")}
+                </p>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleLoadAll}
+                loading={isLoadingAllStorePayments}
+                data-ph-event={POSTHOG_EVENTS.STORE.PAYMENTS_ALL_LOADED}
+              >
+                {hasLoadAllStorePaymentsError
+                  ? tStores("redesign.detail.payments.seeAllRetry")
+                  : tStores("redesign.detail.payments.seeAll", { count: storePaymentsTotalCount })}
+              </Button>
+            </div>
           )}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleLoadAll}
-            loading={isLoadingAllStorePayments}
-            data-ph-event={POSTHOG_EVENTS.STORE.PAYMENTS_ALL_LOADED}
-          >
-            {hasLoadAllStorePaymentsError
-              ? tStores("redesign.detail.payments.seeAllRetry")
-              : tStores("redesign.detail.payments.seeAll", { count: storePaymentsTotalCount })}
-          </Button>
-        </div>
+
+          {/* Text only, and never wrapping the button: `role="status"` implies `aria-atomic`, so a
+              button inside it would be re-announced on every update. */}
+          <p role="status" aria-live="polite" className="sr-only">
+            {tStores("redesign.detail.payments.loadedStatus", {
+              shown: storePayments.length,
+              total: storePaymentsTotalCount,
+            })}
+          </p>
+        </CollapsibleSection>
       )}
 
-      {/* Text only, and never wrapping the button: `role="status"` implies `aria-atomic`, so a
-          button inside it would be re-announced on every update. */}
-      <p role="status" aria-live="polite" className="sr-only">
-        {tStores("redesign.detail.payments.loadedStatus", {
-          shown: storePayments.length,
-          total: storePaymentsTotalCount,
-        })}
-      </p>
-    </CollapsibleSection>
+      {/* "Ajustes de cuadre": its own labelled block, never interleaved into "Pagos a esta tienda"
+          above (WO-11, `ADR 0034` §2 and §4). An adjustment reads as an audit trail, not a payment. */}
+      {adjustments.length > 0 && (
+        <CollapsibleSection
+          eyebrow={
+            <Eyebrow variant="chip" tone="cool" icon={Scale}>
+              {tStores("redesign.detail.reconciliation.historyTitle")}
+            </Eyebrow>
+          }
+          count={adjustments.length}
+          topAccent="cool"
+        >
+          <ul role="list" className="flex flex-col">
+            {adjustments.map((adjustment) => (
+              <StoreAccountAdjustmentRow
+                key={adjustment.id}
+                adjustment={adjustment}
+                locale={locale}
+                onConfirmDelete={deleteAdjustment}
+              />
+            ))}
+          </ul>
+        </CollapsibleSection>
+      )}
+    </>
+  );
+}
+
+type StoreAccountAdjustmentRowProps = {
+  adjustment: StoreReconciliationAdjustmentRow;
+  locale: string;
+  onConfirmDelete: (adjustmentId: string) => Promise<{ ok: boolean; error?: string }>;
+};
+
+/**
+ * One "Ajuste de cuadre" in the history block: its date, its derived magnitude, its reason and every
+ * order it named, each still by its own DATE rather than its `ORD-` code (`FR-05-67`). Deletable
+ * behind a destructive confirm (template: `StorePaymentRow`'s own delete modal), optimistic like
+ * every other delete in this domain.
+ */
+function StoreAccountAdjustmentRow({ adjustment, locale, onConfirmDelete }: StoreAccountAdjustmentRowProps) {
+  const tStores = useTranslations("stores");
+  const tReconciliation = useTranslations("stores.redesign.detail.reconciliation");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [isPending, setIsPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const dateLabel = formatDomainDate(adjustment.adjustmentDate, locale, { dateStyle: "medium" });
+  const amountLabel = formatAmountSymbolOnly(adjustment.magnitudeMinor, adjustment.currencyCode, locale);
+  // A row the client added and the server has not answered for yet has no real id to delete by
+  // (`MINOR-6`, WO-11 review, mirroring `StorePaymentRow`'s own `isAwaitingServerId` guard). Left
+  // clickable, a fast collector could remove it mid-flight and get a NOT_FOUND error toast for an
+  // adjustment that was in fact recorded.
+  const isAwaitingServerId = isOptimisticAdjustmentId(adjustment.id);
+
+  async function handleConfirm() {
+    setIsPending(true);
+    setError(null);
+    const result = await onConfirmDelete(adjustment.id);
+    setIsPending(false);
+    if (result.ok) {
+      setModalOpen(false);
+    } else {
+      setError(tReconciliation("historyDeleteError"));
+    }
+  }
+
+  return (
+    <>
+      <li className="flex flex-col gap-1 py-2.5 [border-bottom:1px_solid_var(--border)] last:border-b-0">
+        <div className="flex items-baseline justify-between gap-2">
+          <div className="min-w-0">
+            <p className="[font-size:var(--text-body)] font-medium [color:var(--text-primary)]">
+              {tReconciliation("historyEntryHeading", { date: dateLabel, amount: amountLabel })}
+            </p>
+            <p className="mt-0.5 [font-size:var(--text-caption)] [color:var(--text-secondary)]">{adjustment.reason}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setModalOpen(true)}
+            disabled={isAwaitingServerId}
+            aria-label={tReconciliation("historyDeleteAria", { date: dateLabel, amount: amountLabel })}
+            className="text-text-muted hover:text-text-title relative grid size-7 shrink-0 cursor-pointer place-items-center rounded-md transition-colors before:absolute before:[inset:-8px] before:content-[''] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-default disabled:opacity-40 md:before:inset-0"
+          >
+            <Trash2 className="size-[13px]" aria-hidden />
+          </button>
+        </div>
+        <ul role="list" className="mt-1 flex flex-col gap-0.5">
+          {adjustment.lines.map((line) => (
+            <li
+              key={line.orderId}
+              className="flex items-baseline justify-between gap-2 [font-size:var(--text-caption)] [color:var(--text-muted)]"
+            >
+              <span>
+                {tReconciliation("historyLineOrder", {
+                  date: formatDomainDate(line.orderDate, locale, { dateStyle: "medium" }),
+                })}
+              </span>
+              <span className="tabular-nums">
+                {formatAmountSymbolOnly(line.amountMinor, adjustment.currencyCode, locale)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </li>
+
+      <Modal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={tReconciliation("historyDeleteModalTitle")}
+        subtitle={tReconciliation("historyDeleteModalDescription", { date: dateLabel, amount: amountLabel })}
+        icon={<Trash2 size={20} aria-hidden="true" />}
+        tone="destructive"
+        role="alertdialog"
+        dismissible={false}
+        primaryAction={{
+          label: isPending ? "…" : tReconciliation("historyDeleteConfirm"),
+          onClick: handleConfirm,
+          variant: "destructive",
+          loading: isPending,
+          disabled: isPending,
+        }}
+        secondaryAction={{
+          label: tStores("redesign.detail.payments.deleteCancel"),
+          onClick: () => setModalOpen(false),
+          disabled: isPending,
+        }}
+      >
+        {error && (
+          <Typography size="sm" className="text-destructive" role="alert">
+            {error}
+          </Typography>
+        )}
+      </Modal>
+    </>
   );
 }

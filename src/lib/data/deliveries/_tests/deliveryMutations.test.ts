@@ -1,7 +1,12 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import type { Prisma } from "../../../../../generated/prisma/client";
 import { DeliveryStatus, OrderItemDeliveryState, OrderStatus } from "../../../../../generated/prisma/client";
-import { createDelivery, persistDerivedOrderStatuses } from "../deliveryMutations";
+import {
+  createDelivery,
+  markDeliveryDelivered,
+  persistDerivedOrderStatuses,
+  reopenDelivery,
+} from "../deliveryMutations";
 
 const { prismaMock, generateDeliveryHumanReadableIdMock } = vi.hoisted(() => ({
   prismaMock: {
@@ -197,6 +202,81 @@ describe("persistDerivedOrderStatuses", () => {
       data: { status: OrderStatus.COMPLETED },
     });
   });
+
+  // FR-08-46 / WO-08: the money transaction needs to know exactly which orders THIS call closed,
+  // so it can run the order-close consumption and settlement only for those.
+  describe("closedOrderIds (FR-08-46)", () => {
+    it("returns [] for an empty orderIds input", async () => {
+      const tx = makeTx([]);
+      const result = await persistDerivedOrderStatuses(tx, []);
+      expect(result).toEqual({ closedOrderIds: [] });
+    });
+
+    it("includes an order that flips to COMPLETED in this call", async () => {
+      const tx = makeTx([
+        {
+          id: "order-1",
+          status: OrderStatus.OPEN,
+          items: [
+            { id: "item-1", deliveryState: OrderItemDeliveryState.DELIVERED },
+            { id: "item-2", deliveryState: OrderItemDeliveryState.DELIVERED },
+          ],
+        },
+      ]);
+      const result = await persistDerivedOrderStatuses(tx, ["order-1"]);
+      expect(result).toEqual({ closedOrderIds: ["order-1"] });
+    });
+
+    it("excludes an order that was already COMPLETED before this call", async () => {
+      const tx = makeTx([
+        {
+          id: "order-1",
+          status: OrderStatus.COMPLETED,
+          items: [
+            { id: "item-1", deliveryState: OrderItemDeliveryState.DELIVERED },
+            { id: "item-2", deliveryState: OrderItemDeliveryState.DELIVERED },
+          ],
+        },
+      ]);
+      const result = await persistDerivedOrderStatuses(tx, ["order-1"]);
+      // Derived status equals current status, so the loop's own `continue` already skips the write;
+      // this asserts the closed-set agrees and does not separately re-count it as "just closed".
+      expect(result).toEqual({ closedOrderIds: [] });
+      expect((tx as unknown as MockTx).order.updateMany).not.toHaveBeenCalled();
+    });
+
+    it("excludes an order that transitions into a non-COMPLETED status", async () => {
+      const tx = makeTx([
+        {
+          id: "order-1",
+          status: OrderStatus.OPEN,
+          items: [{ id: "item-1", deliveryState: OrderItemDeliveryState.IN_TRANSIT }],
+        },
+      ]);
+      const result = await persistDerivedOrderStatuses(tx, ["order-1"]);
+      expect(result).toEqual({ closedOrderIds: [] });
+    });
+
+    it("mixes a closing order with a non-closing one in the same call", async () => {
+      const tx = makeTx([
+        {
+          id: "order-1",
+          status: OrderStatus.OPEN,
+          items: [
+            { id: "item-1", deliveryState: OrderItemDeliveryState.DELIVERED },
+            { id: "item-2", deliveryState: OrderItemDeliveryState.DELIVERED },
+          ],
+        },
+        {
+          id: "order-2",
+          status: OrderStatus.OPEN,
+          items: [{ id: "item-3", deliveryState: OrderItemDeliveryState.IN_TRANSIT }],
+        },
+      ]);
+      const result = await persistDerivedOrderStatuses(tx, ["order-1", "order-2"]);
+      expect(result).toEqual({ closedOrderIds: ["order-1"] });
+    });
+  });
 });
 
 describe("createDelivery", () => {
@@ -250,6 +330,11 @@ describe("createDelivery", () => {
         ]),
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
+      // Only consulted by `buildClosedOrderSnapshots` when an order actually closed to COMPLETED
+      // in this call; empty by default since none of the base fixtures close an order.
+      storeAccountAdjustmentLine: {
+        groupBy: vi.fn().mockResolvedValue([]),
+      },
       ...overrides,
     };
     return tx as unknown as Prisma.TransactionClient;
@@ -274,7 +359,7 @@ describe("createDelivery", () => {
 
     const result = await createDelivery("user-1", input);
 
-    expect(result).toEqual({ ok: true, deliveryId: "delivery-1", productCount: 2, orderCount: 1 });
+    expect(result).toEqual({ ok: true, deliveryId: "delivery-1", productCount: 2, orderCount: 1, closedOrders: [] });
     expect(tx.delivery.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
         humanReadableId: "DLV-20260430-01",
@@ -285,6 +370,24 @@ describe("createDelivery", () => {
         currencyCode: "USD",
         exchangeRateBaseCode: null,
       }),
+      select: { id: true },
+    });
+  });
+
+  it("drops a submitted rate when the delivery is created in the base currency itself", async () => {
+    const tx = makeCreateTx({
+      user: {
+        findUnique: vi.fn().mockResolvedValue({ baseCurrencyCode: "PEN" }),
+      } as unknown as Prisma.TransactionClient["user"],
+    });
+    prismaMock.$transaction.mockImplementation(async (callback: (tx: Prisma.TransactionClient) => unknown) =>
+      callback(tx),
+    );
+
+    await createDelivery("user-1", { ...input, currencyCode: "PEN", exchangeRate: 1.1 });
+
+    expect(tx.delivery.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ currencyCode: "PEN", exchangeRate: null, exchangeRateBaseCode: null }),
       select: { id: true },
     });
   });
@@ -411,7 +514,7 @@ describe("createDelivery", () => {
 
       const result = await createDelivery("user-1", quickInput);
 
-      expect(result).toEqual({ ok: true, deliveryId: "delivery-1", productCount: 2, orderCount: 1 });
+      expect(result).toEqual({ ok: true, deliveryId: "delivery-1", productCount: 2, orderCount: 1, closedOrders: [] });
       expect(tx.delivery.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
           status: DeliveryStatus.DELIVERED,
@@ -450,6 +553,13 @@ describe("createDelivery", () => {
                 { id: "item-1", deliveryState: OrderItemDeliveryState.DELIVERED },
                 { id: "item-2", deliveryState: OrderItemDeliveryState.DELIVERED },
               ],
+              // Also read by `buildClosedOrderSnapshots`'s own findMany, which reuses this mock.
+              storeId: "store-1",
+              currencyCode: "USD",
+              totalCost: 5000,
+              allocatedAmountMinor: 2000,
+              orderDate: new Date("2026-04-01T00:00:00.000Z"),
+              humanReadableId: "ORD-0001",
             },
           ]),
           updateMany: vi.fn().mockResolvedValue({ count: 1 }),
@@ -459,12 +569,26 @@ describe("createDelivery", () => {
         callback(tx),
       );
 
-      await createDelivery("user-1", quickInput);
+      const result = await createDelivery("user-1", quickInput);
 
       expect(tx.order.updateMany).toHaveBeenCalledWith({
         where: { id: { in: ["order-1"] } },
         data: { status: OrderStatus.COMPLETED },
       });
+      // FR-08-46/WO-08: the money transaction needs this snapshot to compute its settlement from,
+      // with no money read or written here.
+      expect(result.ok && result.closedOrders).toEqual([
+        {
+          orderId: "order-1",
+          storeId: "store-1",
+          currencyCode: "USD",
+          totalCost: 5000,
+          allocatedAmountMinor: 2000,
+          adjustmentLineTotalMinor: 0,
+          orderDate: new Date("2026-04-01T00:00:00.000Z"),
+          humanReadableId: "ORD-0001",
+        },
+      ]);
     });
 
     it("re-derives the source order to PARTIALLY_DELIVERED when only some products arrived", async () => {
@@ -551,6 +675,13 @@ describe("createDelivery", () => {
               id: "order-1",
               status: OrderStatus.OPEN,
               items: [{ id: "item-1", deliveryState: OrderItemDeliveryState.DELIVERED }],
+              // Also read by `buildClosedOrderSnapshots`'s own findMany, which reuses this mock.
+              storeId: "store-1",
+              currencyCode: "USD",
+              totalCost: 3000,
+              allocatedAmountMinor: 1000,
+              orderDate: new Date("2026-04-15T00:00:00.000Z"),
+              humanReadableId: "ORD-0001",
             },
             {
               id: "order-2",
@@ -583,7 +714,26 @@ describe("createDelivery", () => {
 
       // One row, and the caller is told the selection spanned two orders.
       expect(tx.delivery.create).toHaveBeenCalledTimes(1);
-      expect(result).toEqual({ ok: true, deliveryId: "delivery-1", productCount: 3, orderCount: 2 });
+      expect(result).toEqual({
+        ok: true,
+        deliveryId: "delivery-1",
+        productCount: 3,
+        orderCount: 2,
+        // Only order-1 closed to COMPLETED; order-2 stays PARTIALLY_DELIVERED and contributes no
+        // snapshot line (FR-08-46: the money transaction only ever touches an order THIS call closed).
+        closedOrders: [
+          {
+            orderId: "order-1",
+            storeId: "store-1",
+            currencyCode: "USD",
+            totalCost: 3000,
+            allocatedAmountMinor: 1000,
+            adjustmentLineTotalMinor: 0,
+            orderDate: new Date("2026-04-15T00:00:00.000Z"),
+            humanReadableId: "ORD-0001",
+          },
+        ],
+      });
 
       // One association per product, all pointing at that single delivery.
       expect(tx.deliveryOrderItem.createMany).toHaveBeenCalledTimes(1);
@@ -626,6 +776,73 @@ describe("createDelivery", () => {
         },
         data: { deliveryState: OrderItemDeliveryState.DELIVERED },
       });
+    });
+
+    // WO-08 spec §1.7: 38 pairs in the collector's own history tie on `orderDate`, so the batch
+    // settlement order needs a deterministic tiebreak.
+    it("sorts closedOrders by orderDate ASC then humanReadableId ASC when two orders tie on orderDate", async () => {
+      const tx = makeCreateTx({
+        orderItem: {
+          findMany: vi.fn().mockResolvedValue([
+            {
+              id: "item-1",
+              orderId: "order-1",
+              deliveryState: OrderItemDeliveryState.NONE,
+              order: { storeId: "store-1", userId: "user-1", status: OrderStatus.OPEN },
+            },
+            {
+              id: "item-2",
+              orderId: "order-2",
+              deliveryState: OrderItemDeliveryState.NONE,
+              order: { storeId: "store-1", userId: "user-1", status: OrderStatus.OPEN },
+            },
+          ]),
+          updateMany: vi.fn().mockResolvedValue({ count: 2 }),
+        } as unknown as Prisma.TransactionClient["orderItem"],
+        deliveryOrderItem: {
+          createMany: vi.fn().mockResolvedValue({ count: 2 }),
+        } as unknown as Prisma.TransactionClient["deliveryOrderItem"],
+        order: {
+          // Listed with the higher humanReadableId first, on purpose: the sort, not fixture order,
+          // must be what puts ORD-0001 ahead of ORD-0002 below.
+          findMany: vi.fn().mockResolvedValue([
+            {
+              id: "order-2",
+              status: OrderStatus.OPEN,
+              items: [{ id: "item-2", deliveryState: OrderItemDeliveryState.DELIVERED }],
+              storeId: "store-1",
+              currencyCode: "USD",
+              totalCost: 2000,
+              allocatedAmountMinor: 0,
+              orderDate: new Date("2026-05-01T00:00:00.000Z"),
+              humanReadableId: "ORD-0002",
+            },
+            {
+              id: "order-1",
+              status: OrderStatus.OPEN,
+              items: [{ id: "item-1", deliveryState: OrderItemDeliveryState.DELIVERED }],
+              storeId: "store-1",
+              currencyCode: "USD",
+              totalCost: 1000,
+              allocatedAmountMinor: 0,
+              orderDate: new Date("2026-05-01T00:00:00.000Z"),
+              humanReadableId: "ORD-0001",
+            },
+          ]),
+          updateMany: vi.fn().mockResolvedValue({ count: 2 }),
+        } as unknown as Prisma.TransactionClient["order"],
+      });
+      prismaMock.$transaction.mockImplementation(async (callback: (tx: Prisma.TransactionClient) => unknown) =>
+        callback(tx),
+      );
+
+      const result = await createDelivery("user-1", {
+        ...input,
+        receivedDate: new Date("2026-05-02T00:00:00.000Z"),
+        productIds: ["item-1", "item-2"],
+      });
+
+      expect(result.ok && result.closedOrders.map((order) => order.humanReadableId)).toEqual(["ORD-0001", "ORD-0002"]);
     });
   });
 
@@ -693,7 +910,368 @@ describe("createDelivery", () => {
 
       const result = await createDelivery("user-1", input);
 
-      expect(result).toEqual({ ok: true, deliveryId: "delivery-1", productCount: 2, orderCount: 1 });
+      expect(result).toEqual({ ok: true, deliveryId: "delivery-1", productCount: 2, orderCount: 1, closedOrders: [] });
     });
+  });
+});
+
+describe("markDeliveryDelivered (FR-08-46 producer snapshot)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  function makeMarkDeliveredTx(overrides: { orderRows?: unknown[] } = {}) {
+    return {
+      delivery: {
+        findFirst: vi.fn().mockResolvedValue({
+          id: "dlv-1",
+          status: DeliveryStatus.IN_TRANSIT,
+          orderItems: [{ orderItem: { id: "item-1", orderId: "order-1" } }],
+        }),
+        update: vi.fn().mockResolvedValue(undefined),
+      },
+      orderItem: { updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
+      order: {
+        findMany: vi.fn().mockResolvedValue(
+          overrides.orderRows ?? [
+            {
+              id: "order-1",
+              status: OrderStatus.OPEN,
+              items: [{ id: "item-1", deliveryState: OrderItemDeliveryState.DELIVERED }],
+              storeId: "store-1",
+              currencyCode: "USD",
+              totalCost: 4000,
+              allocatedAmountMinor: 1500,
+              orderDate: new Date("2026-05-10T00:00:00.000Z"),
+              humanReadableId: "ORD-0009",
+            },
+          ],
+        ),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+      },
+      storeAccountAdjustmentLine: { groupBy: vi.fn().mockResolvedValue([]) },
+    };
+  }
+
+  // Round-4 correction: `markDeliveryDelivered` is a producer of the closed-order trigger set too
+  // (the formal "Marcar como llegada" flow), not only `createDelivery`.
+  it("returns the closed-order snapshot when this call completes the order", async () => {
+    const tx = makeMarkDeliveredTx();
+    prismaMock.$transaction.mockImplementation(async (fn: (t: unknown) => Promise<unknown>) => fn(tx));
+
+    const result = await markDeliveryDelivered("dlv-1", "user-1", new Date("2026-05-10T00:00:00.000Z"));
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected an ok result");
+    expect(result.closedOrders).toEqual([
+      {
+        orderId: "order-1",
+        storeId: "store-1",
+        currencyCode: "USD",
+        totalCost: 4000,
+        allocatedAmountMinor: 1500,
+        adjustmentLineTotalMinor: 0,
+        orderDate: new Date("2026-05-10T00:00:00.000Z"),
+        humanReadableId: "ORD-0009",
+      },
+    ]);
+  });
+
+  it("returns an empty closed-order snapshot when the order stays open after this call", async () => {
+    const tx = makeMarkDeliveredTx({
+      orderRows: [
+        {
+          id: "order-1",
+          status: OrderStatus.OPEN,
+          items: [
+            { id: "item-1", deliveryState: OrderItemDeliveryState.DELIVERED },
+            { id: "item-2", deliveryState: OrderItemDeliveryState.NONE },
+          ],
+        },
+      ],
+    });
+    prismaMock.$transaction.mockImplementation(async (fn: (t: unknown) => Promise<unknown>) => fn(tx));
+
+    const result = await markDeliveryDelivered("dlv-1", "user-1", new Date());
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected an ok result");
+    expect(result.closedOrders).toEqual([]);
+  });
+});
+
+describe("reopenDelivery (settlement reversal, FR-08-43 / ADR 0032 §9)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  function settlementPaymentFixture(overrides: Record<string, unknown> = {}) {
+    return {
+      id: "pay-settlement-1",
+      storeId: "store-1",
+      userId: "user-1",
+      amount: 5000,
+      paymentDate: new Date("2026-05-10T00:00:00.000Z"),
+      currencyCode: "USD",
+      exchangeRate: null,
+      exchangeRateBaseCode: null,
+      note: null,
+      migratedFromOrderId: null,
+      settledByDeliveryId: "dlv-1",
+      createdAt: new Date("2026-05-10T00:00:00.000Z"),
+      updatedAt: new Date("2026-05-10T00:00:00.000Z"),
+      allocations: [
+        {
+          id: "alloc-settlement-1",
+          paymentId: "pay-settlement-1",
+          orderId: "order-1",
+          orderItemId: null,
+          userId: "user-1",
+          amountMinor: 5000,
+          settlesTarget: false,
+          createdAt: new Date("2026-05-10T00:00:00.000Z"),
+        },
+      ],
+      ...overrides,
+    };
+  }
+
+  /** Row shape `paymentAllocation.findMany` returns for the surviving-consumption read. */
+  function survivingConsumedRowFixture(overrides: Record<string, unknown> = {}) {
+    return {
+      amountMinor: 1200,
+      payment: { currencyCode: "USD" },
+      ...overrides,
+    };
+  }
+
+  function makeReopenTx(
+    overrides: {
+      settledPayments?: unknown[];
+      deliveryStatus?: DeliveryStatus;
+      survivingConsumedRows?: unknown[];
+    } = {},
+  ) {
+    return {
+      delivery: {
+        findFirst: vi.fn().mockResolvedValue({
+          id: "dlv-1",
+          status: overrides.deliveryStatus ?? DeliveryStatus.DELIVERED,
+          orderItems: [{ orderItem: { id: "item-1", orderId: "order-1" } }],
+        }),
+        update: vi.fn().mockResolvedValue(undefined),
+      },
+      orderItem: { updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
+      deliveryOrderItem: { count: vi.fn().mockResolvedValue(0) },
+      storePayment: {
+        findMany: vi.fn().mockResolvedValue(overrides.settledPayments ?? []),
+        deleteMany: vi.fn().mockResolvedValue({ count: overrides.settledPayments?.length ?? 0 }),
+      },
+      paymentAllocation: {
+        groupBy: vi.fn().mockResolvedValue([{ orderId: "order-1", _sum: { amountMinor: 0 } }]),
+        // The surviving-consumption read (FR-08-46 provenance, WO-08 UX Notes "known gap"
+        // closure): rows this delivery's own close-time consumption stamped, on payments this
+        // reopen never deletes. `deleteMany` is mocked too so a test can pin that reopen never
+        // calls it for this table at all (mutation-testing evidence: a future change that tried to
+        // delete these rows would flip that assertion).
+        findMany: vi.fn().mockResolvedValue(overrides.survivingConsumedRows ?? []),
+        deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
+      },
+      order: {
+        findMany: vi.fn().mockResolvedValue([]),
+        updateMany: vi.fn().mockResolvedValue({ count: 0 }),
+        update: vi.fn().mockResolvedValue(undefined),
+      },
+    };
+  }
+
+  it("queries StorePayment scoped to this delivery's settledByDeliveryId, never by store", async () => {
+    const tx = makeReopenTx({ settledPayments: [settlementPaymentFixture()] });
+    prismaMock.$transaction.mockImplementation(async (fn: (t: unknown) => Promise<unknown>) => fn(tx));
+
+    await reopenDelivery("dlv-1", "user-1");
+
+    // Mutation-testing evidence: widening this `where` to `{ storeId: "store-1", userId }` (every
+    // payment of the store, dropping `settledByDeliveryId`) would still pass a same-shape assertion
+    // on call count, but fails THIS one, which pins the exact scoping clause.
+    expect(tx.storePayment.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { settledByDeliveryId: "dlv-1", userId: "user-1" } }),
+    );
+  });
+
+  it("deletes only the settlement payment(s) this delivery produced, never widening to the store's other payments", async () => {
+    const tx = makeReopenTx({ settledPayments: [settlementPaymentFixture()] });
+    prismaMock.$transaction.mockImplementation(async (fn: (t: unknown) => Promise<unknown>) => fn(tx));
+
+    await reopenDelivery("dlv-1", "user-1");
+
+    // Mutation-testing evidence: if the delete were widened to also remove an unrelated payment
+    // (e.g. the order-close consumption's own earlier StorePayment, "pay-consumption-1", which
+    // carries no `settledByDeliveryId`), this exact `id: { in: [...] }` assertion fails, because it
+    // pins the delete to precisely the ids `findMany` returned, nothing more.
+    expect(tx.storePayment.deleteMany).toHaveBeenCalledWith({ where: { id: { in: ["pay-settlement-1"] } } });
+  });
+
+  it("recalculates the allocation cache for every order the reverted allocations touched", async () => {
+    const tx = makeReopenTx({ settledPayments: [settlementPaymentFixture()] });
+    prismaMock.$transaction.mockImplementation(async (fn: (t: unknown) => Promise<unknown>) => fn(tx));
+
+    await reopenDelivery("dlv-1", "user-1");
+
+    expect(tx.paymentAllocation.groupBy).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ orderId: { in: ["order-1"] } }) }),
+    );
+    expect(tx.order.updateMany).toHaveBeenCalledWith({
+      where: { id: "order-1", userId: "user-1" },
+      data: { allocatedAmountMinor: 0 },
+    });
+  });
+
+  it("returns the verbatim reverted snapshot and its total, with surviving consumption 0 when close never consumed anything (settlement only)", async () => {
+    const payment = settlementPaymentFixture();
+    const tx = makeReopenTx({ settledPayments: [payment] });
+    prismaMock.$transaction.mockImplementation(async (fn: (t: unknown) => Promise<unknown>) => fn(tx));
+
+    const result = await reopenDelivery("dlv-1", "user-1");
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected an ok result");
+    expect(result.revertedSettlements).toEqual({
+      totalAmountMinor: 5000,
+      payments: [payment],
+      survivingConsumedMinor: 0,
+      survivingConsumedAllocations: [],
+    });
+  });
+
+  /**
+   * The consumption-survival case (WO-08 Technical Notes, ADR 0033 §4): an order-close consumption
+   * writes its allocation onto some OTHER, earlier StorePayment that carries no `settledByDeliveryId`
+   * at all. That payment can never appear in `findMany`'s result (the query is scoped to
+   * `settledByDeliveryId: deliveryId`), so it is never in the delete's `id: { in: [...] }` list and
+   * never touched, even though it allocates to the exact same order this reopen is affecting.
+   */
+  it("leaves an unrelated (non-settlement) payment's allocation to the same order untouched", async () => {
+    const unrelatedConsumptionPayment = {
+      id: "pay-consumption-1",
+      settledByDeliveryId: null,
+      allocations: [{ orderId: "order-1", orderItemId: null, amountMinor: 3000 }],
+    };
+    // `findMany` is scoped by `settledByDeliveryId: "dlv-1"` in production code, so a correct
+    // implementation never returns `unrelatedConsumptionPayment` here in the first place; asserting
+    // the delete only ever touches "pay-settlement-1" is what pins that scoping, not this mock.
+    const tx = makeReopenTx({ settledPayments: [settlementPaymentFixture()] });
+    prismaMock.$transaction.mockImplementation(async (fn: (t: unknown) => Promise<unknown>) => fn(tx));
+
+    await reopenDelivery("dlv-1", "user-1");
+
+    const deleteCall = (tx.storePayment.deleteMany as ReturnType<typeof vi.fn>).mock.calls[0]?.[0];
+    expect(deleteCall.where.id.in).not.toContain(unrelatedConsumptionPayment.id);
+    expect(deleteCall.where.id.in).toEqual(["pay-settlement-1"]);
+  });
+
+  // Regression: a reopen with no settlement payments must behave exactly as it did before this
+  // slice (WO-04's original reopenDelivery), just with the additive empty revertedSettlements field.
+  it("reports an empty reversal and touches no payment when this delivery never produced a settlement", async () => {
+    const tx = makeReopenTx({ settledPayments: [] });
+    prismaMock.$transaction.mockImplementation(async (fn: (t: unknown) => Promise<unknown>) => fn(tx));
+
+    const result = await reopenDelivery("dlv-1", "user-1");
+
+    expect(result).toEqual({
+      ok: true,
+      productCount: 1,
+      revertedSettlements: {
+        totalAmountMinor: 0,
+        payments: [],
+        survivingConsumedMinor: 0,
+        survivingConsumedAllocations: [],
+      },
+    });
+    expect(tx.storePayment.deleteMany).not.toHaveBeenCalled();
+    expect(tx.paymentAllocation.groupBy).not.toHaveBeenCalled();
+    expect(tx.delivery.update).toHaveBeenCalledWith({
+      where: { id: "dlv-1" },
+      data: { status: DeliveryStatus.IN_TRANSIT, receivedDate: null },
+    });
+  });
+
+  /**
+   * The reopen-toast gap closure itself (WO-08 UX Notes "known gap"): a close that ran BOTH the
+   * settlement write and the unconditional FR-08-46 consumption leaves two independent figures for
+   * the reopen to report. This asserts the consumption-only half: reverted is 0 (there is no
+   * settlement `StorePayment` for this delivery to delete), surviving is > 0 (the earlier payment's
+   * allocation this delivery's own close stamped).
+   */
+  it("with consumption only (checkbox unchecked on close): reverted 0, surviving > 0", async () => {
+    const tx = makeReopenTx({
+      settledPayments: [],
+      survivingConsumedRows: [survivingConsumedRowFixture({ amountMinor: 1200, payment: { currencyCode: "USD" } })],
+    });
+    prismaMock.$transaction.mockImplementation(async (fn: (t: unknown) => Promise<unknown>) => fn(tx));
+
+    const result = await reopenDelivery("dlv-1", "user-1");
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected an ok result");
+    expect(result.revertedSettlements.totalAmountMinor).toBe(0);
+    expect(result.revertedSettlements.payments).toEqual([]);
+    expect(result.revertedSettlements.survivingConsumedMinor).toBe(1200);
+    expect(result.revertedSettlements.survivingConsumedAllocations).toEqual([
+      { amountMinor: 1200, currencyCode: "USD" },
+    ]);
+  });
+
+  /**
+   * The combined case: both a settlement StorePayment (deleted, reverted) AND a surviving
+   * consumption allocation (untouched) exist for the same delivery's close.
+   */
+  it("with both settlement and consumption: reverted > 0 AND surviving > 0, summed independently", async () => {
+    const tx = makeReopenTx({
+      settledPayments: [settlementPaymentFixture()],
+      survivingConsumedRows: [
+        survivingConsumedRowFixture({ amountMinor: 800, payment: { currencyCode: "USD" } }),
+        survivingConsumedRowFixture({ amountMinor: 400, payment: { currencyCode: "USD" } }),
+      ],
+    });
+    prismaMock.$transaction.mockImplementation(async (fn: (t: unknown) => Promise<unknown>) => fn(tx));
+
+    const result = await reopenDelivery("dlv-1", "user-1");
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected an ok result");
+    expect(result.revertedSettlements.totalAmountMinor).toBe(5000);
+    expect(result.revertedSettlements.survivingConsumedMinor).toBe(1200);
+  });
+
+  /**
+   * Mutation-testing evidence for the "reopen must never delete or modify a surviving consumption
+   * allocation" rule (WO-08 Technical Notes, ADR 0033 §4): `paymentAllocation.deleteMany` must never
+   * be called at all by `reopenDelivery`. If a future change tried to widen the settlement-reversal
+   * delete to also remove these rows (directly, via a new `paymentAllocation.deleteMany` call, since
+   * `storePayment.deleteMany`'s cascade cannot reach them: they live on an unrelated, earlier,
+   * un-deleted `StorePayment`), this assertion fails.
+   */
+  it("never calls paymentAllocation.deleteMany: surviving consumption rows are read-only to reopen", async () => {
+    const tx = makeReopenTx({
+      settledPayments: [settlementPaymentFixture()],
+      survivingConsumedRows: [survivingConsumedRowFixture()],
+    });
+    prismaMock.$transaction.mockImplementation(async (fn: (t: unknown) => Promise<unknown>) => fn(tx));
+
+    await reopenDelivery("dlv-1", "user-1");
+
+    expect(tx.paymentAllocation.deleteMany).not.toHaveBeenCalled();
+  });
+
+  it("queries the surviving-consumption read scoped to this delivery's consumedByDeliveryId and userId", async () => {
+    const tx = makeReopenTx({ survivingConsumedRows: [survivingConsumedRowFixture()] });
+    prismaMock.$transaction.mockImplementation(async (fn: (t: unknown) => Promise<unknown>) => fn(tx));
+
+    await reopenDelivery("dlv-1", "user-1");
+
+    expect(tx.paymentAllocation.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { consumedByDeliveryId: "dlv-1", userId: "user-1" } }),
+    );
   });
 });

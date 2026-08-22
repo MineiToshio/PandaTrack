@@ -42,6 +42,7 @@ import {
 } from "@/lib/orders/orderPaymentBreakdown";
 import { exchangeRateSchema } from "@/lib/orders/orderValidation";
 import { cn } from "@/lib/styles";
+import DiscrepancyModal from "../../../_components/share/DiscrepancyModal";
 import FxRateAttribution from "../../../_components/share/FxRateAttribution";
 import OrderPaymentBreakdownPanel from "../../../_components/share/OrderPaymentBreakdownPanel";
 import {
@@ -413,6 +414,16 @@ export default function IntakeReviewScreen({
    * and clears per-field the moment the collector edits that field, never on a keystroke elsewhere.
    */
   const [fieldErrors, setFieldErrors] = useState<ReadonlyMap<RequiredIntakeFieldKey, string>>(() => new Map());
+  /**
+   * A save that passed every other gate and is waiting on the totals confirmation. It holds the two
+   * arguments already resolved for the write (the exchange rate and the payment breakdown) so
+   * confirming does not have to re-run the rate parsing, which could fail a second time on a screen
+   * the collector can no longer reach.
+   */
+  const [pendingMismatchSave, setPendingMismatchSave] = useState<{
+    exchangeRate: number | null;
+    breakdown: IntakeBreakdownPayload | undefined;
+  } | null>(null);
   const [totalInput, setTotalInput] = useState(() =>
     seededInitialDraft.totalCost.value !== null
       ? formatCentsForInput(seededInitialDraft.totalCost.value, seededInitialDraft.currency.value ?? NO_CURRENCY_CODE)
@@ -835,7 +846,7 @@ export default function IntakeReviewScreen({
 
     const breakdown = buildIntakeBreakdownPayload(breakdownRows.map((entry) => entry.row));
     if (!needsExchangeRate) {
-      onSave(draft, null, breakdown);
+      commitSave(null, breakdown);
       return;
     }
     const parsed = parseExchangeRateInput(exchangeRateInput);
@@ -843,7 +854,41 @@ export default function IntakeReviewScreen({
       setExchangeRateError(t("fx.invalid"));
       return;
     }
-    onSave(draft, parsed.value, breakdown);
+    commitSave(parsed.value, breakdown);
+  };
+
+  /**
+   * Last gate before the write: rows that are all priced and do not add up to the stated total stop
+   * here for a confirmation, exactly as they do in the manual create and edit forms.
+   *
+   * It is the same component and the same copy on purpose. The inline banner above already says the
+   * two figures disagree, but a banner is passive and a total is money: the collector who reaches
+   * the button having scrolled past it would otherwise save a figure nobody confirmed. The manual
+   * form settled that trade long ago (warn, then let them save anyway), and a draft read from a
+   * photo is the path where the numbers are LEAST likely to be right, so it cannot be the laxer of
+   * the two. `totalMismatch` is reused rather than re-derived so the banner and this gate can never
+   * disagree about what "does not add up" means, shipping allowance included.
+   */
+  const commitSave = (exchangeRate: number | null, breakdown: IntakeBreakdownPayload | undefined) => {
+    if (totalMismatch !== null) {
+      posthog.capture(POSTHOG_EVENTS.ORDER.DISCREPANCY_MODAL_OPENED);
+      setPendingMismatchSave({ exchangeRate, breakdown });
+      return;
+    }
+    onSave(draft, exchangeRate, breakdown);
+  };
+
+  const handleMismatchSaveAnyway = () => {
+    const pending = pendingMismatchSave;
+    setPendingMismatchSave(null);
+    if (pending === null) return;
+    posthog.capture(POSTHOG_EVENTS.ORDER.DISCREPANCY_RESOLVED, { resolution: "kept_entered" });
+    onSave(draft, pending.exchangeRate, pending.breakdown);
+  };
+
+  const handleMismatchGoBack = () => {
+    posthog.capture(POSTHOG_EVENTS.ORDER.DISCREPANCY_RESOLVED, { resolution: "cancelled" });
+    setPendingMismatchSave(null);
   };
 
   // Both action bars below call these, never their own copy of the logic: the two are one control
@@ -1399,6 +1444,20 @@ export default function IntakeReviewScreen({
           {t("manual")}
         </button>
       </div>
+
+      {/*
+        The same confirmation the manual create and edit forms raise, on the same condition and with
+        the same words, so "the products do not add up to the total" means one thing in this product
+        no matter which way the order was entered.
+      */}
+      <DiscrepancyModal
+        isOpen={pendingMismatchSave !== null && totalMismatch !== null}
+        enteredTotal={totalMismatch?.statedTotal ?? 0}
+        calculatedTotal={totalMismatch?.productsTotal ?? 0}
+        formatAmount={(cents) => formatAmount(cents, currencyCode)}
+        onGoBack={handleMismatchGoBack}
+        onSaveAnyway={handleMismatchSaveAnyway}
+      />
     </div>
   );
 }

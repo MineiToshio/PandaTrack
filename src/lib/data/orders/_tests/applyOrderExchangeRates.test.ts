@@ -33,9 +33,17 @@ describe("applyOrderExchangeRates", () => {
     await applyOrderExchangeRates("user-1", "PEN", [{ orderId: "order-1", exchangeRate: 3.25 }]);
 
     expect(prismaMock.order.updateMany).toHaveBeenCalledWith({
-      where: { id: { in: ["order-1"] }, userId: "user-1" },
+      where: { id: { in: ["order-1"] }, userId: "user-1", currencyCode: { not: "PEN" } },
       data: { exchangeRate: 3.25, exchangeRateBaseCode: "PEN" },
     });
+  });
+
+  it("excludes base-currency orders at the write itself, so a payload cannot stamp them", async () => {
+    // The 1.1 incident: a bulk apply once reached hundreds of base-currency orders. The modal's
+    // grouping should never offer them, but the write must refuse them on its own.
+    await applyOrderExchangeRates("user-1", "PEN", [{ orderId: "order-1", exchangeRate: 1.1 }]);
+
+    expect(prismaMock.order.updateMany.mock.calls[0][0].where.currencyCode).toEqual({ not: "PEN" });
   });
 
   it("records no base for a rate confirmed while the collector has no base currency", async () => {
@@ -44,6 +52,8 @@ describe("applyOrderExchangeRates", () => {
     expect(prismaMock.order.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({ data: { exchangeRate: 3.25, exchangeRateBaseCode: null } }),
     );
+    // Without a base currency nothing counts as a base-currency order, so no filter applies.
+    expect(prismaMock.order.updateMany.mock.calls[0][0].where).not.toHaveProperty("currencyCode");
   });
 
   it("runs every statement in a single transaction and returns the total updated count", async () => {
@@ -72,11 +82,11 @@ describe("applyOrderExchangeRates", () => {
 
     expect(prismaMock.order.updateMany).toHaveBeenCalledTimes(2);
     expect(prismaMock.order.updateMany).toHaveBeenNthCalledWith(1, {
-      where: { id: { in: ["order-1", "order-2", "order-4"] }, userId: "user-1" },
+      where: { id: { in: ["order-1", "order-2", "order-4"] }, userId: "user-1", currencyCode: { not: "PEN" } },
       data: { exchangeRate: 3.7, exchangeRateBaseCode: "PEN" },
     });
     expect(prismaMock.order.updateMany).toHaveBeenNthCalledWith(2, {
-      where: { id: { in: ["order-3", "order-5"] }, userId: "user-1" },
+      where: { id: { in: ["order-3", "order-5"] }, userId: "user-1", currencyCode: { not: "PEN" } },
       data: { exchangeRate: 4.1, exchangeRateBaseCode: "PEN" },
     });
     expect(updatedCount).toBe(5);
@@ -108,7 +118,7 @@ describe("applyOrderExchangeRates", () => {
 
     expect(prismaMock.order.updateMany).toHaveBeenCalledTimes(1);
     expect(prismaMock.order.updateMany).toHaveBeenCalledWith({
-      where: { id: { in: ["order-1"] }, userId: "user-1" },
+      where: { id: { in: ["order-1"] }, userId: "user-1", currencyCode: { not: "PEN" } },
       data: { exchangeRate: 4.1, exchangeRateBaseCode: "PEN" },
     });
   });

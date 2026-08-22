@@ -10,6 +10,7 @@ const {
   deleteDeliveryMock,
   posthogCaptureMock,
   redirectMock,
+  runOrderCloseMoneyTransactionMock,
 } = vi.hoisted(() => ({
   getSessionMock: vi.fn(),
   markDeliveryDeliveredMock: vi.fn(),
@@ -18,6 +19,7 @@ const {
   deleteDeliveryMock: vi.fn(),
   posthogCaptureMock: vi.fn(),
   redirectMock: vi.fn(),
+  runOrderCloseMoneyTransactionMock: vi.fn(),
 }));
 
 // Cache revalidation is a Next request-scoped API; the unit under test only needs it to be
@@ -35,11 +37,18 @@ vi.mock("@/lib/data/deliveries/deliveryMutations", () => ({
   deleteDelivery: deleteDeliveryMock,
 }));
 
+vi.mock("@/lib/data/orders/storePaymentMutations", () => ({
+  runOrderCloseMoneyTransaction: runOrderCloseMoneyTransactionMock,
+}));
+
 vi.mock("@/lib/analytics/posthog-server", () => ({
   getPostHogClient: () => ({ capture: posthogCaptureMock, shutdown: vi.fn() }),
 }));
 
-vi.mock("@sentry/nextjs", () => ({ captureException: vi.fn() }));
+vi.mock("@sentry/nextjs", () => ({
+  captureException: vi.fn(),
+  withScope: (callback: (scope: unknown) => void) => callback({ setTag: vi.fn(), setContext: vi.fn() }),
+}));
 
 vi.mock("next/navigation", () => ({
   redirect: (url: string) => {
@@ -62,6 +71,7 @@ const PAST_DATE = new Date("2026-01-01T00:00:00Z");
 describe("markDeliveredAction", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    runOrderCloseMoneyTransactionMock.mockResolvedValue([]);
   });
 
   it("rejects when there is no session", async () => {
@@ -108,11 +118,11 @@ describe("markDeliveredAction", () => {
 
   it("marks the delivery delivered and tracks the event", async () => {
     getSessionMock.mockResolvedValue(AUTHENTICATED_SESSION);
-    markDeliveryDeliveredMock.mockResolvedValue({ ok: true, productCount: 3 });
+    markDeliveryDeliveredMock.mockResolvedValue({ ok: true, productCount: 3, closedOrders: [] });
 
     const result = await markDeliveredAction(VALID_DELIVERY_ID, PAST_DATE);
 
-    expect(result).toEqual({ ok: true });
+    expect(result).toEqual({ ok: true, consumedUnassignedMinor: 0, moneyTransactionPending: false });
     expect(markDeliveryDeliveredMock).toHaveBeenCalledWith(VALID_DELIVERY_ID, "user-1", PAST_DATE);
     expect(posthogCaptureMock).toHaveBeenCalledWith({
       distinctId: "user-1",
@@ -128,6 +138,7 @@ describe("markDeliveredAction", () => {
     const result = await markDeliveredAction(VALID_DELIVERY_ID, PAST_DATE);
 
     expect(result).toEqual({ ok: false, error: "DELIVERY_NOT_FOUND" });
+    expect(runOrderCloseMoneyTransactionMock).not.toHaveBeenCalled();
   });
 
   it("reports an unexpected error to Sentry and returns server_error", async () => {
@@ -137,6 +148,67 @@ describe("markDeliveredAction", () => {
     const result = await markDeliveredAction(VALID_DELIVERY_ID, PAST_DATE);
 
     expect(result).toEqual({ ok: false, error: "server_error" });
+  });
+
+  describe("order-close consumption (WO-08, FR-08-46)", () => {
+    const CLOSED_ORDER = { orderId: "order-1", storeId: "store-1", currencyCode: "PEN" };
+
+    it("calls the money transaction only AFTER the delivery transaction resolved ok, consumption-only", async () => {
+      markDeliveryDeliveredMock.mockResolvedValue({ ok: true, productCount: 2, closedOrders: [CLOSED_ORDER] });
+      runOrderCloseMoneyTransactionMock.mockResolvedValue([
+        { orderId: "order-1", status: "settled", consumedMinor: 1500, settledAmountMinor: null },
+      ]);
+      getSessionMock.mockResolvedValue(AUTHENTICATED_SESSION);
+
+      const result = await markDeliveredAction(VALID_DELIVERY_ID, PAST_DATE);
+
+      expect(markDeliveryDeliveredMock).toHaveBeenCalledTimes(1);
+      expect(runOrderCloseMoneyTransactionMock).toHaveBeenCalledWith({
+        userId: "user-1",
+        deliveryId: VALID_DELIVERY_ID,
+        closedOrders: [{ orderId: "order-1", closed: true }],
+      });
+      expect(result).toEqual({ ok: true, consumedUnassignedMinor: 1500, moneyTransactionPending: false });
+    });
+
+    it("never enables a settlement half: this launcher renders no checkbox", async () => {
+      markDeliveryDeliveredMock.mockResolvedValue({ ok: true, productCount: 1, closedOrders: [CLOSED_ORDER] });
+      runOrderCloseMoneyTransactionMock.mockResolvedValue([
+        { orderId: "order-1", status: "settled", consumedMinor: 0, settledAmountMinor: null },
+      ]);
+      getSessionMock.mockResolvedValue(AUTHENTICATED_SESSION);
+
+      await markDeliveredAction(VALID_DELIVERY_ID, PAST_DATE);
+
+      const call = runOrderCloseMoneyTransactionMock.mock.calls[0][0];
+      expect(call.closedOrders[0]).not.toHaveProperty("settlement");
+    });
+
+    it("reports consumed_unassigned_minor on the analytics event only when it moved money", async () => {
+      markDeliveryDeliveredMock.mockResolvedValue({ ok: true, productCount: 1, closedOrders: [CLOSED_ORDER] });
+      runOrderCloseMoneyTransactionMock.mockResolvedValue([
+        { orderId: "order-1", status: "settled", consumedMinor: 2000, settledAmountMinor: null },
+      ]);
+      getSessionMock.mockResolvedValue(AUTHENTICATED_SESSION);
+
+      await markDeliveredAction(VALID_DELIVERY_ID, PAST_DATE);
+
+      expect(posthogCaptureMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          properties: expect.objectContaining({ consumed_unassigned_minor: 2000 }),
+        }),
+      );
+    });
+
+    it("never turns the delivery already committed into a failure when the money transaction throws", async () => {
+      markDeliveryDeliveredMock.mockResolvedValue({ ok: true, productCount: 1, closedOrders: [CLOSED_ORDER] });
+      runOrderCloseMoneyTransactionMock.mockRejectedValue(new Error("db down"));
+      getSessionMock.mockResolvedValue(AUTHENTICATED_SESSION);
+
+      const result = await markDeliveredAction(VALID_DELIVERY_ID, PAST_DATE);
+
+      expect(result).toEqual({ ok: true, consumedUnassignedMinor: 0, moneyTransactionPending: true });
+    });
   });
 });
 
@@ -164,15 +236,70 @@ describe("reopenDeliveryAction", () => {
 
   it("reopens the delivery and tracks the event", async () => {
     getSessionMock.mockResolvedValue(AUTHENTICATED_SESSION);
-    reopenDeliveryMock.mockResolvedValue({ ok: true, productCount: 2 });
+    reopenDeliveryMock.mockResolvedValue({
+      ok: true,
+      productCount: 2,
+      revertedSettlements: { totalAmountMinor: 0, payments: [] },
+    });
 
     const result = await reopenDeliveryAction(VALID_DELIVERY_ID);
 
-    expect(result).toEqual({ ok: true });
+    expect(result).toEqual({
+      ok: true,
+      revertedSettlements: { totalAmountMinor: 0, payments: [] },
+    });
     expect(posthogCaptureMock).toHaveBeenCalledWith({
       distinctId: "user-1",
       event: POSTHOG_EVENTS.DELIVERY.REOPENED,
       properties: { deliveryId: VALID_DELIVERY_ID, productCount: 2 },
+    });
+  });
+
+  it("adds settlement_reverted_amount_minor to the analytics event when a settlement was deleted", async () => {
+    getSessionMock.mockResolvedValue(AUTHENTICATED_SESSION);
+    reopenDeliveryMock.mockResolvedValue({
+      ok: true,
+      productCount: 2,
+      revertedSettlements: { totalAmountMinor: 5000, payments: [{ id: "payment-1" }] },
+    });
+
+    await reopenDeliveryAction(VALID_DELIVERY_ID);
+
+    expect(posthogCaptureMock).toHaveBeenCalledWith({
+      distinctId: "user-1",
+      event: POSTHOG_EVENTS.DELIVERY.REOPENED,
+      properties: { deliveryId: VALID_DELIVERY_ID, productCount: 2, settlement_reverted_amount_minor: 5000 },
+    });
+  });
+
+  it("adds consumption_survived_amount_minor to the analytics event and surfaces it in the result when consumption survives the reopen", async () => {
+    getSessionMock.mockResolvedValue(AUTHENTICATED_SESSION);
+    reopenDeliveryMock.mockResolvedValue({
+      ok: true,
+      productCount: 2,
+      revertedSettlements: {
+        totalAmountMinor: 0,
+        payments: [],
+        survivingConsumedMinor: 1200,
+        survivingConsumedAllocations: [{ amountMinor: 1200, currencyCode: "USD" }],
+      },
+    });
+
+    const result = await reopenDeliveryAction(VALID_DELIVERY_ID);
+
+    expect(result).toEqual({
+      ok: true,
+      revertedSettlements: {
+        totalAmountMinor: 0,
+        payments: [],
+        survivingConsumedMinor: 1200,
+        survivingConsumedAllocations: [{ amountMinor: 1200, currencyCode: "USD" }],
+      },
+    });
+    expect(posthogCaptureMock).toHaveBeenCalledWith({
+      distinctId: "user-1",
+      event: POSTHOG_EVENTS.DELIVERY.REOPENED,
+      properties: { deliveryId: VALID_DELIVERY_ID, productCount: 2, consumption_survived_amount_minor: 1200 },
     });
   });
 

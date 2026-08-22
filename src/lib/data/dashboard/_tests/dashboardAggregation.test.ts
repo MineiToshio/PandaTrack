@@ -20,8 +20,19 @@ function makeOrder(overrides: Partial<DashboardOrderInput> & { id: string }): Da
     store: { id: "store-1", name: "Store One", slug: "store-one", logoUrl: null },
     items: [],
     payments: [],
+    adjustmentLines: [],
+    // Placeholder; recomputed below from the merged totalCost/payments/adjustmentLines unless the
+    // caller explicitly overrides it, so every pre-existing fixture keeps reading the same gross
+    // value it always has (no adjustment lines -> openBalanceMinor === totalCost - Σ payments).
+    openBalanceMinor: 0,
   };
-  return { ...base, ...overrides };
+  const merged = { ...base, ...overrides };
+  if (overrides.openBalanceMinor === undefined) {
+    const paidMinor = merged.payments.reduce((sum, payment) => sum + payment.amount, 0);
+    const writtenOffMinor = merged.adjustmentLines.reduce((sum, line) => sum + line.amountMinor, 0);
+    merged.openBalanceMinor = merged.totalCost - paidMinor - writtenOffMinor;
+  }
+  return merged;
 }
 
 function makeDelivery(overrides: Partial<DashboardDeliveryInput> & { id: string }): DashboardDeliveryInput {
@@ -103,13 +114,15 @@ describe("buildDashboardData - cash obligations", () => {
   });
 
   /**
-   * A delivered pedido that still owes money is real debt, but it is not "upcoming": its arrival
-   * date is in the past, so ascending by that date it sits at the top of the list forever and
-   * pushes out everything the collector actually has coming. That is exactly how five rows of
-   * years-old delivered pedidos filled this widget. It must leave the LIST without leaving the
-   * TOTALS, which are a debt figure and would understate the debt if it did.
+   * A delivered pedido that still owes money is not "upcoming": its arrival date is in the past,
+   * so ascending by that date it would sit at the top of the list forever and push out everything
+   * the collector actually has coming. That is exactly how five rows of years-old delivered
+   * pedidos once filled this widget. Since `ADR 0033`/`WO-07` (`FR-06-27`), it also leaves every
+   * OTHER obligation total: a fully delivered order with a lingering balance is a registration gap,
+   * not live debt, so it moves into the "pagos que no registraste" diagnostic instead
+   * (superseding this test's earlier "keeps ... inside the obligation totals" assertion).
    */
-  it("keeps completed orders out of the upcoming payments list but inside the obligation totals", () => {
+  it("keeps completed orders out of the upcoming payments list and out of the obligation totals (AC-06-10)", () => {
     const data = build([
       makeOrder({
         id: "deliveredLongAgo",
@@ -121,8 +134,9 @@ describe("buildDashboardData - cash obligations", () => {
     ]);
 
     expect(data.cashObligations.upcomingPayments.map((payment) => payment.orderId)).toEqual(["stillComing"]);
-    expect(data.cashObligations.totalOutstanding.totalMinor).toBe(10000);
-    expect(data.cashObligations.overdue.totalMinor).toBe(8000);
+    expect(data.cashObligations.totalOutstanding.totalMinor).toBe(2000);
+    expect(data.cashObligations.overdue.totalMinor).toBe(0);
+    expect(data.unrecordedPayments.totalMinor).toBe(8000);
   });
 
   it("derives each row's due state from its own date, not from its position in the list", () => {
@@ -1095,5 +1109,181 @@ describe("buildDashboardData - order summaries carry a base-currency amount", ()
     expect(summary.baseTotalCostMinor).toBeNull();
     expect(summary.isFxPending).toBe(true);
     expect(summary.currencyCode).toBe("JPY");
+  });
+});
+
+describe("buildDashboardData - open order debt and unrecorded payments (WO-07, ADR 0033/0034)", () => {
+  it("excludes a COMPLETED order's balance from a pagar este mes, próximos meses, deuda viva total, deuda sin fecha, and the deuda viva trend", () => {
+    const range = { start: utc(2026, 6, 1), end: utc(2026, 8, 1) }; // Jul, Aug 2026
+    const data = build(
+      [
+        makeOrder({
+          id: "deliveredWithBalance",
+          status: "COMPLETED",
+          orderDate: utc(2026, 5, 1),
+          expectedDeliveryFrom: utc(2026, 6, 10),
+          totalCost: 9000,
+        }),
+        makeOrder({ id: "stillOpen", expectedDeliveryFrom: utc(2026, 6, 15), totalCost: 1000 }),
+      ],
+      { range },
+    );
+
+    expect(data.cashObligations.currentMonth.totalMinor).toBe(1000);
+    expect(data.cashObligations.overdue.totalMinor).toBe(0);
+    expect(data.cashObligations.totalOutstanding.totalMinor).toBe(1000);
+    expect(data.cashObligations.noDateOutstanding.totalMinor).toBe(0);
+    expect(data.outstandingTrend.series.map((month) => month.totalMinor)).toEqual([1000, 1000]);
+  });
+
+  it("excludes a no-date COMPLETED order's balance from deuda sin fecha", () => {
+    const data = build([
+      makeOrder({ id: "deliveredNoDate", status: "COMPLETED", expectedDeliveryFrom: null, totalCost: 4000 }),
+    ]);
+    expect(data.cashObligations.noDateOutstanding.totalMinor).toBe(0);
+  });
+
+  it("contributes a COMPLETED order's balance to pagos que no registraste, and to nothing else (AC-06-10)", () => {
+    const data = build([
+      makeOrder({
+        id: "delivered",
+        status: "COMPLETED",
+        expectedDeliveryFrom: utc(2026, 6, 1),
+        totalCost: 9000,
+      }),
+    ]);
+
+    expect(data.unrecordedPayments.totalMinor).toBe(9000);
+    expect(data.cashObligations.currentMonth.totalMinor).toBe(0);
+    expect(data.cashObligations.totalOutstanding.totalMinor).toBe(0);
+    expect(data.cashObligations.noDateOutstanding.totalMinor).toBe(0);
+    expect(data.cashObligations.upcomingPayments).toEqual([]);
+  });
+
+  it("sums pagos que no registraste to 0 when no COMPLETED order carries a balance", () => {
+    const data = build([
+      makeOrder({
+        id: "deliveredPaid",
+        status: "COMPLETED",
+        totalCost: 5000,
+        payments: [{ amount: 5000, paymentDate: utc(2026, 5, 1) }],
+      }),
+      makeOrder({ id: "open", totalCost: 3000 }),
+    ]);
+    expect(data.unrecordedPayments.totalMinor).toBe(0);
+  });
+
+  it("keeps pagado vs pendiente reading the gross balance of a COMPLETED order (regression guard, FR-06-19)", () => {
+    const data = build([
+      makeOrder({
+        id: "delivered",
+        status: "COMPLETED",
+        totalCost: 9000,
+        payments: [{ amount: 1000, paymentDate: utc(2026, 5, 1) }],
+      }),
+    ]);
+    // Committed 9000, paid 1000: the identity paid + pendiente = committed must still hold, and the
+    // pendiente leg must still be the gross 8000 — never scoped away, never netted of adjustments.
+    expect(data.paidVsOutstanding).toMatchObject({ committedMinor: 9000, paidMinor: 1000, outstandingMinor: 8000 });
+  });
+
+  it("keeps pagado vs pendiente gross even when the order carries an adjustment line (regression guard, BR-06-08)", () => {
+    const data = build([
+      makeOrder({
+        id: "written-off",
+        totalCost: 9000,
+        payments: [{ amount: 1000, paymentDate: utc(2026, 5, 1) }],
+        adjustmentLines: [{ amountMinor: 8000, createdAt: utc(2026, 5, 15) }],
+        openBalanceMinor: 0,
+      }),
+    ]);
+    // openBalanceMinor is 0 (netted of the adjustment line), but FR-06-19's "pendiente" leg must stay
+    // the older gross totalCost - paid = 8000, or the paid+pendiente=committed identity breaks.
+    expect(data.paidVsOutstanding).toMatchObject({ committedMinor: 9000, paidMinor: 1000, outstandingMinor: 8000 });
+  });
+
+  it("respects the FX-reconciliation exclusion on pagos que no registraste (FR-06-13)", () => {
+    const data = build([
+      makeOrder({
+        id: "fxPendingDelivered",
+        status: "COMPLETED",
+        currencyCode: "EUR",
+        exchangeRate: 1.1,
+        exchangeRateBaseCode: null,
+        totalCost: 10000,
+      }),
+      makeOrder({ id: "usdDelivered", status: "COMPLETED", totalCost: 3000 }),
+    ]);
+    expect(data.unrecordedPayments.totalMinor).toBe(3000);
+    expect(data.unrecordedPayments.isPartial).toBe(true);
+    expect(data.unrecordedPayments.excludedOrderCount).toBe(1);
+  });
+
+  it("contributes only openBalanceMinor (80), not the gross balance (180), of an open order partially written off, to a pagar este mes / deuda viva total / the deuda viva trend", () => {
+    // Before WO-07 read `openBalanceMinor`, this order would have contributed its gross 180.
+    const range = { start: utc(2026, 6, 1), end: utc(2026, 7, 1) };
+    const data = build(
+      [
+        makeOrder({
+          id: "partiallyWrittenOff",
+          expectedDeliveryFrom: utc(2026, 6, 10),
+          totalCost: 180,
+          adjustmentLines: [{ amountMinor: 100, createdAt: utc(2026, 6, 5) }],
+          openBalanceMinor: 80,
+        }),
+      ],
+      { range },
+    );
+
+    expect(data.cashObligations.currentMonth.totalMinor).toBe(80);
+    expect(data.cashObligations.currentMonth.totalMinor).not.toBe(180);
+    expect(data.cashObligations.totalOutstanding.totalMinor).toBe(80);
+    expect(data.outstandingTrend.series).toEqual([{ year: 2026, month: 7, totalMinor: 80 }]);
+  });
+
+  it("contributes 0 to pagos que no registraste for a COMPLETED order entirely written off before delivery (AC-06-11/12)", () => {
+    const data = build([
+      makeOrder({
+        id: "writtenOffBeforeDelivery",
+        status: "COMPLETED",
+        totalCost: 5000,
+        adjustmentLines: [{ amountMinor: 5000, createdAt: utc(2026, 5, 1) }],
+        openBalanceMinor: 0,
+      }),
+    ]);
+    expect(data.unrecordedPayments.totalMinor).toBe(0);
+  });
+
+  it("contributes only the post-write-off remainder to pagos que no registraste for a partial write-off", () => {
+    const data = build([
+      makeOrder({
+        id: "partiallyWrittenOffDelivered",
+        status: "COMPLETED",
+        totalCost: 5000,
+        adjustmentLines: [{ amountMinor: 3000, createdAt: utc(2026, 5, 1) }],
+        openBalanceMinor: 2000,
+      }),
+    ]);
+    expect(data.unrecordedPayments.totalMinor).toBe(2000);
+  });
+
+  it("drops a COMPLETED order from pagos que no registraste once it is reconciled directly (round-4 arbitration, AC-06-13)", () => {
+    const beforeReconciliation = build([
+      makeOrder({ id: "delivered", status: "COMPLETED", totalCost: 180, openBalanceMinor: 180 }),
+    ]);
+    expect(beforeReconciliation.unrecordedPayments.totalMinor).toBe(180);
+
+    const afterReconciliation = build([
+      makeOrder({
+        id: "delivered",
+        status: "COMPLETED",
+        totalCost: 180,
+        adjustmentLines: [{ amountMinor: 180, createdAt: utc(2026, 6, 20) }],
+        openBalanceMinor: 0,
+      }),
+    ]);
+    expect(afterReconciliation.unrecordedPayments.totalMinor).toBe(0);
+    // No open-orders figure changes: a COMPLETED order was never counted in any of them.
+    expect(afterReconciliation.cashObligations.totalOutstanding.totalMinor).toBe(0);
   });
 });

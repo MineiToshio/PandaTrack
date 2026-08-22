@@ -39,9 +39,10 @@ const LAYER = "col-start-1 row-start-1";
  *
  * The `Package` glyph it replaces carried no information (the same icon for every product, already
  * `aria-hidden`), which is exactly why it is free to become a control: nothing is lost, and the
- * geometry does not move. It is a real `<input type="checkbox">` kept `sr-only` inside its
- * `<label>`, so `Space` works with no key handling of ours, the name and the checked state are
- * announced natively, and the painting is entirely ours.
+ * geometry does not move. It is a real `<input type="checkbox">` kept visually hidden (invisible,
+ * not `sr-only` — see the input's own comment) inside its `<label>`, so `Space` works with no key
+ * handling of ours, the name and the checked state are announced natively, and the painting is
+ * entirely ours.
  *
  * Three glyphs share one grid cell and only their opacity crosses, never their position: rest (the
  * package, filling the tile), affordance (an empty checkbox) and selected (a filled accent
@@ -111,19 +112,37 @@ export default function PendingProductSelectToggle({
         "group relative grid shrink-0 cursor-pointer place-items-center rounded-[var(--radius-md)] select-none",
         // Hit area, mobile: the 36px tile plus 4px per side reaches the 44px touch floor. The
         // desktop tree is `hidden lg:block`, so it never renders below `lg` and its expansion is
-        // dropped there, the same place every other expansion in this view drops it.
+        // dropped there, the same place every other expansion in this view drops it. Dropped with
+        // `content-none` rather than merely resized to `inset-0`: the row variant has nothing to
+        // expand into at `lg`, so there is no reason to keep generating a same-size, invisible
+        // `::before` box over the tile at all (harmless once the input itself is a real hit target,
+        // see below, but pure surface area for a future regression otherwise).
         //
         // The two boxes are written out here as literals rather than hoisted into a `box` variable
         // on purpose: the tap-target guard reads the class strings that sit inside the tag, and a
         // hoisted constant is invisible to it, which is how an undersized control ships green.
-        "before:absolute before:[inset:-4px] before:content-[''] lg:before:inset-0",
+        "before:absolute before:[inset:-4px] before:content-[''] lg:before:content-none",
         "has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:[outline-color:var(--focus-ring)]",
         variant === "card" ? "h-9 w-9" : "h-8 w-8",
       )}
     >
       <input
         type="checkbox"
-        className="peer sr-only"
+        // NOT `sr-only`. `sr-only` hides via `clip-path: inset(50%)` on a 1×1px box, which zeroes
+        // the element's PAINTED *and* HIT-TESTABLE area, not merely its visible one — confirmed
+        // live (`getComputedStyle(input).clipPath === "inset(50%)"`, and `elementFromPoint` at the
+        // input's own reported center resolving to the `<label>`, never the input, at every
+        // breakpoint). A pointing human never notices: clicking anywhere in the label's box
+        // activates the input through the browser's native `<label>` association, which does not
+        // hit-test the input at all. Playwright's `.check()` does the opposite — it hit-tests the
+        // TARGET locator's own box directly — so a clip-based hide makes this exact control
+        // (unlike an ordinary decorative `sr-only` node) permanently unclickable by automation
+        // even though every earlier layer above it was already `pointer-events-none`. `absolute
+        // inset-0 opacity-0` keeps the input invisible and the same footprint as the label (so it
+        // is topmost for its own row without extending into a neighbor's) while leaving a real,
+        // hit-testable box at its reported position; `peer-*`/`group-*` selectors elsewhere in this
+        // file are unaffected; unchecked, so this is opt-in per control rather than a global rule.
+        className="peer absolute inset-0 cursor-pointer opacity-0"
         checked={checked}
         aria-label={label}
         // `Space` activates a checkbox from its keydown, so the key event that is about to produce
@@ -142,7 +161,10 @@ export default function PendingProductSelectToggle({
         aria-hidden
         className={cn(
           LAYER,
-          "grid h-full w-full place-items-center rounded-[var(--radius-md)] [color:var(--accent-cool)] [background:color-mix(in_oklch,var(--accent-cool)_10%,transparent)]",
+          // Decorative only: three glyphs share this grid cell and cross in opacity alone, never in
+          // position. `opacity-0` does not remove a layer from hit-testing, so the invisible glyph on
+          // top of the stack would otherwise intercept clicks meant for the `<input>` beneath it.
+          "pointer-events-none grid h-full w-full place-items-center rounded-[var(--radius-md)] [color:var(--accent-cool)] [background:color-mix(in_oklch,var(--accent-cool)_10%,transparent)]",
           GLYPH_TRANSITION,
           armed ? "opacity-0" : "opacity-100 group-hover:opacity-0 peer-focus-visible:opacity-0",
           "peer-checked:opacity-0",
@@ -155,7 +177,7 @@ export default function PendingProductSelectToggle({
         aria-hidden
         className={cn(
           LAYER,
-          "size-4 rounded-[var(--radius-sm)] [border:1.5px_solid_var(--border-strong)]",
+          "pointer-events-none size-4 rounded-[var(--radius-sm)] [border:1.5px_solid_var(--border-strong)]",
           GLYPH_TRANSITION,
           armed ? "opacity-100" : "opacity-0 group-hover:opacity-100 peer-focus-visible:opacity-100",
           "peer-checked:opacity-0",
@@ -166,7 +188,7 @@ export default function PendingProductSelectToggle({
         aria-hidden
         className={cn(
           LAYER,
-          "grid size-4 place-items-center rounded-[var(--radius-sm)] [color:var(--text-on-accent)] [background:var(--accent)] [border:1.5px_solid_var(--accent)]",
+          "pointer-events-none grid size-4 place-items-center rounded-[var(--radius-sm)] [color:var(--text-on-accent)] [background:var(--accent)] [border:1.5px_solid_var(--accent)]",
           GLYPH_TRANSITION,
           "opacity-0 peer-checked:opacity-100",
         )}

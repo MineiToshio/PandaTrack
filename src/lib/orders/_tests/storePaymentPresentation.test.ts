@@ -6,15 +6,14 @@ import type {
 } from "@/lib/data/orders/storePaymentQueries";
 import {
   computeActiveOrdersProgressPercent,
-  computeDebtOutsideActiveOrdersMinor,
   computePaymentProgressPercent,
   hasActiveOrderCommitment,
   effectivePaymentMinor,
   isOptimisticPaymentId,
   buildOptimisticPaymentId,
-  resolveDebtReconciliationLine,
   resolvePaymentCoverage,
   resolveProgressState,
+  resolveUnassignedMoneyLine,
   sortDebtsByActionability,
   sumActiveAllocationMinor,
   sumLostAllocationMinor,
@@ -36,6 +35,9 @@ function debtRow(overrides: Partial<StoreDebtRow> = {}): StoreDebtRow {
     lostMinor: 0,
     activeCommittedMinor: 0,
     activePaidMinor: 0,
+    openOrderDebtMinor: 0,
+    unrecordedPaymentsMinor: 0,
+    unassignedMinor: 0,
     ...overrides,
   };
 }
@@ -183,127 +185,24 @@ describe("computeActiveOrdersProgressPercent / hasActiveOrderCommitment", () => 
   });
 });
 
-describe("computeDebtOutsideActiveOrdersMinor", () => {
-  it("is zero in every store today, which is what makes the headline agree with the bar's pair", () => {
-    expect(
-      computeDebtOutsideActiveOrdersMinor(
-        debtRow({
-          committedMinor: 1627230,
-          paidMinor: 1391730,
-          debtMinor: 235500,
-          activeCommittedMinor: 387460,
-          activePaidMinor: 151960,
-        }),
-      ),
-    ).toBe(0);
+describe("resolveUnassignedMoneyLine", () => {
+  it("names money already handed over that no order has claimed", () => {
+    // Spec §2.3's numeric example: orders A(50) + B(50), one unassigned payment of 30.
+    expect(resolveUnassignedMoneyLine(debtRow({ unassignedMinor: 3000 }))).toEqual({ amountMinor: 3000 });
   });
 
-  it("names a debt left on an order that has already been delivered", () => {
-    // The same store plus one delivered order of 270.00 that was never paid: the headline says
-    // 2,625.00 while the bar's pair only accounts for 2,355.00 of it.
-    expect(
-      computeDebtOutsideActiveOrdersMinor(
-        debtRow({
-          committedMinor: 1654230,
-          paidMinor: 1391730,
-          debtMinor: 262500,
-          activeCommittedMinor: 387460,
-          activePaidMinor: 151960,
-        }),
-      ),
-    ).toBe(27000);
+  it("stays silent once the pool is exactly zero", () => {
+    expect(resolveUnassignedMoneyLine(debtRow({ unassignedMinor: 0 }))).toBeNull();
   });
 
-  it("goes negative for money handed over on account", () => {
-    expect(
-      computeDebtOutsideActiveOrdersMinor(
-        debtRow({
-          committedMinor: 25000,
-          paidMinor: 41000,
-          debtMinor: -16000,
-          activeCommittedMinor: 25000,
-          activePaidMinor: 25000,
-        }),
-      ),
-    ).toBe(-16000);
-  });
-});
-
-describe("resolveDebtReconciliationLine", () => {
-  it("names a debt left on an order that has already been delivered", () => {
-    expect(
-      resolveDebtReconciliationLine(
-        debtRow({
-          committedMinor: 1654230,
-          paidMinor: 1391730,
-          debtMinor: 262500,
-          activeCommittedMinor: 387460,
-          activePaidMinor: 151960,
-        }),
-      ),
-    ).toEqual({ kind: "outsideActiveOrders", amountMinor: 27000 });
+  it("stays silent when the figure reads negative (over-allocated, not unassigned)", () => {
+    expect(resolveUnassignedMoneyLine(debtRow({ unassignedMinor: -100 }))).toBeNull();
   });
 
-  it("names money handed over on account, which the headline reports but the bar's pair cannot", () => {
-    // One active order of 250.00 with nothing declared against it, plus a payment of 100.00 on
-    // account — an allocation-less submit, which the sheet treats as a first-class case. The
-    // headline reads "Falta 150.00" while the bar's own pair says 250.00 is outstanding. Without
-    // this line nothing on the page names the 100.00 that reconciles the two.
-    expect(
-      resolveDebtReconciliationLine(
-        debtRow({
-          committedMinor: 25000,
-          paidMinor: 10000,
-          debtMinor: 15000,
-          activeCommittedMinor: 25000,
-          activePaidMinor: 0,
-        }),
-      ),
-    ).toEqual({ kind: "onAccount", amountMinor: 10000 });
-  });
-
-  it("names it on a store that is square too, where the gap is the whole of what was handed over", () => {
-    // Debt exactly zero, so the headline is the "Al día" chip and says nothing about amounts, while
-    // the bar still reads 0 of 250.00. `debtMinor === 0` is not the credit case and is not suppressed.
-    expect(
-      resolveDebtReconciliationLine(
-        debtRow({
-          committedMinor: 25000,
-          paidMinor: 25000,
-          debtMinor: 0,
-          activeCommittedMinor: 25000,
-          activePaidMinor: 0,
-        }),
-      ),
-    ).toEqual({ kind: "onAccount", amountMinor: 25000 });
-  });
-
-  it("stays silent when the whole debt sits in the active orders, which is every store today", () => {
-    expect(
-      resolveDebtReconciliationLine(
-        debtRow({
-          committedMinor: 1627230,
-          paidMinor: 1391730,
-          debtMinor: 235500,
-          activeCommittedMinor: 387460,
-          activePaidMinor: 151960,
-        }),
-      ),
-    ).toBeNull();
-  });
-
-  it("stays silent on a store in credit, where a second credit-shaped figure would be the noise", () => {
-    expect(
-      resolveDebtReconciliationLine(
-        debtRow({
-          committedMinor: 25000,
-          paidMinor: 41000,
-          debtMinor: -16000,
-          activeCommittedMinor: 25000,
-          activePaidMinor: 25000,
-        }),
-      ),
-    ).toBeNull();
+  it("stays silent on a store in credit even with a positive unassignedMinor (FIX B)", () => {
+    // A credit is almost always MADE of unassigned money, so without this gate the block would show
+    // two positive figures answering the same question: the credit headline and this line.
+    expect(resolveUnassignedMoneyLine(debtRow({ debtMinor: -1000, unassignedMinor: 3000 }))).toBeNull();
   });
 });
 
@@ -317,11 +216,34 @@ describe("optimistic payment ids", () => {
 
 describe("resolveProgressState", () => {
   it("names the three shapes the block can take", () => {
-    expect(resolveProgressState(debtRow({ debtMinor: 2625 }))).toBe("owing");
-    expect(resolveProgressState(debtRow({ debtMinor: 0 }))).toBe("settled");
+    expect(resolveProgressState(debtRow({ debtMinor: 2625, openOrderDebtMinor: 2625 }))).toBe("owing");
+    expect(resolveProgressState(debtRow({ debtMinor: 0, openOrderDebtMinor: 0 }))).toBe("settled");
     // No store in the collection is in credit today; the branch stays because `debtMinor` is
     // deliberately not clamped at zero and a real overpayment would land here.
-    expect(resolveProgressState(debtRow({ debtMinor: -16000 }))).toBe("credit");
+    expect(resolveProgressState(debtRow({ debtMinor: -16000, openOrderDebtMinor: -16000 }))).toBe("credit");
+  });
+
+  it("reads settled/owing off openOrderDebtMinor, not the lifetime debtMinor (ADR 0033, WO-09)", () => {
+    // A COMPLETED order carrying a balance is a registration gap (`unrecordedPaymentsMinor`), not
+    // debt: the lifetime `debtMinor` still names it (30000) while every open order is square. Before
+    // this work order, `resolveProgressState` read `debtMinor` here and returned "owing" — this
+    // assertion is the red evidence that it now reads the open figure instead.
+    expect(
+      resolveProgressState(debtRow({ debtMinor: 30000, openOrderDebtMinor: 0, unrecordedPaymentsMinor: 30000 })),
+    ).toBe("settled");
+  });
+
+  it("credit is decided on the lifetime debtMinor even when openOrderDebtMinor is still positive", () => {
+    // FR-05-63: "in credit" is a fact about the store's whole history. An open order can still carry
+    // its own committed balance the moment the collector overpays elsewhere in the same currency.
+    expect(resolveProgressState(debtRow({ debtMinor: -5000, openOrderDebtMinor: 12000 }))).toBe("credit");
+  });
+
+  it("never clamps a negative openOrderDebtMinor into settled (BR-05-32)", () => {
+    // Only reachable if one of openBalanceMinor's own ceilings were bypassed, but the type is not
+    // narrowed to non-negative, so the derivation must not paper over it either: it must read as
+    // "owing" (so the headline still prints the raw, negative figure) rather than "settled".
+    expect(resolveProgressState(debtRow({ debtMinor: 5000, openOrderDebtMinor: -100 }))).toBe("owing");
   });
 });
 
@@ -340,6 +262,19 @@ describe("sortDebtsByActionability", () => {
     const sorted = sortDebtsByActionability([
       debtRow({ currencyCode: "USD", committedMinor: 115000, debtMinor: 0 }),
       debtRow({ currencyCode: "PEN", committedMinor: 732700, debtMinor: 0 }),
+    ]);
+
+    expect(sorted.map((debt) => debt.currencyCode)).toEqual(["PEN", "USD"]);
+  });
+
+  it("ranks by openOrderDebtMinor, the figure the block actually displays, not the lifetime debtMinor (FIX D)", () => {
+    // A registration-gap currency: a big lifetime `debtMinor` (an unregistered balance on a
+    // COMPLETED order) but nothing open right now, next to a currency that genuinely owes less
+    // lifetime-wide but has a live open balance. The block's headline reads `openOrderDebtMinor`
+    // (`StorePaymentProgressRows`), so the currency ordering must agree with what is on screen.
+    const sorted = sortDebtsByActionability([
+      debtRow({ currencyCode: "USD", committedMinor: 100000, debtMinor: 100000, openOrderDebtMinor: 0 }),
+      debtRow({ currencyCode: "PEN", committedMinor: 8000, debtMinor: 500, openOrderDebtMinor: 8000 }),
     ]);
 
     expect(sorted.map((debt) => debt.currencyCode)).toEqual(["PEN", "USD"]);

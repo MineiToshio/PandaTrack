@@ -397,6 +397,8 @@
         "noAmountNotice": "Enter the payment amount to assign it.",
         "open": "Assign",
         "overCulprit": "Check {name}.",
+        "parkRemainder": "I don't know yet",
+        "parkRemainderAria": "Mark {amount} as parked money, without assigning it to any order",
         "recapEdit": "Edit the assignment",
         "orderBalance": "{amount} left",
         "restAmountAria": "Amount for the rest of order {order}",
@@ -415,7 +417,10 @@
         "summaryNone": "Nothing assigned yet",
         "totalsAssigned": "Assigned: {assigned} of {payment}",
         "totalsOver": "You went over by {amount}",
+        "totalsParked": "Parked: {amount}",
         "totalsUnassigned": "Unassigned: {amount}",
+        "unpark": "Remove",
+        "unparkAria": "Remove the parked money, so you can assign it",
         "viewLine": "View the line",
         "markPaid": "Mark as paid",
         "markPaidAria": "Mark {name} as paid, without assigning an amount",
@@ -429,6 +434,7 @@
         "CURRENCY_REQUIRED": "Pick which currency this payment is in.",
         "STORE_DEBT_EXCEEDED": "The amount is more than you owe this store.",
         "ALLOCATION_SUM_EXCEEDS_PAYMENT": "What you declared adds up to more than the payment.",
+        "ALLOCATION_SUM_BELOW_PAYMENT": "What you declared doesn't cover the whole payment. Assign the rest or choose \"I don't know yet\".",
         "ORDER_NOT_FOUND": "We couldn't find one of the orders.",
         "STORE_MISMATCH": "One of the orders doesn't belong to this store.",
         "ORDER_CANCELLED": "One of the orders is cancelled.",
@@ -554,6 +560,7 @@
       "amountLabel": "Amount",
       "amountPlaceholder": "0.00",
       "amountExceedsBalance": "Amount exceeds the remaining balance ({remaining}).",
+      "amountExceedsBalanceReconciled": "This order's balance was reconciled with the store: it can no longer take this payment.",
       "quickPickAll": "All · {amount}",
       "quickPickAllAria": "Pay the whole balance, {amount}",
       "quickPickPercent": "{pct}%",
@@ -708,6 +715,7 @@
       "validation": {
         "itemsRequired": "Select at least one product.",
         "receivedRequired": "Tell us when it arrived.",
+        "settlementDateRequired": "Tell me when you paid.",
         "shippedAfterReceived": "It cannot leave after it arrived.",
         "costInvalid": "Enter a valid amount.",
         "currencyRequired": "Pick the currency for the cost.",
@@ -734,7 +742,27 @@
         "RECEIVED_DATE_IN_FUTURE": "The arrival date cannot be in the future.",
         "DELIVERY_DATE_IN_FUTURE": "The dispatch date cannot be in the future."
       },
-      "settledNotListed": "{count, plural, one {1 product that already shipped or arrived is not listed.} other {# products that already shipped or arrived are not listed.}}"
+      "settledNotListed": "{count, plural, one {1 product that already shipped or arrived is not listed.} other {# products that already shipped or arrived are not listed.}}",
+      "settlement": {
+        "checkboxLabel": "I already paid the rest",
+        "help": "Uncheck it if you still owe that money.",
+        "dateLabel": "When did you pay?",
+        "detail": "A payment of {amount} dated {date} will be recorded.",
+        "partialCoverage": "Covers the {count} products you are receiving.",
+        "reasonMissingPrice": "These products have no price on record, so tell me how much you paid.",
+        "reasonUndetailedMoney": "I cannot tell how much of what you already paid covers these products, so tell me how much you paid.",
+        "reference": "{amount} is left on the whole order.",
+        "appliedUnassigned": "{amount} of this payment was already paid to the store.",
+        "unassignedNotice": "{store} holds {amount} already paid and not assigned.",
+        "confirmation": "Arrival recorded, and {amount} logged as a payment.",
+        "loading": "Calculating the payment…",
+        "retry": "Retry",
+        "retryFailed": "The payment could not be recorded. Retry.",
+        "noLongerPending": "Nothing pending anymore: the delivery was reopened.",
+        "validation": {
+          "amountRequired": "Type how much you paid."
+        }
+      }
     }
   }
 }

@@ -22,7 +22,9 @@ const capturedState: {
   debts: StoreDebtRow[];
   loadAll: (() => Promise<void>) | null;
   payments: StorePaymentListRow[];
-} = { debts: [], loadAll: null, payments: [] };
+  applyAdjustmentDeltas:
+    ((input: { currencyCode: string; openGroupWriteOffMinor: number; totalWriteOffMinor: number }) => void) | null;
+} = { debts: [], loadAll: null, payments: [], applyAdjustmentDeltas: null };
 
 const {
   capturedSubmitRef,
@@ -86,6 +88,14 @@ vi.mock("@/app/[locale]/(app)/_actions/storePaymentActions", () => ({
   listAllStorePaymentsAction: (...args: unknown[]) => listAllStorePaymentsActionMock(...args),
 }));
 
+// `StorePaymentsSection` (rendered below) now also reads `StoreReconciliationProvider`'s own
+// context for the "Ajustes de cuadre" history block (WO-11). This suite is about the PAYMENTS
+// coordinator, not the reconciliation one, so it stands in with an empty, inert history — the
+// reconciliation provider's own behaviour is covered by `StoreReconciliationProvider.test.tsx`.
+vi.mock("../StoreReconciliationProvider", () => ({
+  useStoreReconciliationState: () => ({ adjustments: [], deleteAdjustment: vi.fn() }),
+}));
+
 /** Reaches the context's own `deleteStorePayment` without going through the payments card's UI. */
 function DeleteProbe() {
   const state = useStorePaymentState();
@@ -94,6 +104,7 @@ function DeleteProbe() {
     capturedState.debts = state.storeDebtByCurrency;
     capturedState.loadAll = state.loadAllStorePayments;
     capturedState.payments = state.storePayments;
+    capturedState.applyAdjustmentDeltas = state.applyAdjustmentDeltas;
   });
   return null;
 }
@@ -164,6 +175,9 @@ function renderStorePayments(
               lostMinor: 0,
               activeCommittedMinor: 5000,
               activePaidMinor: 0,
+              openOrderDebtMinor: 5000,
+              unrecordedPaymentsMinor: 0,
+              unassignedMinor: 0,
             },
           ]
         }
@@ -291,6 +305,29 @@ describe("StorePaymentStateProvider - registering a payment", () => {
         screen.queryByText('stores.redesign.detail.payments.noteLabel:{"note":"Deposit"}'),
       ).not.toBeInTheDocument();
     });
+  });
+
+  it("forwards the sheet's parked amount to the action (WO-09)", () => {
+    // `StorePaymentSheetSubmitInput.parkedAmountMinor` is the "no sé todavía" slice the sheet's own
+    // equality gate already validated against `amount`. The server's `requireFullAllocation` check
+    // re-derives `allocationTotal + parkedAmountMinor` and refuses `ALLOCATION_SUM_BELOW_PAYMENT`
+    // when it falls short of `amount` — so a coordinator that drops this field on the way to
+    // `createStorePaymentAction` breaks every draft that parks money, even though the sheet itself
+    // did everything right.
+    createStorePaymentActionMock.mockReturnValueOnce(deferred<CreateStorePaymentActionResult>().promise);
+    renderStorePayments();
+
+    act(() => {
+      capturedSubmitRef.current?.({
+        ...SUBMIT_INPUT,
+        amount: 1000,
+        allocations: [{ orderId: "order-1", amountMinor: 400 }],
+        declarePaidItemIds: [],
+        parkedAmountMinor: 600,
+      });
+    });
+
+    expect(createStorePaymentActionMock).toHaveBeenCalledWith(expect.objectContaining({ parkedAmountMinor: 600 }));
   });
 
   it("tells the sheet a rejected action was UNANSWERED, not a verdict it can act on (GRAVE 1)", async () => {
@@ -437,6 +474,9 @@ describe("StorePaymentStateProvider - the optimistic patch tells the truth about
       // The store's remaining standing order, the one the bar measures.
       activeCommittedMinor: 25000,
       activePaidMinor: 25000,
+      openOrderDebtMinor: 0,
+      unrecordedPaymentsMinor: 0,
+      unassignedMinor: 0,
     },
   ];
 
@@ -462,6 +502,14 @@ describe("StorePaymentStateProvider - the optimistic patch tells the truth about
         // `SUBMIT_INPUT` declares nothing, so this is money on account: it pays down the store's
         // debt and belongs to no order, which is exactly what the bar must NOT count.
         activePaidMinor: 0,
+        // Unchanged: nothing is declared against any order, so no active order's own open balance
+        // moved (FIX A).
+        openOrderDebtMinor: 5000,
+        unrecordedPaymentsMinor: 0,
+        // FIX A: the whole 1000 is parked (amount - Σ allocations = 1000 - 0), so it must be the
+        // figure `resolveUnassignedMoneyLine` reads the instant the payment lands, not after the
+        // next full page load.
+        unassignedMinor: 1000,
       },
     ]);
   });
@@ -500,6 +548,9 @@ describe("StorePaymentStateProvider - the optimistic patch tells the truth about
         lostMinor: 0,
         activeCommittedMinor: 25000,
         activePaidMinor: 25000,
+        openOrderDebtMinor: 0,
+        unrecordedPaymentsMinor: 0,
+        unassignedMinor: 0,
       },
     ]);
   });
@@ -526,10 +577,16 @@ describe("StorePaymentStateProvider - the optimistic patch tells the truth about
 
     // The bar moves by the live 30.00 only; the sunk 20.00 comes off `lostMinor` instead, so the
     // block and the payments list keep adding up to the same money.
+    //
+    // FIX A: `openOrderDebtMinor` moves by the same 30.00 the bar does (deleting a payment restores
+    // the order's own open balance), and `unassignedMinor` does not move: `allocatedTotal` (5000)
+    // equals `amount` (5000), so nothing about this payment was ever parked.
     expect(capturedState.debts[0]).toMatchObject({
       paidMinor: 25000 - 3000,
       debtMinor: 3000,
       lostMinor: 16000 - 2000,
+      openOrderDebtMinor: 0 + 3000,
+      unassignedMinor: 0,
     });
   });
 
@@ -562,7 +619,16 @@ describe("StorePaymentStateProvider - the optimistic patch tells the truth about
       });
     });
 
-    expect(capturedState.debts[0]).toMatchObject({ paidMinor: 1000, debtMinor: 4000, activePaidMinor: 1000 });
+    // FIX A: `openOrderDebtMinor` moves by the same active-allocation delta as `activePaidMinor` (it
+    // reads the same order's own open balance), and `unassignedMinor` does NOT move: the whole 1000
+    // was declared against an order, so nothing about it is parked.
+    expect(capturedState.debts[0]).toMatchObject({
+      paidMinor: 1000,
+      debtMinor: 4000,
+      activePaidMinor: 1000,
+      openOrderDebtMinor: 4000,
+      unassignedMinor: 0,
+    });
   });
 
   it("leaves the bar still when the payment settles an order that has already been delivered", () => {
@@ -580,7 +646,15 @@ describe("StorePaymentStateProvider - the optimistic patch tells the truth about
       });
     });
 
-    expect(capturedState.debts[0]).toMatchObject({ paidMinor: 1000, debtMinor: 4000, activePaidMinor: 0 });
+    // FIX A: the order is not active, so its own open balance does not move either (`activePaidDelta`
+    // is 0), and the money is still fully declared, so nothing is parked.
+    expect(capturedState.debts[0]).toMatchObject({
+      paidMinor: 1000,
+      debtMinor: 4000,
+      activePaidMinor: 0,
+      openOrderDebtMinor: 5000,
+      unassignedMinor: 0,
+    });
   });
 
   it("takes the bar back down by the active slice only when a payment is deleted", async () => {
@@ -611,10 +685,15 @@ describe("StorePaymentStateProvider - the optimistic patch tells the truth about
 
     // All 50.00 leaves the store's debt; only the 30.00 that was riding on a live order leaves the
     // bar. Subtracting the whole amount would drop the bar for money the bar never counted.
+    //
+    // FIX A: `openOrderDebtMinor` moves by that same 30.00 (the live order's own open balance grows
+    // back), and `unassignedMinor` does not move (`allocatedTotal` 5000 equals `amount` 5000).
     expect(capturedState.debts[0]).toMatchObject({
       paidMinor: 25000 - 5000,
       debtMinor: 5000,
       activePaidMinor: 25000 - 3000,
+      openOrderDebtMinor: 0 + 3000,
+      unassignedMinor: 0,
     });
   });
 
@@ -632,7 +711,13 @@ describe("StorePaymentStateProvider - the optimistic patch tells the truth about
         allocations: [{ orderId: "order-1", orderItemId: null, amountMinor: 1000 }],
       });
     });
-    expect(capturedState.debts[0]).toMatchObject({ paidMinor: 1000, debtMinor: 4000, activePaidMinor: 1000 });
+    expect(capturedState.debts[0]).toMatchObject({
+      paidMinor: 1000,
+      debtMinor: 4000,
+      activePaidMinor: 1000,
+      openOrderDebtMinor: 4000,
+      unassignedMinor: 0,
+    });
 
     await act(async () => {
       pending.resolve({ ok: false, error: "EXCEEDS_BALANCE", orderId: "order-1" });
@@ -641,7 +726,13 @@ describe("StorePaymentStateProvider - the optimistic patch tells the truth about
 
     // Every figure back where it started. Undoing `paidMinor`/`debtMinor` but not the bar's own
     // number leaves the block showing progress against a payment the server refused.
-    expect(capturedState.debts[0]).toMatchObject({ paidMinor: 0, debtMinor: 5000, activePaidMinor: 0 });
+    expect(capturedState.debts[0]).toMatchObject({
+      paidMinor: 0,
+      debtMinor: 5000,
+      activePaidMinor: 0,
+      openOrderDebtMinor: 5000,
+      unassignedMinor: 0,
+    });
   });
 
   it("corrects the bar when the server says the order finished between opening the sheet and submitting", async () => {
@@ -660,7 +751,7 @@ describe("StorePaymentStateProvider - the optimistic patch tells the truth about
         allocations: [{ orderId: "order-1", orderItemId: null, amountMinor: 1000 }],
       });
     });
-    expect(capturedState.debts[0]).toMatchObject({ activePaidMinor: 1000 });
+    expect(capturedState.debts[0]).toMatchObject({ activePaidMinor: 1000, openOrderDebtMinor: 4000 });
 
     await act(async () => {
       pending.resolve({
@@ -678,8 +769,14 @@ describe("StorePaymentStateProvider - the optimistic patch tells the truth about
     });
 
     // The debt still moved by the whole payment: the money is real either way. Only the bar's
-    // share was wrong.
-    expect(capturedState.debts[0]).toMatchObject({ paidMinor: 1000, debtMinor: 4000, activePaidMinor: 0 });
+    // share was wrong, and `openOrderDebtMinor` follows the same correction (FIX A): the order was
+    // never really active, so its own open balance never actually dropped.
+    expect(capturedState.debts[0]).toMatchObject({
+      paidMinor: 1000,
+      debtMinor: 4000,
+      activePaidMinor: 0,
+      openOrderDebtMinor: 5000,
+    });
   });
 
   it("restores the bar's own figure when the delete fails", async () => {
@@ -977,5 +1074,99 @@ describe("StorePaymentStateProvider - loading every payment", () => {
     // away everything load-all brought in. Undoing only its own row is what keeps both writers safe.
     expect(capturedState.payments.map((payment) => payment.id)).toEqual(["payment-1", "payment-2"]);
     expect(capturedState.debts[0]).toMatchObject({ paidMinor: 0, debtMinor: 5000 });
+  });
+});
+
+describe("StorePaymentStateProvider - applyAdjustmentDeltas (FIX 1, WO-11 review)", () => {
+  it("subtracts openGroupWriteOffMinor from openOrderDebtMinor and totalWriteOffMinor from debtMinor", () => {
+    renderStorePayments();
+
+    act(() => {
+      capturedState.applyAdjustmentDeltas?.({
+        currencyCode: "PEN",
+        openGroupWriteOffMinor: 1800,
+        totalWriteOffMinor: 2500,
+      });
+    });
+
+    // Fixture starts at debtMinor 5000 / openOrderDebtMinor 5000 (see `renderStorePayments`'s own
+    // default). Only these two fields move; nothing else this provider tracks (`paidMinor`,
+    // `activePaidMinor`, `unassignedMinor`, ...) is a reconciliation adjustment's to touch.
+    expect(capturedState.debts[0]).toMatchObject({
+      debtMinor: 5000 - 2500,
+      openOrderDebtMinor: 5000 - 1800,
+      paidMinor: 0,
+      activePaidMinor: 0,
+      unassignedMinor: 0,
+    });
+  });
+
+  it("reverts the patch when called again with the same magnitude negated", () => {
+    renderStorePayments();
+
+    act(() => {
+      capturedState.applyAdjustmentDeltas?.({
+        currencyCode: "PEN",
+        openGroupWriteOffMinor: 1800,
+        totalWriteOffMinor: 2500,
+      });
+    });
+    act(() => {
+      capturedState.applyAdjustmentDeltas?.({
+        currencyCode: "PEN",
+        openGroupWriteOffMinor: -1800,
+        totalWriteOffMinor: -2500,
+      });
+    });
+
+    // Back to the untouched fixture: this IS the whole rollback mechanism (no separate "undo" path).
+    expect(capturedState.debts[0]).toMatchObject({ debtMinor: 5000, openOrderDebtMinor: 5000 });
+  });
+
+  it("leaves a different currency's row untouched", () => {
+    renderStorePayments(
+      [],
+      [
+        {
+          storeId: "store-1",
+          currencyCode: "PEN",
+          committedMinor: 5000,
+          paidMinor: 0,
+          debtMinor: 5000,
+          lostMinor: 0,
+          activeCommittedMinor: 5000,
+          activePaidMinor: 0,
+          openOrderDebtMinor: 5000,
+          unrecordedPaymentsMinor: 0,
+          unassignedMinor: 0,
+        },
+        {
+          storeId: "store-1",
+          currencyCode: "USD",
+          committedMinor: 1000,
+          paidMinor: 0,
+          debtMinor: 1000,
+          lostMinor: 0,
+          activeCommittedMinor: 1000,
+          activePaidMinor: 0,
+          openOrderDebtMinor: 1000,
+          unrecordedPaymentsMinor: 0,
+          unassignedMinor: 0,
+        },
+      ],
+    );
+
+    act(() => {
+      capturedState.applyAdjustmentDeltas?.({
+        currencyCode: "PEN",
+        openGroupWriteOffMinor: 1800,
+        totalWriteOffMinor: 2500,
+      });
+    });
+
+    expect(capturedState.debts.find((debt) => debt.currencyCode === "USD")).toMatchObject({
+      debtMinor: 1000,
+      openOrderDebtMinor: 1000,
+    });
   });
 });

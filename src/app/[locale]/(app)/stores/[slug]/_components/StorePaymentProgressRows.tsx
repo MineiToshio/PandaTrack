@@ -1,6 +1,8 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { Scale } from "lucide-react";
+import Button from "@/components/core/Button/Button";
 import Chip from "@/components/core/Chip";
 import ProgressBar from "@/components/core/ProgressBar";
 import SummaryStatRow from "@/components/modules/SummaryStatRow";
@@ -8,12 +10,13 @@ import { formatAmount } from "@/lib/currency";
 import {
   computeActiveOrdersProgressPercent,
   hasActiveOrderCommitment,
-  resolveDebtReconciliationLine,
   resolveProgressState,
+  resolveUnassignedMoneyLine,
   sortDebtsByActionability,
 } from "@/lib/orders/storePaymentPresentation";
 import type { StoreDebtRow } from "@/lib/data/orders/storePaymentQueries";
 import { useStorePaymentState } from "./StorePaymentStateProvider";
+import { useStoreReconciliationState } from "./StoreReconciliationProvider";
 
 type StorePaymentProgressRowsProps = {
   /**
@@ -21,6 +24,8 @@ type StorePaymentProgressRowsProps = {
    * facturado" row above already shows. Used only to name the gap against `committedMinor`.
    */
   totalSpentByCurrency: Array<{ currencyCode: string; totalMinorUnits: number }>;
+  /** For the "cuadrar cuenta" nudge's copy (WO-11, `ADR 0034` §7), which names the store. */
+  storeName: string;
 };
 
 /**
@@ -29,20 +34,24 @@ type StorePaymentProgressRowsProps = {
  *
  * Why a bar and not a number. "Deuda pendiente" rendered `S/ 0.00` on 104 of the collector's 120
  * stores, which is a lot of pixels spent saying nothing; a bar reading "Al día" says the same
- * thing usefully, and on the store/currency pairs with a live debt it puts "Falta {amount}"
- * against the pair it came from.
+ * thing usefully, and on the store/currency pairs with a live debt it puts "Pendiente en pedidos
+ * abiertos {amount}" against the pair it came from.
  *
  * **What the bar measures, and what it does not.** The bar's ratio is scoped to the orders still
- * in flight: `activePaidMinor / activeCommittedMinor`. The headline, the "Registrar pago" gate,
- * the "Por tienda" order view and the dashboard all keep reading the lifetime `debtMinor`, which
- * is untouched. Only the ratio was narrowed, and the reason is in
- * `computeActiveOrdersProgressPercent`.
+ * in flight: `activePaidMinor / activeCommittedMinor`. The headline (`ADR 0033`, `WO-09`) reads
+ * `openOrderDebtMinor` (every "Debes / Falta" surface was promoted off the lifetime `debtMinor` to
+ * that same figure); the credit branch is the one deliberate exception and keeps reading the
+ * lifetime `debtMinor` (`FR-05-63`), because "in credit" is a fact about the store's whole
+ * history, not about its open orders alone. The "Registrar pago" validation ceiling stays lifetime
+ * too, unchanged. Only the bar's own ratio was narrowed, and the reason is in
+ * `computeActiveOrdersProgressPercent`; reconciling the bar's denominator itself against
+ * `openOrderDebtMinor` is a declared, deliberate gap (`WO-09` Technical Notes), not a defect.
  *
  * Four deliberate refusals to simplify:
  *
- *  - **The percentage is never shown alone.** `Falta {amount}` and `{paid} pagados de {committed}
- *    en pedidos activos` are always next to it, and that caption names its own scope so it cannot
- *    be read as the store's lifetime total.
+ *  - **The percentage is never shown alone.** `Pendiente en pedidos abiertos {amount}` and
+ *    `{paid} pagados de {committed} en pedidos activos` are always next to it, and that caption
+ *    names its own scope so it cannot be read as the store's lifetime total.
  *  - **No denominator, no bar.** With nothing active there is nothing to measure, and a full track
  *    over a zero denominator is the same graphical lie as one drawn past 100%. The block stays
  *    (it still answers "am I square with this store?"); it just says "Sin pedidos activos"
@@ -50,14 +59,22 @@ type StorePaymentProgressRowsProps = {
  *  - **Currencies are never summed.** Two currencies mean two independent blocks; converting them
  *    would need an FX rate at read time, which this domain models per order, not per store.
  *  - **Every gap gets a line rather than a silent difference.** "Cancelados" for orders that were
- *    called off, "Perdido en cancelados" for money sunk in them, and the two directions of the
- *    headline-versus-bar gap: "Fuera de pedidos activos" for a debt on an order already delivered,
- *    "A cuenta" for money handed over that no active order claims. All of them are conditional and
- *    all of them exist so no two figures in this card can disagree without saying why.
+ *    called off, "Perdido en cancelados" for money sunk in them, and, its own line regardless of
+ *    the bar, the money already paid that no order has claimed yet (`unassignedMinor`). All of
+ *    them are conditional and all of them exist so no two figures in this card can disagree
+ *    without saying why.
  */
-export default function StorePaymentProgressRows({ totalSpentByCurrency }: StorePaymentProgressRowsProps) {
+export default function StorePaymentProgressRows({ totalSpentByCurrency, storeName }: StorePaymentProgressRowsProps) {
   const tStores = useTranslations("stores");
   const { storeDebtByCurrency } = useStorePaymentState();
+
+  // Whether ANY currency this store has a row for still has an order in flight. The nudge below
+  // makes a STORE-level claim ("no te queda nada abierto con {tienda}"), so it must be gated on this
+  // store-wide flag rather than on any one row's own `hasActiveOrderCommitment` (`ADR 0034`
+  // 2026-08-20 review). Without it, a settled currency sitting beside a currency that still owes
+  // money renders the nudge next to a sibling block that visibly contradicts it (Vaulted Store: USD
+  // settled + PEN owing 1,200.00 PEN).
+  const storeHasOpenOrders = storeDebtByCurrency.some((debt) => hasActiveOrderCommitment(debt));
 
   const committedByCurrency = new Map(storeDebtByCurrency.map((debt) => [debt.currencyCode, debt.committedMinor]));
   const cancelledRows = totalSpentByCurrency
@@ -84,7 +101,12 @@ export default function StorePaymentProgressRows({ totalSpentByCurrency }: Store
         />
       ))}
       {sortDebtsByActionability(storeDebtByCurrency).map((debt) => (
-        <StorePaymentProgressBlock key={debt.currencyCode} debt={debt} />
+        <StorePaymentProgressBlock
+          key={debt.currencyCode}
+          debt={debt}
+          storeName={storeName}
+          storeHasOpenOrders={storeHasOpenOrders}
+        />
       ))}
     </>
   );
@@ -114,29 +136,50 @@ function LostOnCancelledLine({ debt }: { debt: StoreDebtRow }) {
 }
 
 /**
- * The gap between the headline and the bar's pair, named in whichever direction it opens.
+ * Money already handed over to this store, in this currency, that no order has claimed yet
+ * (`StoreDebtRow.unassignedMinor`, `BR-05-27` / `FR-05-60`, `ADR 0033`).
  *
- * The headline is the store's whole debt while the bar's pair covers only its active orders, so the
- * two can disagree both ways and both are reachable: "Fuera de pedidos activos" when an order was
- * delivered without being fully paid (headline bigger than the pair's gap), "A cuenta" when money
- * was handed over without being declared against an active order (headline smaller). Which one, and
- * when neither, is {@link resolveDebtReconciliationLine}. Rendered only alongside a bar: with no bar
- * the caption already says the whole debt sits outside the active set.
+ * Retires the old "gap between the headline and the bar" line (`outsideActiveOrders`): now that the
+ * headline itself reads `openOrderDebtMinor` (the canonical `openBalanceMinor` per order), that gap
+ * no longer exists (`ADR 0033`, `WO-09` Technical Notes). This is the one figure the bar's own pair
+ * still cannot show: money paid but not yet attributed to any order.
  */
-function DebtReconciliationLine({ debt }: { debt: StoreDebtRow }) {
+function UnassignedMoneyLine({ debt }: { debt: StoreDebtRow }) {
   const tStores = useTranslations("stores");
-  const line = resolveDebtReconciliationLine(debt);
+  const line = resolveUnassignedMoneyLine(debt);
   if (!line) return null;
   return (
     <p className="mt-1 [font-size:var(--text-caption)] [color:var(--text-muted)] [font-variant-numeric:tabular-nums]">
-      {tStores(`redesign.detail.aside.paymentProgress.${line.kind}`, {
+      {tStores("redesign.detail.aside.paymentProgress.unassignedMoney", {
         amount: formatAmount(line.amountMinor, debt.currencyCode),
       })}
     </p>
   );
 }
 
-function StorePaymentProgressBlock({ debt }: { debt: StoreDebtRow }) {
+/**
+ * True when this (store, currency) pair has ANYTHING reconcilable or historical to say: an
+ * unregistered balance, a lifetime debt or credit, unassigned money, or at least one non-cancelled
+ * order (`committedMinor` is the sum of non-cancelled orders' `totalCost`, so `> 0` is the same
+ * fact as "at least one exists"). A row failing all four has nothing standing with this store in
+ * this currency at all, so neither the settled empty-state chip nor its nudge has anything true to
+ * say (`ADR 0034` 2026-08-20 review, Finding 1).
+ */
+function hasReconcilableActivity(debt: StoreDebtRow): boolean {
+  return (
+    debt.unrecordedPaymentsMinor > 0 || debt.debtMinor !== 0 || debt.unassignedMinor > 0 || debt.committedMinor > 0
+  );
+}
+
+function StorePaymentProgressBlock({
+  debt,
+  storeName,
+  storeHasOpenOrders,
+}: {
+  debt: StoreDebtRow;
+  storeName: string;
+  storeHasOpenOrders: boolean;
+}) {
   const tStores = useTranslations("stores");
   const state = resolveProgressState(debt);
   // The bar and the headline read two different scopes on purpose: the headline is the store's
@@ -155,7 +198,7 @@ function StorePaymentProgressBlock({ debt }: { debt: StoreDebtRow }) {
   // would be claiming a relationship that no longer exists. The money is still named, by the
   // "Cancelados" line above and "Perdido en cancelados" here, just not as a state. One owner action
   // away: cancel a store's last standing order and keep its payment.
-  if (debt.committedMinor === 0 && debt.paidMinor === 0) {
+  if (!hasReconcilableActivity(debt)) {
     if (debt.lostMinor <= 0) return null;
     return (
       <div className={BLOCK_CLASS}>
@@ -179,8 +222,13 @@ function StorePaymentProgressBlock({ debt }: { debt: StoreDebtRow }) {
           </Chip>
         ) : (
           <span className="[font-weight:500] [color:var(--text-primary)]">
-            {tStores("redesign.detail.aside.paymentProgress.remaining", {
-              amount: formatAmount(debt.debtMinor, debt.currencyCode),
+            {/* "Pendiente en pedidos abiertos" (`openOrderDebtMinor`, `ADR 0033`, `FR-05-61`), not the
+                lifetime `debtMinor`: the "Falta {amount}" headline promoted to this figure so a
+                fully delivered order leaves it together with its own payments. Deliberately NOT
+                clamped: a negative `openOrderDebtMinor` (unreachable by construction, `BR-05-32`)
+                must still render as computed rather than be silenced. */}
+            {tStores("redesign.detail.aside.paymentProgress.openOrderDebt", {
+              amount: formatAmount(debt.openOrderDebtMinor, debt.currencyCode),
             })}
           </span>
         )}
@@ -213,8 +261,62 @@ function StorePaymentProgressBlock({ debt }: { debt: StoreDebtRow }) {
           : tStores("redesign.detail.aside.paymentProgress.noActiveOrders")}
       </p>
 
-      {showBar && <DebtReconciliationLine debt={debt} />}
+      {/* Independent of `showBar`: unassigned money can sit against a store with no active orders
+          left (every order COMPLETED or CANCELLED) just as easily as against one still in flight,
+          and folding it behind the bar's own gate would hide it exactly there. */}
+      <UnassignedMoneyLine debt={debt} />
       <LostOnCancelledLine debt={debt} />
+      <ReconciliationTrigger debt={debt} storeName={storeName} storeHasOpenOrders={storeHasOpenOrders} />
+    </div>
+  );
+}
+
+/**
+ * "Cuadrar cuenta": the reconciliation trigger, reachable per (store, currency) from anywhere in
+ * this block (WO-11, `ADR 0034`). Always rendered LAST in the block, after the breakdown and the
+ * unassigned/lost lines above: the action must never be the first control reached, so a collector
+ * always sees what explains the gap before being offered the write (`ADR 0034` §6, "last resort, not
+ * first offer"). The trigger button itself stays per-pair regardless of the nudge below: reaching
+ * the sheet for one currency must never depend on another currency's state.
+ *
+ * The proactive nudge (`ADR 0034` §7) appears only when the whole STORE has no open orders left in
+ * ANY of its currencies (`storeHasOpenOrders`, Finding 1, 2026-08-20 review), never a single pair's
+ * own `!hasActiveOrderCommitment`. The nudge's copy ("no te queda nada abierto con {tienda}") is a
+ * claim about the STORE, so gating it on one currency's own commitment let a settled currency
+ * (nothing active in IT) show the nudge right beside a sibling currency that still owes money
+ * (Vaulted Store: USD settled, PEN owing 1,200.00 PEN) - a block visibly contradicting its neighbor.
+ * `MINOR-8` (WO-11 review) already covers the narrower case this subsumes: three OPEN, fully
+ * prepaid orders in the SAME currency (`activeCommittedMinor > 0` there too, so `storeHasOpenOrders`
+ * is still true and the nudge stays quiet).
+ */
+function ReconciliationTrigger({
+  debt,
+  storeName,
+  storeHasOpenOrders,
+}: {
+  debt: StoreDebtRow;
+  storeName: string;
+  storeHasOpenOrders: boolean;
+}) {
+  const tStores = useTranslations("stores");
+  const { openReconciliationSheet } = useStoreReconciliationState();
+  const hasNothingLeftOpen = !storeHasOpenOrders;
+
+  return (
+    <div className="mt-2 flex flex-col items-start gap-1">
+      {hasNothingLeftOpen && (
+        <p className="[font-size:var(--text-caption)] [color:var(--text-secondary)]">
+          {tStores("redesign.detail.reconciliation.nudge", { store: storeName })}
+        </p>
+      )}
+      <Button
+        variant="ghost"
+        size="sm"
+        leadingIcon={<Scale size={14} aria-hidden="true" />}
+        onClick={() => openReconciliationSheet(debt.currencyCode)}
+      >
+        {tStores("redesign.detail.reconciliation.trigger")}
+      </Button>
     </div>
   );
 }

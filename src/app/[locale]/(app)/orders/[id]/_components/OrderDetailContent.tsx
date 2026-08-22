@@ -24,9 +24,22 @@ type OrderDetailContentProps = {
   baseCurrencyCode: string | null;
   backHref?: string | null;
   detailHref: string;
-  /** The store's debt in this order's currency, read server-side (§ store-level payments). Only
-      surfaced by the hero when this order itself has nothing allocated to it yet. */
+  /** The store's LIFETIME debt in this order's currency, read server-side (§ store-level payments).
+      Decides the "in credit" branch (`FR-05-63`) and the `STORE_DEBT_EXCEEDED` validation ceiling. */
   storeDebtMinor: number;
+  /** `StoreDebtRow.openOrderDebtMinor` (`ADR 0033`): the figure the hero's positive-debt link
+      prints, in place of the lifetime `storeDebtMinor`. Only surfaced by the hero when this order
+      itself has nothing allocated to it yet. */
+  openOrderDebtMinor: number;
+  /**
+   * This order's own canonical NET balance (`BR-05-32`, `ADR 0034`): `totalCost` minus every
+   * `PaymentAllocation` AND every `StoreAccountAdjustmentLine` written against it. Feeds ONLY the
+   * inline payment form's writable ceiling, downstream in `OrderDetailClient`; the order's own
+   * GROSS balance ("Falta" figure, the "still owed" chip) keeps rendering everywhere else on this
+   * page unchanged, per `FR-05-35` — a reconciliation adjustment squares the store's account, it
+   * does not pay the order.
+   */
+  openBalanceMinor: number;
   /** The collector's IANA timezone, or `null` when none is stored (resolution falls back to UTC). */
   timeZone: string | null;
 };
@@ -41,6 +54,8 @@ export default async function OrderDetailContent({
   baseCurrencyCode,
   backHref,
   storeDebtMinor,
+  openOrderDebtMinor,
+  openBalanceMinor,
   timeZone,
 }: OrderDetailContentProps) {
   const t = await getTranslations({ locale, namespace: "orders" });
@@ -137,6 +152,8 @@ export default async function OrderDetailContent({
           overdueDays={overdueDays}
           locale={locale}
           storeDebtMinor={storeDebtMinor}
+          openOrderDebtMinor={openOrderDebtMinor}
+          openBalanceMinor={openBalanceMinor}
           quickArrivalItems={quickArrivalItems}
           settledItemCount={settledItemCount}
           canCreateDelivery={canCreateDelivery}

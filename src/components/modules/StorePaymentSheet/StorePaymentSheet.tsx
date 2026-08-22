@@ -15,6 +15,7 @@ import type { AssignableOrder } from "@/lib/data/orders/storePaymentAssignableOr
 import {
   buildAllocationInputs,
   buildDeclaredPaidItemIds,
+  computeUnallocatedMinor,
   findOverAllocationCulprit,
   itemLineKey,
   restLineKey,
@@ -134,6 +135,15 @@ export default function StorePaymentSheet({
    * dropped exactly like an amount typed into that row.
    */
   const [declaredLineKeys, setDeclaredLineKeys] = useState<ReadonlySet<string>>(() => new Set());
+  /**
+   * The deliberate "no sé todavía" amount (WO-09, `FR-05-58`/`FR-05-60`, `ADR 0033`). Held beside
+   * the draft's other money state rather than derived, because it is not arithmetic: it is a
+   * one-shot CHOICE the collector makes ("park exactly what's left right now"), not a live
+   * computation that should track the remainder as it moves. Reset to 0 by every handler that
+   * changes the amount or a line's own money below — the choice has to be re-made on purpose
+   * whenever the number it was about moves, never carried over onto a draft it was never chosen for.
+   */
+  const [parkedAmountMinor, setParkedAmountMinor] = useState(0);
   const [lastEditedLineKey, setLastEditedLineKey] = useState<string | null>(null);
   const [serverRejectedLineKey, setServerRejectedLineKey] = useState<string | null>(null);
   const [revealRequest, setRevealRequest] = useState<AllocationRevealRequest | null>(null);
@@ -172,6 +182,10 @@ export default function StorePaymentSheet({
     // and remounts with a fresh token counter, so a request left standing would be replayed and
     // steal the focus on every later entry into the panel.
     setRevealRequest(null);
+    // "Limpiar" (or a currency switch) wipes every allocation line, so a parked amount chosen
+    // against the old draft no longer explains anything real; carrying it forward would let a
+    // now-empty draft still read as "fully declared".
+    setParkedAmountMinor(0);
   }, []);
 
   const handleClose = useCallback(() => {
@@ -190,6 +204,9 @@ export default function StorePaymentSheet({
   const handleAmountChange = useCallback((next: string) => {
     setAmount(next);
     setSubmitError(null);
+    // The parked slice was a choice about THIS amount's remainder; a different amount has a
+    // different remainder, so the choice has to be re-made rather than silently reinterpreted.
+    setParkedAmountMinor(0);
   }, []);
 
   /** Line edits clear a network failure's message, but never a verdict the amount alone can lift. */
@@ -290,6 +307,7 @@ export default function StorePaymentSheet({
       debtMinor: debtForCurrency,
       paymentDate: paymentDate ? toDomainDate(paymentDate) : null,
       orders: orderDrafts,
+      parkedAmountMinor,
     };
   }, [
     amount,
@@ -300,6 +318,7 @@ export default function StorePaymentSheet({
     renderableKeys,
     debtForCurrency,
     paymentDate,
+    parkedAmountMinor,
   ]);
 
   const validation = useMemo(() => validateStorePaymentSheetDraft(draft), [draft]);
@@ -327,6 +346,8 @@ export default function StorePaymentSheet({
       setLastEditedLineKey(line.key);
       setServerRejectedLineKey((current) => (current === line.key ? null : current));
       clearResendableSubmitError();
+      // A hand-typed line changes the remainder a park was about, so the choice has to be re-made.
+      setParkedAmountMinor(0);
     },
     [clearResendableSubmitError, currencyCode],
   );
@@ -338,6 +359,7 @@ export default function StorePaymentSheet({
       setLastEditedLineKey(line.key);
       setServerRejectedLineKey((current) => (current === line.key ? null : current));
       clearResendableSubmitError();
+      setParkedAmountMinor(0);
     },
     [clearResendableSubmitError, currencyCode],
   );
@@ -355,6 +377,25 @@ export default function StorePaymentSheet({
       return next;
     });
   }, []);
+
+  /**
+   * The explicit "no sé todavía" action (WO-09, `FR-05-58`/`FR-05-60`, `ADR 0033`): parks exactly
+   * the draft's own current remainder, never a default and never a partial figure the collector
+   * could under- or over-shoot by hand. Reading `computeUnallocatedMinor(draft)` rather than the
+   * memoized `validation.unallocatedMinor` is deliberate belt-and-suspenders: both read the same
+   * live draft, so they can never disagree, but the direct call keeps this handler correct even if
+   * a future edit reorders the memos it depends on. A no-op below 0 amount or a payment already
+   * fully declared, so the control this drives can simply always be wired to it.
+   */
+  const handleParkRemainder = useCallback(() => {
+    const remainder = computeUnallocatedMinor(draft);
+    if (remainder <= 0) return;
+    setParkedAmountMinor(remainder);
+    posthog.capture(POSTHOG_EVENTS.STORE.PAYMENT_ALLOCATION_PARKED, { store_id: storeId, amount_minor: remainder });
+  }, [draft, storeId]);
+
+  /** Undoes a park choice, without touching anything else: the collector wants to name it after all. */
+  const handleUnpark = useCallback(() => setParkedAmountMinor(0), []);
 
   const handleOpenAllocations = useCallback(() => {
     posthog.capture(POSTHOG_EVENTS.STORE.PAYMENT_ALLOCATIONS_OPENED, {
@@ -454,6 +495,7 @@ export default function StorePaymentSheet({
       note: note.trim() || null,
       allocations,
       declarePaidItemIds,
+      parkedAmountMinor: draft.parkedAmountMinor ?? 0,
     };
 
     // Optimistic Confirmation, but only where a failure costs nothing to rebuild: a payment with no
@@ -529,6 +571,7 @@ export default function StorePaymentSheet({
     currencyCode,
     declarePaidItemIds,
     draft.paymentAmountMinor,
+    draft.parkedAmountMinor,
     droppedDraftLines.typedMinor,
     handleClose,
     hasDroppedDraftLines,
@@ -690,6 +733,8 @@ export default function StorePaymentSheet({
             onFill={handleLineFill}
             onToggleDeclared={handleToggleDeclared}
             onClear={resetDraftState}
+            onParkRemainder={handleParkRemainder}
+            onUnpark={handleUnpark}
             onEditPayment={handleBackToPayment}
             onEditDate={handleEditDate}
             revealRequest={revealRequest}

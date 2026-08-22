@@ -11,7 +11,7 @@
     "title": "Upload the screenshot",
     "description": "We read your photos and fill in the order.",
     "dropzoneTitle": "Add photos",
-    "dropzoneHint": "Chat screenshot, email or receipt",
+    "dropzoneHint": "Chat, email, store page or receipt screenshot",
     "chooseMore": "Add more photos",
     "helper": "Upload as many photos as you need. PNG, JPEG and WebP are accepted.",
     "attachedTitle": "Attached photos ({count})",
@@ -23,7 +23,7 @@
     "linkHintToggle": "Only got the product link?",
     "linkHint": "Attach a screenshot of its store page: that is where the name comes from. Adding it later means reading every photo again.",
     "guidanceOneOrder": "Upload <strong>one order at a time</strong>: everything merges into one.",
-    "guidanceOrder": "We read them <strong>in order</strong>: the chat first, product pages last.",
+    "guidanceOrder": "We read them <strong>in order</strong>: the purchase first, product pages last.",
     "guidanceLabel": "Before you upload",
     "position": "Photo {position}",
     "zoomOpen": "View photo {position} larger",
@@ -47,7 +47,7 @@
     "stepsLabel": "Reading progress",
     "optimizing": "Optimising images...",
     "uploading": "Uploading...",
-    "reading": "Reading the conversation...",
+    "reading": "Reading the purchase...",
     "doneLabel": "Done",
     "activeLabel": "In progress",
     "pendingLabel": "Pending"
@@ -55,6 +55,7 @@
   "errors": {
     "title": "We could not continue",
     "attachmentsKept": "Your photos are still attached.",
+    "reference": "Failure reference: {reference}. Share it if you need us to look into it.",
     "emptySubmission": "Attach at least one photo to continue.",
     "tooManyImages": "That is a lot of photos for a single upload. Send up to 20 at a time.",
     "fileTooLarge": "One of the photos is still too heavy after optimizing it. Crop it or split it into two screenshots.",
@@ -78,13 +79,13 @@
     "dailyCapExceeded": "You have reached today's photo limit. Come back tomorrow or add the order by hand.",
     "dailyAttemptCapExceeded": "There were too many reading attempts today. Come back tomorrow or add the order by hand.",
     "invalidModelResponse": "We did not understand what was in the photos. Try a clearer screenshot.",
-    "noOrderFound": "We could not find an order in those photos. It usually happens when the photo only shows the product: we need the conversation or the receipt, the one where the products and the amounts appear. Remove the photo that does not belong and try another one.",
+    "noOrderFound": "We could not find an order in those photos. It usually happens when the photo only shows the product: we need the purchase (the chat, the email, the order page or the receipt), the one where the products and the amounts appear. Remove the photo that does not belong and try another one.",
     "multipleOrders": "Those photos look like several separate purchases. Each order is uploaded on its own, even when it has several products. Remove the extra photos and keep only the ones from a single purchase.",
     "providerError": "We could not read the photos right now. Try again in a minute.",
     "providerRejected": "Something went wrong reading the photos. Trying again will not fix it: we have already been notified and we are on it. In the meantime you can add the order by hand.",
     "responseTooLong": "The reading grew too long and was cut off. Send fewer photos at a time, or add the order by hand.",
     "ledgerError": "We could not finish the reading. Try again in a minute.",
-    "productCeilingExceeded": "That is too many products for one order. The chat asks for {productCount} and an order takes {maxProducts}. Merge them into a single product or split the purchase into two orders.",
+    "productCeilingExceeded": "That is too many products for one order. The photos ask for {productCount} and an order takes {maxProducts}. Merge them into a single product or split the purchase into two orders.",
     "missingBaseCurrency": "Pick your base currency in settings first.",
     "unauthorized": "Your session expired. Sign in again.",
     "serverError": "Something went wrong. Try again.",
@@ -96,7 +97,7 @@
   "review": {
     "title": "Review and confirm",
     "headerWithDoubts": "We found {productCount, plural, one {# product} other {# products}} for {total}. {doubtCount, plural, one {Check # detail and save.} other {Check # details and save.}}",
-    "headerClean": "Everything came out clean from the chat. Review it and save.",
+    "headerClean": "Everything came out clean from the photos. Review it and save.",
     "edit": {
       "blankName": "Product {position} was left without a name. Give it one so the order can be saved."
     },
@@ -108,7 +109,7 @@
       "mobileTitle": "Choose the store",
       "mobileSearch": "Search store",
       "listLabel": "Available stores",
-      "readFromChat": "From the chat: \"{phrase}\"",
+      "readFromChat": "From the photos: \"{phrase}\"",
       "help": "Pick it from your list so the order can be saved.",
       "createLabel": "Create a new store",
       "notFoundQuestion": "Not in your list?"
@@ -123,10 +124,10 @@
       "assumed": "assumed",
       "derived": "calculated",
       "missing": "missing",
-      "assumedHint": "The chat does not say it. We filled it in, so it is worth a look.",
-      "missingHint": "We did not find it in the chat. Fill it in if you know it.",
-      "totalHint": "The chat states no total. Add up the products or type it in.",
-      "totalDerivedHint": "The chat states no total. We calculated it by adding up {count, plural, one {the price of the # product} other {the prices of the # products}}."
+      "assumedHint": "The photos do not say it. We filled it in, so it is worth a look.",
+      "missingHint": "We did not find it in the photos. Fill it in if you know it.",
+      "totalHint": "The photos state no total. Add up the products or type it in.",
+      "totalDerivedHint": "The photos state no total. We calculated it by adding up {count, plural, one {the price of the # product} other {the prices of the # products}}."
     },
     "fx": {
       "label": "Exchange rate {from} to {to}",
@@ -148,10 +149,10 @@
       "notNameable": "We could not tell what is inside.",
       "notNameableWhy": "We saved it as one product.",
       "openRange": "We split it into {count, plural, one {# product} other {# products}}.",
-      "openRangeWhy": "The chat asks for a range, so we created one product per number.",
-      "sourceQuote": "From the chat: \"{phrase}\"",
-      "sourceQuoteSealed": "The chat says \"{phrase}\".",
-      "sourceQuoteNotNameable": "The chat says \"{phrase}\" without saying which ones.",
+      "openRangeWhy": "The photos ask for a range, so we created one product per number.",
+      "sourceQuote": "From the photos: \"{phrase}\"",
+      "sourceQuoteSealed": "The photos say \"{phrase}\".",
+      "sourceQuoteNotNameable": "The photos say \"{phrase}\" without saying which ones.",
       "mergeAction": "Merge into one",
       "splitAction": "Split",
       "splitIntoAction": "Split into {count} products",
@@ -163,7 +164,7 @@
       "rangeSeparator": "{first} to {last}",
       "priceSplitUneven": "We split {total} evenly. Adjust it if one piece is worth more than the other",
       "doubtful": "We are not sure",
-      "clean": "From the chat",
+      "clean": "From the photos",
       "warning": "Price split",
       "noPrice": "No price",
       "rowsLabel": "Products in this group",
@@ -179,13 +180,13 @@
       "editCollapsedHint": "Open the {count} to correct a name or a price.",
       "priceNotANumber": "Write the price as a number, with no thousands separators and no symbols. For example: 115.00",
       "categorySuggestedHint": "The categories are our suggestions. Change any that do not fit.",
-      "referenceLinkLead": "Link from the chat:"
+      "referenceLinkLead": "Link from the photos:"
     },
     "productSheet": {
       "title": "{count, plural, one {We can name this product better} other {We can name these # products better}}",
-      "reasonHostOnly": "All we got from the link is the domain: \"{name}\". The chat never says which product it is.",
+      "reasonHostOnly": "All we got from the link is the domain: \"{name}\". The photos never say which product it is.",
       "reasonDoubtful": "We read \"{name}\" from the {host} link, but we are not sure what it is.",
-      "body": "Attach a screenshot of the product page and we will name it from there. The price and the total still come from the chat, never from the product page.",
+      "body": "Attach a screenshot of the product page and we will name it from there. The price and the total still come from the purchase, never from the product page.",
       "cost": "Reading again spends the {count, plural, one {# photo} other {# photos}} you already uploaded one more time, plus the new one: the reading is a single pass over every photo.",
       "costWithBalance": "Reading again spends the {count, plural, one {# photo} other {# photos}} you already uploaded one more time, plus the new one: the reading is a single pass over every photo. You have {remaining} left this month.",
       "costUnaffordable": "Reading again would cost {needed, plural, one {# photo} other {# photos}} (the ones you already uploaded plus the new one) and you have {remaining} left this month.",
@@ -195,7 +196,7 @@
     "payments": {
       "title": "Payments",
       "row": "Payment on {date}",
-      "empty": "We found no payments in the chat.",
+      "empty": "We found no payments in the photos.",
       "amountLabel": "Payment {position}",
       "dateLabel": "Payment date",
       "add": "Add payment",
@@ -215,7 +216,7 @@
     },
     "delivery": {
       "cost": "Shipping cost",
-      "costNotSaved": "We read it from the chat, but it is only saved once you register the delivery."
+      "costNotSaved": "We read it from the photos, but it is only saved once you register the delivery."
     },
     "save": "Create order",
     "manual": "Fill it in by hand",
@@ -227,7 +228,7 @@
     }
   },
   "save": {
-    "paymentsSkipped": "We could not record {count, plural, one {# payment} other {# payments}} from the chat. Check it and add it to the order by hand.",
+    "paymentsSkipped": "We could not record {count, plural, one {# payment} other {# payments}} from the photos. Check it and add it to the order by hand.",
     "breakdownSkipped": "We could not record {count, plural, one {one payment with a breakdown} other {# payments with a breakdown}}. Record it on the order with its breakdown."
   },
   "share": {

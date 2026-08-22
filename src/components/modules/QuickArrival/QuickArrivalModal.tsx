@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ChevronDown, PackageCheck } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Checkbox from "@/components/core/Checkbox";
@@ -10,9 +10,14 @@ import Input from "@/components/core/Input";
 import Select from "@/components/core/Select";
 import Modal from "@/components/modules/Modal/Modal";
 import { ALLOWED_COLLECTOR_BASE_CURRENCY_CODES } from "@/lib/catalog/collectorCountries";
+import { formatAmountWithSymbol } from "@/lib/currency";
 import { isValidNonNegativeDecimal, isValidRate, sanitizeDecimalInput, sanitizeRateInput } from "@/lib/decimalInput";
 import { toDomainDate } from "@/lib/domainDate";
 import { cn } from "@/lib/styles";
+import {
+  getSettlementContextAction,
+  type SettlementOrderContext,
+} from "@/app/[locale]/(app)/_actions/settlementActions";
 import type { QuickArrivalSubmitInput } from "./useQuickArrival";
 
 export type QuickArrivalItem = {
@@ -24,6 +29,12 @@ export type QuickArrivalItem = {
    * already named in the subtitle and repeating it would be noise.
    */
   orderLabel?: string;
+  /**
+   * The item's own source order id (`WO-08`). Required for the settlement preview: every launcher
+   * either scopes the whole modal to one order (see `orderId` below) or must supply it per item
+   * (the store-scoped batch, whose selection spans several orders).
+   */
+  orderId?: string;
 };
 
 export type QuickArrivalModalProps = {
@@ -54,6 +65,14 @@ export type QuickArrivalModalProps = {
   alwaysListItems?: boolean;
   baseCurrencyCode: string | null;
   locale: string;
+  /**
+   * The single order every item belongs to (`WO-08`). Set by the four per-order launchers; the
+   * store-scoped batch launcher leaves it unset and relies on each item's own `orderId` instead,
+   * since its selection can span several orders.
+   */
+  orderId?: string;
+  /** Store name, for the settlement double-counting guard's "En {tienda} tienes..." copy. */
+  storeName?: string;
   /** Optimistic Confirmation: fire-and-forget, the coordinator owns the toast and the refresh. */
   onSubmit: (input: QuickArrivalSubmitInput) => void;
 };
@@ -62,6 +81,9 @@ function startOfToday(): Date {
   const now = new Date();
   return new Date(now.getFullYear(), now.getMonth(), now.getDate());
 }
+
+/** Debounce window for re-fetching the settlement preview after the selection changes (MAJOR F4). */
+const SETTLEMENT_CONTEXT_DEBOUNCE_MS = 300;
 
 type QuickArrivalItemGroup = { orderLabel: string | null; items: QuickArrivalItem[] };
 
@@ -112,6 +134,8 @@ export default function QuickArrivalModal({
   alwaysListItems = false,
   baseCurrencyCode,
   locale,
+  orderId,
+  storeName,
   onSubmit,
 }: QuickArrivalModalProps) {
   const t = useTranslations("orders");
@@ -131,6 +155,16 @@ export default function QuickArrivalModal({
   const [exchangeRate, setExchangeRate] = useState("");
   const [errors, setErrors] = useState<Record<string, string | null>>({});
 
+  // Settlement on arrival (`WO-08`, `ADR 0032`). `settlementContexts` is `null` while loading (or
+  // before the first fetch); an empty-after-load array is what tells the render below there is
+  // nothing to settle at all, rather than that the fetch simply has not resolved yet.
+  const [settlementContexts, setSettlementContexts] = useState<SettlementOrderContext[] | null>(null);
+  const [isLoadingSettlement, setIsLoadingSettlement] = useState(false);
+  const [settleRemainder, setSettleRemainder] = useState(true);
+  const [settlementDate, setSettlementDate] = useState<Date | null>(startOfToday);
+  const [settlementDateTouched, setSettlementDateTouched] = useState(false);
+  const [manualAmounts, setManualAmounts] = useState<Record<string, string>>({});
+
   const selectedIds = useMemo(
     () => items.filter((item) => !deselectedIds.includes(item.id)).map((item) => item.id),
     [items, deselectedIds],
@@ -138,6 +172,75 @@ export default function QuickArrivalModal({
 
   const showExchangeRate = Boolean(baseCurrencyCode && currencyCode && currencyCode !== baseCurrencyCode);
   const allSelected = selectedIds.length === items.length;
+
+  // Which orders this arrival touches, and which of their items it delivers — the settlement
+  // preview's own request shape. Scoped to `orderId` when the caller set it (every per-order
+  // launcher); grouped by each item's own `orderId` otherwise (the store-scoped batch).
+  //
+  // Built off `selectedIds` (MAJOR F4, 2026-08-20 review), never the full `items` list: the
+  // preview used to keep quoting a figure for every eligible product regardless of which ones the
+  // collector actually left checked, so deselecting a row never moved the displayed amount/branch.
+  const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+  const settlementOrderGroups = useMemo(() => {
+    if (orderId) return [{ orderId, itemIds: selectedIds }];
+    const byOrderId = new Map<string, string[]>();
+    for (const item of items) {
+      if (!item.orderId || !selectedIdSet.has(item.id)) continue;
+      const bucket = byOrderId.get(item.orderId);
+      if (bucket) bucket.push(item.id);
+      else byOrderId.set(item.orderId, [item.id]);
+    }
+    return [...byOrderId.entries()].map(([id, itemIds]) => ({ orderId: id, itemIds }));
+  }, [orderId, items, selectedIds, selectedIdSet]);
+
+  // MAJOR F4, 2026-08-20 review: re-fetches whenever the SELECTION changes, not only when the
+  // dialog opens (`settlementOrderGroups` is itself keyed on `selectedIds`, so its identity changes
+  // on every toggle). Debounced so a rapid run of checkbox clicks fires one request, not one per
+  // click; the loading flag flips synchronously so the block reads "Calculando…" immediately rather
+  // than quoting the PREVIOUS selection's figures while the debounced request is still pending.
+  useEffect(() => {
+    if (!isOpen || settlementOrderGroups.length === 0) return;
+    let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional fetch-on-open/selection-change, not a render-driven sync
+    setIsLoadingSettlement(true);
+    const timer = setTimeout(() => {
+      void getSettlementContextAction({
+        orders: settlementOrderGroups.map((group) => ({ orderId: group.orderId, deliveredItemIds: group.itemIds })),
+      }).then(
+        (result) => {
+          if (cancelled) return;
+          setIsLoadingSettlement(false);
+          if (!result.ok) {
+            setSettlementContexts([]);
+            return;
+          }
+          setSettlementContexts(result.contexts);
+          const relevant = result.contexts.filter((context) => context.plan.kind !== "nothingToSettle");
+          setSettleRemainder(relevant.length === 0 || relevant.every((context) => context.defaultChecked));
+        },
+        () => {
+          // A REJECTED promise (a thrown module-evaluation error, a dropped connection) is not an
+          // `ok: false` the server described, it is no answer at all — same fallback as that branch,
+          // so "Calculando…" clears instead of hanging forever with no settlement block ever shown.
+          // Deliberately the SECOND argument of `then`, never a chained `catch`, which would also
+          // swallow whatever the success handler above throws.
+          if (cancelled) return;
+          setIsLoadingSettlement(false);
+          setSettlementContexts([]);
+        },
+      );
+    }, SETTLEMENT_CONTEXT_DEBOUNCE_MS);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [isOpen, settlementOrderGroups]);
+
+  const relevantSettlementContexts = useMemo(
+    () => (settlementContexts ?? []).filter((context) => context.plan.kind !== "nothingToSettle"),
+    [settlementContexts],
+  );
+  const showSettlementBlock = relevantSettlementContexts.length > 0;
 
   const handleToggleItem = useCallback((itemId: string) => {
     setDeselectedIds((current) =>
@@ -161,8 +264,18 @@ export default function QuickArrivalModal({
     setCurrencyCode(baseCurrencyCode ?? "");
     setExchangeRate("");
     setErrors({});
+    setSettlementContexts(null);
+    setSettleRemainder(true);
+    setSettlementDate(startOfToday());
+    setSettlementDateTouched(false);
+    setManualAmounts({});
     onClose();
   }, [baseCurrencyCode, onClose]);
+
+  const manualSettlementContexts = useMemo(
+    () => relevantSettlementContexts.filter((context) => context.plan.kind === "manual"),
+    [relevantSettlementContexts],
+  );
 
   const validate = useCallback((): boolean => {
     const next: Record<string, string | null> = {};
@@ -182,14 +295,29 @@ export default function QuickArrivalModal({
         next.exchangeRate = t("detail.quickArrival.validation.fxRequired");
       }
     }
+    if (settleRemainder) {
+      // MINOR fix J, 2026-08-20 review: its own key, not the arrival date's `receivedRequired` —
+      // "¿Cuándo llegó?" is the wrong question under a field asking when the collector paid.
+      if (!settlementDate) next.settlementDate = t("detail.quickArrival.validation.settlementDateRequired");
+      for (const context of manualSettlementContexts) {
+        const raw = manualAmounts[context.orderId] ?? "";
+        if (raw.trim() === "" || !isValidNonNegativeDecimal(raw, context.currencyCode)) {
+          next[`manualAmount-${context.orderId}`] = t("detail.quickArrival.settlement.validation.amountRequired");
+        }
+      }
+    }
     setErrors(next);
     return Object.values(next).every((value) => !value);
   }, [
     cost,
     currencyCode,
     exchangeRate,
+    manualAmounts,
+    manualSettlementContexts,
     receivedDate,
     selectedIds.length,
+    settleRemainder,
+    settlementDate,
     shippedDate,
     showExchangeRate,
     showShippingDetails,
@@ -200,6 +328,7 @@ export default function QuickArrivalModal({
     if (!validate() || !receivedDate) return;
 
     const hasCost = showShippingDetails && cost.trim() !== "" && isValidNonNegativeDecimal(cost, currencyCode);
+    const effectiveSettlementDate = settlementDate ?? receivedDate;
     onSubmit({
       productIds: selectedIds,
       receivedDate: toDomainDate(receivedDate),
@@ -208,6 +337,24 @@ export default function QuickArrivalModal({
       // A delivery row always needs a currency; with no cost recorded it is only a unit label.
       currencyCode: currencyCode || baseCurrencyCode || "USD",
       exchangeRate: hasCost && showExchangeRate && isValidRate(exchangeRate) ? parseFloat(exchangeRate) : null,
+      settleRemainder: showSettlementBlock && settleRemainder,
+      settlementDate: showSettlementBlock && settleRemainder ? toDomainDate(effectiveSettlementDate) : undefined,
+      settlementIntents:
+        showSettlementBlock && settleRemainder
+          ? relevantSettlementContexts.map((context) => ({
+              orderId: context.orderId,
+              manualAmountMinor:
+                context.plan.kind === "manual"
+                  ? Math.round(parseFloat(manualAmounts[context.orderId] || "0") * 100)
+                  : undefined,
+              branchHint:
+                context.plan.kind === "computedFull"
+                  ? "full"
+                  : context.plan.kind === "computedPartial"
+                    ? "partial_computed"
+                    : "manual",
+            }))
+          : undefined,
     });
     handleClose();
   }, [
@@ -216,12 +363,17 @@ export default function QuickArrivalModal({
     currencyCode,
     exchangeRate,
     handleClose,
+    manualAmounts,
     onSubmit,
     receivedDate,
+    relevantSettlementContexts,
     selectedIds,
+    settleRemainder,
+    settlementDate,
     shippedDate,
     showExchangeRate,
     showShippingDetails,
+    showSettlementBlock,
     validate,
   ]);
 
@@ -345,6 +497,9 @@ export default function QuickArrivalModal({
             value={receivedDate}
             onChange={(date) => {
               setReceivedDate(date);
+              // The settlement date is PROPOSED as the arrival date (ADR 0032 §7): it follows this
+              // field until the collector edits it directly, at which point it becomes independent.
+              if (!settlementDateTouched) setSettlementDate(date);
               setErrors((prev) => (prev.receivedDate ? { ...prev, receivedDate: null } : prev));
             }}
             placeholder={t("detail.quickArrival.receivedPlaceholder")}
@@ -358,6 +513,144 @@ export default function QuickArrivalModal({
             <p className="text-[11.5px] [color:var(--text-muted)]">{t("detail.quickArrival.receivedHelper")}</p>
           )}
         </div>
+
+        {isLoadingSettlement && (
+          <p className="text-[11.5px] [color:var(--text-muted)]" role="status">
+            {t("detail.quickArrival.settlement.loading")}
+          </p>
+        )}
+
+        {showSettlementBlock && (
+          <div className="space-y-2.5 rounded-xl px-3 py-2.5 [background:var(--surface-elevated)] [border:1px_solid_var(--border)]">
+            <Checkbox
+              id="quick-arrival-settle-remainder"
+              checked={settleRemainder}
+              onChange={() => setSettleRemainder((current) => !current)}
+              label={t("detail.quickArrival.settlement.checkboxLabel")}
+              size="sm"
+            />
+            <p className="pl-[26px] text-[11.5px] [color:var(--text-muted)]">
+              {t("detail.quickArrival.settlement.help")}
+            </p>
+
+            {settleRemainder && (
+              <div className="space-y-3 pl-[26px]">
+                <div className="space-y-1.5">
+                  <label
+                    htmlFor="quick-arrival-settlement-date"
+                    className="text-[13px] font-medium [color:var(--text-secondary)]"
+                  >
+                    {t("detail.quickArrival.settlement.dateLabel")}
+                  </label>
+                  <DatePickerInput
+                    id="quick-arrival-settlement-date"
+                    value={settlementDate}
+                    onChange={(date) => {
+                      setSettlementDateTouched(true);
+                      setSettlementDate(date);
+                      setErrors((prev) => (prev.settlementDate ? { ...prev, settlementDate: null } : prev));
+                    }}
+                    placeholder={t("detail.quickArrival.receivedPlaceholder")}
+                    locale={locale}
+                    disableFuture
+                    popupAlign="end"
+                  />
+                  {errors.settlementDate && <FieldErrorMsg>{errors.settlementDate}</FieldErrorMsg>}
+                </div>
+
+                {relevantSettlementContexts.map((context) => {
+                  const amountLabel =
+                    context.plan.kind === "computedFull" || context.plan.kind === "computedPartial"
+                      ? formatAmountWithSymbol(context.plan.amountMinor, context.currencyCode, locale)
+                      : null;
+                  const dateLabel = settlementDate
+                    ? settlementDate.toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric" })
+                    : "";
+
+                  return (
+                    <div key={context.orderId} className="space-y-1.5">
+                      {amountLabel && (
+                        <p className="text-[12.5px] [color:var(--text-secondary)]">
+                          {t("detail.quickArrival.settlement.detail", { amount: amountLabel, date: dateLabel })}
+                        </p>
+                      )}
+                      {context.plan.kind === "computedPartial" && (
+                        <p className="text-[11.5px] [color:var(--text-muted)]">
+                          {t("detail.quickArrival.settlement.partialCoverage", {
+                            count:
+                              settlementOrderGroups.find((group) => group.orderId === context.orderId)?.itemIds
+                                .length ?? 0,
+                          })}
+                        </p>
+                      )}
+                      {context.closesOrder &&
+                        context.plan.kind === "computedFull" &&
+                        context.plan.appliedUnassignedMinor > 0 && (
+                          <p className="text-[11.5px] [color:var(--text-muted)]">
+                            {t("detail.quickArrival.settlement.appliedUnassigned", {
+                              amount: formatAmountWithSymbol(
+                                context.plan.appliedUnassignedMinor,
+                                context.currencyCode,
+                                locale,
+                              ),
+                            })}
+                          </p>
+                        )}
+                      {!context.closesOrder && context.unassignedMinor > 0 && (
+                        <p className="text-[11.5px] [color:var(--text-muted)]">
+                          {t("detail.quickArrival.settlement.unassignedNotice", {
+                            store: storeName ?? "",
+                            amount: formatAmountWithSymbol(context.unassignedMinor, context.currencyCode, locale),
+                          })}
+                        </p>
+                      )}
+                      {context.plan.kind === "manual" && (
+                        <>
+                          <p className="text-[11.5px] [color:var(--text-muted)]">
+                            {t(
+                              context.plan.reasonCode === "missingPrice"
+                                ? "detail.quickArrival.settlement.reasonMissingPrice"
+                                : "detail.quickArrival.settlement.reasonUndetailedMoney",
+                            )}
+                          </p>
+                          <Input
+                            id={`quick-arrival-settlement-amount-${context.orderId}`}
+                            type="text"
+                            inputMode="decimal"
+                            value={manualAmounts[context.orderId] ?? ""}
+                            placeholder={t("detail.quickArrival.costPlaceholder")}
+                            error={Boolean(errors[`manualAmount-${context.orderId}`])}
+                            onChange={(event) => {
+                              const sanitized = sanitizeDecimalInput(event.target.value, context.currencyCode);
+                              setManualAmounts((prev) => ({ ...prev, [context.orderId]: sanitized }));
+                              setErrors((prev) =>
+                                prev[`manualAmount-${context.orderId}`]
+                                  ? { ...prev, [`manualAmount-${context.orderId}`]: null }
+                                  : prev,
+                              );
+                            }}
+                          />
+                          {errors[`manualAmount-${context.orderId}`] && (
+                            <FieldErrorMsg>{errors[`manualAmount-${context.orderId}`]}</FieldErrorMsg>
+                          )}
+                          <p className="text-[11.5px] [color:var(--text-muted)]">
+                            {t("detail.quickArrival.settlement.reference", {
+                              amount: formatAmountWithSymbol(
+                                context.plan.referenceAmountMinor,
+                                context.currencyCode,
+                                locale,
+                              ),
+                            })}
+                          </p>
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="rounded-xl [border:1px_solid_var(--border)]">
           <button

@@ -8,6 +8,7 @@ import {
   doesAllocationSumExceedPayment,
   doesPaymentExceedDebt,
   findOverAllocationCulprit,
+  isDeclaredTotalCompleteAgainstPayment,
   isItemOverRemainingBase,
   isOrderDateBeforeOrder,
   isOrderOverAssignable,
@@ -360,7 +361,7 @@ describe("buildDeclaredPaidItemIds", () => {
 
   it("does not move a single money figure", () => {
     // The coverage axis enters no ceiling: the declared draft below allocates nothing, so
-    // "Sin asignar" is the whole payment and the CTA has nothing to complain about.
+    // "Sin asignar" is the whole payment before anything is parked.
     const draft: StorePaymentSheetDraft = {
       paymentAmountMinor: 5000,
       debtMinor: 20000,
@@ -371,7 +372,12 @@ describe("buildDeclaredPaidItemIds", () => {
     expect(sumAllOrders(draft.orders)).toBe(0);
     expect(computeUnallocatedMinor(draft)).toBe(5000);
     expect(buildAllocationInputs(draft.orders)).toEqual([]);
-    expect(validateStorePaymentSheetDraft(draft).canSubmit).toBe(true);
+    // WO-09 (`FR-05-58`): on this surface a sum of 0 is not by itself submittable any more — the
+    // mark moves no money, so the whole 5000 still has to be either declared or parked. Parking it
+    // in full is what makes the draft submittable, and marking the product alongside it still moves
+    // nothing: the two axes stay independent.
+    expect(validateStorePaymentSheetDraft({ ...draft, parkedAmountMinor: 5000 }).canSubmit).toBe(true);
+    expect(validateStorePaymentSheetDraft(draft).canSubmit).toBe(false);
   });
 });
 
@@ -468,5 +474,78 @@ describe("findOverAllocationCulprit", () => {
 
   it("names nothing when the draft declares nothing", () => {
     expect(findOverAllocationCulprit({ ...draft, orders: [makeOrder()] }, null)).toBeNull();
+  });
+});
+
+/**
+ * The store-level surface's own hardening (WO-09, `FR-05-58`, `ADR 0033`): the plain `<=` ceiling
+ * becomes an equality on named allocations plus whatever the collector deliberately parked. A draft
+ * with money left over and nothing parked is a legal, non-error state — it is simply not
+ * submittable yet, which is exactly what {@link isDeclaredTotalCompleteAgainstPayment} and
+ * `canSubmit` capture.
+ */
+describe("isDeclaredTotalCompleteAgainstPayment / canSubmit (WO-09 equality rule)", () => {
+  it("cannot submit once money is left over and nothing is parked", () => {
+    const draft: StorePaymentSheetDraft = {
+      paymentAmountMinor: 1000,
+      debtMinor: 5000,
+      paymentDate: ORDER_DATE,
+      orders: [makeOrder({ assignableMinor: 1000, amountMinor: 600 })],
+    };
+    expect(isDeclaredTotalCompleteAgainstPayment(draft)).toBe(false);
+    const result = validateStorePaymentSheetDraft(draft);
+    expect(result.isDeclaredTotalComplete).toBe(false);
+    expect(result.canSubmit).toBe(false);
+  });
+
+  it("can submit once the allocated sum plus the parked slice equal the payment", () => {
+    const draft: StorePaymentSheetDraft = {
+      paymentAmountMinor: 1000,
+      debtMinor: 5000,
+      paymentDate: ORDER_DATE,
+      orders: [makeOrder({ assignableMinor: 1000, amountMinor: 600 })],
+      parkedAmountMinor: 400,
+    };
+    expect(isDeclaredTotalCompleteAgainstPayment(draft)).toBe(true);
+    const result = validateStorePaymentSheetDraft(draft);
+    expect(result.isDeclaredTotalComplete).toBe(true);
+    expect(result.canSubmit).toBe(true);
+    expect(result.parkedAmountMinor).toBe(400);
+  });
+
+  it("can submit fully parked, with nothing named against any order (spec §3.4)", () => {
+    const draft: StorePaymentSheetDraft = {
+      paymentAmountMinor: 1000,
+      debtMinor: 5000,
+      paymentDate: ORDER_DATE,
+      orders: [],
+      parkedAmountMinor: 1000,
+    };
+    expect(isDeclaredTotalCompleteAgainstPayment(draft)).toBe(true);
+    expect(validateStorePaymentSheetDraft(draft).canSubmit).toBe(true);
+  });
+
+  it("defaults an omitted parkedAmountMinor to 0, so every pre-WO-09 draft literal keeps behaving the same way", () => {
+    const draft: StorePaymentSheetDraft = {
+      paymentAmountMinor: 1000,
+      debtMinor: 5000,
+      paymentDate: ORDER_DATE,
+      orders: [makeOrder({ assignableMinor: 1000, amountMinor: 1000 })],
+    };
+    const result = validateStorePaymentSheetDraft(draft);
+    expect(result.parkedAmountMinor).toBe(0);
+    expect(result.canSubmit).toBe(true);
+  });
+
+  it("stays blocked when the sum alone already overshoots, however much is parked", () => {
+    const draft: StorePaymentSheetDraft = {
+      paymentAmountMinor: 1000,
+      debtMinor: 5000,
+      paymentDate: ORDER_DATE,
+      orders: [makeOrder({ assignableMinor: 5000, amountMinor: 1200 })],
+      parkedAmountMinor: 0,
+    };
+    expect(doesAllocationSumExceedPayment(draft)).toBe(true);
+    expect(validateStorePaymentSheetDraft(draft).canSubmit).toBe(false);
   });
 });

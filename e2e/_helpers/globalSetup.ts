@@ -1,5 +1,7 @@
 import { request, type FullConfig } from "@playwright/test";
 
+import { captureDataBaseline } from "./dataGuard";
+
 /**
  * Public routes hit once before the suite starts. Only unauthenticated GETs: `src/proxy.ts`
  * redirects every private prefix (`/dashboard`, `/orders`, `/stores`, `/admin`, ...) to sign-in
@@ -46,6 +48,11 @@ const DEFAULT_BASE_URL = "http://localhost:3000";
  * be strictly worse than letting the specs report the real problem themselves.
  */
 export default async function globalSetup(config: FullConfig): Promise<void> {
+  // Before anything else, and unlike the warmup below, this one DOES fail the run when it fails:
+  // without a baseline the suite has no way to prove afterwards that it left the collector's real
+  // data intact. See `scripts/e2e-db-baseline.ts`.
+  await captureDataBaseline();
+
   const baseURL = config.projects[0]?.use?.baseURL ?? DEFAULT_BASE_URL;
   const context = await request.newContext({ baseURL });
 

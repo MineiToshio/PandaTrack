@@ -49,6 +49,7 @@ import {
   clientErrorMessageKey,
   dimensionIssueMessage,
   extractErrorMessageKey,
+  extractErrorReference,
   fileTooLargeMessage,
   saveErrorMessageKey,
   serverDimensionMessage,
@@ -536,6 +537,7 @@ export default function ImageIntakeScreen({
                     result.productCount !== undefined && result.maxProducts !== undefined
                       ? { productCount: result.productCount, maxProducts: result.maxProducts }
                       : { minDimension: MIN_IMAGE_DIMENSION, maxWidth: MAX_IMAGE_WIDTH, maxHeight: MAX_IMAGE_HEIGHT },
+                  reference: extractErrorReference(result.code) ?? undefined,
                 },
           );
           setPhase("upload");
@@ -546,7 +548,7 @@ export default function ImageIntakeScreen({
         setSpentPhotoCount(segments.length);
         setPhase("review");
       } catch {
-        setError({ messageKey: "serverError" });
+        setError({ messageKey: "serverError", reference: extractErrorReference("server-error") ?? undefined });
         setPhase("upload");
       } finally {
         clearTimeout(readingTimer);
@@ -757,6 +759,11 @@ export default function ImageIntakeScreen({
             </ul>
           )}
           {attachments.length > 0 && <span className="mt-1 block">{t("errors.attachmentsKept")}</span>}
+          {error?.reference !== undefined && (
+            <span className="mt-1 block [font-size:var(--text-caption)] [color:var(--text-muted)]">
+              {t("errors.reference", { reference: error.reference })}
+            </span>
+          )}
         </AlertBanner>
       )}
 

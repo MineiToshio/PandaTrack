@@ -26,7 +26,7 @@ This is the spine of FRD-11. Everything after it is either an enrichment of this
 - Server Action `imageIntakeActions.ts`: authenticate, validate, call `extract`, return the draft.
 - **Currency gate**: when the user has no base currency configured, ask for it before extraction runs and only process the submission once it is set.
 - **"Revisa y confirma" screen**:
-  - header summary in both variants ("Encontramos 6 productos por S/ 480.00. Revisa 2 datos y guarda." and "Todo salió limpio del chat. Revísalo y guarda."),
+  - header summary in both variants ("Encontramos 6 productos por S/ 480.00. Revisa 2 datos y guarda." and "Todo salió limpio de las fotos. Revísalo y guarda."),
   - read values as plain, non-focusable text; assumed and missing values as focusable controls,
   - an assumed currency visibly marked as assumed,
   - group cards with the four-part structure (what we did, what the chat said quoted verbatim, why, and the reverting action), in their good / amber / doubtful states,

@@ -154,7 +154,7 @@
       "label": "Buscar tiendas o productos",
       "placeholder": "Tienda o producto (Amazon, Nendoroid…)"
     },
-    "debtAmount": "Debes {amount}",
+    "openOrderDebtAmount": "Pendiente en pedidos abiertos {amount}",
     "creditAmount": "A favor {amount}",
     "registerPayment": "Registrar pago",
     "registerPaymentDisabledHint": "Sin deuda pendiente con esta tienda",

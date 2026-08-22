@@ -89,13 +89,18 @@ function groupOrderDateExtreme(group: PendingProductsByStoreGroup, direction: 1 
 /**
  * Store ranking for `total-desc`. When a store's debt spans more than one currency there is no
  * single "biggest" figure to compare without a shared unit, so — as a documented simplification —
- * the highest `debtMinor` across the store's currencies stands in for its rank. This can rank a
- * store with a large debt in a minor currency ahead of one with a smaller debt in a strong currency.
- * Acceptable at today's near-entirely-single-currency-per-store data; revisit with a base-currency
- * conversion if multi-currency debt becomes common.
+ * the highest `openOrderDebtMinor` across the store's currencies stands in for its rank. This can
+ * rank a store with a large open balance in a minor currency ahead of one with a smaller open
+ * balance in a strong currency. Acceptable at today's near-entirely-single-currency-per-store data;
+ * revisit with a base-currency conversion if multi-currency debt becomes common.
+ *
+ * Ranks on `openOrderDebtMinor`, not the lifetime `debtMinor` (`ADR 0033`, `FIX D`): the store
+ * header chip this sort orders around displays `openOrderDebtMinor` (`StoreGroupHeader`), and a
+ * registration-gap store (a big unregistered balance on a COMPLETED order, nothing open today) must
+ * not outrank a store that genuinely owes money right now.
  */
 function groupMaxDebtMinor(group: PendingProductsByStoreGroup): number {
-  return group.debts.reduce((max, debt) => Math.max(max, debt.debtMinor), Number.NEGATIVE_INFINITY);
+  return group.debts.reduce((max, debt) => Math.max(max, debt.openOrderDebtMinor), Number.NEGATIVE_INFINITY);
 }
 
 /**

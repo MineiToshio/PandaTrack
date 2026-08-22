@@ -11,7 +11,7 @@ vi.mock("@/lib/data/user-settings/userSettingsQueries", () => ({
   getCollectorPreferencesSnapshot: vi.fn().mockResolvedValue(null),
 }));
 
-import { listOrderPaymentRecords } from "../orderPaymentAllocations";
+import { listOrderPaymentRecords, recalculateOrderAllocationCache } from "../orderPaymentAllocations";
 import { getOrderDetail } from "../orderQueries";
 
 /**
@@ -248,5 +248,32 @@ describe("isShared counts ORDERS, not lines (D1)", () => {
     const records = await listOrderPaymentRecords(tx as never, "order-1", "user-1");
 
     expect(records[0]).toMatchObject({ amount: 4000, isPartialClaim: true, isShared: false });
+  });
+});
+
+describe("recalculateOrderAllocationCache scopes its write to the caller (defense in depth)", () => {
+  /**
+   * The cache write used to be `tx.order.update({ where: { id: orderId }, ... })`: a bare id, with no
+   * `userId` in the where clause. Every caller of this module already resolved the order against
+   * `{ userId, ... }` earlier in its own transaction, so this never let a cross-account write happen
+   * in practice, but it left the write itself unscoped (`data-layer-user-id-duplication.mdc`).
+   * Hardened to `updateMany({ where: { id, userId }, ... })` so the write is scoped on its own terms,
+   * not only by the caller's earlier read.
+   */
+  it("writes via updateMany scoped to { id, userId }, not a bare id", async () => {
+    const updateMany = vi.fn().mockResolvedValue({ count: 1 });
+    const tx = {
+      paymentAllocation: {
+        groupBy: vi.fn().mockResolvedValue([{ orderId: "order-1", _sum: { amountMinor: 5000 } }]),
+      },
+      order: { updateMany },
+    };
+
+    await recalculateOrderAllocationCache(tx as never, ["order-1"], "user-1");
+
+    expect(updateMany).toHaveBeenCalledWith({
+      where: { id: "order-1", userId: "user-1" },
+      data: { allocatedAmountMinor: 5000 },
+    });
   });
 });

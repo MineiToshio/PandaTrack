@@ -1,10 +1,24 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { StoreRemovalReason, StoreStatus } from "../../../../../../../../generated/prisma/client";
+import { formatAmountSymbolOnly } from "@/lib/currency";
 import OrderDetailHero from "../OrderDetailHero";
 
+// Captures the `vars` of the LAST call for each key, so tests can assert not just that a key
+// rendered but which AMOUNT it was called with — the plain `(key) => key` shape used elsewhere in
+// this file cannot tell `openOrderDebtMinor` and `storeDebtMinor` apart once both format to the
+// same key.
+const { capturedTranslations } = vi.hoisted(() => ({
+  capturedTranslations: new Map<string, Record<string, unknown> | undefined>(),
+}));
+
 vi.mock("next-intl", () => ({
-  useTranslations: () => (key: string) => key,
+  useTranslations:
+    () =>
+    (key: string, vars?: Record<string, unknown>): string => {
+      capturedTranslations.set(key, vars);
+      return key;
+    },
 }));
 
 // Leaf children that pull image / clipboard / analytics deps — stubbed so the test stays focused
@@ -38,6 +52,7 @@ const BASE_PROPS = {
   isOverdue: false,
   overdueDays: 0,
   storeDebtMinor: 0,
+  openOrderDebtMinor: 0,
   locale: "en",
 };
 
@@ -84,8 +99,24 @@ describe("OrderDetailHero allocation state", () => {
     expect(screen.queryByText("detail.hero.storeDebtLink")).toBeNull();
   });
 
+  it("stays on the progress bar, not the debt link, once THIS order has a partial allocation even while the store still owes money elsewhere", () => {
+    // The exact shape of ORD-20260313-02 (Vaulted Store) and ORD-20250909-02 (Pop Dealer Store): a
+    // partial payment already declared against this order (30000/150000 and 15970/29970 in prod),
+    // plus a genuine open debt on the store from ITS OTHER orders. The two lines are mutually
+    // exclusive by design (see the block comment above `hasAllocation` in `OrderDetailHero`): once
+    // something is declared against this order, the hero commits to "Asignado X de Y" for it and
+    // leaves the store-wide figure to the store page, rather than showing both at once. A visual
+    // pass that expects `isCreditAtStore || openOrderDebtMinor !== 0` alone to gate the link would
+    // read this as a missing link; it is the allocated-order branch instead, not a defect.
+    render(<OrderDetailHero {...BASE_PROPS} allocatedAmountMinor={3000} openOrderDebtMinor={120000} order={order} />);
+
+    expect(screen.getByText("detail.hero.allocatedOfTotal")).toBeInTheDocument();
+    expect(screen.getByRole("progressbar")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /detail\.hero\.storeDebtLink/ })).toBeNull();
+  });
+
   it("shows the store's debt link instead of a progress bar while nothing is allocated yet", () => {
-    render(<OrderDetailHero {...BASE_PROPS} allocatedAmountMinor={0} storeDebtMinor={3000} order={order} />);
+    render(<OrderDetailHero {...BASE_PROPS} allocatedAmountMinor={0} openOrderDebtMinor={3000} order={order} />);
 
     expect(screen.queryByRole("progressbar")).toBeNull();
     expect(screen.queryByText("detail.hero.allocatedOfTotal")).toBeNull();
@@ -93,11 +124,78 @@ describe("OrderDetailHero allocation state", () => {
     expect(new URL(debtLink.getAttribute("href")!, "http://localhost").pathname).toBe("/en/stores/manga-store");
   });
 
+  it("prints openOrderDebtMinor on the link, not the lifetime storeDebtMinor, when they diverge (ADR 0033)", () => {
+    // A COMPLETED order elsewhere at this store left a balance behind (a registration gap): the
+    // lifetime `storeDebtMinor` (500.00) still carries it, but `openOrderDebtMinor` (200.00)
+    // excludes it. The link must print the open figure.
+    capturedTranslations.clear();
+    render(
+      <OrderDetailHero
+        {...BASE_PROPS}
+        allocatedAmountMinor={0}
+        storeDebtMinor={5000}
+        openOrderDebtMinor={2000}
+        order={order}
+      />,
+    );
+
+    expect(capturedTranslations.get("detail.hero.storeDebtLink")?.amount).toBe(
+      formatAmountSymbolOnly(2000, order.currencyCode, "en"),
+    );
+    expect(capturedTranslations.get("detail.hero.storeDebtLink")?.amount).not.toBe(
+      formatAmountSymbolOnly(5000, order.currencyCode, "en"),
+    );
+  });
+
+  it("never clamps a negative openOrderDebtMinor: the link renders the raw figure (BR-05-32)", () => {
+    // Unreachable through the derivation by construction, but the type is not narrowed to
+    // non-negative, so the component must not paper over it: hiding or clamping it would convert
+    // a loud symptom (a ceiling bypassed elsewhere) into silence. `storeDebtMinor` stays positive
+    // here so this exercises the debt branch, not the credit one.
+    capturedTranslations.clear();
+    render(
+      <OrderDetailHero
+        {...BASE_PROPS}
+        allocatedAmountMinor={0}
+        storeDebtMinor={1000}
+        openOrderDebtMinor={-500}
+        order={order}
+      />,
+    );
+
+    const debtLink = screen.getByRole("link", { name: /detail\.hero\.storeDebtLink/ });
+    expect(debtLink).toBeInTheDocument();
+    expect(capturedTranslations.get("detail.hero.storeDebtLink")?.amount).toBe(
+      formatAmountSymbolOnly(-500, order.currencyCode, "en"),
+    );
+  });
+
   it("shows the credit line instead of the debt line when the store owes the collector", () => {
     render(<OrderDetailHero {...BASE_PROPS} allocatedAmountMinor={0} storeDebtMinor={-2000} order={order} />);
 
     expect(screen.getByText("detail.hero.storeCreditLink")).toBeInTheDocument();
     expect(screen.queryByText("detail.hero.storeDebtLink")).toBeNull();
+  });
+
+  it("keeps the credit line on the lifetime storeDebtMinor even when openOrderDebtMinor differs (FR-05-63)", () => {
+    // "In credit" is a fact about the store's whole history; the credit branch must not switch to
+    // `openOrderDebtMinor`, even when an open order still carries its own committed balance.
+    capturedTranslations.clear();
+    render(
+      <OrderDetailHero
+        {...BASE_PROPS}
+        allocatedAmountMinor={0}
+        storeDebtMinor={-5000}
+        openOrderDebtMinor={12000}
+        order={order}
+      />,
+    );
+
+    expect(screen.getByText("detail.hero.storeCreditLink")).toBeInTheDocument();
+    expect(screen.queryByText("detail.hero.storeDebtLink")).toBeNull();
+    expect(capturedTranslations.get("detail.hero.storeCreditLink")?.amount).toBe(
+      formatAmountSymbolOnly(5000, order.currencyCode, "en"),
+    );
   });
 
   it("shows the paid-in-full badge only once allocated reaches the total", () => {
@@ -109,7 +207,33 @@ describe("OrderDetailHero allocation state", () => {
   });
 
   it("renders neither the debt link nor the credit link when nothing is owed either way", () => {
-    render(<OrderDetailHero {...BASE_PROPS} allocatedAmountMinor={0} storeDebtMinor={0} order={order} />);
+    render(
+      <OrderDetailHero
+        {...BASE_PROPS}
+        allocatedAmountMinor={0}
+        storeDebtMinor={0}
+        openOrderDebtMinor={0}
+        order={order}
+      />,
+    );
+
+    expect(screen.queryByRole("link", { name: /detail\.hero\.storeDebtLink/ })).toBeNull();
+    expect(screen.queryByText("detail.hero.storeCreditLink")).toBeNull();
+  });
+
+  it("renders no debt link when the lifetime debt is a registration gap but openOrderDebtMinor is zero", () => {
+    // The exact scenario ADR 0033 exists to fix: a COMPLETED order elsewhere left a balance behind,
+    // so `storeDebtMinor` alone is not zero, but nothing is open. The link must stay hidden rather
+    // than reappear off the lifetime figure.
+    render(
+      <OrderDetailHero
+        {...BASE_PROPS}
+        allocatedAmountMinor={0}
+        storeDebtMinor={3000}
+        openOrderDebtMinor={0}
+        order={order}
+      />,
+    );
 
     expect(screen.queryByRole("link", { name: /detail\.hero\.storeDebtLink/ })).toBeNull();
     expect(screen.queryByText("detail.hero.storeCreditLink")).toBeNull();
@@ -117,7 +241,15 @@ describe("OrderDetailHero allocation state", () => {
 
   it("hides both the allocation line and the debt link on a cancelled order", () => {
     const cancelledOrder = { ...order, status: "CANCELLED" as const };
-    render(<OrderDetailHero {...BASE_PROPS} allocatedAmountMinor={0} storeDebtMinor={3000} order={cancelledOrder} />);
+    render(
+      <OrderDetailHero
+        {...BASE_PROPS}
+        allocatedAmountMinor={0}
+        storeDebtMinor={3000}
+        openOrderDebtMinor={3000}
+        order={cancelledOrder}
+      />,
+    );
 
     expect(screen.queryByRole("progressbar")).toBeNull();
     expect(screen.queryByText("detail.hero.storeDebtLink")).toBeNull();

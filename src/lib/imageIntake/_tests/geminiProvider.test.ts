@@ -303,6 +303,42 @@ describe("GeminiExtractionProvider.generateDraft: failure classification", () =>
     await expect(call).rejects.toMatchObject({ reason: "server-error", status: 503 });
   });
 
+  /**
+   * The two 4xx statuses that describe the moment rather than the request.
+   *
+   * Lumping them in with "the API refused what we sent" cost the submission twice: the single
+   * retry that would very likely have cleared them never ran, and the collector was told the
+   * failure could not be cleared by retrying and that a bug report had been filed, neither of
+   * which was true of a rate limit.
+   */
+  it.each([
+    [429, "rate limited"],
+    [408, "request timeout"],
+  ])("treats a %i as a retryable transport failure, not as a defect of ours", async (status, message) => {
+    const { ApiError } = await import("@google/genai");
+    const { GeminiExtractionProvider } = await importProvider();
+    const { ProviderRequestError, ProviderTransportError } = await import("../extractionEngine");
+    generateContentMock.mockRejectedValue(new ApiError({ message, status }));
+
+    const call = new GeminiExtractionProvider().generateDraft(buildImages(), buildContext());
+
+    await expect(call).rejects.toBeInstanceOf(ProviderTransportError);
+    await expect(call).rejects.not.toBeInstanceOf(ProviderRequestError);
+    await expect(call).rejects.toMatchObject({ reason: "overloaded", status });
+  });
+
+  it("keeps every other 4xx non-retryable, so a malformed request still fails once", async () => {
+    const { ApiError } = await import("@google/genai");
+    const { GeminiExtractionProvider } = await importProvider();
+    const { ProviderRequestError } = await import("../extractionEngine");
+    for (const status of [400, 401, 403, 404]) {
+      generateContentMock.mockRejectedValue(new ApiError({ message: "refused", status }));
+      const call = new GeminiExtractionProvider().generateDraft(buildImages(), buildContext());
+      await expect(call).rejects.toBeInstanceOf(ProviderRequestError);
+      await expect(call).rejects.toMatchObject({ kind: "rejected", status });
+    }
+  });
+
   it("never treats a 4xx as transport, even when its body contains transport-sounding words", async () => {
     const { ApiError } = await import("@google/genai");
     const { GeminiExtractionProvider } = await importProvider();

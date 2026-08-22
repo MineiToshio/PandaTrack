@@ -122,11 +122,11 @@ describe("filterStoreGroups", () => {
         makeProduct({ itemId: "p1", name: "Nendoroid Kaworu", orderId: "order-30" }),
         makeProduct({ itemId: "p2", name: "Keychain", orderId: "order-31" }),
       ],
-      { debts: [{ currencyCode: "PEN", debtMinor: 45000 }] },
+      { debts: [{ currencyCode: "PEN", debtMinor: 45000, openOrderDebtMinor: 45000 }] },
     );
 
     const result = filterStoreGroups([group], "nendoroid");
 
-    expect(result[0].debts).toEqual([{ currencyCode: "PEN", debtMinor: 45000 }]);
+    expect(result[0].debts).toEqual([{ currencyCode: "PEN", debtMinor: 45000, openOrderDebtMinor: 45000 }]);
   });
 });

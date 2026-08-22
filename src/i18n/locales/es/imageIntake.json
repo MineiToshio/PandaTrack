@@ -11,7 +11,7 @@
     "title": "Sube la captura",
     "description": "Leemos tus fotos y llenamos el pedido.",
     "dropzoneTitle": "Añadir fotos",
-    "dropzoneHint": "Captura de chat, correo o recibo",
+    "dropzoneHint": "Captura de chat, correo, página de la tienda o recibo",
     "chooseMore": "Añadir más fotos",
     "helper": "Sube las fotos que necesites. Se aceptan PNG, JPEG y WebP.",
     "attachedTitle": "Fotos adjuntas ({count})",
@@ -23,7 +23,7 @@
     "linkHintToggle": "¿Solo tienes el enlace del producto?",
     "linkHint": "Adjunta una captura de su ficha en la tienda: de ahí sacamos el nombre. Si la añades después, hay que volver a leer todas las fotos.",
     "guidanceOneOrder": "Sube <strong>un pedido a la vez</strong>: todo se junta en uno.",
-    "guidanceOrder": "Leemos <strong>en orden</strong>: primero el chat, las fichas de producto al final.",
+    "guidanceOrder": "Leemos <strong>en orden</strong>: primero la compra, las fichas de producto al final.",
     "guidanceLabel": "Antes de subir",
     "position": "Foto {position}",
     "zoomOpen": "Ver la foto {position} en grande",
@@ -47,7 +47,7 @@
     "stepsLabel": "Progreso de la lectura",
     "optimizing": "Optimizando imágenes...",
     "uploading": "Subiendo...",
-    "reading": "Leyendo la conversación...",
+    "reading": "Leyendo la compra...",
     "doneLabel": "Completado",
     "activeLabel": "En curso",
     "pendingLabel": "Pendiente"
@@ -55,6 +55,7 @@
   "errors": {
     "title": "No pudimos continuar",
     "attachmentsKept": "Tus fotos siguen adjuntas.",
+    "reference": "Referencia del fallo: {reference}. Compártela si necesitas que lo revisemos.",
     "emptySubmission": "Adjunta al menos una foto para continuar.",
     "tooManyImages": "Son muchas fotos para una sola subida. Envía hasta 20 por vez.",
     "fileTooLarge": "Una de las fotos sigue pesando demasiado después de optimizarla. Recórtala o divídela en dos capturas.",
@@ -78,13 +79,13 @@
     "dailyCapExceeded": "Llegaste al máximo de fotos por hoy. Vuelve mañana o registra el pedido a mano.",
     "dailyAttemptCapExceeded": "Hubo demasiados intentos de lectura hoy. Vuelve mañana o registra el pedido a mano.",
     "invalidModelResponse": "No entendimos lo que había en las fotos. Prueba con una captura más clara.",
-    "noOrderFound": "No encontramos ningún pedido en esas fotos. Suele pasar cuando la foto es solo del producto: necesitamos ver la conversación o el recibo, donde salgan los productos y los montos. Quita la foto que no corresponde y prueba con otra.",
+    "noOrderFound": "No encontramos ningún pedido en esas fotos. Suele pasar cuando la foto es solo del producto: necesitamos ver la compra (el chat, el correo, la página del pedido o el recibo), donde salgan los productos y los montos. Quita la foto que no corresponde y prueba con otra.",
     "multipleOrders": "Esas fotos parecen de varias compras distintas. Cada pedido se sube por separado, aunque tenga varios productos. Quita las fotos que sobran y deja solo las de una compra.",
     "providerError": "No pudimos leer las fotos en este momento. Inténtalo de nuevo en un minuto.",
     "providerRejected": "Hubo un problema al leer las fotos. No se soluciona reintentando: ya estamos avisados y lo vamos a arreglar. Mientras tanto puedes registrar el pedido a mano.",
     "responseTooLong": "La lectura se hizo demasiado larga y se cortó. Envía menos fotos por vez, o registra el pedido a mano.",
     "ledgerError": "No pudimos completar la lectura. Inténtalo de nuevo en un minuto.",
-    "productCeilingExceeded": "Son demasiados productos para un pedido. El chat pide {productCount} y un pedido admite {maxProducts}. Únelos en un solo producto o divide la compra en dos pedidos.",
+    "productCeilingExceeded": "Son demasiados productos para un pedido. Las fotos piden {productCount} y un pedido admite {maxProducts}. Únelos en un solo producto o divide la compra en dos pedidos.",
     "missingBaseCurrency": "Primero elige tu moneda base en configuración.",
     "unauthorized": "Tu sesión expiró. Vuelve a iniciar sesión.",
     "serverError": "Algo salió mal. Inténtalo de nuevo.",
@@ -96,7 +97,7 @@
   "review": {
     "title": "Revisa y confirma",
     "headerWithDoubts": "Encontramos {productCount, plural, one {# producto} other {# productos}} por {total}. {doubtCount, plural, one {Revisa # dato y guarda.} other {Revisa # datos y guarda.}}",
-    "headerClean": "Todo salió limpio del chat. Revísalo y guarda.",
+    "headerClean": "Todo salió limpio de las fotos. Revísalo y guarda.",
     "edit": {
       "blankName": "El producto {position} se quedó sin nombre. Escríbele uno para poder guardar el pedido."
     },
@@ -108,7 +109,7 @@
       "mobileTitle": "Elige la tienda",
       "mobileSearch": "Buscar tienda",
       "listLabel": "Tiendas disponibles",
-      "readFromChat": "Del chat: \"{phrase}\"",
+      "readFromChat": "De las fotos: \"{phrase}\"",
       "help": "Elígela de tu lista para poder guardar el pedido.",
       "createLabel": "Crear una tienda nueva",
       "notFoundQuestion": "¿No está en tu lista?"
@@ -123,10 +124,10 @@
       "assumed": "asumido",
       "derived": "calculado",
       "missing": "falta",
-      "assumedHint": "El chat no lo dice. Lo completamos nosotros, así que conviene revisarlo.",
-      "missingHint": "No lo encontramos en el chat. Complétalo si lo sabes.",
-      "totalHint": "El chat no dice un total. Súmalo de los productos o escríbelo.",
-      "totalDerivedHint": "El chat no dice un total. Lo calculamos sumando {count, plural, one {el precio del # producto} other {el precio de los # productos}}."
+      "assumedHint": "Las fotos no lo dicen. Lo completamos nosotros, así que conviene revisarlo.",
+      "missingHint": "No lo encontramos en las fotos. Complétalo si lo sabes.",
+      "totalHint": "Las fotos no dicen un total. Súmalo de los productos o escríbelo.",
+      "totalDerivedHint": "Las fotos no dicen un total. Lo calculamos sumando {count, plural, one {el precio del # producto} other {el precio de los # productos}}."
     },
     "fx": {
       "label": "Tipo de cambio {from} a {to}",
@@ -148,10 +149,10 @@
       "notNameable": "No supimos qué trae.",
       "notNameableWhy": "Lo guardamos como un producto.",
       "openRange": "Lo separamos en {count, plural, one {# producto} other {# productos}}.",
-      "openRangeWhy": "El chat pide un rango, así que creamos un producto por cada número.",
-      "sourceQuote": "Del chat: \"{phrase}\"",
-      "sourceQuoteSealed": "El chat dice \"{phrase}\".",
-      "sourceQuoteNotNameable": "El chat dice \"{phrase}\" sin decir cuáles.",
+      "openRangeWhy": "Las fotos piden un rango, así que creamos un producto por cada número.",
+      "sourceQuote": "De las fotos: \"{phrase}\"",
+      "sourceQuoteSealed": "Las fotos dicen \"{phrase}\".",
+      "sourceQuoteNotNameable": "Las fotos dicen \"{phrase}\" sin decir cuáles.",
       "mergeAction": "Unir en uno",
       "splitAction": "Separar",
       "splitIntoAction": "Separar en {count} productos",
@@ -163,7 +164,7 @@
       "rangeSeparator": "{first} a {last}",
       "priceSplitUneven": "Repartimos {total} en partes iguales. Ajusta si una pieza vale más que la otra",
       "doubtful": "No estamos seguros",
-      "clean": "Del chat",
+      "clean": "De las fotos",
       "warning": "Precio repartido",
       "noPrice": "Sin precio",
       "rowsLabel": "Productos del grupo",
@@ -179,13 +180,13 @@
       "editCollapsedHint": "Abre los {count} para corregir un nombre o un precio.",
       "priceNotANumber": "Escribe el precio como número, sin separadores de miles ni símbolos. Ejemplo: 115.00",
       "categorySuggestedHint": "Las categorías son sugerencias nuestras. Cámbialas si no encajan.",
-      "referenceLinkLead": "Enlace del chat:"
+      "referenceLinkLead": "Enlace de las fotos:"
     },
     "productSheet": {
       "title": "{count, plural, one {Podemos nombrar mejor este producto} other {Podemos nombrar mejor estos # productos}}",
-      "reasonHostOnly": "Del enlace solo sacamos el dominio: \"{name}\". El chat no dice qué producto es.",
+      "reasonHostOnly": "Del enlace solo sacamos el dominio: \"{name}\". Las fotos no dicen qué producto es.",
       "reasonDoubtful": "Leímos \"{name}\" del enlace de {host}, pero no estamos seguros de qué es.",
-      "body": "Adjunta una captura de su ficha en la tienda y lo nombramos de ahí. El precio y el total siguen saliendo del chat, nunca de la ficha.",
+      "body": "Adjunta una captura de su ficha en la tienda y lo nombramos de ahí. El precio y el total siguen saliendo de la compra, nunca de la ficha.",
       "cost": "Volver a leer gasta otra vez las {count, plural, one {# foto} other {# fotos}} que ya subiste, más la que añadas: la lectura es una sola pasada sobre todas las fotos.",
       "costWithBalance": "Volver a leer gasta otra vez las {count, plural, one {# foto} other {# fotos}} que ya subiste, más la que añadas: la lectura es una sola pasada sobre todas las fotos. Te quedan {remaining} este mes.",
       "costUnaffordable": "Volver a leer costaría {needed, plural, one {# foto} other {# fotos}} (las que ya subiste más la nueva) y te quedan {remaining} este mes.",
@@ -195,7 +196,7 @@
     "payments": {
       "title": "Pagos",
       "row": "Pago del {date}",
-      "empty": "No encontramos pagos en el chat.",
+      "empty": "No encontramos pagos en las fotos.",
       "amountLabel": "Pago {position}",
       "dateLabel": "Fecha del pago",
       "add": "Añadir pago",
@@ -215,7 +216,7 @@
     },
     "delivery": {
       "cost": "Costo de envío",
-      "costNotSaved": "Lo leímos del chat, pero se guarda recién cuando registres la entrega."
+      "costNotSaved": "Lo leímos de las fotos, pero se guarda recién cuando registres la entrega."
     },
     "save": "Crear pedido",
     "manual": "Completar a mano",
@@ -227,7 +228,7 @@
     }
   },
   "save": {
-    "paymentsSkipped": "No pudimos registrar {count, plural, one {# pago} other {# pagos}} del chat. Revísalo y agrégalo a mano en el pedido.",
+    "paymentsSkipped": "No pudimos registrar {count, plural, one {# pago} other {# pagos}} de las fotos. Revísalo y agrégalo a mano en el pedido.",
     "breakdownSkipped": "No pudimos registrar {count, plural, one {un pago con desglose} other {# pagos con desglose}}. Anótalo en el pedido con su desglose."
   },
   "share": {

@@ -1,8 +1,16 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import QuickArrivalModal from "../QuickArrivalModal";
+
+const { getSettlementContextActionMock } = vi.hoisted(() => ({
+  getSettlementContextActionMock: vi.fn(),
+}));
+
+vi.mock("@/app/[locale]/(app)/_actions/settlementActions", () => ({
+  getSettlementContextAction: getSettlementContextActionMock,
+}));
 
 // The values are serialized into the returned string on purpose: several of this modal's strings
 // exist only to state a quantity or an order code, and a mock that dropped the interpolations
@@ -281,5 +289,314 @@ describe("QuickArrivalModal over a store-scoped selection", () => {
 
     expect(onSubmit).toHaveBeenCalledTimes(1);
     expect(onSubmit.mock.calls[0][0].productIds).toEqual(["item-1", "item-2", "item-3"]);
+  });
+});
+
+/**
+ * Settlement on arrival (`WO-08`, `ADR 0032`): the "Ya pagué el resto" checkbox and its detail,
+ * reference and guard copy. The modal fetches a preview via `getSettlementContextAction` once it
+ * opens (mocked here so every scenario controls exactly what the resolver would have said).
+ */
+describe("QuickArrivalModal settlement on arrival (WO-08)", () => {
+  const SINGLE_ITEM = [{ id: "item-1", name: "Nendoroid Miku", orderId: "order-1" }];
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("renders no checkbox when the order has nothing left to settle", async () => {
+    getSettlementContextActionMock.mockResolvedValue({
+      ok: true,
+      contexts: [
+        {
+          orderId: "order-1",
+          currencyCode: "USD",
+          closesOrder: true,
+          unassignedMinor: 0,
+          plan: { kind: "nothingToSettle" },
+          defaultChecked: false,
+        },
+      ],
+    });
+
+    renderModal({ items: SINGLE_ITEM, orderId: "order-1" });
+
+    await waitFor(() => expect(getSettlementContextActionMock).toHaveBeenCalled());
+    expect(
+      screen.queryByRole("checkbox", { name: "detail.quickArrival.settlement.checkboxLabel" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("pre-marks the checkbox when the arrival closes the order and no unassigned money exists", async () => {
+    getSettlementContextActionMock.mockResolvedValue({
+      ok: true,
+      contexts: [
+        {
+          orderId: "order-1",
+          currencyCode: "USD",
+          closesOrder: true,
+          unassignedMinor: 0,
+          plan: { kind: "computedFull", amountMinor: 5000, appliedUnassignedMinor: 0 },
+          defaultChecked: true,
+        },
+      ],
+    });
+
+    renderModal({ items: SINGLE_ITEM, orderId: "order-1" });
+
+    const checkbox = await screen.findByRole("checkbox", { name: "detail.quickArrival.settlement.checkboxLabel" });
+    expect(checkbox).toBeChecked();
+  });
+
+  it("pre-marks the checkbox (informative only) when the arrival closes the order despite unassigned money existing", async () => {
+    getSettlementContextActionMock.mockResolvedValue({
+      ok: true,
+      contexts: [
+        {
+          orderId: "order-1",
+          currencyCode: "USD",
+          closesOrder: true,
+          unassignedMinor: 1000,
+          plan: { kind: "computedFull", amountMinor: 4000, appliedUnassignedMinor: 1000 },
+          defaultChecked: true,
+        },
+      ],
+    });
+
+    renderModal({ items: SINGLE_ITEM, orderId: "order-1" });
+
+    const checkbox = await screen.findByRole("checkbox", { name: "detail.quickArrival.settlement.checkboxLabel" });
+    expect(checkbox).toBeChecked();
+    expect(screen.getByText(/settlement\.appliedUnassigned/)).toBeInTheDocument();
+  });
+
+  it("double-counting guard: leaves the checkbox unmarked when the arrival does NOT close the order and unassigned money exists", async () => {
+    getSettlementContextActionMock.mockResolvedValue({
+      ok: true,
+      contexts: [
+        {
+          orderId: "order-1",
+          currencyCode: "USD",
+          closesOrder: false,
+          unassignedMinor: 1500,
+          plan: { kind: "computedPartial", amountMinor: 800, undetailed: false },
+          defaultChecked: false,
+        },
+      ],
+    });
+
+    renderModal({ items: SINGLE_ITEM, orderId: "order-1" });
+
+    const checkbox = await screen.findByRole("checkbox", { name: "detail.quickArrival.settlement.checkboxLabel" });
+    expect(checkbox).not.toBeChecked();
+  });
+
+  it("shows the unassigned-money guard notice only when the arrival stays open and money is unassigned", async () => {
+    getSettlementContextActionMock.mockResolvedValue({
+      ok: true,
+      contexts: [
+        {
+          orderId: "order-1",
+          currencyCode: "USD",
+          closesOrder: false,
+          unassignedMinor: 1500,
+          plan: { kind: "computedPartial", amountMinor: 800, undetailed: false },
+          defaultChecked: false,
+        },
+      ],
+    });
+
+    renderModal({ items: SINGLE_ITEM, orderId: "order-1", storeName: "AmiAmi" });
+
+    await screen.findByRole("checkbox", { name: "detail.quickArrival.settlement.checkboxLabel" });
+    await userEvent.click(screen.getByRole("checkbox", { name: "detail.quickArrival.settlement.checkboxLabel" }));
+    expect(screen.getByText(/settlement\.unassignedNotice/)).toBeInTheDocument();
+  });
+
+  it("shows a blank amount input plus the missing-price reason and the reference figure on the manual branch", async () => {
+    getSettlementContextActionMock.mockResolvedValue({
+      ok: true,
+      contexts: [
+        {
+          orderId: "order-1",
+          currencyCode: "USD",
+          closesOrder: false,
+          unassignedMinor: 0,
+          plan: { kind: "manual", reasonCode: "missingPrice", referenceAmountMinor: 3000 },
+          defaultChecked: true,
+        },
+      ],
+    });
+
+    renderModal({ items: SINGLE_ITEM, orderId: "order-1" });
+
+    await screen.findByRole("checkbox", { name: "detail.quickArrival.settlement.checkboxLabel" });
+    expect(screen.getByText("detail.quickArrival.settlement.reasonMissingPrice")).toBeInTheDocument();
+    expect(screen.getByText(/settlement\.reference/)).toBeInTheDocument();
+    const amountInput = screen.getByPlaceholderText("detail.quickArrival.costPlaceholder");
+    expect(amountInput).toHaveValue("");
+  });
+
+  it("refuses to submit the manual branch with a blank amount", async () => {
+    getSettlementContextActionMock.mockResolvedValue({
+      ok: true,
+      contexts: [
+        {
+          orderId: "order-1",
+          currencyCode: "USD",
+          closesOrder: false,
+          unassignedMinor: 0,
+          plan: { kind: "manual", reasonCode: "missingPrice", referenceAmountMinor: 3000 },
+          defaultChecked: true,
+        },
+      ],
+    });
+
+    const { onSubmit } = renderModal({ items: SINGLE_ITEM, orderId: "order-1" });
+
+    await screen.findByRole("checkbox", { name: "detail.quickArrival.settlement.checkboxLabel" });
+    await userEvent.click(screen.getByRole("button", { name: /detail\.quickArrival\.confirm/ }));
+
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it("submits the computed amount's order id as a settlement intent, with the settlement date defaulted to the arrival date", async () => {
+    getSettlementContextActionMock.mockResolvedValue({
+      ok: true,
+      contexts: [
+        {
+          orderId: "order-1",
+          currencyCode: "USD",
+          closesOrder: true,
+          unassignedMinor: 0,
+          plan: { kind: "computedFull", amountMinor: 5000, appliedUnassignedMinor: 0 },
+          defaultChecked: true,
+        },
+      ],
+    });
+
+    const { onSubmit } = renderModal({ items: SINGLE_ITEM, orderId: "order-1" });
+
+    await screen.findByRole("checkbox", { name: "detail.quickArrival.settlement.checkboxLabel" });
+    await userEvent.click(screen.getByRole("button", { name: /detail\.quickArrival\.confirm/ }));
+
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    const payload = onSubmit.mock.calls[0][0];
+    expect(payload.settleRemainder).toBe(true);
+    expect(payload.settlementIntents).toEqual([
+      { orderId: "order-1", manualAmountMinor: undefined, branchHint: "full" },
+    ]);
+    expect(payload.settlementDate.toISOString().slice(0, 10)).toBe(payload.receivedDate.toISOString().slice(0, 10));
+  });
+
+  it("submits settleRemainder: false and no settlement date when the collector unchecks the box", async () => {
+    getSettlementContextActionMock.mockResolvedValue({
+      ok: true,
+      contexts: [
+        {
+          orderId: "order-1",
+          currencyCode: "USD",
+          closesOrder: true,
+          unassignedMinor: 0,
+          plan: { kind: "computedFull", amountMinor: 5000, appliedUnassignedMinor: 0 },
+          defaultChecked: true,
+        },
+      ],
+    });
+
+    const { onSubmit } = renderModal({ items: SINGLE_ITEM, orderId: "order-1" });
+
+    await screen.findByRole("checkbox", { name: "detail.quickArrival.settlement.checkboxLabel" });
+    await userEvent.click(screen.getByRole("checkbox", { name: "detail.quickArrival.settlement.checkboxLabel" }));
+    await userEvent.click(screen.getByRole("button", { name: /detail\.quickArrival\.confirm/ }));
+
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    const payload = onSubmit.mock.calls[0][0];
+    expect(payload.settleRemainder).toBe(false);
+    expect(payload.settlementDate).toBeUndefined();
+    expect(payload.settlementIntents).toBeUndefined();
+  });
+
+  // MAJOR F4, 2026-08-20 review: before the fix, the settlement-context effect was keyed on
+  // `[isOpen]` only, so it fetched exactly once when the dialog opened and never again — deselecting
+  // a product moved the picker's own state but never re-requested the preview, which kept quoting a
+  // figure for every eligible product regardless of what was actually still checked.
+  it("re-fetches the settlement preview with the NARROWED selection when a product is deselected", async () => {
+    const MULTI_ITEMS = [
+      { id: "item-1", name: "Nendoroid Miku", orderId: "order-1" },
+      { id: "item-2", name: "Figma Rem", orderId: "order-1" },
+    ];
+    getSettlementContextActionMock.mockResolvedValue({
+      ok: true,
+      contexts: [
+        {
+          orderId: "order-1",
+          currencyCode: "USD",
+          closesOrder: true,
+          unassignedMinor: 0,
+          plan: { kind: "computedFull", amountMinor: 10000, appliedUnassignedMinor: 0 },
+          defaultChecked: true,
+        },
+      ],
+    });
+
+    renderModal({ items: MULTI_ITEMS, orderId: "order-1" });
+
+    await waitFor(() =>
+      expect(getSettlementContextActionMock).toHaveBeenCalledWith({
+        orders: [{ orderId: "order-1", deliveredItemIds: ["item-1", "item-2"] }],
+      }),
+    );
+
+    await userEvent.click(screen.getByRole("checkbox", { name: "Figma Rem" }));
+
+    await waitFor(() =>
+      expect(getSettlementContextActionMock).toHaveBeenLastCalledWith({
+        orders: [{ orderId: "order-1", deliveredItemIds: ["item-1"] }],
+      }),
+    );
+  });
+
+  // MAJOR, 2026-08-21 review: `getSettlementContextAction`'s `.then` had no rejection handler, so a
+  // rejected promise (a thrown module-evaluation error, a dropped connection) left `settlementContexts`
+  // `null` and `isLoadingSettlement` `true` forever — "Calculando…" never clears. Before this fix
+  // this test times out waiting for the loading indicator to disappear.
+  it("clears the loading state instead of hanging when the settlement-context fetch rejects", async () => {
+    getSettlementContextActionMock.mockRejectedValue(new Error("boom"));
+
+    renderModal({ items: SINGLE_ITEM, orderId: "order-1" });
+
+    await waitFor(() => expect(getSettlementContextActionMock).toHaveBeenCalled());
+    await waitFor(() => expect(screen.queryByRole("status")).not.toBeInTheDocument());
+    expect(
+      screen.queryByRole("checkbox", { name: "detail.quickArrival.settlement.checkboxLabel" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows the loading state instead of a stale figure while the debounced re-fetch is pending", async () => {
+    const MULTI_ITEMS = [
+      { id: "item-1", name: "Nendoroid Miku", orderId: "order-1" },
+      { id: "item-2", name: "Figma Rem", orderId: "order-1" },
+    ];
+    getSettlementContextActionMock.mockResolvedValue({
+      ok: true,
+      contexts: [
+        {
+          orderId: "order-1",
+          currencyCode: "USD",
+          closesOrder: true,
+          unassignedMinor: 0,
+          plan: { kind: "computedFull", amountMinor: 10000, appliedUnassignedMinor: 0 },
+          defaultChecked: true,
+        },
+      ],
+    });
+
+    renderModal({ items: MULTI_ITEMS, orderId: "order-1" });
+    await waitFor(() => expect(getSettlementContextActionMock).toHaveBeenCalledTimes(1));
+
+    await userEvent.click(screen.getByRole("checkbox", { name: "Figma Rem" }));
+
+    expect(screen.getByRole("status")).toHaveTextContent("detail.quickArrival.settlement.loading");
   });
 });

@@ -57,6 +57,22 @@ const NETWORK_ERROR_CODES = new Set([
 ]);
 
 /**
+ * The two 4xx statuses that are NOT a defect of ours.
+ *
+ * Everything else in the 4xx range means the API refused what we sent and will refuse it
+ * identically forever, which is why a 4xx is normally non-retryable and is reported to the
+ * collector as something only a code change can fix. These two are the opposite: `429` is the
+ * provider's own rate limit or a momentarily exhausted quota, and `408` is a request the provider
+ * itself gave up on. Both describe this instant rather than this request, both clear on their own,
+ * and a retry is exactly the right response to them.
+ *
+ * Classifying them as permanent was wrong twice over: it burned the submission on the first refusal
+ * instead of retrying it, and it told the collector that retrying could not help and that we had
+ * been notified of a bug that does not exist.
+ */
+const RETRYABLE_CLIENT_ERROR_STATUSES = new Set([408, 429]);
+
+/**
  * The model id this provider will actually call. Exported because the caller needs the same id
  * before the call happens: the spend ledger's reservation row is written against it, and a second,
  * independently resolved copy in the caller would silently mis-attribute spend the moment
@@ -322,7 +338,15 @@ function classifyProviderError(error: unknown, usage: ProviderUsage | null): Err
       return new ProviderTransportError({ reason: "server-error", status: error.status, usage });
     }
 
-    // A 4xx means the API refused what we sent, so it is a defect of ours that will repeat on every
+    // Rate-limited or abandoned by the provider: transient, self-clearing, and retryable, so it is
+    // a transport failure despite being a 4xx. Reported as `overloaded` rather than `server-error`
+    // so the diagnostics can tell "Google was busy" apart from "Google broke", which are the same
+    // remedy for the collector but different answers to "is this us?".
+    if (RETRYABLE_CLIENT_ERROR_STATUSES.has(error.status)) {
+      return new ProviderTransportError({ reason: "overloaded", status: error.status, usage });
+    }
+
+    // Any other 4xx means the API refused what we sent, so it is a defect of ours that will repeat on every
     // request until someone changes the code: it has to be visible without waiting for a user to
     // report that the feature is dead. The sanitized error is what gets reported, never the SDK's
     // own `ApiError`, whose message serializes the provider's response body and can echo text the

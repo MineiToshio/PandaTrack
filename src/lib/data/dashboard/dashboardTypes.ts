@@ -60,6 +60,24 @@ export type DashboardOrderInput = {
     deliveryDates: Date[];
   }>;
   payments: Array<{ amount: number; paymentDate: Date }>;
+  /**
+   * Canonical open balance (`BR-06-08`, `FRD-05 · BR-05-32`, `ADR 0034`): `totalCost` net of both
+   * `PaymentAllocation`s and any `StoreAccountAdjustmentLine` a store reconciliation wrote against
+   * this order. Order currency. Computed upstream, once per batch, by the canonical
+   * `openBalanceMinorByOrderId` helper (`FRD-05 · BP-01 · WO-10`) so this module never carries a
+   * second balance derivation; every open-orders figure (`FR-06-02`, `FR-06-03`, `FR-06-04`,
+   * `FR-06-05`, `FR-06-21`) and the diagnostic figure (`FR-06-28`) read this field. `outstandingMinor`
+   * above stays the older, gross `totalCost - Σ payments`, and is the one "pagado vs pendiente"
+   * (`FR-06-19`) deliberately keeps reading, so its paid-plus-pendiente identity is unaffected.
+   */
+  openBalanceMinor: number;
+  /**
+   * Raw `StoreAccountAdjustmentLine` rows against this order, order currency, with their write
+   * date. Used only by the outstanding-debt trend (`FR-06-21`) to net out a write-off exactly as of
+   * the month-end it was written, mirroring how `payments` above are already bucketed by date; every
+   * other figure reads the already-summed `openBalanceMinor` instead of these raw lines.
+   */
+  adjustmentLines: Array<{ amountMinor: number; createdAt: Date }>;
 };
 
 /**
@@ -330,4 +348,15 @@ export type DashboardData = {
    * order retains payments; the surface renders only when it is greater than 0.
    */
   lostOnCancelled: BaseCurrencyTotal;
+  /**
+   * "Pagos que no registraste" / "Payments you never recorded" (`FR-06-28`, `BR-06-13`): Σ
+   * `openBalanceMinor` over `COMPLETED` orders that still carry a balance — not debt, a thermometer
+   * of registration hygiene, since a store in this market never hands the product over unpaid
+   * (`ADR 0032`'s axiom). Base currency, FX-excluded like every other total (`FR-06-13`). Net of any
+   * `StoreAccountAdjustmentLine` regardless of when it was written (`BR-06-13`, round-4
+   * arbitration), so a written-off order contributes 0 here. `totalMinor` is 0 when no `COMPLETED`
+   * order carries a balance; the surface renders only when it is greater than 0, following the same
+   * placement pattern as `lostOnCancelled` (`BR-06-12`).
+   */
+  unrecordedPayments: BaseCurrencyTotal;
 };

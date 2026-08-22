@@ -70,6 +70,8 @@ export type CreateStorePaymentActionInput = {
   allocations?: { orderId: string; orderItemId?: string; amountMinor: number; settlesTarget?: boolean }[];
   /** Products this payment declares covered, with no amount attached. */
   declarePaidItemIds?: string[];
+  /** The deliberate "no sé todavía" amount (WO-09, `FR-05-58`/`FR-05-60`). Defaults to 0. */
+  parkedAmountMinor?: number;
 };
 
 export type CreateStorePaymentActionResult =
@@ -111,7 +113,12 @@ export async function createStorePaymentAction(
   if (!parsed.success) return { ok: false, error: "validation" };
 
   try {
-    const result = await createStorePayment({ userId, ...parsed.data });
+    // Store-level equality hardening (WO-09, `FR-05-58`, `ADR 0033`): this is the ONLY caller that
+    // sets `requireFullAllocation`. It is never accepted from the client — `storePaymentCreateSchema`
+    // has no such field — so a crafted payload cannot ask for, or opt out of, the hardened rule.
+    // `addOrderPayment` and `createOrder`'s initial payment reach `createStorePayment` through their
+    // own doors and never set it, so they keep seeing the plain `<=` ceiling (`BR-05-31`).
+    const result = await createStorePayment({ userId, ...parsed.data, requireFullAllocation: true });
     if (!result.ok) {
       return { ok: false, error: result.error, orderId: result.orderId, orderItemId: result.orderItemId };
     }

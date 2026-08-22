@@ -57,6 +57,10 @@ type FakeTx = {
     groupBy: ReturnType<typeof vi.fn>;
   };
   deliveryOrderItem: { findFirst: ReturnType<typeof vi.fn> };
+  storeAccountAdjustmentLine: {
+    findFirst: ReturnType<typeof vi.fn>;
+    groupBy: ReturnType<typeof vi.fn>;
+  };
   user: { findUnique: ReturnType<typeof vi.fn> };
 };
 
@@ -85,6 +89,10 @@ function makeFakeTx(): FakeTx {
       groupBy: vi.fn().mockResolvedValue([]),
     },
     deliveryOrderItem: { findFirst: vi.fn().mockResolvedValue(null) },
+    storeAccountAdjustmentLine: {
+      findFirst: vi.fn().mockResolvedValue(null),
+      groupBy: vi.fn().mockResolvedValue([]),
+    },
     user: { findUnique: vi.fn().mockResolvedValue({ baseCurrencyCode: null }) },
   };
 }

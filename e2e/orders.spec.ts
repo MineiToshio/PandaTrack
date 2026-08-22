@@ -38,10 +38,17 @@ test.afterEach(async ({ page }) => {
   }
 });
 
-/** Creates a minimal order through the create wizard (in the account's base currency) and
- *  returns its detail URL. Mirrors the helper in `deliveries.spec.ts`.
- *  `itemName` lets a spec create two orders it can tell apart in the "Por tienda" list. */
-async function createOrderWithOneItem(page: Page, itemName: string = E2E_ITEM_NAME): Promise<string> {
+/** Creates a minimal order through the create wizard and returns its detail URL. Mirrors the
+ *  helper in `deliveries.spec.ts`.
+ *  `itemName` lets a spec create two orders it can tell apart in the "Por tienda" list.
+ *  `fx` overrides the prefilled base currency (and optionally supplies the rate the wizard offers
+ *  for a foreign currency) — the FX spec uses it to keep its blast radius off the account's real
+ *  orders. */
+async function createOrderWithOneItem(
+  page: Page,
+  itemName: string = E2E_ITEM_NAME,
+  fx?: { currencyCode: string; exchangeRate?: string },
+): Promise<string> {
   await page.goto("/en/orders/new");
   await expect(page).toHaveURL(/\/en\/orders\/new/);
 
@@ -50,6 +57,12 @@ async function createOrderWithOneItem(page: Page, itemName: string = E2E_ITEM_NA
   const firstStoreOption = page.getByRole("option").first();
   await expect(firstStoreOption).toBeVisible();
   await firstStoreOption.click();
+  if (fx) {
+    // The closed field is a button; clicking it swaps in the combobox input under the same id.
+    await page.locator("#order-currency").click();
+    await page.locator("#order-currency").fill(fx.currencyCode);
+    await page.getByRole("option", { name: new RegExp(`^${fx.currencyCode}`) }).click();
+  }
   await page
     .getByRole("button", { name: /^continue$/i })
     .first()
@@ -61,6 +74,9 @@ async function createOrderWithOneItem(page: Page, itemName: string = E2E_ITEM_NA
     .first()
     .fill(itemName);
   await page.getByLabel(/^total/i).fill("10.00");
+  if (fx?.exchangeRate) {
+    await page.locator("#order-exchange-rate").fill(fx.exchangeRate);
+  }
   await page
     .getByRole("button", { name: /^continue$/i })
     .first()
@@ -178,12 +194,7 @@ test.describe("Order FX reconciliation flag", () => {
     test.setTimeout(120_000);
     await signInAndLandOnDashboard(page);
 
-    // 1. Seed an order in the account's current base currency.
-    const orderUrl = await createOrderWithOneItem(page);
-    const orderId = orderUrl.split("/").pop()!;
-
-    // 2. Read the current base from the inline currency select, then switch to a different one and
-    //    confirm with "Save" (explicit-confirm, no modal).
+    // 1. Read the current base from the inline currency select before touching anything.
     await page.goto("/en/settings");
     const tablist = page.getByRole("tablist", { name: /settings sections|secciones de ajustes/i }).first();
     await tablist.getByRole("tab", { name: /preferences|preferencias/i }).click();
@@ -192,6 +203,28 @@ test.describe("Order FX reconciliation flag", () => {
     // The trigger label reads "USD — US dollar"; the leading 3 chars are the current base code.
     const originalCode = ((await currencySelect.textContent()) ?? "").trim().slice(0, 3).toUpperCase();
     const newBaseCode = originalCode === "USD" ? "EUR" : "USD";
+    // The seed currency must be one the account's real orders never use. The reconciliation modal
+    // groups every pending order into per-currency-pair cards and applies a rate to a whole pair
+    // at once, so this test may only ever fill the pair that contains nothing but its own seeded
+    // order. Filling the account's own pair once mass-stamped a placeholder rate onto every real
+    // base-currency order in the dev database — that incident is why this list avoids PEN and USD
+    // and why step 5 refuses to apply to more than one order.
+    const seedCurrencyCode = ["GBP", "JPY", "CLP"].find(
+      (code) => code !== originalCode && code !== newBaseCode,
+    ) as string;
+
+    // 2. Seed an order in that third currency, already reconciled against the current base (the
+    //    wizard offers the rate field for a foreign currency). Pending must appear BECAUSE the
+    //    base changes in step 3, not because the order was born rateless.
+    const orderUrl = await createOrderWithOneItem(page, E2E_ITEM_NAME, {
+      currencyCode: seedCurrencyCode,
+      exchangeRate: "5.00",
+    });
+    const orderId = orderUrl.split("/").pop()!;
+
+    // 3. Switch the base currency and confirm with "Save" (explicit-confirm, no modal).
+    await page.goto("/en/settings");
+    await tablist.getByRole("tab", { name: /preferences|preferencias/i }).click();
     await currencySelect.click();
     await page.getByRole("option", { name: new RegExp(`^${newBaseCode}`) }).click();
     await page.getByRole("button", { name: /^save$|^guardar$/i }).click();
@@ -203,8 +236,8 @@ test.describe("Order FX reconciliation flag", () => {
     // The conditional "reconcile rates" shortcut appears because the seeded order is now foreign.
     await expect(page.getByRole("link", { name: /update rates|actualizar tasas/i })).toBeVisible({ timeout: 15_000 });
 
-    // 3. The seeded order (now in a foreign currency) is flagged: the FX banner appears and
-    //    the order shows under the `fxPending` filter.
+    // 4. The seeded order (now stamped against a stale base) is flagged: the FX banner appears
+    //    and the order shows under the `fxPending` filter.
     // The FX banner renders in two responsive slots (one hidden per breakpoint), so scope to
     // the visible one.
     await page.goto("/en/orders");
@@ -218,14 +251,17 @@ test.describe("Order FX reconciliation flag", () => {
     // The card link is an inset overlay (visually "covered"), so assert DOM presence.
     await expect(page.locator(`a[href*="/orders/${orderId}"]`).first()).toBeAttached({ timeout: 15_000 });
 
-    // 3b. Per-order indicators: a warning chip on the order detail and an inline warning on its edit form.
+    // 4b. Per-order indicators: a warning chip on the order detail and an inline warning on its edit form.
     await page.goto(orderUrl);
     await expect(page.getByText(/FX update pending/i).first()).toBeVisible({ timeout: 15_000 });
     await page.goto(`${orderUrl}/edit`);
     await expect(page.getByText(/may be outdated/i).first()).toBeVisible({ timeout: 15_000 });
 
-    // 4. Reconcile the originalCode → newBaseCode pair through the modal (back on the list, where
-    //    the banner CTA lives — 3b navigated away to the detail/edit surfaces).
+    // 5. Reconcile the seedCurrencyCode → newBaseCode pair through the modal (back on the list,
+    //    where the banner CTA lives — 4b navigated away to the detail/edit surfaces). ONLY that
+    //    pair: the account's own pair (its real orders, also pending after the base switch) must
+    //    never be filled, and the apply CTA must count exactly the one seeded order before it is
+    //    pressed — if it ever counts more, failing here is the guard against a mass write.
     await page.goto("/en/orders?fxPending=true");
     await page
       .getByRole("button", { name: /^update exchange rates$/i })
@@ -236,19 +272,19 @@ test.describe("Order FX reconciliation flag", () => {
     await expect(fxDialog).toBeVisible();
     const pairGroup = fxDialog
       .getByRole("listitem")
-      .filter({ hasText: new RegExp(`1\\s*${originalCode}\\s*=\\s*\\?\\s*${newBaseCode}`, "i") })
+      .filter({ hasText: new RegExp(`1\\s*${seedCurrencyCode}\\s*=\\s*\\?\\s*${newBaseCode}`, "i") })
       .first();
     await pairGroup.getByPlaceholder("0.00").fill("1.10");
-    await fxDialog.getByRole("button", { name: /apply to \d+ order/i }).click();
+    await fxDialog.getByRole("button", { name: /^apply to 1 order$/i }).click();
     await expect(page.getByText(/exchange rates updated/i)).toBeVisible({ timeout: 15_000 });
 
-    // 5. The seeded order has left the FX-pending set (flag cleared on reconcile).
+    // 6. The seeded order has left the FX-pending set (flag cleared on reconcile).
     await expect(async () => {
       await page.goto("/en/orders?fxPending=true");
       await expect(page.locator(`a[href*="/orders/${orderId}"]`)).toHaveCount(0, { timeout: 2_000 });
     }).toPass({ timeout: 15_000 });
 
-    // 6. Cleanup — delete the order and restore the original base currency (afterEach is only the
+    // 7. Cleanup — delete the order and restore the original base currency (afterEach is only the
     //    backstop for a failure above; the happy path restores inline so state is right immediately).
     await deleteOrder(page, orderUrl);
     await changeBaseCurrency(page, originalCode);

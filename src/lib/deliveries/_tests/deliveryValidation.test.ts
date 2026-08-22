@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { deliveryCreateSchema, deliveryStoreArrivalSchema } from "../deliveryValidation";
+import {
+  deliveryCreateSchema,
+  deliveryQuickArrivalSchema,
+  deliveryStoreArrivalSchema,
+  retrySettlementSchema,
+  settlementContextRequestSchema,
+  undoReopenSchema,
+} from "../deliveryValidation";
 import { addUtcDays, utcMidnightToday } from "@/test/domainDateFixtures";
 
 const VALID_CUID = "clxxxxxxxxxxxxxxxxxxxxxx0";
@@ -92,6 +99,7 @@ describe("deliveryStoreArrivalSchema", () => {
       cost: 0,
       currencyCode: "USD",
       exchangeRate: null,
+      settleRemainder: true,
       ...overrides,
     };
   }
@@ -150,5 +158,169 @@ describe("deliveryStoreArrivalSchema", () => {
     const result = deliveryStoreArrivalSchema.safeParse(buildInput({ currencyCode: "JPY", cost: 500050 }));
     expect(result.success).toBe(false);
     if (!result.success) expect(result.error.issues.map((e) => e.message)).toContain("COST_FRACTIONAL_SUBUNITS");
+  });
+});
+
+describe("settlement-on-arrival schema fields (WO-08)", () => {
+  const YESTERDAY = addUtcDays(utcMidnightToday(), -1);
+
+  function buildQuickArrivalInput(overrides: Record<string, unknown> = {}) {
+    return {
+      orderId: VALID_CUID,
+      productIds: [VALID_CUID],
+      receivedDate: YESTERDAY,
+      shippedDate: null,
+      cost: 0,
+      currencyCode: "USD",
+      exchangeRate: null,
+      settleRemainder: true,
+      ...overrides,
+    };
+  }
+
+  it("requires settleRemainder: a payload silently omitting it is rejected, not defaulted", () => {
+    const { settleRemainder: _settleRemainder, ...withoutFlag } = buildQuickArrivalInput();
+    const result = deliveryQuickArrivalSchema.safeParse(withoutFlag);
+    expect(result.success).toBe(false);
+  });
+
+  it("accepts settleRemainder false (the collector left the checkbox unchecked)", () => {
+    expect(deliveryQuickArrivalSchema.safeParse(buildQuickArrivalInput({ settleRemainder: false })).success).toBe(true);
+  });
+
+  it("accepts an omitted settlementDate, deferring the default to the server", () => {
+    const result = deliveryQuickArrivalSchema.safeParse(buildQuickArrivalInput());
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.settlementDate).toBeUndefined();
+  });
+
+  it("rejects a future settlement date", () => {
+    const result = deliveryQuickArrivalSchema.safeParse(
+      buildQuickArrivalInput({ settlementDate: addUtcDays(utcMidnightToday(), 1) }),
+    );
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error.issues.map((e) => e.message)).toContain("SETTLEMENT_DATE_IN_FUTURE");
+  });
+
+  it("accepts one manual amount per order in a batch, never a single shared figure", () => {
+    const otherOrderId = "clyyyyyyyyyyyyyyyyyyyyyy0";
+    const result = deliveryQuickArrivalSchema.safeParse(
+      buildQuickArrivalInput({
+        settlementIntents: [
+          { orderId: VALID_CUID, manualAmountMinor: 1200, branchHint: "manual" },
+          { orderId: otherOrderId, manualAmountMinor: 500 },
+        ],
+      }),
+    );
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects a negative manual amount", () => {
+    const result = deliveryQuickArrivalSchema.safeParse(
+      buildQuickArrivalInput({ settlementIntents: [{ orderId: VALID_CUID, manualAmountMinor: -1 }] }),
+    );
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("settlementContextRequestSchema", () => {
+  it("accepts one or more orders, each with their own deliveredItemIds", () => {
+    const result = settlementContextRequestSchema.safeParse({
+      orders: [{ orderId: VALID_CUID, deliveredItemIds: [VALID_CUID] }],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects an empty orders list", () => {
+    const result = settlementContextRequestSchema.safeParse({ orders: [] });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("retrySettlementSchema", () => {
+  it("requires deliveryId, settleRemainder and a real domain settlementDate", () => {
+    const result = retrySettlementSchema.safeParse({
+      deliveryId: VALID_CUID,
+      settleRemainder: true,
+      settlementDate: addUtcDays(utcMidnightToday(), -1),
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects a settlementDate that never went through toDomainDate (not UTC midnight)", () => {
+    const result = retrySettlementSchema.safeParse({
+      deliveryId: VALID_CUID,
+      settleRemainder: true,
+      settlementDate: new Date("2026-05-02T05:00:00.000Z"),
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error.issues.map((e) => e.message)).toContain("DATE_NOT_UTC_MIDNIGHT");
+  });
+
+  // MINOR fix J, 2026-08-20 review: `retrySettlementSchema` used to accept any domain date, future
+  // included, unlike every other settlement date boundary (`settlementFields.settlementDate`).
+  it("rejects a settlementDate in the future, mirroring settlementFields' own refinement", () => {
+    const result = retrySettlementSchema.safeParse({
+      deliveryId: VALID_CUID,
+      settleRemainder: true,
+      settlementDate: addUtcDays(utcMidnightToday(), 1),
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error.issues.map((e) => e.message)).toContain("SETTLEMENT_DATE_IN_FUTURE");
+  });
+});
+
+describe("undoReopenSchema", () => {
+  it("accepts an empty snapshot: a reopen that reverted no settlement has nothing to restore", () => {
+    const result = undoReopenSchema.safeParse({
+      deliveryId: VALID_CUID,
+      previousStatus: "DELIVERED",
+      receivedDate: utcMidnightToday(),
+      snapshot: [],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts a full payment snapshot with its allocations", () => {
+    const result = undoReopenSchema.safeParse({
+      deliveryId: VALID_CUID,
+      previousStatus: "DELIVERED",
+      receivedDate: utcMidnightToday(),
+      snapshot: [
+        {
+          storeId: VALID_CUID,
+          amount: 5000,
+          paymentDate: addUtcDays(utcMidnightToday(), -1),
+          currencyCode: "USD",
+          note: null,
+          exchangeRate: null,
+          exchangeRateBaseCode: null,
+          settledByDeliveryId: VALID_CUID,
+          allocations: [{ orderId: VALID_CUID, orderItemId: null, amountMinor: 5000 }],
+        },
+      ],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("requires receivedDate when the previous status was DELIVERED", () => {
+    const result = undoReopenSchema.safeParse({
+      deliveryId: VALID_CUID,
+      previousStatus: "DELIVERED",
+      receivedDate: null,
+      snapshot: [],
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error.issues.map((e) => e.message)).toContain("RECEIVED_DATE_REQUIRED");
+  });
+
+  it("allows a null receivedDate when the previous status was CANCELLED", () => {
+    const result = undoReopenSchema.safeParse({
+      deliveryId: VALID_CUID,
+      previousStatus: "CANCELLED",
+      receivedDate: null,
+      snapshot: [],
+    });
+    expect(result.success).toBe(true);
   });
 });

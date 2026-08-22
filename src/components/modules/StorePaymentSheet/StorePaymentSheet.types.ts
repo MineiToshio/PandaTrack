@@ -14,6 +14,14 @@ export type StorePaymentSheetSubmitInput = {
    * `amount`: it enters no ceiling here and moves no figure on the server.
    */
   declarePaidItemIds: string[];
+  /**
+   * The deliberate "no sé todavía" amount (WO-09, `FR-05-58`/`FR-05-60`, `ADR 0033`): money this
+   * payment leaves unattributed on purpose, chosen through the allocation panel's own action. 0 when
+   * nothing was parked. The sheet only ever submits a draft where `allocations` plus this figure
+   * equal `amount` (`validateStorePaymentSheetDraft`'s own equality gate), so a caller may forward
+   * it to `createStorePaymentAction` as-is.
+   */
+  parkedAmountMinor: number;
 };
 
 /**

@@ -15,6 +15,14 @@ import { sortStoreGroups, type StoreViewSort } from "@/lib/orders/storeViewSort"
 import { cn } from "@/lib/styles";
 import { createStorePaymentAction } from "@/app/[locale]/(app)/_actions/storePaymentActions";
 import { storeArrivalAction } from "@/app/[locale]/(app)/_actions/storeArrivalAction";
+import { retrySettlementAction } from "@/app/[locale]/(app)/_actions/settlementActions";
+import { domainDateToIsoString } from "@/lib/domainDate";
+import {
+  clearPendingSettlement,
+  formatSettledTotals,
+  writePendingSettlement,
+  type PendingSettlementEntry,
+} from "@/lib/deliveries/pendingSettlementStore";
 import type { PendingProductsByStoreGroup } from "@/lib/data/orders/pendingProductsByStoreQueries";
 import {
   QuickArrivalModal,
@@ -226,6 +234,7 @@ export default function StoreGroupedView({
         id: product.itemId,
         name: product.name,
         orderLabel: product.orderHumanReadableId,
+        orderId: product.orderId,
       })),
     [selectedProducts],
   );
@@ -242,6 +251,87 @@ export default function StoreGroupedView({
   // on the first pass (once the flag is down the branch cannot be taken again). An effect would
   // both paint first and ask for the pattern the `set-state-in-effect` lint exists to prevent.
   if (isArrivalOpen && (!selectionGroup || arrivalItems.length === 0)) setIsArrivalOpen(false);
+
+  // Latest-ref so a repeated "Retry" (offered again on a further transient failure) always calls
+  // the current closure, never one captured when the first toast was created — the same pattern
+  // `useQuickArrival`'s own `retryPendingRef` uses for its per-order equivalent.
+  const retryBatchPendingRef = useRef<(deliveryId: string, entry: PendingSettlementEntry) => void>(() => {});
+
+  /**
+   * Re-attempts a batch's pending money transaction (`WO-08`, `FR-08-42`), with the SAME
+   * success/failure toast contract `useQuickArrival`'s own `retryPending` uses (MAJOR F10,
+   * 2026-08-20 review): success names the settled total, a genuine business refusal clears the
+   * entry and shows a dismissable notice (never re-offered as Retry), and only a still-"pending"
+   * (transient) outcome keeps the persisted entry and re-offers Retry.
+   */
+  const retryBatchPending = useCallback(
+    (deliveryId: string, entry: PendingSettlementEntry) => {
+      void retrySettlementAction({
+        deliveryId,
+        settleRemainder: entry.settleRemainder,
+        settlementDate: new Date(`${entry.settlementDate}T00:00:00.000Z`),
+        settlementIntents: entry.settlementIntents,
+      }).then(
+        (result) => {
+          if (!result.ok) {
+            addToast(tArrival("error.server_error"), { variant: "error" });
+            return;
+          }
+          if (result.noLongerPending) {
+            clearPendingSettlement(deliveryId);
+            addToast(tArrival("settlement.noLongerPending"), { variant: "neutral" });
+            router.refresh();
+            return;
+          }
+
+          const refusedOutcome = result.outcomes.find((outcome) => outcome.status === "refused");
+          if (refusedOutcome) {
+            clearPendingSettlement(deliveryId);
+            const key = `error.${refusedOutcome.error}` as const;
+            addToast(tPayment.has(key as never) ? tPayment(key as never) : tPayment("error.server_error"), {
+              variant: "error",
+            });
+            router.refresh();
+            return;
+          }
+
+          const stillPending = result.outcomes.some((outcome) => outcome.status === "pending");
+          if (stillPending) {
+            addToast(tArrival("settlement.retryFailed"), {
+              variant: "error",
+              action: {
+                label: tArrival("settlement.retry"),
+                onClick: () => retryBatchPendingRef.current(deliveryId, entry),
+              },
+            });
+            return;
+          }
+
+          clearPendingSettlement(deliveryId);
+          const settledLabel = formatSettledTotals(result.outcomes, locale);
+          addToast(
+            settledLabel
+              ? tArrival("settlement.confirmation", { amount: settledLabel })
+              : tArrival("toast.success", { count: 1 }),
+            { variant: "success" },
+          );
+          router.refresh();
+        },
+        () => {
+          // Same treatment this file already gives a rejected `storeArrivalAction`/
+          // `createStorePaymentAction` call (see `handleSubmitArrival`/`handleSubmitPayment` below):
+          // a rejected promise is no answer at all, not a refusal the server described. Deliberately
+          // the SECOND argument of `then`, never a chained `catch`, which would also swallow whatever
+          // the success handler above throws. The pending entry is left in place for another retry.
+          addToast(tArrival("error.server_error"), { variant: "error" });
+        },
+      );
+    },
+    [addToast, locale, router, tArrival, tPayment],
+  );
+  useEffect(() => {
+    retryBatchPendingRef.current = retryBatchPending;
+  });
 
   const handleSubmitArrival = (input: QuickArrivalSubmitInput) => {
     const group = selectionGroup;
@@ -278,11 +368,17 @@ export default function StoreGroupedView({
     // The store leaves the list with the arrival, taking its debt figure and its "Registrar pago"
     // button with it (this view is a pending-product view, and it now has nothing pending). Said
     // once, at the moment it happens, rather than left for the collector to notice was missing.
+    //
+    // Reads `openOrderDebtMinor`, not the lifetime `debtMinor` (FIX E): that is the figure the
+    // store chip itself displays (`ADR 0033`), and `group.debts` is exactly the state FIX A's own
+    // patch keeps live, so a payment recorded earlier in this session is already reflected here. A
+    // registration gap (`debtMinor > 0` but `openOrderDebtMinor === 0`, an unregistered balance on a
+    // COMPLETED order) must not read as a debt on an order the arrival ever touched.
     const groupIsGone = !patched.some((candidate) => candidate.store.id === storeId);
     const owedAfter = groupIsGone
       ? group.debts
-          .filter((debt) => debt.debtMinor > 0)
-          .map((debt) => formatAmountWithSymbol(debt.debtMinor, debt.currencyCode, locale))
+          .filter((debt) => debt.openOrderDebtMinor > 0)
+          .map((debt) => formatAmountWithSymbol(debt.openOrderDebtMinor, debt.currencyCode, locale))
           .join(" · ")
       : "";
 
@@ -319,14 +415,59 @@ export default function StoreGroupedView({
           return;
         }
 
+        // Settlement on arrival (`WO-08`), applied per closed order across the batch: a batch
+        // toast states the SUMMED settled amount in one confirmation. MAJOR F7 (2026-08-20 review):
+        // "refused" is a genuine business refusal, never transient, so it gets a dismissable notice
+        // instead of a persisted Retry entry — only "pending" (the money transaction threw) still
+        // surfaces the `Retry` affordance, and the retry intent is persisted so it survives
+        // navigation.
+        const refusedOutcome = result.moneyOutcomes.find((outcome) => outcome.status === "refused");
+        const needsRetry = result.moneyOutcomes.some((outcome) => outcome.status === "pending");
+
+        if (refusedOutcome) {
+          const key = `error.${refusedOutcome.error}` as const;
+          addToast(tPayment.has(key as never) ? tPayment(key as never) : tPayment("error.server_error"), {
+            variant: "error",
+          });
+          return;
+        }
+
+        if (needsRetry && input.settleRemainder) {
+          const entry: PendingSettlementEntry = {
+            deliveryId: result.deliveryId,
+            settleRemainder: input.settleRemainder,
+            // MAJOR F5, 2026-08-20 review: `input.settlementDate`/`input.receivedDate` are already
+            // domain dates (UTC midnight, `toDomainDate`-normalized by `QuickArrivalModal` before
+            // they reach this handler). `domainDateToIsoString` reads that UTC calendar day
+            // directly; the old `toLocalIsoDateString` used local getters, which shifts the day
+            // backward for a collector whose timezone sits west of UTC (e.g. `America/Lima`).
+            settlementDate: domainDateToIsoString(input.settlementDate ?? input.receivedDate) ?? "",
+            settlementIntents: input.settlementIntents ?? [],
+            createdAt: new Date().toISOString(),
+          };
+          writePendingSettlement(entry);
+          addToast(
+            owedAfter
+              ? tArrival("toast.successStoreLeft", { count: result.productCount, store: storeName, debt: owedAfter })
+              : tArrival("toast.success", { count: result.productCount }),
+            {
+              variant: "success",
+              action: {
+                label: tArrival("settlement.retry"),
+                onClick: () => retryBatchPending(result.deliveryId, entry),
+              },
+            },
+          );
+          return;
+        }
+
+        const settledLabel = formatSettledTotals(result.moneyOutcomes, locale);
         addToast(
-          owedAfter
-            ? tArrival("toast.successStoreLeft", {
-                count: result.productCount,
-                store: storeName,
-                debt: owedAfter,
-              })
-            : tArrival("toast.success", { count: result.productCount }),
+          settledLabel
+            ? tArrival("settlement.confirmation", { amount: settledLabel })
+            : owedAfter
+              ? tArrival("toast.successStoreLeft", { count: result.productCount, store: storeName, debt: owedAfter })
+              : tArrival("toast.success", { count: result.productCount }),
           {
             variant: "success",
             action: {
@@ -353,6 +494,16 @@ export default function StoreGroupedView({
     if (!storeId) return { ok: true };
 
     const previous = groupsState;
+    // The slice of this payment that lands on an order still in flight, the same delta
+    // `StorePaymentStateProvider` derives for its own bar (FIX A): looked up against the sheet's own
+    // cached order list, since `StorePaymentSheetSubmitInput.allocations` carries no `orderActive`
+    // of its own. `openOrderDebtMinor` (the store chip's headline, `ADR 0033`) is `Σ openBalanceMinor`
+    // over the store's active orders, so money declared against one lowers this same delta off it.
+    const orderById = new Map(sheet.orders.map((order) => [order.orderId, order]));
+    const activePaidDelta = input.allocations.reduce(
+      (sum, allocation) => (orderById.get(allocation.orderId)?.isActive ? sum + allocation.amountMinor : sum),
+      0,
+    );
     setGroupsState((prev) =>
       prev.map((group) => {
         if (group.store.id !== storeId) return group;
@@ -375,12 +526,21 @@ export default function StoreGroupedView({
         }
         return {
           ...group,
-          // Only `debtMinor` moves, and that is complete rather than partial: `StoreDebtEntry` is
-          // narrowed to `{ currencyCode, debtMinor }` at the query (`pendingProductsByStoreQueries`
-          // projects `StoreDebtRow` down to it), so there is no `paidMinor` here to fall out of
-          // step with it. The store detail keeps the full row precisely because it draws the pair.
+          // `debtMinor` moves by the whole payment (the lifetime figure the "Registrar pago" gate
+          // and the credit chip both still read), and `openOrderDebtMinor` — the figure this group's
+          // own chip actually DISPLAYS for a store that owes money (`StoreGroupHeader`, `ADR 0033`)
+          // — moves by `activePaidDelta` alone: only the slice declared against an order still in
+          // flight lowers that order's own open balance. `StoreDebtEntry` has no `unassignedMinor`
+          // of its own (`pendingProductsByStoreQueries` narrows `StoreDebtRow` down to just these two
+          // fields), so there is nothing else on this shape for a patch to fall out of step with.
           debts: group.debts.map((debt) =>
-            debt.currencyCode === input.currencyCode ? { ...debt, debtMinor: debt.debtMinor - input.amount } : debt,
+            debt.currencyCode === input.currencyCode
+              ? {
+                  ...debt,
+                  debtMinor: debt.debtMinor - input.amount,
+                  openOrderDebtMinor: debt.openOrderDebtMinor - activePaidDelta,
+                }
+              : debt,
           ),
           pendingProducts: group.pendingProducts.map((product) => {
             const delta = amountByItemId.get(product.itemId);
@@ -404,6 +564,7 @@ export default function StoreGroupedView({
       note: input.note,
       allocations: input.allocations,
       declarePaidItemIds: input.declarePaidItemIds,
+      parkedAmountMinor: input.parkedAmountMinor,
     }).then(
       (result): StorePaymentSubmitOutcome => {
         // Every resolved mutation retires the sheet's cached order list, rollback included: the
@@ -650,6 +811,7 @@ export default function StoreGroupedView({
           alwaysListItems
           baseCurrencyCode={baseCurrencyCode}
           locale={locale}
+          storeName={selectionGroup.store.name}
           onSubmit={handleSubmitArrival}
         />
       )}

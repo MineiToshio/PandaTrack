@@ -249,12 +249,14 @@ export const POSTHOG_EVENTS = {
     STORE_ARRIVAL_LOGGED: "delivery_store_arrival_logged",
     STORE_SELECTION_STARTED: "delivery_store_selection_started",
     REOPENED: "delivery_reopened",
+    REOPEN_UNDONE: "delivery_reopen_undone",
     CANCELLED: "delivery_cancelled",
     DELETED: "delivery_deleted",
     NOTE_SAVED: "delivery_note_saved",
     NOTE_DELETED: "delivery_note_deleted",
     STICKY_BAR_PRIMARY_CLICKED: "delivery_detail_sticky_primary_clicked",
     ACTIONS_SHEET_OPENED: "delivery_detail_actions_sheet_opened",
+    SETTLEMENT_RETRIED: "delivery_settlement_retried",
   },
   STORE: {
     CREATED: "store_created",
@@ -290,10 +292,14 @@ export const POSTHOG_EVENTS = {
     PRODUCT_TYPE_REQUEST_REJECTED: "store_product_type_request_rejected",
     PAYMENT_SHEET_OPENED: "store_payment_sheet_opened",
     PAYMENT_ALLOCATIONS_OPENED: "store_payment_allocations_opened",
+    PAYMENT_ALLOCATION_PARKED: "store_payment_allocation_parked",
     PAYMENT_REGISTERED: "store_payment_registered",
     PAYMENT_DELETED: "store_payment_deleted",
     PAYMENT_BREAKDOWN_OPENED: "store_payment_breakdown_opened",
     PAYMENTS_ALL_LOADED: "store_payments_all_loaded",
+    RECONCILIATION_SHEET_OPENED: "store_reconciliation_sheet_opened",
+    RECONCILIATION_ADJUSTMENT_CREATED: "store_reconciliation_adjustment_created",
+    RECONCILIATION_ADJUSTMENT_DELETED: "store_reconciliation_adjustment_deleted",
   },
   NAVIGATION: {
     VIEW_TRANSITION_NAVIGATED: "view_transition_navigated",
@@ -323,6 +329,8 @@ export const POSTHOG_EVENTS = {
     COLLECTION_ZONE_VIEWED: "dashboard_collection_zone_viewed",
     TOP_STORE_CTA_CLICKED: "dashboard_top_store_cta_clicked",
     PRODUCT_TYPE_SEGMENT_CLICKED: "dashboard_product_type_segment_clicked",
+    /** "Pagos que no registraste" diagnostic line click (`FR-06-27`, `FR-06-28`, WO-07). */
+    UNRECORDED_PAYMENTS_LINK_CLICKED: "dashboard_unrecorded_payments_link_clicked",
   },
   ADMIN: {
     SPACE_ENTERED: "admin_space_entered",

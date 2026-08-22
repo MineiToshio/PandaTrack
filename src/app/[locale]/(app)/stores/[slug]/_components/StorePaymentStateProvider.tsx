@@ -39,6 +39,28 @@ type StorePaymentStateContextValue = {
   isLoadingAllStorePayments: boolean;
   /** True when the last "load all" attempt failed, so the card can offer a retry in place. */
   hasLoadAllStorePaymentsError: boolean;
+  /**
+   * Moves one currency's debt figures by a "cuadrar cuenta" (reconciliation adjustment) write-off,
+   * the sibling of {@link patchDebtByCurrency} for the OTHER mutation shape this page's debt block
+   * reacts to (`FIX 1`, WO-11 review). Owned here, not by `StoreReconciliationProvider`, for the
+   * same reason `patchDebtByCurrency` is: this provider holds the only `storeDebtByCurrency` state
+   * this page renders (see this component's own doc).
+   *
+   * `openGroupWriteOffMinor` moves `openOrderDebtMinor` (`ADR 0033`, `FR-05-61`): the slice of the
+   * declaration written against orders still in the OPEN group, the only lines that figure counts.
+   * `totalWriteOffMinor` moves the lifetime `debtMinor` (`FR-05-63`): the write-off subtracts from
+   * the ceiling regardless of which group a line targets, because a delivered order's balance is
+   * still part of the store's lifetime debt even though it left `openOrderDebtMinor` already.
+   *
+   * Both deltas subtract. A negative delta therefore ADDS back, which is the whole rollback
+   * mechanism: undoing an optimistic create, or applying a delete, passes the same magnitude
+   * negated rather than a second, differently-signed code path.
+   */
+  applyAdjustmentDeltas: (input: {
+    currencyCode: string;
+    openGroupWriteOffMinor: number;
+    totalWriteOffMinor: number;
+  }) => void;
 };
 
 /**
@@ -140,7 +162,7 @@ type StorePaymentStateProviderProps = {
  * `revalidateCollectionSurfaces` inside the store payment actions and pick up the change on their
  * own next visit.
  *
- * Four properties of the patching are load-bearing enough to name:
+ * Six properties of the patching are load-bearing enough to name:
  *
  *  - **`paidMinor` moves with `debtMinor`, never alone.** The progress block reads both, and the
  *    sentence under the bar puts them side by side, so patching one is a visible contradiction.
@@ -157,11 +179,35 @@ type StorePaymentStateProviderProps = {
  *    against an already delivered order, or for money handed over on account and declared against
  *    nothing at all. `activeCommittedMinor` never moves here: a payment does not change what the
  *    collector's orders cost.
+ *  - **`openOrderDebtMinor` moves by the SAME delta as `activePaidMinor`, in the opposite
+ *    direction.** It is the headline figure every "Debes / Falta" surface renders (`ADR 0033`), and
+ *    it is `Σ openBalanceMinor` over the store's still-active orders — so money that lands on an
+ *    active order lowers that order's own open balance by exactly the amount `activePaidMinor`
+ *    rises by. Reusing the same delta (rather than inventing a second one) is what keeps the two
+ *    figures from being able to drift apart.
+ *  - **`unassignedMinor` moves by `amount − Σ allocations`, the parked remainder.** Computed from
+ *    the payment's own numbers rather than trusted as `parkedAmountMinor`, so it is correct for any
+ *    caller, not only one that went through the sheet's own equality gate (where the two happen to
+ *    agree). NOT patched: allocations to a COMPLETED order would move `unrecordedPaymentsMinor` (a
+ *    diagnostic for a delivered-but-unpaid order), but that figure is not rendered anywhere on this
+ *    surface, so there is nothing on screen for a missed patch to contradict; a full page revisit
+ *    picks it up like any other figure this component does not track.
  *  - **The optimistic guess at "which orders are active" is reconciled against the server's.** The
  *    client can only read the sheet's cached order list; the server reads the order's status inside
  *    the transaction. When they disagree the success handler patches the difference, because this
  *    is the one drift that would not self-correct: the row is replaced by the server's, so a later
- *    delete would subtract the correct, smaller figure and leave the surplus on the bar.
+ *    delete would subtract the correct, smaller figure and leave the surplus on the bar (and,
+ *    together with it, on `openOrderDebtMinor`).
+ *
+ * A seventh property, added for a second mutation this provider does not itself dispatch (`FIX 1`,
+ * WO-11 review): **`applyAdjustmentDeltas` is `StoreReconciliationProvider`'s own door into this
+ * state**, exposed because that provider owns no `storeDebtByCurrency` of its own (by design, see
+ * its own doc) but still needs to move `openOrderDebtMinor` and `debtMinor` the instant a "cuadrar
+ * cuenta" write-off lands, rather than waiting on a `router.refresh()`. It is a SIBLING of
+ * `patchDebtByCurrency`, not a reuse of it: a reconciliation adjustment carries no allocation,
+ * `paidMinor`, `lostMinor` or `unassignedMinor` line of its own, so folding it into the payment
+ * patch would either leave those fields silently untouched by an unrelated code path or invent
+ * meaningless zero-deltas for them.
  */
 export default function StorePaymentStateProvider({
   storeId,
@@ -218,17 +264,31 @@ export default function StorePaymentStateProvider({
    * with the list of payments underneath it. Leaving it unpatched on a delete makes the block claim
    * money that no row on screen accounts for any more.
    *
-   * `activePaidDelta` is the slice of `paidDelta` that landed on orders still in flight, and it is
-   * the ONLY one of the three the progress bar draws. It is a third number rather than a reuse of
-   * `paidDelta` because the two genuinely differ: money declared against an already delivered
-   * order, and money handed over with nothing declared at all, both move the debt and neither
-   * moves the bar. `activeCommittedMinor` is not patched at all, and must not be: recording or
-   * deleting a payment never changes what the collector's orders cost.
+   * `activePaidDelta` is the slice of `paidDelta` that landed on orders still in flight. It moves
+   * TWO figures, not one: `activePaidMinor`, the progress bar's own numerator, and
+   * `openOrderDebtMinor`, the headline every "Debes / Falta" surface renders (`ADR 0033`), by the
+   * same amount in the OPPOSITE direction — money that lands on an active order both advances the
+   * bar and lowers that order's own open balance by construction, so one delta has to move both or
+   * the two can drift apart. It is a distinct number from `paidDelta` because the two genuinely
+   * differ: money declared against an already delivered order, and money handed over with nothing
+   * declared at all, both move the debt and neither moves the bar or the headline.
+   * `activeCommittedMinor` is not patched at all, and must not be: recording or deleting a payment
+   * never changes what the collector's orders cost.
+   *
+   * `unassignedMinor` moves by its own delta, independent of the other three: it is the "sin
+   * asignar" pool (`amount − Σ allocations`, `BR-05-27`), which can move even when nothing above it
+   * does (money handed over on account moves `paidMinor` and `unassignedMinor` together but neither
+   * `activePaidDelta` nor `openOrderDebtMinor`).
    */
   const patchDebtByCurrency = useCallback(
     (
       currencyCode: string,
-      { paidDelta, lostDelta, activePaidDelta }: { paidDelta: number; lostDelta: number; activePaidDelta: number },
+      {
+        paidDelta,
+        lostDelta,
+        activePaidDelta,
+        unassignedDelta,
+      }: { paidDelta: number; lostDelta: number; activePaidDelta: number; unassignedDelta: number },
     ) => {
       setDebts((prev) =>
         prev.map((debt) =>
@@ -239,6 +299,40 @@ export default function StorePaymentStateProvider({
                 paidMinor: debt.paidMinor + paidDelta,
                 lostMinor: debt.lostMinor + lostDelta,
                 activePaidMinor: debt.activePaidMinor + activePaidDelta,
+                openOrderDebtMinor: debt.openOrderDebtMinor - activePaidDelta,
+                unassignedMinor: debt.unassignedMinor + unassignedDelta,
+              }
+            : debt,
+        ),
+      );
+    },
+    [],
+  );
+
+  /**
+   * Sibling of {@link patchDebtByCurrency} for the "cuadrar cuenta" mutation shape (`FIX 1`, WO-11
+   * review): a reconciliation write-off has no allocation, no `paidMinor`, no `lostMinor` and no
+   * `unassignedMinor` line of its own (`ADR 0034` §2), so it needs its own two-field patch rather
+   * than being folded into the payment patch above. See {@link StorePaymentStateContextValue}'s own
+   * doc for what each field moves and why both deltas subtract.
+   */
+  const applyAdjustmentDeltas = useCallback(
+    ({
+      currencyCode,
+      openGroupWriteOffMinor,
+      totalWriteOffMinor,
+    }: {
+      currencyCode: string;
+      openGroupWriteOffMinor: number;
+      totalWriteOffMinor: number;
+    }) => {
+      setDebts((prev) =>
+        prev.map((debt) =>
+          debt.currencyCode === currencyCode
+            ? {
+                ...debt,
+                openOrderDebtMinor: debt.openOrderDebtMinor - openGroupWriteOffMinor,
+                debtMinor: debt.debtMinor - totalWriteOffMinor,
               }
             : debt,
         ),
@@ -263,7 +357,17 @@ export default function StorePaymentStateProvider({
       // Derived from the very lines the optimistic row renders, so the bar and the row cannot
       // disagree about which orders this payment touched.
       const activePaidDelta = sumActiveAllocationMinor(optimisticAllocations);
-      patchDebtByCurrency(input.currencyCode, { paidDelta: input.amount, lostDelta: 0, activePaidDelta });
+      // `amount − Σ allocations`: the parked remainder this payment leaves unassigned. The sheet
+      // only offers standing orders, so every named allocation reduces the pool by construction —
+      // there is no "against a cancelled order" case to net out here, unlike the delete path below.
+      const unassignedDelta =
+        input.amount - input.allocations.reduce((sum, allocation) => sum + allocation.amountMinor, 0);
+      patchDebtByCurrency(input.currencyCode, {
+        paidDelta: input.amount,
+        lostDelta: 0,
+        activePaidDelta,
+        unassignedDelta,
+      });
 
       const optimisticPayment: StorePaymentListRow = {
         id: tempId,
@@ -288,6 +392,7 @@ export default function StorePaymentStateProvider({
           paidDelta: -input.amount,
           lostDelta: 0,
           activePaidDelta: -activePaidDelta,
+          unassignedDelta: -unassignedDelta,
         });
         setPayments((prev) => prev.filter((payment) => payment.id !== tempId));
         setPaymentsTotalCount((prev) => Math.max(0, prev - 1));
@@ -301,6 +406,7 @@ export default function StorePaymentStateProvider({
         note: input.note,
         allocations: input.allocations,
         declarePaidItemIds: input.declarePaidItemIds,
+        parkedAmountMinor: input.parkedAmountMinor,
       }).then(
         (result): StorePaymentSubmitOutcome => {
           // Every resolved mutation retires the sheet's cached order list, rollback included: the
@@ -328,6 +434,10 @@ export default function StorePaymentStateProvider({
               paidDelta: 0,
               lostDelta: 0,
               activePaidDelta: serverActivePaidDelta - activePaidDelta,
+              // Which orders are active can change between opening the sheet and submitting; how
+              // much of the payment was declared cannot. `unassignedMinor` already has its correct,
+              // final value from the optimistic patch above.
+              unassignedDelta: 0,
             });
           }
           // Reconcile the optimistic row with the authoritative one (real id, server-normalized data).
@@ -382,6 +492,13 @@ export default function StorePaymentStateProvider({
       // settled a delivered order lowers the store's debt when it is removed and leaves the bar
       // exactly where it was, which is correct: that order is not in the bar's denominator either.
       const activeMinor = sumActiveAllocationMinor(target.allocations);
+      // What this payment's own removal gives back to the unassigned pool: `allocatedTotal − amount`.
+      // Equivalent to `-(effectiveMinor − nonCancelledAllocatedMinor)` (the payment's own live
+      // remainder leaving with it), collapsed algebraically: `lostMinor` cancels out because it is
+      // both subtracted from `effectiveMinor` and part of `allocatedTotal`. A payment that is fully
+      // declared against non-cancelled orders (`allocatedTotal === amount`, the common case) leaves
+      // the pool untouched, exactly as it should: it was never contributing anything unassigned.
+      const unassignedDelta = target.allocatedTotal - target.amount;
 
       deletesInFlight.current.add(paymentId);
       setPayments((prev) => prev.filter((payment) => payment.id !== paymentId));
@@ -390,6 +507,7 @@ export default function StorePaymentStateProvider({
         paidDelta: -effectiveMinor,
         lostDelta: -lostMinor,
         activePaidDelta: -activeMinor,
+        unassignedDelta,
       });
 
       // Same reasoning as the create path: a rejected promise is not an answer, so it rolls back
@@ -424,6 +542,7 @@ export default function StorePaymentStateProvider({
           paidDelta: effectiveMinor,
           lostDelta: lostMinor,
           activePaidDelta: activeMinor,
+          unassignedDelta: -unassignedDelta,
         });
         return result;
       }
@@ -485,6 +604,7 @@ export default function StorePaymentStateProvider({
       loadAllStorePayments,
       isLoadingAllStorePayments: isLoadingAll,
       hasLoadAllStorePaymentsError: hasLoadAllError,
+      applyAdjustmentDeltas,
     }),
     [
       debts,
@@ -496,6 +616,7 @@ export default function StorePaymentStateProvider({
       loadAllStorePayments,
       isLoadingAll,
       hasLoadAllError,
+      applyAdjustmentDeltas,
     ],
   );
 

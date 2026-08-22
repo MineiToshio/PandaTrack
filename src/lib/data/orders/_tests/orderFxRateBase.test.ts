@@ -39,6 +39,10 @@ type FakeTx = {
     groupBy: ReturnType<typeof vi.fn>;
   };
   deliveryOrderItem: { findFirst: ReturnType<typeof vi.fn> };
+  storeAccountAdjustmentLine: {
+    findFirst: ReturnType<typeof vi.fn>;
+    groupBy: ReturnType<typeof vi.fn>;
+  };
   user: { findUnique: ReturnType<typeof vi.fn> };
 };
 
@@ -47,7 +51,7 @@ function makeFakeTx(baseCurrencyCode: string | null): FakeTx {
     store: { findFirst: vi.fn().mockResolvedValue({ id: "store-1" }) },
     storeProductType: { findMany: vi.fn().mockResolvedValue([]) },
     order: {
-      findFirst: vi.fn().mockResolvedValue({ status: OrderStatus.OPEN, storeId: "store-1" }),
+      findFirst: vi.fn().mockResolvedValue({ status: OrderStatus.OPEN, storeId: "store-1", currencyCode: "USD" }),
       findMany: vi.fn().mockResolvedValue([]),
       create: vi.fn().mockResolvedValue({ id: "order-1", humanReadableId: "ORD-20260803-01" }),
       update: vi.fn().mockResolvedValue({}),
@@ -66,6 +70,10 @@ function makeFakeTx(baseCurrencyCode: string | null): FakeTx {
       groupBy: vi.fn().mockResolvedValue([]),
     },
     deliveryOrderItem: { findFirst: vi.fn().mockResolvedValue(null) },
+    storeAccountAdjustmentLine: {
+      findFirst: vi.fn().mockResolvedValue(null),
+      groupBy: vi.fn().mockResolvedValue([]),
+    },
     user: { findUnique: vi.fn().mockResolvedValue({ baseCurrencyCode }) },
   };
 }
@@ -120,6 +128,21 @@ describe("createOrder rate provenance", () => {
       expect.objectContaining({ data: expect.objectContaining({ exchangeRateBaseCode: null }) }),
     );
   });
+
+  it("drops a submitted rate when the order is in the base currency itself", async () => {
+    // The 1.1 incident shape: a rate on a base-currency order is invisible to reconciliation
+    // while the base stays put and a wrong "reconciled" claim if the base ever moves.
+    const tx = makeFakeTx("PEN");
+    useTx(tx);
+
+    await createOrder("user-1", { ...createInput, currencyCode: "PEN", exchangeRate: 1.1 });
+
+    expect(tx.order.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ exchangeRate: null, exchangeRateBaseCode: null }),
+      }),
+    );
+  });
 });
 
 describe("editOrder rate provenance", () => {
@@ -163,5 +186,34 @@ describe("editOrder rate provenance", () => {
     expect(data).not.toHaveProperty("exchangeRate");
     expect(data).not.toHaveProperty("exchangeRateBaseCode");
     expect(tx.user.findUnique).not.toHaveBeenCalled();
+  });
+
+  it("drops a submitted rate when the order sits in the base currency", async () => {
+    const tx = makeFakeTx("PEN");
+    tx.order.findFirst.mockResolvedValue({ status: OrderStatus.OPEN, storeId: "store-1", currencyCode: "PEN" });
+    useTx(tx);
+
+    await editOrder("order-1", "user-1", { exchangeRate: 1.1 } as OrderEditInput);
+
+    expect(tx.order.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ exchangeRate: null, exchangeRateBaseCode: null }),
+      }),
+    );
+  });
+
+  it("clears the old pair when the edit moves the order into the base currency without a rate", async () => {
+    // Restating a USD order as PEN (base PEN) leaves the old USD rate meaningless; keeping it
+    // would recreate the exact artifact the base-currency guard exists to prevent.
+    const tx = makeFakeTx("PEN");
+    useTx(tx);
+
+    await editOrder("order-1", "user-1", { currencyCode: "PEN" } as OrderEditInput);
+
+    expect(tx.order.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ exchangeRate: null, exchangeRateBaseCode: null }),
+      }),
+    );
   });
 });

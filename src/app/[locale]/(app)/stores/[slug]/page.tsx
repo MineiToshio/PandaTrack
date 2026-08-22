@@ -14,6 +14,11 @@ import {
   type StorePaymentsForStoreResult,
 } from "@/lib/data/orders/storePaymentQueries";
 import {
+  listStoreAccountAdjustmentCurrencyCodes,
+  listStoreAccountAdjustments,
+} from "@/lib/data/orders/storeAccountAdjustmentQueries";
+import type { StoreReconciliationAdjustmentRow } from "./_components/StoreReconciliationProvider";
+import {
   getEditableStoreBySlug,
   getStoreGovernanceSummary,
   getStoreGovernanceViewerContext,
@@ -102,6 +107,32 @@ export default async function StoreDetailPage({ params, searchParams }: StoreDet
     listAuthoredStoreProductTypeNamesCached(),
   ]);
 
+  // The adjustment history is per (store, currency) at read time (`listStoreAccountAdjustments`,
+  // WO-11), so it is fetched once per currency the store could have an adjustment in. That is NOT
+  // only "every currency with a debt row" (`MINOR-5`, WO-11 review): a debt row comes from the
+  // store's ORDERS, so a store whose only order in a currency was CANCELLED carries no debt row
+  // there at all, even though an adjustment against that order (written off before the cancel, or
+  // simply the store's only adjustment in that currency) can still exist. Reading the adjustments'
+  // own currencies straight from `listStoreAccountAdjustmentCurrencyCodes` and UNIONing it with the
+  // debt currencies is what keeps that adjustment listable, and deletable, either way.
+  const currencyCodesWithDebt = [...new Set(storeDebtByCurrency.map((debt) => debt.currencyCode))];
+  const currencyCodesWithAdjustments = session?.user?.id
+    ? await listStoreAccountAdjustmentCurrencyCodes(session.user.id, store.id)
+    : [];
+  const adjustmentCurrencyCodes = [...new Set([...currencyCodesWithDebt, ...currencyCodesWithAdjustments])];
+  const adjustmentsByCurrency = session?.user?.id
+    ? await Promise.all(
+        adjustmentCurrencyCodes.map((currencyCode) =>
+          listStoreAccountAdjustments(session.user.id!, store.id, currencyCode).then((rows) =>
+            rows.map((row) => ({ ...row, currencyCode })),
+          ),
+        ),
+      )
+    : [];
+  const storeAccountAdjustments: StoreReconciliationAdjustmentRow[] = adjustmentsByCurrency
+    .flat()
+    .sort((a, b) => b.adjustmentDate.getTime() - a.adjustmentDate.getTime());
+
   const canAccessEditRoute = session?.user?.id != null;
   const canDirectlyEdit = Boolean(
     session?.user?.id &&
@@ -122,6 +153,7 @@ export default async function StoreDetailPage({ params, searchParams }: StoreDet
       storeDebtByCurrency={storeDebtByCurrency}
       storePayments={storePaymentsResult.payments}
       storePaymentsTotalCount={storePaymentsResult.totalCount}
+      storeAccountAdjustments={storeAccountAdjustments}
       adminOpenReports={adminOpenReports}
       adminChangeRequests={adminChangeRequests}
       canAccessEditRoute={canAccessEditRoute}

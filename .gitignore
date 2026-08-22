@@ -61,3 +61,6 @@ generated/prisma
 
 # One-off local migration/maintenance scripts (never committed)
 /scripts/local/
+
+# E2E data guard baseline (regenerated on every run)
+/.e2e-data-baseline.json

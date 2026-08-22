@@ -6,6 +6,7 @@ import {
   OrderStatus,
 } from "../../../../generated/prisma/client";
 import { prisma } from "@/lib/prisma";
+import { openBalanceMinorByOrderId } from "@/lib/data/orders/orderOpenBalance";
 import {
   REMINDER_ARRIVAL_LEAD_DAYS,
   REMINDER_COARSE_WINDOW_PADDING_DAYS,
@@ -75,10 +76,16 @@ function coarseOverdueUpperBound(now: Date): Date {
 }
 
 /**
- * Upcoming-payment candidates: non-cancelled orders with an outstanding balance whose
- * expected date falls in the coarse payment window (`BR-09-05`, `BR-09-08`). Outstanding
- * is read from the transactionally-synced `allocatedAmountMinor` cache and compared in memory,
- * so the payment graph is never loaded.
+ * Upcoming-payment candidates: non-cancelled orders with an outstanding NET balance whose
+ * expected date falls in the coarse payment window (`BR-09-05`, `BR-09-08`). Outstanding is the
+ * canonical `openBalanceMinorByOrderId` (`BR-05-32`, `ADR 0034` §3.1), never the gross
+ * `allocatedAmountMinor < totalCost`: an order a store reconciliation already wrote off in full
+ * owes the collector nothing and must not surface a reminder (F6, 2026-08-20 review).
+ *
+ * The net-balance read is grouped by collector: `openBalanceMinorByOrderId` is scoped to one
+ * `userId`'s own `StoreAccountAdjustmentLine` rows, so this batches one call per distinct collector
+ * with a candidate in the window, bounded by the number of collectors, never by the order count. The
+ * payment graph itself is still never loaded.
  */
 export async function getPaymentDueCandidates(now: Date): Promise<ReminderCandidate[]> {
   const bounds = coarseDueBounds(now, REMINDER_PAYMENT_LEAD_DAYS);
@@ -100,8 +107,23 @@ export async function getPaymentDueCandidates(now: Date): Promise<ReminderCandid
     },
   });
 
+  const rowsByUserId = new Map<string, typeof rows>();
+  for (const row of rows) {
+    const forUser = rowsByUserId.get(row.userId) ?? [];
+    forUser.push(row);
+    rowsByUserId.set(row.userId, forUser);
+  }
+
+  const openBalanceByOrderId = new Map<string, number>();
+  await Promise.all(
+    [...rowsByUserId.entries()].map(async ([userId, userRows]) => {
+      const balances = await openBalanceMinorByOrderId(prisma, userId, userRows);
+      for (const [orderId, balance] of balances) openBalanceByOrderId.set(orderId, balance);
+    }),
+  );
+
   return rows
-    .filter((row) => row.allocatedAmountMinor < row.totalCost && row.expectedDeliveryFrom !== null)
+    .filter((row) => (openBalanceByOrderId.get(row.id) ?? 0) > 0 && row.expectedDeliveryFrom !== null)
     .map((row) => ({
       userId: row.userId,
       type: NotificationType.PAYMENT_DUE,

@@ -448,7 +448,8 @@ describe("deleteOrderPayment", () => {
       },
       order: {
         findFirst: vi.fn().mockResolvedValue(order),
-        update: vi.fn().mockResolvedValue({}),
+        // `recalculateOrderAllocationCache`'s own write, scoped to `{ id, userId }` (defense in depth).
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
       storePayment: {
         delete: vi.fn().mockResolvedValue({}),

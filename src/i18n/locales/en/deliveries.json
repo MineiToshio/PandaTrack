@@ -260,12 +260,24 @@
     },
     "toast": {
       "reopened": "Delivery reopened: products go back to In transit.",
+      "reopenedWithSettlement": "Delivery reopened, and {amount} went back to the outstanding balance.",
+      "reopenedWithSettlementAndConsumption": "Delivery reopened. {settlementAmount} from the settlement went back to the outstanding balance. {consumedAmount} paid earlier stays applied to this order.",
+      "reopenedWithSurvivingConsumption": "{amount} paid earlier stays applied to this order.",
       "undo": "Undo",
       "undoError": "Could not undo. Please try again.",
       "reopenError": "The delivery could not be reopened. Please try again.",
       "reopenConflict": "Cannot reopen: some products are already in another delivery.",
       "markDeliveredError": "The arrival could not be saved. Please try again.",
-      "cancelError": "The delivery could not be cancelled. Please try again."
+      "cancelError": "The delivery could not be cancelled. Please try again.",
+      "retrySettlementError": "The pending payment could not be recorded. Please try again.",
+      "retryNoLongerPending": "Nothing left to record: the delivery was reopened in the meantime.",
+      "retrySettled": "{amount} logged as a payment.",
+      "retrySettledPlain": "Pending payment resolved."
+    },
+    "settlement": {
+      "pendingNotice": "A payment from this delivery still needs to be recorded.",
+      "retry": "Retry",
+      "retrying": "Retrying…"
     }
   },
   "list": {

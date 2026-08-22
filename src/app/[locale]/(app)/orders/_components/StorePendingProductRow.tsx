@@ -121,7 +121,7 @@ export default function StorePendingProductRow({
               // only route into the order: 11 rows have no date at all and would have been left
               // with no navigation. The name is the row's primary identifier and the natural
               // target. It is NOT inside the select toggle's `<label>` — that wraps only the
-              // `sr-only` input and three `aria-hidden` spans — so no invalid markup is created.
+              // invisible input and three `aria-hidden` spans — so no invalid markup is created.
               // No hit-area expansion here: this row only renders from `lg` up (its container is
               // `hidden lg:block`), which is the density this grid was designed for. The touch
               // surface is `StorePendingProductCard`, and the expansion lives there.

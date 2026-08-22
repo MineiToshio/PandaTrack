@@ -33,7 +33,8 @@ function toPercent(part: number, whole: number): number {
 /** Highest-value collector surface: what to have ready this month, ahead, and paid-vs-pending. */
 export default async function DashboardCashZone({ data, locale }: DashboardCashZoneProps) {
   const t = await getTranslations({ locale, namespace: "dashboard" });
-  const { cashObligations, paidVsOutstanding, collection, lostOnCancelled, baseCurrencyCode } = data;
+  const { cashObligations, paidVsOutstanding, collection, lostOnCancelled, unrecordedPayments, baseCurrencyCode } =
+    data;
   const money = (minor: number): string => formatDashboardMoney(minor, baseCurrencyCode, locale);
 
   const ordersHref = `/${locale}${ROUTES.orders}`;
@@ -163,6 +164,32 @@ export default async function DashboardCashZone({ data, locale }: DashboardCashZ
                 className="[font-weight:var(--font-weight-semibold)] whitespace-nowrap [color:var(--accent)] hover:underline"
               >
                 {t("cash.cancelledLink")}
+              </Link>
+            </p>
+          )}
+          {/*
+            "Pagos que no registraste" (`FR-06-28`, `BR-06-13`): the balance still owed on fully
+            delivered orders. Follows the exact placement pattern of the "lost on cancelled" note
+            above (`BR-06-12`): a quiet line inside this zone rather than its own card, rendered
+            only when > 0. Unlike that unrecoverable figure, this gap is actionable, so its link
+            reaches the affected orders (delivered, still owing) via the orders list "Con saldo
+            pendiente" filter scoped to COMPLETED, the simplest honest destination available today.
+          */}
+          {unrecordedPayments.totalMinor > 0 && (
+            <p className="mt-2.5 [font-size:var(--text-body)] [color:var(--text-secondary)]">
+              {unrecordedPayments.isPartial && unrecordedPayments.excludedOrderCount > 0
+                ? t("cash.unrecordedNotePartial", {
+                    amount: money(unrecordedPayments.totalMinor),
+                    count: unrecordedPayments.excludedOrderCount,
+                  })
+                : t("cash.unrecordedNote", { amount: money(unrecordedPayments.totalMinor) })}{" "}
+              <Link
+                href={`${ordersHref}?status=${OrderStatus.COMPLETED}&balance=true`}
+                data-ph-event={POSTHOG_EVENTS.DASHBOARD.UNRECORDED_PAYMENTS_LINK_CLICKED}
+                data-ph-props={JSON.stringify({ source: "cash_zone_unrecorded_line" })}
+                className="[font-weight:var(--font-weight-semibold)] whitespace-nowrap [color:var(--accent)] hover:underline"
+              >
+                {t("cash.unrecordedLink")}
               </Link>
             </p>
           )}

@@ -16,6 +16,7 @@ const { prismaMock } = vi.hoisted(() => ({
   prismaMock: {
     order: { findMany: vi.fn() },
     delivery: { findMany: vi.fn() },
+    storeAccountAdjustmentLine: { groupBy: vi.fn() },
   },
 }));
 
@@ -27,6 +28,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   prismaMock.order.findMany.mockResolvedValue([]);
   prismaMock.delivery.findMany.mockResolvedValue([]);
+  prismaMock.storeAccountAdjustmentLine.groupBy.mockResolvedValue([]);
 });
 
 describe("getPaymentDueCandidates", () => {
@@ -83,6 +85,63 @@ describe("getPaymentDueCandidates", () => {
       locale: "en",
       timezone: "America/Lima",
     });
+  });
+
+  /**
+   * MAJOR F6 (eighth-consumer audit, 2026-08-20 review): candidacy used to read the GROSS balance
+   * (`allocatedAmountMinor < totalCost`), so an order a store reconciliation already wrote off in
+   * full (net balance 0) still looked outstanding and would surface a payment reminder for money the
+   * collector no longer owes. Fixed to read `openBalanceMinorByOrderId`'s net balance instead.
+   *
+   * Red-first: against the pre-fix gross test, this order (gross remainder 6000, net 0 once its
+   * 6000 write-off is counted) still produced a candidate. Captured failure (pre-fix):
+   *   expect(candidates).toHaveLength(0)
+   *   Expected length: 0
+   *   Received length: 1
+   */
+  it("nets a StoreAccountAdjustmentLine out of candidacy: a fully written-off order owes nothing, no reminder", async () => {
+    prismaMock.order.findMany.mockResolvedValueOnce([
+      {
+        id: "order-written-off",
+        userId: "user-1",
+        expectedDeliveryFrom: new Date("2026-07-15T00:00:00Z"),
+        totalCost: 10000,
+        allocatedAmountMinor: 4000,
+        store: { name: "Panda Store" },
+        user: { timezone: "America/Lima", locale: "en" },
+      },
+    ]);
+    // Net balance: 10000 - 4000 - 6000 (written off) = 0.
+    prismaMock.storeAccountAdjustmentLine.groupBy.mockResolvedValue([
+      { orderId: "order-written-off", _sum: { amountMinor: 6000 } },
+    ]);
+
+    const candidates = await getPaymentDueCandidates(NOW);
+
+    expect(candidates).toHaveLength(0);
+  });
+
+  it("still surfaces a candidate for an order only PARTIALLY written off, using the net remainder", async () => {
+    prismaMock.order.findMany.mockResolvedValueOnce([
+      {
+        id: "order-partial",
+        userId: "user-1",
+        expectedDeliveryFrom: new Date("2026-07-15T00:00:00Z"),
+        totalCost: 10000,
+        allocatedAmountMinor: 4000,
+        store: { name: "Panda Store" },
+        user: { timezone: "America/Lima", locale: "en" },
+      },
+    ]);
+    // Net balance: 10000 - 4000 - 3000 (written off) = 3000, still > 0.
+    prismaMock.storeAccountAdjustmentLine.groupBy.mockResolvedValue([
+      { orderId: "order-partial", _sum: { amountMinor: 3000 } },
+    ]);
+
+    const candidates = await getPaymentDueCandidates(NOW);
+
+    expect(candidates).toHaveLength(1);
+    expect(candidates[0].subjectId).toBe("order-partial");
   });
 });
 

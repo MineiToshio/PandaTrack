@@ -109,60 +109,34 @@ export function computeActiveOrdersProgressPercent(debt: ActiveOrdersPair): numb
 }
 
 /**
- * The slice of `debtMinor` that the bar's pair does not account for.
+ * The line the block prints for money already handed over that no order has claimed
+ * (`StoreDebtRow.unassignedMinor`, `BR-05-27` / `FR-05-60`).
  *
- * Positive means money still owed on orders that already left the active set: an order delivered
- * without being fully paid. That is a real, payable debt, and it is the one arithmetic hole the
- * narrowed ratio opens up, because on screen "Falta 2,625.00" would sit above a pair that only
- * adds up to 2,355.00. Naming it is what keeps the two from contradicting each other, the same
- * job the "Cancelados" and "Perdido en cancelados" lines already do for their own gaps.
- *
- * Zero in all 122 of the collector's store/currency pairs today, because no completed order
- * carries a balance any more. It is a guard against that invariant breaking, not decoration: one
- * "Ya me llegó" on a half-paid order re-creates it.
- *
- * Negative is the mirror image and just as reachable: money that lowered `debtMinor` without
- * landing on an active order, which is money handed over on account (the sheet submits an
- * allocation-less payment as a first-class case) or a payment freed as `credit` when its order was
- * cancelled. Which line names it is {@link resolveDebtReconciliationLine}'s business.
+ * This retires the old `outsideActiveOrders` reconciliation line and its `resolveDebtReconciliationLine`
+ * shim (`ADR 0033`, `WO-09`): `openOrderDebtMinor` already reads the canonical per-order
+ * `openBalanceMinor` (`BR-05-32`, `ADR 0034`), so the gap that line used to name between the
+ * headline and the bar's pair no longer exists (`ADR 0033`, Technical Notes). This is the single
+ * remaining helper for the block's "money already paid, not yet assigned" line, reading the exact
+ * figure, `unassignedMinor`.
  */
-export function computeDebtOutsideActiveOrdersMinor(debt: Pick<StoreDebtRow, "debtMinor"> & ActiveOrdersPair): number {
-  return debt.debtMinor - (debt.activeCommittedMinor - debt.activePaidMinor);
-}
+export type UnassignedMoneyLine = { amountMinor: number } | null;
 
 /**
- * Which reconciliation line the block prints under the bar, if any.
- *
- * The block puts two figures on screen that are computed over different sets: the headline is the
- * store's whole debt, the bar's pair covers only its active orders. {@link
- * computeDebtOutsideActiveOrdersMinor} is the difference, and BOTH of its directions are reachable,
- * so both get named rather than only the one that happened to be thought of first:
- *
- *  - **Positive, `outsideActiveOrders`.** Debt on an order that has already been delivered. The
- *    headline is bigger than the bar's gap ("Falta 2,625.00" over a pair adding up to 2,355.00).
- *  - **Negative, `onAccount`.** Money already handed over that the bar's pair does not count, net
- *    of any balance still owed on delivered orders. The headline is SMALLER than the bar's gap:
- *    one active order of 250.00 with nothing declared plus a payment of 100.00 on account reads
- *    "Falta 150.00" above "0.00 pagados de 250.00 en pedidos activos", and until this line exists
- *    nothing on the page names the 100.00 that explains the difference.
- *
- * The one direction still suppressed is a negative difference on a store that is in credit
- * (`debtMinor < 0`). There the headline is already "A favor {amount}", money the store holds for
- * the collector, and a second, larger credit-shaped figure beside it would be two answers to "how
- * much of mine are they holding?" rather than a reconciliation. Note what this does NOT claim: the
- * credit headline is not the arithmetic complement of the bar's gap, it is the net position. This
- * is a deliberate choice to keep one credit figure on the block, not a proof that the gap is
- * covered.
+ * Suppressed while the store is in credit (`debtMinor < 0`, `FR-05-63`), even when
+ * `unassignedMinor` itself is positive. A credit is almost always MADE of unassigned money (that is
+ * what makes it a credit), so the block would otherwise show two positive figures side by side that
+ * both, in effect, answer "am I owed money": the credit headline ("A favor 160.00") and this line
+ * ("100.00 sin asignar"). That is not two facts, it is one fact printed twice in two different
+ * shapes, and a collector reading both has no way to tell whether they overlap. The credit chip
+ * already is the answer for this state (`ADR 0033`'s consequence note), so this line stays quiet
+ * for as long as the store is in credit, regardless of how large `unassignedMinor` reads.
  */
-export type DebtReconciliationLine = { kind: "outsideActiveOrders" | "onAccount"; amountMinor: number } | null;
-
-export function resolveDebtReconciliationLine(
-  debt: Pick<StoreDebtRow, "debtMinor"> & ActiveOrdersPair,
-): DebtReconciliationLine {
-  const outsideMinor = computeDebtOutsideActiveOrdersMinor(debt);
-  if (outsideMinor > 0) return { kind: "outsideActiveOrders", amountMinor: outsideMinor };
-  if (outsideMinor < 0 && debt.debtMinor >= 0) return { kind: "onAccount", amountMinor: -outsideMinor };
-  return null;
+export function resolveUnassignedMoneyLine(
+  debt: Pick<StoreDebtRow, "unassignedMinor" | "debtMinor">,
+): UnassignedMoneyLine {
+  if (debt.debtMinor < 0) return null;
+  const amountMinor = debt.unassignedMinor;
+  return amountMinor > 0 ? { amountMinor } : null;
 }
 
 /**
@@ -184,21 +158,39 @@ export function isOptimisticPaymentId(paymentId: string): boolean {
 
 export type StorePaymentProgressState = "settled" | "owing" | "credit";
 
-/** Which of the three shapes the block takes. A credit draws no bar: a track past 100% is a lie. */
-export function resolveProgressState(debt: Pick<StoreDebtRow, "debtMinor">): StorePaymentProgressState {
+/**
+ * Which of the three shapes the block takes. A credit draws no bar: a track past 100% is a lie.
+ *
+ * `credit` is decided on the lifetime `debtMinor`, unchanged (`FR-05-63`): the collector can only be
+ * "in credit" against the store's whole history, not against its open orders alone. `settled` /
+ * `owing` are decided on `openOrderDebtMinor` (`ADR 0033`, `WO-09`), the figure the headline itself
+ * now renders, so a store whose last open order just closed reads "Al día" even while an older
+ * delivered order still carries an unregistered balance (`unrecordedPaymentsMinor`, a diagnostic,
+ * never debt). `openOrderDebtMinor` is deliberately compared with `=== 0`, not `<= 0`: a negative
+ * reading there is real (BR-05-32, never clamped) and must fall to `owing` so the headline still
+ * renders it, rather than being mistaken for `settled`.
+ */
+export function resolveProgressState(
+  debt: Pick<StoreDebtRow, "debtMinor" | "openOrderDebtMinor">,
+): StorePaymentProgressState {
   if (debt.debtMinor < 0) return "credit";
-  return debt.debtMinor === 0 ? "settled" : "owing";
+  return debt.openOrderDebtMinor === 0 ? "settled" : "owing";
 }
 
 /**
  * Currencies ordered so the one the collector can act on comes first: live debt before anything
  * else, then by size of commitment. Without this the order is whatever the debt query's `Map`
  * happened to build, which today puts a fully settled USD above a PEN debt of 1,389.00.
+ *
+ * Ranks on `openOrderDebtMinor`, not the lifetime `debtMinor` (`ADR 0033`, `FIX D`): the block this
+ * order feeds (`StorePaymentProgressRows`) prints `openOrderDebtMinor` on its "owing" headline, so a
+ * registration-gap currency (a big unregistered balance on a COMPLETED order, nothing open today)
+ * must not outrank one the collector genuinely owes money on right now.
  */
 export function sortDebtsByActionability(debts: readonly StoreDebtRow[]): StoreDebtRow[] {
   return [...debts].sort((a, b) => {
-    const aOwing = a.debtMinor > 0 ? 0 : 1;
-    const bOwing = b.debtMinor > 0 ? 0 : 1;
+    const aOwing = a.openOrderDebtMinor > 0 ? 0 : 1;
+    const bOwing = b.openOrderDebtMinor > 0 ? 0 : 1;
     if (aOwing !== bOwing) return aOwing - bOwing;
     return b.committedMinor - a.committedMinor;
   });

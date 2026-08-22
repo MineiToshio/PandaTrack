@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { getCollectorPreferencesSnapshot } from "@/lib/data/user-settings/userSettingsQueries";
+import { openBalanceMinorByOrderId } from "@/lib/data/orders/orderOpenBalance";
 import { DeliveryStatus } from "../../../../generated/prisma/client";
 import { buildDashboardData } from "./dashboardAggregation";
 import { resolveDashboardRange } from "./dashboardPeriods";
@@ -13,6 +14,14 @@ import type {
 /**
  * Loads every order the collector owns, with the items and payments the dashboard aggregates.
  * This is the single read pass shared by all zones, so no zone issues its own broad scan.
+ *
+ * Also resolves each order's canonical `openBalanceMinor` (`BR-06-08`, `FRD-05 · BR-05-32`) through
+ * the shared `openBalanceMinorByOrderId` batch helper (`FRD-05 · BP-01 · WO-10`), one extra
+ * `groupBy` query regardless of how many orders the collector has, so this module never carries a
+ * second balance derivation (`FR-06-27`, `ADR 0033`/`0034`). `storeAccountAdjustmentLines` is
+ * fetched separately, with its write date, purely so the outstanding-debt trend (`FR-06-21`) can
+ * bucket a write-off by the month it was written, exactly like a payment; every other figure reads
+ * the already-summed `openBalanceMinor` instead of these raw lines.
  */
 async function fetchDashboardOrders(userId: string): Promise<DashboardOrderInput[]> {
   const rows = await prisma.order.findMany({
@@ -27,6 +36,7 @@ async function fetchDashboardOrders(userId: string): Promise<DashboardOrderInput
       exchangeRate: true,
       exchangeRateBaseCode: true,
       totalCost: true,
+      allocatedAmountMinor: true,
       status: true,
       store: { select: { id: true, name: true, slug: true, logoUrl: true } },
       items: {
@@ -51,35 +61,59 @@ async function fetchDashboardOrders(userId: string): Promise<DashboardOrderInput
       paymentAllocations: {
         select: { amountMinor: true, payment: { select: { paymentDate: true } } },
       },
+      storeAccountAdjustmentLines: {
+        select: { amountMinor: true, createdAt: true },
+      },
     },
   });
 
-  return rows.map((row) => ({
-    id: row.id,
-    humanReadableId: row.humanReadableId,
-    orderDate: row.orderDate,
-    expectedDeliveryFrom: row.expectedDeliveryFrom,
-    expectedDeliveryTo: row.expectedDeliveryTo,
-    currencyCode: row.currencyCode,
-    exchangeRate: row.exchangeRate ? Number(row.exchangeRate) : null,
-    exchangeRateBaseCode: row.exchangeRateBaseCode,
-    totalCost: row.totalCost,
-    status: row.status,
-    store: { id: row.store.id, name: row.store.name, slug: row.store.slug, logoUrl: row.store.logoUrl },
-    items: row.items.map((item) => ({
-      id: item.id,
-      name: item.name,
-      quantity: item.quantity,
-      productTypeKey: item.productTypeKey,
-      unitPrice: item.unitPrice,
-      deliveryState: item.deliveryState,
-      deliveryDates: item.deliveryItems.map((link) => link.delivery.deliveryDate),
-    })),
-    payments: row.paymentAllocations.map((allocation) => ({
-      amount: allocation.amountMinor,
-      paymentDate: allocation.payment.paymentDate,
-    })),
-  }));
+  const openBalanceByOrderId = await openBalanceMinorByOrderId(
+    prisma,
+    userId,
+    rows.map((row) => ({ id: row.id, totalCost: row.totalCost, allocatedAmountMinor: row.allocatedAmountMinor })),
+  );
+
+  return rows.map((row) => {
+    const openBalanceMinor = openBalanceByOrderId.get(row.id);
+    // The batch helper guarantees an entry per input order (see its own module doc). Falling back
+    // to the gross `totalCost - allocatedAmountMinor` here would silently reintroduce the older,
+    // adjustment-blind formula this work order retires, which is exactly the kind of quiet
+    // degradation `BR-06-08` forbids, so a miss is a programming error, not a figure to soften.
+    if (openBalanceMinor === undefined) {
+      throw new Error(`openBalanceMinorByOrderId missing entry for order ${row.id}`);
+    }
+    return {
+      id: row.id,
+      humanReadableId: row.humanReadableId,
+      orderDate: row.orderDate,
+      expectedDeliveryFrom: row.expectedDeliveryFrom,
+      expectedDeliveryTo: row.expectedDeliveryTo,
+      currencyCode: row.currencyCode,
+      exchangeRate: row.exchangeRate ? Number(row.exchangeRate) : null,
+      exchangeRateBaseCode: row.exchangeRateBaseCode,
+      totalCost: row.totalCost,
+      status: row.status,
+      store: { id: row.store.id, name: row.store.name, slug: row.store.slug, logoUrl: row.store.logoUrl },
+      items: row.items.map((item) => ({
+        id: item.id,
+        name: item.name,
+        quantity: item.quantity,
+        productTypeKey: item.productTypeKey,
+        unitPrice: item.unitPrice,
+        deliveryState: item.deliveryState,
+        deliveryDates: item.deliveryItems.map((link) => link.delivery.deliveryDate),
+      })),
+      payments: row.paymentAllocations.map((allocation) => ({
+        amount: allocation.amountMinor,
+        paymentDate: allocation.payment.paymentDate,
+      })),
+      openBalanceMinor,
+      adjustmentLines: row.storeAccountAdjustmentLines.map((line) => ({
+        amountMinor: line.amountMinor,
+        createdAt: line.createdAt,
+      })),
+    };
+  });
 }
 
 /**

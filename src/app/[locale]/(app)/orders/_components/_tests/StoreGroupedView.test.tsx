@@ -1,10 +1,11 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ComponentProps, ReactNode } from "react";
 import { ToastProvider } from "@/contexts/ToastContext";
 import type { PendingProductRow, PendingProductsByStoreGroup } from "@/lib/data/orders/pendingProductsByStoreQueries";
+import { formatAmountWithSymbol } from "@/lib/currency";
 import { utcMidnightToday } from "@/test/domainDateFixtures";
 import StoreGroupedView from "../StoreGroupedView";
 
@@ -28,23 +29,53 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), refresh: 
 vi.mock("../../_actions/orderItemActions", () => ({
   setOrderItemArrivedAction: vi.fn().mockResolvedValue({ ok: true }),
 }));
-const { createStorePaymentActionMock, storeArrivalActionMock, capturedSubmitRef } = vi.hoisted(() => ({
+const {
+  createStorePaymentActionMock,
+  storeArrivalActionMock,
+  capturedSubmitRef,
+  getStorePaymentSheetOrdersActionMock,
+  getSettlementContextActionMock,
+  retrySettlementActionMock,
+  writePendingSettlementMock,
+  clearPendingSettlementMock,
+} = vi.hoisted(() => ({
   createStorePaymentActionMock: vi
     .fn()
     .mockResolvedValue({ ok: true, paymentId: "payment-1", currencyCode: "PEN", affectedOrders: [] }),
   storeArrivalActionMock: vi
     .fn()
-    .mockResolvedValue({ ok: true, deliveryId: "delivery-1", productCount: 1, orderCount: 1 }),
+    .mockResolvedValue({ ok: true, deliveryId: "delivery-1", productCount: 1, orderCount: 1, moneyOutcomes: [] }),
   capturedSubmitRef: { current: null as ((input: unknown) => Promise<unknown> | void) | null },
+  getStorePaymentSheetOrdersActionMock: vi.fn().mockResolvedValue({ ok: true, orders: [] }),
+  getSettlementContextActionMock: vi.fn().mockResolvedValue({ ok: true, contexts: [] }),
+  retrySettlementActionMock: vi.fn(),
+  writePendingSettlementMock: vi.fn(),
+  clearPendingSettlementMock: vi.fn(),
 }));
 
 vi.mock("@/app/[locale]/(app)/_actions/storePaymentActions", () => ({
-  getStorePaymentSheetOrdersAction: vi.fn().mockResolvedValue({ ok: true, orders: [] }),
+  getStorePaymentSheetOrdersAction: (...args: unknown[]) => getStorePaymentSheetOrdersActionMock(...args),
   createStorePaymentAction: (...args: unknown[]) => createStorePaymentActionMock(...args),
 }));
 vi.mock("@/app/[locale]/(app)/_actions/storeArrivalAction", () => ({
   storeArrivalAction: (...args: unknown[]) => storeArrivalActionMock(...args),
 }));
+// The settlement preview (WO-08) fetches on open; a real `getSession()` call would throw outside
+// a request scope, so it is stubbed to "nothing to settle" for every test that does not care about it.
+vi.mock("@/app/[locale]/(app)/_actions/settlementActions", () => ({
+  getSettlementContextAction: (...args: unknown[]) => getSettlementContextActionMock(...args),
+  retrySettlementAction: (...args: unknown[]) => retrySettlementActionMock(...args),
+}));
+vi.mock("@/lib/deliveries/pendingSettlementStore", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/deliveries/pendingSettlementStore")>(
+    "@/lib/deliveries/pendingSettlementStore",
+  );
+  return {
+    ...actual,
+    writePendingSettlement: writePendingSettlementMock,
+    clearPendingSettlement: clearPendingSettlementMock,
+  };
+});
 
 // The sheet itself is not under test here; its submit handler is. The hook stays real so the
 // coordinator's own `invalidate` wiring keeps working.
@@ -124,7 +155,7 @@ function makeGroup(overrides: Partial<PendingProductsByStoreGroup> = {}): Pendin
         basePagableMinor: null,
       }),
     ],
-    debts: [{ currencyCode: "PEN", debtMinor: 5000 }],
+    debts: [{ currencyCode: "PEN", debtMinor: 5000, openOrderDebtMinor: 5000 }],
     undetailedByOrder: [],
     ...overrides,
   };
@@ -223,6 +254,30 @@ describe("StoreGroupedView", () => {
     expect(screen.getByText("Manga Corner")).toBeInTheDocument();
   });
 
+  it("forwards the sheet's parked amount to the action (WO-09)", async () => {
+    // Same gap as `StorePaymentStateProvider`: the sheet's own equality gate only guarantees
+    // `allocations + parkedAmountMinor === amount` inside its own draft. The server re-derives that
+    // same sum with `requireFullAllocation` and refuses `ALLOCATION_SUM_BELOW_PAYMENT` the instant a
+    // coordinator forwards the allocations but drops the parked slice on the way to the action.
+    renderView({ groups: [makeGroup()] });
+
+    fireEvent.click(screen.getByRole("button", { name: "storeView.registerPayment" }));
+
+    await act(async () => {
+      await capturedSubmitRef.current?.({
+        amount: 1000,
+        paymentDate: new Date("2026-01-05T00:00:00.000Z"),
+        currencyCode: "PEN",
+        note: null,
+        allocations: [{ orderId: "order-1", amountMinor: 400 }],
+        declarePaidItemIds: [],
+        parkedAmountMinor: 600,
+      });
+    });
+
+    expect(createStorePaymentActionMock).toHaveBeenCalledWith(expect.objectContaining({ parkedAmountMinor: 600 }));
+  });
+
   it("tells the sheet a rejected payment action was UNANSWERED, not a verdict (GRAVE 1)", async () => {
     // The second of the two coordinators. It absorbs the rejection into a RESOLVED outcome on
     // purpose (a `catch` chained after the success handler would roll a committed payment back off
@@ -275,6 +330,113 @@ describe("StoreGroupedView", () => {
     expect(screen.queryAllByText(/card\.paymentPercentage/)).toHaveLength(0);
     // The figure itself, which is what the state says instead of a ratio.
     expect(screen.getAllByText(/detail\.payments\.declaredAgainst/).length).toBeGreaterThan(0);
+  });
+
+  it("moves the store chip's openOrderDebtMinor by the active-allocation sum on an optimistic submit (FIX A)", async () => {
+    // The chip renders `openOrderDebtMinor` (ADR 0033), so the optimistic patch has to move THAT
+    // figure, not merely the lifetime `debtMinor` the old patch touched. `order-1` is looked up in
+    // the sheet's own cached order list to decide whether it counts, exactly like
+    // `StorePaymentStateProvider`.
+    getStorePaymentSheetOrdersActionMock.mockResolvedValueOnce({
+      ok: true,
+      orders: [
+        {
+          orderId: "order-1",
+          humanReadableId: "PED-001",
+          orderDate: new Date("2026-01-05T00:00:00.000Z"),
+          currencyCode: "PEN",
+          totalCost: 5000,
+          isActive: true,
+          allocatedAmountMinor: 0,
+          assignableMinor: 5000,
+          restCeilingMinor: 5000,
+          items: [],
+        },
+      ],
+    });
+    renderView({
+      groups: [makeGroup({ debts: [{ currencyCode: "PEN", debtMinor: 5000, openOrderDebtMinor: 5000 }] })],
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "storeView.registerPayment" }));
+    // Lets the sheet's own order fetch resolve before the submit reads `sheet.orders`.
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      await capturedSubmitRef.current?.({
+        amount: 1000,
+        paymentDate: new Date("2026-01-05T00:00:00.000Z"),
+        currencyCode: "PEN",
+        note: null,
+        allocations: [{ orderId: "order-1", amountMinor: 1000 }],
+      });
+    });
+
+    expect(
+      screen.getByText(
+        `storeView.openOrderDebtAmount:${JSON.stringify({ amount: formatAmountWithSymbol(4000, "PEN", "es") })}`,
+      ),
+    ).toBeInTheDocument();
+  });
+
+  describe("store debt headline (ADR 0033, WO-09)", () => {
+    it("shows the OPEN-orders figure, not the lifetime debt, on the store chip", () => {
+      // A COMPLETED order left a balance behind (a registration gap, `unrecordedPaymentsMinor`):
+      // the lifetime `debtMinor` (500.00) still carries it, but `openOrderDebtMinor` (200.00)
+      // excludes it. The chip must print the open figure.
+      renderView({
+        groups: [makeGroup({ debts: [{ currencyCode: "PEN", debtMinor: 50000, openOrderDebtMinor: 20000 }] })],
+      });
+
+      expect(
+        screen.getByText(
+          `storeView.openOrderDebtAmount:${JSON.stringify({ amount: formatAmountWithSymbol(20000, "PEN", "es") })}`,
+        ),
+      ).toBeInTheDocument();
+      expect(screen.queryByText(/storeView\.debtAmount:/)).not.toBeInTheDocument();
+    });
+
+    it("keeps the credit chip on the lifetime debtMinor, unchanged (FR-05-63)", () => {
+      // In credit is a fact about the store's whole history: the credit chip must not switch to
+      // `openOrderDebtMinor`, even when it differs from the lifetime figure.
+      renderView({
+        groups: [makeGroup({ debts: [{ currencyCode: "PEN", debtMinor: -16000, openOrderDebtMinor: 5000 }] })],
+      });
+
+      expect(
+        screen.getByText(
+          `storeView.creditAmount:${JSON.stringify({ amount: formatAmountWithSymbol(16000, "PEN", "es") })}`,
+        ),
+      ).toBeInTheDocument();
+      expect(screen.queryByText(/storeView\.openOrderDebtAmount/)).not.toBeInTheDocument();
+    });
+
+    it("keeps 'Registrar pago' enabled off the lifetime debt even when the open-orders figure is zero", () => {
+      // The payment-validation ceiling is lifetime-wide (`FR-05-63`): a store whose only debt is an
+      // unregistered balance on a COMPLETED order must still offer the action, so the gate stays on
+      // `debtMinor`, deliberately not switched to `openOrderDebtMinor` alongside the displayed chip.
+      renderView({
+        groups: [
+          makeGroup({
+            debts: [{ currencyCode: "PEN", debtMinor: 30000, openOrderDebtMinor: 0 }],
+          }),
+        ],
+      });
+
+      expect(screen.getByRole("button", { name: "storeView.registerPayment" })).not.toBeDisabled();
+    });
+
+    it("disables 'Registrar pago' when the lifetime debt is zero, even with nothing open either", () => {
+      renderView({
+        groups: [makeGroup({ debts: [{ currencyCode: "PEN", debtMinor: 0, openOrderDebtMinor: 0 }] })],
+      });
+
+      // Disabled swaps the accessible name to the hint (`aria-label`), so the disabled button is no
+      // longer reachable by the enabled name above.
+      expect(screen.getByRole("button", { name: "storeView.registerPaymentDisabledHint" })).toBeDisabled();
+    });
   });
 
   describe("undetailed money (FR-05-51)", () => {
@@ -682,7 +844,7 @@ describe("StoreGroupedView", () => {
         groups: [
           makeGroup({
             pendingProducts: [makeProduct({ itemId: "a", name: "Only one" })],
-            debts: [{ currencyCode: "PEN", debtMinor: 199000 }],
+            debts: [{ currencyCode: "PEN", debtMinor: 199000, openOrderDebtMinor: 199000 }],
           }),
         ],
       });
@@ -693,6 +855,50 @@ describe("StoreGroupedView", () => {
       // The group is a pending-product group, so it vanishes with its debt figure AND its
       // "Registrar pago" button. Said once, where it happens.
       await waitFor(() => expect(screen.getByText(/^toast\.successStoreLeft:/)).toBeInTheDocument());
+    });
+
+    it("names the OPEN-orders figure in the toast, not the lifetime debt (FIX E)", async () => {
+      // Both figures are positive but disagree: the toast must echo the open one (20.00), the
+      // figure the store chip itself displays, not the lifetime one (50.00).
+      renderView({
+        groups: [
+          makeGroup({
+            pendingProducts: [makeProduct({ itemId: "a", name: "Only one" })],
+            debts: [{ currencyCode: "PEN", debtMinor: 50000, openOrderDebtMinor: 20000 }],
+          }),
+        ],
+      });
+
+      selectProduct("Only one");
+      await confirmArrival();
+
+      await waitFor(() =>
+        expect(
+          screen.getByText(
+            `toast.successStoreLeft:${JSON.stringify({ count: 1, store: "Akiba Books", debt: formatAmountWithSymbol(20000, "PEN", "es") })}`,
+          ),
+        ).toBeInTheDocument(),
+      );
+    });
+
+    it("prefers the plain toast over a stale lifetime debt when nothing is open any more (FIX E)", async () => {
+      // A registration-gap store: a big lifetime `debtMinor` (an unregistered balance on a
+      // COMPLETED order) but nothing OPEN right now. Reading `debtMinor` here would tell the
+      // collector they still owe 199.00, which is not a debt on any order still in flight.
+      renderView({
+        groups: [
+          makeGroup({
+            pendingProducts: [makeProduct({ itemId: "a", name: "Only one" })],
+            debts: [{ currencyCode: "PEN", debtMinor: 199000, openOrderDebtMinor: 0 }],
+          }),
+        ],
+      });
+
+      selectProduct("Only one");
+      await confirmArrival();
+
+      await waitFor(() => expect(screen.getByText(/^toast\.success:/)).toBeInTheDocument());
+      expect(screen.queryByText(/^toast\.successStoreLeft:/)).not.toBeInTheDocument();
     });
 
     it("keeps the plain success copy while the store stays on the list", async () => {
@@ -816,13 +1022,219 @@ describe("StoreGroupedView", () => {
 
     it("never moves the store's debt figure: an arrival is not a payment", async () => {
       renderView({ groups: twoStores() });
-      const before = screen.getAllByText(/storeView\.debtAmount/)[0].textContent;
+      const before = screen.getAllByText(/storeView\.openOrderDebtAmount/)[0].textContent;
 
       selectProduct("Soonest");
       await confirmArrival();
 
       await waitFor(() => expect(screen.queryByText("Soonest")).not.toBeInTheDocument());
-      expect(screen.getAllByText(/storeView\.debtAmount/)[0].textContent).toBe(before);
+      expect(screen.getAllByText(/storeView\.openOrderDebtAmount/)[0].textContent).toBe(before);
+    });
+  });
+
+  describe("settlement on arrival: retry contract (F5/F7/F10, 2026-08-20 review)", () => {
+    function oneStoreOneProduct(): PendingProductsByStoreGroup[] {
+      return [
+        makeGroup({
+          openOrdersCount: 1,
+          pendingProducts: [makeProduct({ itemId: "a", name: "Alpha", orderId: "order-1" })],
+        }),
+      ];
+    }
+
+    // A pre-checked, computed-full settlement context: enough for `QuickArrivalModal` to submit
+    // with `settleRemainder: true` without any extra interaction with the checkbox.
+    const SETTLEMENT_CONTEXT = {
+      orderId: "order-1",
+      currencyCode: "PEN",
+      closesOrder: true,
+      unassignedMinor: 0,
+      plan: { kind: "computedFull" as const, amountMinor: 5000, appliedUnassignedMinor: 0 },
+      defaultChecked: true,
+    };
+
+    // Each test in this block fully owns these mocks (`mockReset` + a plain, non-"Once"
+    // resolution), rather than layering `mockResolvedValueOnce` calls on a shared queue: an extra
+    // fetch anywhere in the render tree (the settlement-context effect, a re-render) would
+    // otherwise silently shift which test's queued response lands on which test's own call.
+    beforeEach(() => {
+      getSettlementContextActionMock.mockReset();
+      getSettlementContextActionMock.mockResolvedValue({ ok: true, contexts: [SETTLEMENT_CONTEXT] });
+      storeArrivalActionMock.mockReset();
+      retrySettlementActionMock.mockReset();
+      writePendingSettlementMock.mockReset();
+      clearPendingSettlementMock.mockReset();
+    });
+
+    async function confirmArrivalSingle() {
+      fireEvent.click(
+        screen.getByRole("button", { name: 'storeView.selection.storeArrivalAriaLabel:{"store":"Akiba Books"}' }),
+      );
+      // The settlement-context fetch is debounced (MAJOR F4): wait for the checkbox it renders
+      // before confirming, or a slow CI run can click "confirm" while `showSettlementBlock` is
+      // still false (nothing fetched yet) and submit with `settleRemainder: false` regardless of
+      // what `SETTLEMENT_CONTEXT` says — a test race, not the behavior under test.
+      await screen.findByRole("checkbox", { name: "detail.quickArrival.settlement.checkboxLabel" });
+      fireEvent.click(await screen.findByRole("button", { name: /detail\.quickArrival\.confirm/ }));
+    }
+
+    // MAJOR F5: `input.settlementDate`/`input.receivedDate` reach `handleSubmitArrival` as domain
+    // dates (UTC midnight); serializing with the OLD `toLocalIsoDateString` (local getters) shifts
+    // the calendar day backward under any timezone west of UTC. Run under `America/Lima` so this
+    // test actually reproduces the regression.
+    describe("under TZ=America/Lima", () => {
+      const originalTz = process.env.TZ;
+      beforeEach(() => {
+        process.env.TZ = "America/Lima";
+      });
+      afterEach(() => {
+        process.env.TZ = originalTz;
+      });
+
+      it("persists the pending entry's settlementDate on the SAME civil day the arrival used", async () => {
+        // `QuickArrivalModal`'s default arrival date is "today" in the AMBIENT (Lima) timezone
+        // (`startOfToday()` uses local `Date` getters), not "today" in UTC — the two can genuinely
+        // be different civil days depending on the moment this suite runs. Read the expectation off
+        // local getters too, captured BEFORE the interaction so a rollover mid-test cannot make the
+        // two disagree for reasons unrelated to this fix.
+        const now = new Date();
+        const expectedDay = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+        storeArrivalActionMock.mockResolvedValue({
+          ok: true,
+          deliveryId: "delivery-1",
+          productCount: 1,
+          orderCount: 1,
+          moneyOutcomes: [
+            {
+              orderId: "order-1",
+              currencyCode: "PEN",
+              status: "pending",
+              consumedMinor: null,
+              settledAmountMinor: null,
+            },
+          ],
+        });
+        renderView({ groups: oneStoreOneProduct() });
+
+        selectProduct("Alpha");
+        await confirmArrivalSingle();
+
+        await waitFor(() => expect(writePendingSettlementMock).toHaveBeenCalled());
+        const entry = writePendingSettlementMock.mock.calls.at(-1)?.[0] as { settlementDate: string };
+        // Must match `toISOString().slice(0, 10)` exactly — never a day earlier, which is what the
+        // local-getter serializer used to produce here under a west-of-UTC timezone.
+        expect(entry.settlementDate).toBe(expectedDay);
+      });
+    });
+
+    it("MAJOR F7: a 'refused' outcome shows a dismissable notice and never persists a pending entry", async () => {
+      storeArrivalActionMock.mockResolvedValue({
+        ok: true,
+        deliveryId: "delivery-1",
+        productCount: 1,
+        orderCount: 1,
+        moneyOutcomes: [
+          {
+            orderId: "order-1",
+            currencyCode: "PEN",
+            status: "refused",
+            consumedMinor: 0,
+            settledAmountMinor: null,
+            error: "AMOUNT_INVALID",
+          },
+        ],
+      });
+      renderView({ groups: oneStoreOneProduct() });
+
+      selectProduct("Alpha");
+      await confirmArrivalSingle();
+
+      await waitFor(() => expect(screen.getByText("error.AMOUNT_INVALID")).toBeInTheDocument());
+      expect(writePendingSettlementMock).not.toHaveBeenCalled();
+    });
+
+    it("MAJOR F10: the batch retry names the settled total on success", async () => {
+      storeArrivalActionMock.mockResolvedValue({
+        ok: true,
+        deliveryId: "delivery-1",
+        productCount: 1,
+        orderCount: 1,
+        moneyOutcomes: [
+          { orderId: "order-1", currencyCode: "PEN", status: "pending", consumedMinor: null, settledAmountMinor: null },
+        ],
+      });
+      retrySettlementActionMock.mockResolvedValue({
+        ok: true,
+        noLongerPending: false,
+        outcomes: [
+          { orderId: "order-1", currencyCode: "PEN", status: "settled", consumedMinor: 0, settledAmountMinor: 5000 },
+        ],
+      });
+      renderView({ groups: oneStoreOneProduct() });
+
+      selectProduct("Alpha");
+      await confirmArrivalSingle();
+
+      const retryButton = await screen.findByRole("button", { name: "settlement.retry" });
+      fireEvent.click(retryButton);
+
+      await waitFor(() => expect(clearPendingSettlementMock).toHaveBeenCalledWith("delivery-1"));
+      expect(screen.getByText(/^settlement\.confirmation:/)).toBeInTheDocument();
+    });
+
+    it("MAJOR F10: the batch retry keeps the entry and shows a toast on a still-pending failure", async () => {
+      storeArrivalActionMock.mockResolvedValue({
+        ok: true,
+        deliveryId: "delivery-1",
+        productCount: 1,
+        orderCount: 1,
+        moneyOutcomes: [
+          { orderId: "order-1", currencyCode: "PEN", status: "pending", consumedMinor: null, settledAmountMinor: null },
+        ],
+      });
+      retrySettlementActionMock.mockResolvedValue({
+        ok: true,
+        noLongerPending: false,
+        outcomes: [
+          { orderId: "order-1", currencyCode: "PEN", status: "pending", consumedMinor: null, settledAmountMinor: null },
+        ],
+      });
+      renderView({ groups: oneStoreOneProduct() });
+
+      selectProduct("Alpha");
+      await confirmArrivalSingle();
+
+      const retryButton = await screen.findByRole("button", { name: "settlement.retry" });
+      fireEvent.click(retryButton);
+
+      await waitFor(() => expect(screen.getByText("settlement.retryFailed")).toBeInTheDocument());
+      expect(clearPendingSettlementMock).not.toHaveBeenCalled();
+    });
+
+    // MAJOR, 2026-08-21 review: `retrySettlementAction`'s `.then` had no rejection handler, so a
+    // rejected promise here silently did nothing at all: no toast, and the pending entry never
+    // cleared or re-offered. This is the same "settlement action .then with no rejection handling"
+    // bug as `QuickArrivalModal`'s hanging settlement-context fetch, just in the batch retry path.
+    it("shows an error toast instead of doing nothing when the batch retry rejects", async () => {
+      storeArrivalActionMock.mockResolvedValue({
+        ok: true,
+        deliveryId: "delivery-1",
+        productCount: 1,
+        orderCount: 1,
+        moneyOutcomes: [
+          { orderId: "order-1", currencyCode: "PEN", status: "pending", consumedMinor: null, settledAmountMinor: null },
+        ],
+      });
+      retrySettlementActionMock.mockRejectedValue(new Error("boom"));
+      renderView({ groups: oneStoreOneProduct() });
+
+      selectProduct("Alpha");
+      await confirmArrivalSingle();
+
+      const retryButton = await screen.findByRole("button", { name: "settlement.retry" });
+      fireEvent.click(retryButton);
+
+      await waitFor(() => expect(screen.getByText("error.server_error")).toBeInTheDocument());
     });
   });
 });

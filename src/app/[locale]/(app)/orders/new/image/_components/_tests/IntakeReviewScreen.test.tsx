@@ -104,6 +104,24 @@ function mobileSubmit(): HTMLElement {
   return submitButtons()[1];
 }
 
+/**
+ * Presses save and confirms the totals warning when it appears.
+ *
+ * Rows that are all priced and do not add up to the stated total now raise the same confirmation
+ * the manual create and edit forms raise, so a draft in that state takes two clicks to save rather
+ * than one. Most fixtures here are in exactly that state (the default draft's total is deliberately
+ * unrelated to its rows), and none of them is about the totals gate, so they say "save it" once and
+ * let this helper answer the question the gate asks. The gate's own behaviour, including the answer
+ * that must NOT save, is asserted in the totals-reconciliation block instead.
+ */
+function submitAndConfirm(button: HTMLElement = desktopSubmit()) {
+  // `fireEvent` rather than a raw `element.click()`: the confirmation renders through a portal, and
+  // only an act-wrapped dispatch flushes the render that puts it in the document.
+  fireEvent.click(button);
+  const confirm = screen.queryByRole("button", { name: "saveAnyway" });
+  if (confirm !== null) fireEvent.click(confirm);
+}
+
 function manualButtons() {
   return screen.getAllByRole("button", { name: "manual" });
 }
@@ -252,7 +270,7 @@ describe("IntakeReviewScreen", () => {
       />,
     );
 
-    desktopSubmit().click();
+    submitAndConfirm();
 
     expect(onSave).toHaveBeenCalledTimes(1);
     expect(onSave.mock.calls[0][0].store.matchedStoreId).toBe("clh1234567890abcdefghijkl");
@@ -341,7 +359,7 @@ describe("IntakeReviewScreen exchange rate", () => {
     );
 
     await screen.findByText(/fx.unavailable/);
-    desktopSubmit().click();
+    submitAndConfirm();
 
     expect(onSave).toHaveBeenCalledTimes(1);
     expect(onSave.mock.calls[0][1]).toBeNull();
@@ -368,7 +386,7 @@ describe("IntakeReviewScreen exchange rate", () => {
     await waitFor(() => expect((input as HTMLInputElement).value).toBe("3.75"));
     fireEvent.change(input, { target: { value: "3.812345" } });
 
-    desktopSubmit().click();
+    submitAndConfirm();
 
     expect(onSave).toHaveBeenCalledTimes(1);
     expect(onSave.mock.calls[0][1]).toBe(3.812345);
@@ -418,7 +436,7 @@ describe("IntakeReviewScreen exchange rate", () => {
       />,
     );
 
-    desktopSubmit().click();
+    submitAndConfirm();
 
     expect(onSave.mock.calls[0][1]).toBeNull();
   });
@@ -611,8 +629,8 @@ describe("IntakeReviewScreen action bars", () => {
       />,
     );
 
-    desktopSubmit().click();
-    mobileSubmit().click();
+    submitAndConfirm();
+    submitAndConfirm(mobileSubmit());
 
     expect(onSave).toHaveBeenCalledTimes(2);
     expect(onSave.mock.calls[0]).toEqual(onSave.mock.calls[1]);
@@ -743,7 +761,7 @@ describe("IntakeReviewScreen totals reconciliation", () => {
     expect(screen.queryByText(/totals.mismatchTitle/)).toBeNull();
   });
 
-  it("never blocks the save over a mismatch: the total is what the chat said and it is saved as is", () => {
+  it("asks before saving a mismatch, then saves the stated total as is once confirmed", () => {
     const onSave = vi.fn();
     render(
       <IntakeReviewScreen
@@ -760,9 +778,65 @@ describe("IntakeReviewScreen totals reconciliation", () => {
       />,
     );
 
-    desktopSubmit().click();
+    fireEvent.click(desktopSubmit());
+    // The write waits on the answer. The inline banner above has said the two figures disagree
+    // since the screen loaded, but a banner is passive and this is the last moment anyone can
+    // catch a total the model misread.
+    expect(onSave).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: "saveAnyway" }));
     expect(onSave).toHaveBeenCalledTimes(1);
+    // Confirming keeps the stated total untouched: a mismatch is occasionally right (an
+    // unitemised discount), so the answer is the collector's, never a figure the screen rewrites.
     expect((onSave.mock.calls[0][0] as ImageIntakeDraft).totalCost.value).toBe(11000);
+  });
+
+  it("saves nothing when the collector goes back from the totals confirmation", () => {
+    const onSave = vi.fn();
+    render(
+      <IntakeReviewScreen
+        initialDraft={buildDraft({ totalCost: field(11000, "read") })}
+        baseCurrencyCode={BASE_CURRENCY}
+        storeOptions={STORE_OPTIONS}
+        productTypeKeys={PRODUCT_TYPE_KEYS}
+        isSaving={false}
+        onSave={onSave}
+        onManualClick={vi.fn()}
+        spentPhotoCount={2}
+        remainingPhotos={null}
+        onAddProductSheet={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(desktopSubmit());
+    fireEvent.click(screen.getByRole("button", { name: "goBack" }));
+    expect(onSave).not.toHaveBeenCalled();
+    // Back on the screen, with the draft intact and the button still live, so the correction the
+    // question asked for can actually be made.
+    expect(screen.queryByRole("button", { name: "saveAnyway" })).toBeNull();
+    expect(submitButtons().length).toBeGreaterThan(0);
+  });
+
+  it("does not ask when the rows add up, so an accurate draft still saves in one click", () => {
+    const onSave = vi.fn();
+    render(
+      <IntakeReviewScreen
+        initialDraft={buildDraft({ totalCost: field(15000, "read") })}
+        baseCurrencyCode={BASE_CURRENCY}
+        storeOptions={STORE_OPTIONS}
+        productTypeKeys={PRODUCT_TYPE_KEYS}
+        isSaving={false}
+        onSave={onSave}
+        onManualClick={vi.fn()}
+        spentPhotoCount={2}
+        remainingPhotos={null}
+        onAddProductSheet={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(desktopSubmit());
+    expect(screen.queryByRole("button", { name: "saveAnyway" })).toBeNull();
+    expect(onSave).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -801,7 +875,7 @@ describe("IntakeReviewScreen payments", () => {
     );
 
     fireEvent.change(screen.getByLabelText(/payments.amountLabel/), { target: { value: "150" } });
-    desktopSubmit().click();
+    submitAndConfirm();
 
     const [saved] = onSave.mock.calls[0] as [ImageIntakeDraft];
     expect(saved.payments[0].amount).toEqual({ value: 15000, source: "read" });
@@ -842,7 +916,7 @@ describe("IntakeReviewScreen payments", () => {
 
     fireEvent.change(amountInputs[1], { target: { value: "50" } });
     fireEvent.change(dateInputs[1], { target: { value: "2026-07-25" } });
-    desktopSubmit().click();
+    submitAndConfirm();
 
     const [saved] = onSave.mock.calls[0] as [ImageIntakeDraft];
     expect(saved.payments).toHaveLength(2);
@@ -901,7 +975,7 @@ describe("IntakeReviewScreen: correcting the draft", () => {
     );
 
     fireEvent.change(screen.getByLabelText("itemNameLabel"), { target: { value: "Chainsaw Man box" } });
-    desktopSubmit().click();
+    submitAndConfirm();
 
     const [saved] = onSave.mock.calls[0] as [ImageIntakeDraft];
     expect(saved.groups[0].products[0].name).toBe("Chainsaw Man box");
@@ -913,7 +987,7 @@ describe("IntakeReviewScreen: correcting the draft", () => {
     const onSave = renderWithSave(buildDraft());
 
     fireEvent.change(screen.getAllByLabelText("itemUnitPriceLabel")[0], { target: { value: "115" } });
-    desktopSubmit().click();
+    submitAndConfirm();
 
     const [saved] = onSave.mock.calls[0] as [ImageIntakeDraft];
     expect(saved.groups[0].products[0].unitPrice).toBe(11500);
@@ -1055,7 +1129,7 @@ describe("IntakeReviewScreen: total derived from priced products", () => {
       />,
     );
 
-    desktopSubmit().click();
+    submitAndConfirm();
 
     expect(onSave).toHaveBeenCalledTimes(1);
     expect((onSave.mock.calls[0][0] as ImageIntakeDraft).totalCost).toEqual({ value: 15000, source: "assumed" });
@@ -1079,7 +1153,7 @@ describe("IntakeReviewScreen: total derived from priced products", () => {
     );
 
     fireEvent.change(screen.getByLabelText(/fields.total/), { target: { value: "999" } });
-    desktopSubmit().click();
+    submitAndConfirm();
 
     expect(onSave).toHaveBeenCalledTimes(1);
     expect((onSave.mock.calls[0][0] as ImageIntakeDraft).totalCost).toEqual({ value: 99900, source: "read" });
@@ -1296,3 +1370,4 @@ describe("IntakeReviewScreen: required-field validation before save", () => {
     expect(screen.getByText("saveTotalRequired")).toBeTruthy();
   });
 });
+

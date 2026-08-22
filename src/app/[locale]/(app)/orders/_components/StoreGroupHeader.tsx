@@ -54,6 +54,11 @@ export default function StoreGroupHeader({
   const t = useTranslations("orderListing");
   const tStores = useTranslations("stores");
   const [isUndetailedOpen, setIsUndetailedOpen] = useState(false);
+  // The "Registrar pago" gate stays on the LIFETIME `debtMinor`, deliberately not switched to
+  // `openOrderDebtMinor` alongside the displayed chip below: the payment-validation ceiling
+  // (`STORE_DEBT_EXCEEDED`) is lifetime-wide (`FR-05-63`), so a store with only a COMPLETED order
+  // still carrying a balance must still offer the action, even though its open-order chip reads
+  // zero.
   const canRegisterPayment = Boolean(onRegisterPayment) && debts.some((debt) => debt.debtMinor > 0);
   const undetailedCount = undetailedByOrder.length;
 
@@ -129,6 +134,11 @@ export default function StoreGroupHeader({
             {(debts.length > 0 || undetailedCount > 0) && (
               <div className="mt-1 flex flex-wrap items-center gap-1.5">
                 {debts.map((debt) => {
+                  // Credit stays on the LIFETIME `debtMinor` (`FR-05-63`): "in credit" is a fact
+                  // about the store's whole history. The DISPLAYED positive figure below switches
+                  // to `openOrderDebtMinor` (`ADR 0033`): a fully delivered order leaves this chip
+                  // together with its own payments, so a store with only a settled-but-undeclared
+                  // COMPLETED order reads no chip at all rather than a stale "Debes" one.
                   const inFavor = debt.debtMinor < 0;
                   return inFavor ? (
                     <Chip key={debt.currencyCode} variant="success" size="sm">
@@ -143,8 +153,8 @@ export default function StoreGroupHeader({
                       key={debt.currencyCode}
                       className="[font-size:var(--text-caption)] [color:var(--text-secondary)] tabular-nums"
                     >
-                      {t("storeView.debtAmount", {
-                        amount: formatAmountWithSymbol(debt.debtMinor, debt.currencyCode, locale),
+                      {t("storeView.openOrderDebtAmount", {
+                        amount: formatAmountWithSymbol(debt.openOrderDebtMinor, debt.currencyCode, locale),
                       })}
                     </span>
                   );

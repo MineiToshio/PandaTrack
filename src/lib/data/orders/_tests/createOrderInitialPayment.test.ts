@@ -24,7 +24,7 @@ type FakeTx = {
   order: {
     findMany: ReturnType<typeof vi.fn>;
     create: ReturnType<typeof vi.fn>;
-    update: ReturnType<typeof vi.fn>;
+    updateMany: ReturnType<typeof vi.fn>;
   };
   orderItem: {
     findMany: ReturnType<typeof vi.fn>;
@@ -43,7 +43,8 @@ function makeFakeTx(createdItemIds: string[] = []): FakeTx {
     order: {
       findMany: vi.fn().mockResolvedValue([]),
       create: vi.fn().mockResolvedValue({ id: "order-1", humanReadableId: "ORD-20260808-01" }),
-      update: vi.fn().mockResolvedValue({}),
+      // `recalculateOrderAllocationCache`'s own write, scoped to `{ id, userId }` (defense in depth).
+      updateMany: vi.fn().mockResolvedValue({ count: 1 }),
     },
     orderItem: {
       findMany: vi.fn().mockResolvedValue(createdItemIds.map((id) => ({ id }))),

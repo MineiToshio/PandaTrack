@@ -1,10 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { DeliveryStatus, OrderItemDeliveryState, OrderStatus } from "../../../../generated/prisma/client";
-import { resolveExchangeRateBaseCode } from "@/lib/fx/reconciliation";
+import { resolveExchangeRateBaseCode, resolveFxPair } from "@/lib/fx/reconciliation";
 import { isWholeMajorAmount, isZeroDecimalCurrency } from "@/lib/currency";
 import { generateOrderHumanReadableId } from "@/lib/orders/orderIdentifier";
 import { appendOrderHistoryEntry, OrderHistoryEventType } from "./orderHistoryMutations";
 import { createOrderItems, findInvalidProductTypeKey, replaceOrderItems } from "./orderItemMutations";
+import { declaredAgainstOrderMinor } from "./orderOpenBalance";
 import { recalculateOrderAllocationCache } from "./orderPaymentAllocations";
 import { writeStorePaymentWithAllocations } from "./storePaymentMutations";
 import type { CancelPaymentsChoice, OrderCreateInput, OrderEditInput } from "@/lib/orders/orderValidation";
@@ -116,7 +117,7 @@ export async function createOrder(userId: string, input: OrderCreateInput): Prom
       const humanReadableId = await generateOrderHumanReadableId(tx, userId, now);
 
       const user = await tx.user.findUnique({ where: { id: userId }, select: { baseCurrencyCode: true } });
-      const exchangeRate = input.exchangeRate ?? null;
+      const fxPair = resolveFxPair(input.currencyCode, input.exchangeRate ?? null, user?.baseCurrencyCode ?? null);
 
       const order = await tx.order.create({
         data: {
@@ -127,8 +128,8 @@ export async function createOrder(userId: string, input: OrderCreateInput): Prom
           expectedDeliveryFrom: input.expectedDeliveryFrom ?? null,
           expectedDeliveryTo: input.expectedDeliveryTo ?? null,
           currencyCode: input.currencyCode,
-          exchangeRate,
-          exchangeRateBaseCode: resolveExchangeRateBaseCode(exchangeRate, user?.baseCurrencyCode ?? null),
+          exchangeRate: fxPair.exchangeRate,
+          exchangeRateBaseCode: fxPair.exchangeRateBaseCode,
           totalCost: input.totalCost,
           note: input.note ?? null,
           status: OrderStatus.OPEN,
@@ -157,8 +158,8 @@ export async function createOrder(userId: string, input: OrderCreateInput): Prom
           amount: input.initialPayment.amount,
           paymentDate: input.initialPayment.paymentDate,
           currencyCode: input.currencyCode,
-          exchangeRate,
-          exchangeRateBaseCode: resolveExchangeRateBaseCode(exchangeRate, user?.baseCurrencyCode ?? null),
+          exchangeRate: fxPair.exchangeRate,
+          exchangeRateBaseCode: fxPair.exchangeRateBaseCode,
           allocations: [
             {
               orderId: order.id,
@@ -191,7 +192,7 @@ export async function editOrder(orderId: string, userId: string, input: OrderEdi
   return prisma.$transaction(async (tx) => {
     const order = await tx.order.findFirst({
       where: { id: orderId, userId },
-      select: { status: true, storeId: true, currencyCode: true, allocatedAmountMinor: true },
+      select: { status: true, storeId: true, currencyCode: true, allocatedAmountMinor: true, totalCost: true },
     });
 
     if (!order) {
@@ -204,9 +205,16 @@ export async function editOrder(orderId: string, userId: string, input: OrderEdi
 
     // Declared money pins two fields in place. A payment belongs to a store and is denominated in
     // one currency, so an order carrying declarations cannot move to another store or be restated
-    // in another currency without the declarations becoming lies. Read once, used by both guards.
-    const hasAllocations =
-      (await tx.paymentAllocation.findFirst({ where: { orderId, userId }, select: { id: true } })) !== null;
+    // in another currency without the declarations becoming lies. Widened to "allocation OR
+    // adjustment line" (FR-05-68, WO-11): a `StoreAccountAdjustmentLine` writes off part of this
+    // order's balance against one specific store/currency pair, so it pins the same two fields even
+    // though it is deliberately not a `PaymentAllocation`. Read once, used by both guards.
+    const allocation = await tx.paymentAllocation.findFirst({ where: { orderId, userId }, select: { id: true } });
+    const adjustmentLine = await tx.storeAccountAdjustmentLine.findFirst({
+      where: { orderId, userId },
+      select: { id: true },
+    });
+    const hasAllocations = allocation !== null || adjustmentLine !== null;
 
     if (input.storeId !== undefined && input.storeId !== order.storeId) {
       const hasDeliveries = await tx.deliveryOrderItem.findFirst({
@@ -226,12 +234,26 @@ export async function editOrder(orderId: string, userId: string, input: OrderEdi
       return { ok: false, error: "CURRENCY_CHANGE_BLOCKED" };
     }
 
-    // Total guard — server-side safety net for the client check in `OrderEditForm`. We refuse to
-    // update the total to a value below what is already declared as paid against this order; doing
-    // so would produce a negative `remainingAmount` everywhere downstream (hero, sticky bar, list
-    // cards), and would leave the order over-allocated.
-    if (input.totalCost !== undefined && input.totalCost < order.allocatedAmountMinor) {
-      return { ok: false, error: "TOTAL_BELOW_PAID" };
+    // Total guard — server-side safety net for the client check in `OrderEditForm`. Compares against
+    // `declaredAgainstOrderMinor` (Σ allocations + Σ adjustment lines, WO-10), not
+    // `order.allocatedAmountMinor` alone: a line is deliberately not a `PaymentAllocation`, so
+    // ignoring it here would let the total drop below a written-off balance and drive
+    // `openBalanceMinor` negative with nothing left to catch it (FR-05-68, BR-05-32).
+    //
+    // Subtlety: `declaredAgainstOrderMinor` is defined as `totalCost − openBalanceMinor`, and
+    // `openBalanceMinor` is itself `totalCost − Σallocations − Σlines`. The `totalCost` term cancels
+    // out algebraically, so the result is always exactly `Σallocations + Σlines`, independent of
+    // which `totalCost` value is passed in. Passing the order's own CURRENT (pre-edit) `totalCost`
+    // here is therefore safe and correct even though this same edit may be about to change it.
+    if (input.totalCost !== undefined) {
+      const declaredMinor = await declaredAgainstOrderMinor(tx, userId, {
+        id: orderId,
+        totalCost: order.totalCost,
+        allocatedAmountMinor: order.allocatedAmountMinor,
+      });
+      if (input.totalCost < declaredMinor) {
+        return { ok: false, error: "TOTAL_BELOW_PAID" };
+      }
     }
 
     // Items are replaced before the order row is touched, because this is the last step that can
@@ -251,12 +273,18 @@ export async function editOrder(orderId: string, userId: string, input: OrderEdi
     // entered against. An edit that leaves the rate untouched must not restamp it: the existing
     // base code still describes the existing rate.
     let rateUpdate: { exchangeRate: number | null; exchangeRateBaseCode: string | null } | undefined;
-    if (input.exchangeRate !== undefined) {
+    if (input.exchangeRate !== undefined || input.currencyCode !== undefined) {
       const user = await tx.user.findUnique({ where: { id: userId }, select: { baseCurrencyCode: true } });
-      rateUpdate = {
-        exchangeRate: input.exchangeRate,
-        exchangeRateBaseCode: resolveExchangeRateBaseCode(input.exchangeRate, user?.baseCurrencyCode ?? null),
-      };
+      const baseCurrencyCode = user?.baseCurrencyCode ?? null;
+      // The currency this edit leaves the order in, not necessarily the one it arrived with.
+      const effectiveCurrencyCode = input.currencyCode ?? order.currencyCode;
+      if (input.exchangeRate !== undefined) {
+        rateUpdate = resolveFxPair(effectiveCurrencyCode, input.exchangeRate, baseCurrencyCode);
+      } else if (baseCurrencyCode !== null && effectiveCurrencyCode === baseCurrencyCode) {
+        // Currency moved into the base with the rate untouched: the old rate now sits on a
+        // base-currency row, where it is meaningless — drop the pair rather than restamp it.
+        rateUpdate = { exchangeRate: null, exchangeRateBaseCode: null };
+      }
     }
 
     await tx.order.update({
@@ -414,7 +442,14 @@ export async function applyOrderExchangeRates(
   const results = await prisma.$transaction(
     [...orderIdsByRate].map(([exchangeRate, orderIds]) =>
       prisma.order.updateMany({
-        where: { id: { in: orderIds }, userId },
+        // Base-currency orders are excluded at the write itself, not just by the modal's grouping:
+        // a rate against the base is meaningless for them, so a payload that sneaks them in (or a
+        // UI regression that pools them into a pair) must not be able to stamp them.
+        where: {
+          id: { in: orderIds },
+          userId,
+          ...(baseCurrencyCode !== null ? { currencyCode: { not: baseCurrencyCode } } : {}),
+        },
         data: {
           exchangeRate,
           exchangeRateBaseCode: resolveExchangeRateBaseCode(exchangeRate, baseCurrencyCode),

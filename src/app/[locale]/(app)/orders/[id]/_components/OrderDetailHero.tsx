@@ -45,10 +45,17 @@ type OrderDetailHeroProps = {
   hasUnpaidBalance: boolean;
   isOverdue: boolean;
   overdueDays: number;
-  /** The store's debt in this order's currency, read server-side. Surfaced only while nothing is
-      allocated to THIS order yet, so a collector who hasn't logged a payment here still sees what
-      they already owe the store from other orders. Negative means the store owes them (credit). */
+  /** The store's LIFETIME debt in this order's currency, read server-side. Only decides whether the
+      store is in credit (`< 0`, `FR-05-63`): the credit branch reads this figure unchanged, since
+      "in credit" is a fact about the store's whole history, not about its open orders alone. Never
+      used to print the positive-debt figure itself; see {@link openOrderDebtMinor}. */
   storeDebtMinor: number;
+  /** `StoreDebtRow.openOrderDebtMinor` (`ADR 0033`, `BR-05-26` / `FR-05-61`): the figure the
+      positive-debt link prints. Surfaced only while nothing is allocated to THIS order yet, so a
+      collector who hasn't logged a payment here still sees what they already owe the store from
+      other open orders (a fully delivered order does not contribute here even if it still carries
+      an unregistered balance). Deliberately NOT clamped: see `openOrderDebtMinor`'s own doc. */
+  openOrderDebtMinor: number;
   locale: string;
 };
 
@@ -90,6 +97,7 @@ export default function OrderDetailHero({
   isOverdue,
   overdueDays,
   storeDebtMinor,
+  openOrderDebtMinor,
   locale,
 }: OrderDetailHeroProps) {
   const t = useTranslations("orders");
@@ -139,13 +147,18 @@ export default function OrderDetailHero({
   // stacked would drift the fill away from the counter above it.
   const progressTone = completedUnpaid || isOverdue ? "warning" : "accent";
 
+  // Credit is decided on the LIFETIME debt (`FR-05-63`): "in credit" is a fact about the store's
+  // whole history, not about its open orders alone. The positive-debt figure itself is
+  // `openOrderDebtMinor` (`ADR 0033`): a fully delivered order leaves this link together with its
+  // own payments, so it never re-inflates once an order that carried this debt is settled.
   const isCreditAtStore = storeDebtMinor < 0;
+  const showDebtLink = isCreditAtStore || openOrderDebtMinor !== 0;
   const debtLabel = isCreditAtStore
     ? t("detail.hero.storeCreditLink", {
         amount: formatAmountSymbolOnly(Math.abs(storeDebtMinor), order.currencyCode, locale),
       })
     : t("detail.hero.storeDebtLink", {
-        amount: formatAmountSymbolOnly(storeDebtMinor, order.currencyCode, locale),
+        amount: formatAmountSymbolOnly(openOrderDebtMinor, order.currencyCode, locale),
       });
 
   // Meta line segments — order date is always present so the hero surfaces the same
@@ -276,10 +289,11 @@ export default function OrderDetailHero({
             </>
           ) : (
             // Nothing declared against THIS order yet. A debt link only makes sense when there is
-            // something to say: > 0 owed to the store, or < 0 (a credit, the existing "A favor"
-            // link). At exactly 0 the collector owes this store nothing at all, so the line is
-            // omitted entirely rather than rendering a "Deuda de la tienda: 0.00" link to nowhere.
-            storeDebtMinor !== 0 && (
+            // something to say: a credit (lifetime `storeDebtMinor < 0`, the existing "A favor"
+            // link), or a positive `openOrderDebtMinor`. At exactly 0 on both the collector owes
+            // this store nothing open, so the line is omitted entirely rather than rendering a
+            // "Deuda de la tienda: 0.00" link to nowhere.
+            showDebtLink && (
               <Link
                 href={storeHref}
                 className={cn(

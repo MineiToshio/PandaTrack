@@ -1,12 +1,24 @@
 import { POSTHOG_EVENTS } from "@/lib/constants";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { getSessionMock, createDeliveryMock, preferencesMock, posthogCaptureMock, revalidateMock } = vi.hoisted(() => ({
+const {
+  getSessionMock,
+  createDeliveryMock,
+  getEligibleProductsForStoreMock,
+  getOrderDetailMock,
+  preferencesMock,
+  posthogCaptureMock,
+  revalidateMock,
+  runOrderCloseMoneyTransactionMock,
+} = vi.hoisted(() => ({
   getSessionMock: vi.fn(),
   createDeliveryMock: vi.fn(),
+  getEligibleProductsForStoreMock: vi.fn(),
+  getOrderDetailMock: vi.fn(),
   preferencesMock: vi.fn(),
   posthogCaptureMock: vi.fn(),
   revalidateMock: vi.fn(),
+  runOrderCloseMoneyTransactionMock: vi.fn(),
 }));
 
 // Cache revalidation is a Next request-scoped API; the unit under test only needs it to be
@@ -18,6 +30,16 @@ vi.mock("@/lib/cache/revalidateCollectionSurfaces", () => ({
 vi.mock("@/lib/auth/auth-server", () => ({ getSession: getSessionMock }));
 
 vi.mock("@/lib/data/deliveries/deliveryMutations", () => ({ createDelivery: createDeliveryMock }));
+
+vi.mock("@/lib/data/deliveries/deliveryQueries", () => ({
+  getEligibleProductsForStore: getEligibleProductsForStoreMock,
+}));
+
+vi.mock("@/lib/data/orders/orderQueries", () => ({ getOrderDetail: getOrderDetailMock }));
+
+vi.mock("@/lib/data/orders/storePaymentMutations", () => ({
+  runOrderCloseMoneyTransaction: runOrderCloseMoneyTransactionMock,
+}));
 
 vi.mock("@/lib/data/user-settings/userSettingsQueries", () => ({
   getCollectorPreferencesSnapshot: preferencesMock,
@@ -50,16 +72,51 @@ function buildInput(overrides: Partial<StoreArrivalActionInput> = {}): StoreArri
     cost: 0,
     currencyCode: "USD",
     exchangeRate: null,
+    settleRemainder: true,
     ...overrides,
   };
 }
+
+const ORDER_A_SNAPSHOT = {
+  orderId: "clhaaaaaaaaaaabcdefghijk",
+  storeId: VALID_STORE_ID,
+  currencyCode: "USD",
+  totalCost: 5000,
+  allocatedAmountMinor: 0,
+  adjustmentLineTotalMinor: 0,
+  orderDate: new Date("2026-03-01T00:00:00.000Z"),
+  humanReadableId: "PED-001",
+};
+
+const ORDER_B_SNAPSHOT = {
+  orderId: "clhbbbbbbbbbbabcdefghijk",
+  storeId: VALID_STORE_ID,
+  currencyCode: "USD",
+  totalCost: 3000,
+  allocatedAmountMinor: 0,
+  adjustmentLineTotalMinor: 0,
+  orderDate: new Date("2026-03-05T00:00:00.000Z"),
+  humanReadableId: "PED-002",
+};
 
 describe("storeArrivalAction", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     getSessionMock.mockResolvedValue(AUTHENTICATED_SESSION);
     preferencesMock.mockResolvedValue({ baseCurrencyCode: "USD" });
-    createDeliveryMock.mockResolvedValue({ ok: true, deliveryId: "delivery-1", productCount: 2, orderCount: 2 });
+    createDeliveryMock.mockResolvedValue({
+      ok: true,
+      deliveryId: "delivery-1",
+      productCount: 2,
+      orderCount: 2,
+      closedOrders: [],
+    });
+    runOrderCloseMoneyTransactionMock.mockResolvedValue([]);
+    // Empty by default: no eligible product maps to an order, so the partial-branch lookup (BLOCKER
+    // F3 wiring) finds nothing to add and every existing test below keeps its original shape. The
+    // dedicated tests for that branch configure this explicitly.
+    getEligibleProductsForStoreMock.mockResolvedValue({ byOrder: [] });
+    getOrderDetailMock.mockResolvedValue({ currencyCode: "USD" });
   });
 
   it("rejects an unauthenticated caller before touching the data layer", async () => {
@@ -84,15 +141,21 @@ describe("storeArrivalAction", () => {
       exchangeRate: null,
       productIds: [PRODUCT_A, PRODUCT_B],
     });
-    expect(result).toEqual({ ok: true, deliveryId: "delivery-1", productCount: 2, orderCount: 2 });
+    expect(result).toEqual({ ok: true, deliveryId: "delivery-1", productCount: 2, orderCount: 2, moneyOutcomes: [] });
   });
 
   it("returns the server's own counts, so the client never has to infer how many orders it hit", async () => {
-    createDeliveryMock.mockResolvedValue({ ok: true, deliveryId: "delivery-9", productCount: 5, orderCount: 3 });
+    createDeliveryMock.mockResolvedValue({
+      ok: true,
+      deliveryId: "delivery-9",
+      productCount: 5,
+      orderCount: 3,
+      closedOrders: [],
+    });
 
     const result = await storeArrivalAction(buildInput());
 
-    expect(result).toEqual({ ok: true, deliveryId: "delivery-9", productCount: 5, orderCount: 3 });
+    expect(result).toEqual({ ok: true, deliveryId: "delivery-9", productCount: 5, orderCount: 3, moneyOutcomes: [] });
   });
 
   it("uses the supplied dispatch date when the collector knows it", async () => {
@@ -209,6 +272,10 @@ describe("storeArrivalAction", () => {
         order_count: 2,
         had_shipped_date: false,
         backdated: true,
+        settled: false,
+        settlement_branch: "not_settled",
+        settlement_amount_minor: 0,
+        settlement_date_edited: false,
       },
     });
   });
@@ -219,5 +286,157 @@ describe("storeArrivalAction", () => {
     const result = await storeArrivalAction(buildInput());
 
     expect(result).toEqual({ ok: false, error: "server_error" });
+  });
+
+  describe("settlement on arrival (WO-08), batch", () => {
+    beforeEach(() => {
+      createDeliveryMock.mockResolvedValue({
+        ok: true,
+        deliveryId: "delivery-1",
+        productCount: 2,
+        orderCount: 2,
+        closedOrders: [ORDER_A_SNAPSHOT, ORDER_B_SNAPSHOT],
+      });
+    });
+
+    it("settles every order the batch closed, in the order the delivery transaction reported them", async () => {
+      runOrderCloseMoneyTransactionMock.mockResolvedValue([
+        { orderId: ORDER_A_SNAPSHOT.orderId, status: "settled", consumedMinor: 0, settledAmountMinor: 5000 },
+        { orderId: ORDER_B_SNAPSHOT.orderId, status: "settled", consumedMinor: 0, settledAmountMinor: 3000 },
+      ]);
+
+      const result = await storeArrivalAction(buildInput());
+
+      expect(runOrderCloseMoneyTransactionMock).toHaveBeenCalledWith({
+        userId: "user-1",
+        deliveryId: "delivery-1",
+        closedOrders: [
+          {
+            orderId: ORDER_A_SNAPSHOT.orderId,
+            closed: true,
+            settlement: {
+              enabled: true,
+              deliveredItemIds: [PRODUCT_A, PRODUCT_B],
+              settlementDate: RECEIVED_DATE,
+              manualAmountMinor: undefined,
+            },
+          },
+          {
+            orderId: ORDER_B_SNAPSHOT.orderId,
+            closed: true,
+            settlement: {
+              enabled: true,
+              deliveredItemIds: [PRODUCT_A, PRODUCT_B],
+              settlementDate: RECEIVED_DATE,
+              manualAmountMinor: undefined,
+            },
+          },
+        ],
+      });
+      expect(result).toMatchObject({
+        ok: true,
+        moneyOutcomes: [
+          { orderId: ORDER_A_SNAPSHOT.orderId, currencyCode: "USD", settledAmountMinor: 5000 },
+          { orderId: ORDER_B_SNAPSHOT.orderId, currencyCode: "USD", settledAmountMinor: 3000 },
+        ],
+      });
+    });
+
+    it("reports the summed settled amount in the funnel event", async () => {
+      runOrderCloseMoneyTransactionMock.mockResolvedValue([
+        { orderId: ORDER_A_SNAPSHOT.orderId, status: "settled", consumedMinor: 0, settledAmountMinor: 5000 },
+        { orderId: ORDER_B_SNAPSHOT.orderId, status: "settled", consumedMinor: 0, settledAmountMinor: 3000 },
+      ]);
+
+      await storeArrivalAction(buildInput());
+
+      expect(posthogCaptureMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          properties: expect.objectContaining({ settled: true, settlement_amount_minor: 8000 }),
+        }),
+      );
+    });
+
+    it("never turns a money-transaction throw into ok:false, since the batch already committed", async () => {
+      runOrderCloseMoneyTransactionMock.mockRejectedValue(new Error("db down"));
+
+      const result = await storeArrivalAction(buildInput());
+
+      expect(result.ok).toBe(true);
+      if (!result.ok) throw new Error("expected ok result");
+      expect(result.moneyOutcomes.every((outcome) => outcome.status === "pending")).toBe(true);
+    });
+
+    // BLOCKER F3 wiring, 2026-08-20 review: an order this batch affected (one of its own products
+    // was in the submitted selection) but did NOT close used to get no `ClosedOrderInput` at all, so
+    // a partial arrival with the box checked never even called the money transaction for it. Before
+    // the fix this test fails: `runOrderCloseMoneyTransactionMock` is called with only ORDER_A's
+    // closed entry, ORDER_C entirely absent.
+    it("also settles an order the batch affected but did not close, closed:false, when the checkbox is checked", async () => {
+      const ORDER_C_ID = "clhccccccccccabcdefghijk";
+      createDeliveryMock.mockResolvedValue({
+        ok: true,
+        deliveryId: "delivery-1",
+        productCount: 2,
+        orderCount: 2,
+        // Only order A closed; order C (PRODUCT_B's real order) stayed open — a genuine partial
+        // arrival for it.
+        closedOrders: [ORDER_A_SNAPSHOT],
+      });
+      getEligibleProductsForStoreMock.mockResolvedValue({
+        byOrder: [
+          {
+            orderId: ORDER_A_SNAPSHOT.orderId,
+            orderHumanReadableId: "PED-001",
+            orderDate: new Date(),
+            products: [
+              {
+                orderItemId: PRODUCT_A,
+                orderItemName: "x",
+                quantity: 1,
+                productTypeKey: null,
+                deliveryState: "NONE",
+                orderId: ORDER_A_SNAPSHOT.orderId,
+                orderHumanReadableId: "PED-001",
+                orderDate: new Date(),
+              },
+            ],
+          },
+          {
+            orderId: ORDER_C_ID,
+            orderHumanReadableId: "PED-003",
+            orderDate: new Date(),
+            products: [
+              {
+                orderItemId: PRODUCT_B,
+                orderItemName: "y",
+                quantity: 1,
+                productTypeKey: null,
+                deliveryState: "NONE",
+                orderId: ORDER_C_ID,
+                orderHumanReadableId: "PED-003",
+                orderDate: new Date(),
+              },
+            ],
+          },
+        ],
+      });
+      getOrderDetailMock.mockResolvedValue({ currencyCode: "USD" });
+      runOrderCloseMoneyTransactionMock.mockResolvedValue([
+        { orderId: ORDER_A_SNAPSHOT.orderId, status: "settled", consumedMinor: 0, settledAmountMinor: 5000 },
+        { orderId: ORDER_C_ID, status: "settled", consumedMinor: 0, settledAmountMinor: 700 },
+      ]);
+
+      await storeArrivalAction(buildInput());
+
+      expect(runOrderCloseMoneyTransactionMock).toHaveBeenCalledWith({
+        userId: "user-1",
+        deliveryId: "delivery-1",
+        closedOrders: [
+          expect.objectContaining({ orderId: ORDER_A_SNAPSHOT.orderId, closed: true }),
+          expect.objectContaining({ orderId: ORDER_C_ID, closed: false, settlement: expect.any(Object) }),
+        ],
+      });
+    });
   });
 });

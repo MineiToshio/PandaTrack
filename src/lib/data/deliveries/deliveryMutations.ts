@@ -3,12 +3,33 @@ import { DeliveryStatus, OrderItemDeliveryState, OrderStatus } from "../../../..
 import { deriveOrderStatus } from "@/lib/orders/orderState";
 import { getNextItemDeliveryState, mapToItemDeliveryState } from "@/lib/deliveries/deliveryState";
 import { generateDeliveryHumanReadableId } from "@/lib/deliveries/deliveryIdentifier";
-import { resolveExchangeRateBaseCode } from "@/lib/fx/reconciliation";
+import { resolveFxPair } from "@/lib/fx/reconciliation";
 import { prisma } from "@/lib/prisma";
 import type { DeliveryCreateInput, DeliveryEditInput } from "@/lib/deliveries/deliveryValidation";
+import { recalculateOrderAllocationCache } from "@/lib/data/orders/orderPaymentAllocations";
+
+/**
+ * One order this delivery transaction just closed to COMPLETED, snapshotted for the money
+ * transaction that follows it (`FR-08-46`, `ADR 0032`). No money is read or written to produce
+ * this: `totalCost`, `allocatedAmountMinor`, and the adjustment-line total are read as they stand
+ * at this same transaction's commit, purely so the caller can sequence its own, separate money
+ * transaction without a second round trip to find out what just closed. The money transaction
+ * re-reads all of this fresh before writing anything (WO-08 Technical Notes): this snapshot never
+ * gates a write on its own.
+ */
+export type ClosedOrderSnapshot = {
+  orderId: string;
+  storeId: string;
+  currencyCode: string;
+  totalCost: number;
+  allocatedAmountMinor: number;
+  adjustmentLineTotalMinor: number;
+  orderDate: Date;
+  humanReadableId: string;
+};
 
 export type CreateDeliveryResult =
-  | { ok: true; deliveryId: string; productCount: number; orderCount: number }
+  | { ok: true; deliveryId: string; productCount: number; orderCount: number; closedOrders: ClosedOrderSnapshot[] }
   | {
       ok: false;
       error:
@@ -29,9 +50,18 @@ export type CreateDeliveryResult =
  *
  * Orders with status CANCELLED are never updated by delivery mutations — their
  * status is exclusively managed by the order lifecycle.
+ *
+ * Returns the ids this call itself just derived INTO `COMPLETED` (`FR-08-46`, `WO-08`): an order
+ * that was already `COMPLETED` before this call does not count, since nothing closed just now.
+ * `createDelivery` and `markDeliveryDelivered` are this trigger set's only two producers; every
+ * other caller here (`reopenDelivery`, `cancelDelivery`, `deleteDelivery`, `editDelivery`) discards
+ * it, since none of them can ever close an order (see `deliveryMutations.ts`'s own module notes).
  */
-export async function persistDerivedOrderStatuses(tx: Prisma.TransactionClient, orderIds: string[]): Promise<void> {
-  if (orderIds.length === 0) return;
+export async function persistDerivedOrderStatuses(
+  tx: Prisma.TransactionClient,
+  orderIds: string[],
+): Promise<{ closedOrderIds: string[] }> {
+  if (orderIds.length === 0) return { closedOrderIds: [] };
 
   const unique = [...new Set(orderIds)];
 
@@ -66,6 +96,62 @@ export async function persistDerivedOrderStatuses(tx: Prisma.TransactionClient, 
   for (const [status, ids] of idsByTargetStatus) {
     await tx.order.updateMany({ where: { id: { in: ids } }, data: { status } });
   }
+
+  return { closedOrderIds: idsByTargetStatus.get(OrderStatus.COMPLETED) ?? [] };
+}
+
+/**
+ * Snapshots the orders a delivery transaction just closed to `COMPLETED`, for the money
+ * transaction that runs after it (`FR-08-46`, `ADR 0032`). One `findMany` plus one
+ * `storeAccountAdjustmentLine` groupBy, both inside the caller's own transaction: no money
+ * (`StorePayment`, `PaymentAllocation`) is read or written here, only the order-level totals
+ * `openBalanceMinor` is built from (`ADR 0034`). Sorted `orderDate ASC, humanReadableId ASC`,
+ * the deterministic batch order the money transaction must settle in (spec §1.7, `WO-08`).
+ */
+async function buildClosedOrderSnapshots(
+  tx: Prisma.TransactionClient,
+  closedOrderIds: string[],
+): Promise<ClosedOrderSnapshot[]> {
+  if (closedOrderIds.length === 0) return [];
+
+  const [orders, adjustmentTotals] = await Promise.all([
+    tx.order.findMany({
+      where: { id: { in: closedOrderIds } },
+      select: {
+        id: true,
+        storeId: true,
+        currencyCode: true,
+        totalCost: true,
+        allocatedAmountMinor: true,
+        orderDate: true,
+        humanReadableId: true,
+      },
+    }),
+    tx.storeAccountAdjustmentLine.groupBy({
+      by: ["orderId"],
+      where: { orderId: { in: closedOrderIds } },
+      _sum: { amountMinor: true },
+    }),
+  ]);
+
+  const adjustmentTotalByOrderId = new Map(adjustmentTotals.map((row) => [row.orderId, row._sum.amountMinor ?? 0]));
+  const closedIdSet = new Set(closedOrderIds);
+
+  return orders
+    .filter((order) => closedIdSet.has(order.id))
+    .map((order) => ({
+      orderId: order.id,
+      storeId: order.storeId,
+      currencyCode: order.currencyCode,
+      totalCost: order.totalCost,
+      allocatedAmountMinor: order.allocatedAmountMinor,
+      adjustmentLineTotalMinor: adjustmentTotalByOrderId.get(order.id) ?? 0,
+      orderDate: order.orderDate,
+      humanReadableId: order.humanReadableId,
+    }))
+    .sort(
+      (a, b) => a.orderDate.getTime() - b.orderDate.getTime() || a.humanReadableId.localeCompare(b.humanReadableId),
+    );
 }
 
 /**
@@ -156,7 +242,7 @@ export async function createDelivery(userId: string, input: DeliveryCreateInput)
 
       const humanReadableId = await generateDeliveryHumanReadableId(tx, userId, input.deliveryDate);
       const user = await tx.user.findUnique({ where: { id: userId }, select: { baseCurrencyCode: true } });
-      const exchangeRate = input.exchangeRate ?? null;
+      const fxPair = resolveFxPair(input.currencyCode, input.exchangeRate ?? null, user?.baseCurrencyCode ?? null);
       const receivedDate = input.receivedDate ?? null;
       const isBornDelivered = receivedDate !== null;
       const delivery = await tx.delivery.create({
@@ -171,8 +257,8 @@ export async function createDelivery(userId: string, input: DeliveryCreateInput)
           expectedArrivalTo: input.expectedArrivalTo ?? null,
           cost: input.cost,
           currencyCode: input.currencyCode,
-          exchangeRate,
-          exchangeRateBaseCode: resolveExchangeRateBaseCode(exchangeRate, user?.baseCurrencyCode ?? null),
+          exchangeRate: fxPair.exchangeRate,
+          exchangeRateBaseCode: fxPair.exchangeRateBaseCode,
         },
         select: { id: true },
       });
@@ -198,13 +284,15 @@ export async function createDelivery(userId: string, input: DeliveryCreateInput)
       });
 
       const orderIds = selectedItems.map((item) => item.orderId);
-      await persistDerivedOrderStatuses(tx, orderIds);
+      const { closedOrderIds } = await persistDerivedOrderStatuses(tx, orderIds);
+      const closedOrders = await buildClosedOrderSnapshots(tx, closedOrderIds);
 
       return {
         ok: true,
         deliveryId: delivery.id,
         productCount: uniqueProductIds.length,
         orderCount: new Set(orderIds).size,
+        closedOrders,
       };
     })
     .catch((error: unknown) => {
@@ -223,6 +311,84 @@ export type DeliveryLifecycleError =
   "DELIVERY_NOT_FOUND" | "INVALID_STATUS" | "PRODUCTS_IN_OTHER_DELIVERY" | "RECEIVED_DATE_REQUIRED";
 
 export type DeliveryLifecycleResult = { ok: true; productCount: number } | { ok: false; error: DeliveryLifecycleError };
+
+/**
+ * Result of `markDeliveryDelivered`: same shape as {@link DeliveryLifecycleResult}, plus the
+ * closed-order snapshot the money transaction needs next (`FR-08-46`, `WO-08`). A superset, not a
+ * replacement, so every existing caller that only reads `ok`/`error`/`productCount` keeps compiling.
+ */
+export type MarkDeliveryDeliveredResult =
+  | { ok: true; productCount: number; closedOrders: ClosedOrderSnapshot[] }
+  | { ok: false; error: DeliveryLifecycleError };
+
+/**
+ * One `StorePayment` reverted by `reopenDelivery`, captured verbatim (every scalar field plus its
+ * `PaymentAllocation` rows) so the "Deshacer" action can restore it row-for-row without recomputing
+ * anything (`FR-08-43`, `ADR 0032` §9). Recomputing at restore time could invent or lose money
+ * relative to what was actually reverted, since the order's balance may have moved since the reopen.
+ */
+export type RevertedStorePaymentSnapshot = {
+  id: string;
+  storeId: string;
+  userId: string;
+  amount: number;
+  paymentDate: Date;
+  currencyCode: string;
+  exchangeRate: Prisma.Decimal | null;
+  exchangeRateBaseCode: string | null;
+  note: string | null;
+  migratedFromOrderId: string | null;
+  settledByDeliveryId: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  allocations: Array<{
+    id: string;
+    paymentId: string;
+    orderId: string;
+    orderItemId: string | null;
+    userId: string;
+    amountMinor: number;
+    settlesTarget: boolean;
+    createdAt: Date;
+  }>;
+};
+
+/**
+ * One `PaymentAllocation` this delivery's own close-time consumption (`FR-08-46`) stamped with
+ * `consumedByDeliveryId`, read (never deleted or modified) by `reopenDelivery` so the reopen toast
+ * can name the surviving figure honestly (`WO-08` UX Notes, "known gap" closure). The row lives on
+ * an EARLIER, unrelated `StorePayment` that carries no `settledByDeliveryId` at all: money paid to
+ * the store before this delivery ever existed, which stays applied to the order regardless of the
+ * order's reopened lifecycle state.
+ */
+export type SurvivingConsumedAllocationSnapshot = {
+  amountMinor: number;
+  currencyCode: string;
+};
+
+/**
+ * Result of `reopenDelivery`: same shape as {@link DeliveryLifecycleResult}, plus what the
+ * settlement reversal deleted (`FR-08-43`) and what this delivery's own close-time consumption
+ * still has applied to the order (`FR-08-46`). `revertedSettlements.payments` is empty, and
+ * `totalAmountMinor` is `0`, whenever this delivery never produced a settlement (checkbox left
+ * unchecked, or the arrival did not close the order) — the reopen behaves exactly as it did before
+ * this slice in that case. `survivingConsumedMinor` / `survivingConsumedAllocations` are
+ * independently `0` / `[]` whenever this delivery's close never consumed any pre-existing
+ * unassigned money; the two figures are unrelated and can each be zero, positive, or both positive
+ * at once (see the "both" row in `WO-08`'s own reopen truth table).
+ */
+export type ReopenDeliveryResult =
+  | {
+      ok: true;
+      productCount: number;
+      revertedSettlements: {
+        totalAmountMinor: number;
+        payments: RevertedStorePaymentSnapshot[];
+        survivingConsumedMinor: number;
+        survivingConsumedAllocations: SurvivingConsumedAllocationSnapshot[];
+      };
+    }
+  | { ok: false; error: DeliveryLifecycleError };
 
 type DeliveryWithItems = {
   id: string;
@@ -260,7 +426,7 @@ export async function markDeliveryDelivered(
   deliveryId: string,
   userId: string,
   receivedDate: Date,
-): Promise<DeliveryLifecycleResult> {
+): Promise<MarkDeliveryDeliveredResult> {
   return prisma.$transaction(async (tx) => {
     const delivery = await findDeliveryWithItems(tx, deliveryId, userId);
     if (!delivery) return { ok: false, error: "DELIVERY_NOT_FOUND" };
@@ -280,9 +446,10 @@ export async function markDeliveryDelivered(
       });
     }
 
-    await persistDerivedOrderStatuses(tx, orderIds);
+    const { closedOrderIds } = await persistDerivedOrderStatuses(tx, orderIds);
+    const closedOrders = await buildClosedOrderSnapshots(tx, closedOrderIds);
 
-    return { ok: true, productCount: itemIds.length };
+    return { ok: true, productCount: itemIds.length, closedOrders };
   });
 }
 
@@ -292,7 +459,7 @@ export async function markDeliveryDelivered(
  * Reopening a cancelled delivery is rejected when any of its products joined
  * another live delivery in the meantime (one delivery per product).
  */
-export async function reopenDelivery(deliveryId: string, userId: string): Promise<DeliveryLifecycleResult> {
+export async function reopenDelivery(deliveryId: string, userId: string): Promise<ReopenDeliveryResult> {
   return prisma.$transaction(async (tx) => {
     const delivery = await findDeliveryWithItems(tx, deliveryId, userId);
     if (!delivery) return { ok: false, error: "DELIVERY_NOT_FOUND" };
@@ -311,6 +478,85 @@ export async function reopenDelivery(deliveryId: string, userId: string): Promis
       if (conflicting > 0) return { ok: false, error: "PRODUCTS_IN_OTHER_DELIVERY" };
     }
 
+    // Settlement reversal (`FR-08-43`, `ADR 0032` §9), scoped strictly to `StorePayment` rows THIS
+    // delivery produced (`settledByDeliveryId`). This must never widen to every payment of the
+    // store: the order-close consumption's own allocation (`FR-08-46`) lives on a DIFFERENT, earlier
+    // `StorePayment` that carries no `settledByDeliveryId` at all, because that money was already
+    // paid to the store before this delivery ever existed and stays applied to the order regardless
+    // of the order's reopened lifecycle state. This query structurally cannot reach that allocation,
+    // and reopen must never be widened to try (`WO-08` Technical Notes, `ADR 0033` §4).
+    const settledPayments = await tx.storePayment.findMany({
+      where: { settledByDeliveryId: deliveryId, userId },
+      select: {
+        id: true,
+        storeId: true,
+        userId: true,
+        amount: true,
+        paymentDate: true,
+        currencyCode: true,
+        exchangeRate: true,
+        exchangeRateBaseCode: true,
+        note: true,
+        migratedFromOrderId: true,
+        settledByDeliveryId: true,
+        createdAt: true,
+        updatedAt: true,
+        allocations: {
+          select: {
+            id: true,
+            paymentId: true,
+            orderId: true,
+            orderItemId: true,
+            userId: true,
+            amountMinor: true,
+            settlesTarget: true,
+            createdAt: true,
+          },
+        },
+      },
+    });
+
+    let revertedTotalAmountMinor = 0;
+    const revertedOrderIds = new Set<string>();
+    for (const payment of settledPayments) {
+      revertedTotalAmountMinor += payment.amount;
+      for (const allocation of payment.allocations) revertedOrderIds.add(allocation.orderId);
+    }
+
+    if (settledPayments.length > 0) {
+      // `PaymentAllocation.payment` carries `onDelete: Cascade` (prisma/schema.prisma, migration
+      // 20260808215744): deleting these StorePayment rows removes their PaymentAllocation rows with
+      // them at the database level, so no separate allocation delete is needed here.
+      await tx.storePayment.deleteMany({ where: { id: { in: settledPayments.map((payment) => payment.id) } } });
+      await recalculateOrderAllocationCache(tx, [...revertedOrderIds], userId);
+    }
+
+    // Surviving-consumption read (`FR-08-46`, `WO-08` UX Notes "known gap" closure): rows this
+    // delivery's own close-time consumption stamped via `consumeUnassignedStoreMoneyOnOrderClose`'s
+    // `consumedByDeliveryId`, on some EARLIER, unrelated `StorePayment` this reopen never touches
+    // (it is not in the `settledPayments` list above, and never can be — that query is scoped to
+    // `settledByDeliveryId`, a different column entirely). This read is READ-ONLY: reopen must
+    // never delete or modify these rows, because that money was paid to the store before this
+    // delivery ever existed and stays correctly applied to the order regardless of the order's
+    // reopened lifecycle state (deleting it would manufacture debt on an order that never lost that
+    // payment, `ADR 0033 §4`'s own silent-understatement failure from the other direction).
+    //
+    // The stamp itself (`consumedByDeliveryId`) is also deliberately left in place, not cleared: it
+    // is provenance of a fact that already happened ("this delivery's close consumed this money"),
+    // independent of the delivery's current lifecycle state, not a claim tied to it. Clearing it on
+    // reopen would lose that fact for a later re-close of the same delivery, with no upside: nothing
+    // reads the stamp to decide whether THIS reopen is allowed, only to report what already
+    // happened.
+    const survivingConsumedRows = await tx.paymentAllocation.findMany({
+      where: { consumedByDeliveryId: deliveryId, userId },
+      select: { amountMinor: true, payment: { select: { currencyCode: true } } },
+    });
+    const survivingConsumedMinor = survivingConsumedRows.reduce((sum, row) => sum + row.amountMinor, 0);
+    const survivingConsumedAllocations: SurvivingConsumedAllocationSnapshot[] = survivingConsumedRows.map((row) => ({
+      amountMinor: row.amountMinor,
+      currencyCode: row.payment.currencyCode,
+    }));
+
     await tx.delivery.update({
       where: { id: deliveryId },
       data: { status: DeliveryStatus.IN_TRANSIT, receivedDate: null },
@@ -325,7 +571,16 @@ export async function reopenDelivery(deliveryId: string, userId: string): Promis
 
     await persistDerivedOrderStatuses(tx, orderIds);
 
-    return { ok: true, productCount: itemIds.length };
+    return {
+      ok: true,
+      productCount: itemIds.length,
+      revertedSettlements: {
+        totalAmountMinor: revertedTotalAmountMinor,
+        payments: settledPayments,
+        survivingConsumedMinor,
+        survivingConsumedAllocations,
+      },
+    };
   });
 }
 
@@ -540,8 +795,13 @@ export async function editDelivery(
       // the delivery's final rate and gets stamped with the base it was entered against. Editing
       // is the per-delivery reconciliation path: a saved rate leaves the FX-pending set because
       // pending-ness is derived from that pair, not from a stored flag (ADR 0024).
-      const exchangeRate = input.exchangeRate ?? null;
       const user = await tx.user.findUnique({ where: { id: userId }, select: { baseCurrencyCode: true } });
+      // The currency this edit leaves the delivery in decides whether the pair is meaningful.
+      const fxPair = resolveFxPair(
+        input.currencyCode ?? delivery.currencyCode,
+        input.exchangeRate ?? null,
+        user?.baseCurrencyCode ?? null,
+      );
 
       await tx.delivery.update({
         where: { id: deliveryId },
@@ -551,8 +811,8 @@ export async function editDelivery(
           expectedArrivalTo: input.expectedArrivalTo ?? null,
           ...(input.cost !== undefined ? { cost: input.cost } : {}),
           ...(input.currencyCode !== undefined ? { currencyCode: input.currencyCode } : {}),
-          exchangeRate,
-          exchangeRateBaseCode: resolveExchangeRateBaseCode(exchangeRate, user?.baseCurrencyCode ?? null),
+          exchangeRate: fxPair.exchangeRate,
+          exchangeRateBaseCode: fxPair.exchangeRateBaseCode,
         },
       });
 

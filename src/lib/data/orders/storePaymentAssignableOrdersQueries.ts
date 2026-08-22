@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { OrderStatus } from "../../../../generated/prisma/client";
 import { resolveBasePagableMinor } from "@/lib/orders/productPaymentState";
+import { openBalanceMinorByOrderId } from "./orderOpenBalance";
 import { isActiveOrderStatus } from "./storePaymentQueries";
 
 /** One product on an order still eligible to receive a declared allocation. */
@@ -40,7 +41,12 @@ export type AssignableOrder = {
   isActive: boolean;
   /** `totalCost - assignableMinor` money already declared against this order, across every payment. */
   allocatedAmountMinor: number;
-  /** `totalCost - allocatedAmountMinor`, always > 0 for a row returned by this query. */
+  /**
+   * The NET open balance (`openBalanceMinorByOrderId`, `BR-05-32`, `ADR 0034` §3.1), always > 0 for a
+   * row returned by this query: `totalCost - allocatedAmountMinor - Σ StoreAccountAdjustmentLine`, not
+   * the gross `totalCost - allocatedAmountMinor`. The sheet must never offer the collector a balance
+   * to fill in that a store reconciliation already wrote off (F6, 2026-08-20 review).
+   */
   assignableMinor: number;
   /**
    * How much of `assignableMinor` this order's own products cannot absorb, so the sheet can offer a
@@ -114,7 +120,13 @@ export async function getAssignableOrdersByStore(userId: string, storeId: string
     orderBy: [{ orderDate: "desc" }, { id: "desc" }],
   });
 
-  const eligibleOrders = orders.filter((order) => order.totalCost - order.allocatedAmountMinor > 0);
+  // The net open balance (BR-05-32, ADR 0034 §3.1), never the gross `totalCost - allocatedAmountMinor`:
+  // an order a store reconciliation already wrote off in whole or in part must not be offered as a
+  // place to fill in more money than it actually still owes (F6, 2026-08-20 review). One batched read
+  // for the whole set of standing orders, so this never turns one query into N.
+  const openBalanceByOrderId = await openBalanceMinorByOrderId(prisma, userId, orders);
+
+  const eligibleOrders = orders.filter((order) => (openBalanceByOrderId.get(order.id) ?? 0) > 0);
   if (eligibleOrders.length === 0) return [];
 
   const itemIds = eligibleOrders.flatMap((order) => order.items.map((item) => item.id));
@@ -140,7 +152,12 @@ export async function getAssignableOrdersByStore(userId: string, storeId: string
 
   return eligibleOrders.map((order) => {
     const orderItemCount = order.items.length;
-    const assignableMinor = order.totalCost - order.allocatedAmountMinor;
+    // The batch form guarantees an entry per input order (see `openBalanceMinorByOrderId`'s doc); a
+    // miss here is a programming error, not a figure to silently degrade to the gross remainder.
+    const assignableMinor = openBalanceByOrderId.get(order.id);
+    if (assignableMinor === undefined) {
+      throw new Error(`openBalanceMinorByOrderId missing entry for order ${order.id}`);
+    }
     const items = order.items.map((item) => ({
       itemId: item.id,
       name: item.name,

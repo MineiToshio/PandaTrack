@@ -81,6 +81,24 @@ type QuickPick = "all" | (typeof PERCENT_QUICK_PICKS)[number];
 type OrderInlinePaymentFormProps = {
   currencyCode: string;
   remainingAmount: number;
+  /**
+   * This order's own canonical NET balance (`BR-05-32`, `ADR 0034`): `totalCost` minus every
+   * `PaymentAllocation` AND every `StoreAccountAdjustmentLine` (a "cuadrar cuenta" write-off)
+   * written against it.
+   *
+   * BR-05-32 / FR-05-35: the order's own detail keeps printing `remainingAmount` (GROSS) as its
+   * "Falta" figure and its "still owed" chip everywhere else on the page, because a reconciliation
+   * adjustment squares the STORE's account, it does not pay the ORDER. This prop exists so THIS
+   * FORM, and only this form, can narrow the WRITABLE ceiling to what the order can actually still
+   * take: a payment can never be worth more than the money still missing after every write-off, even
+   * though the order's own balance keeps quoting the pre-adjustment figure. Do not "fix" this back to
+   * `remainingAmount` — that is the exact bug this prop closes (a collector could type an amount the
+   * server always refused, and read a refusal quoting the same number twice: "180 exceeds 180").
+   *
+   * Optional, defaulting to `remainingAmount`: a caller with no reconciliation write-off to report
+   * gets the historical behaviour (net === gross) with no extra wiring.
+   */
+  openBalanceMinor?: number;
   orderDate: Date;
   locale: string;
   /**
@@ -167,6 +185,7 @@ function parseIsoDate(value: string): Date | null {
 export default function OrderInlinePaymentForm({
   currencyCode,
   remainingAmount,
+  openBalanceMinor = remainingAmount,
   orderDate,
   locale,
   initialAmountMinor,
@@ -217,7 +236,26 @@ export default function OrderInlinePaymentForm({
 
   const paymentDate = parseIsoDate(paymentDateStr);
   const parsedAmount = parseDecimalToMinorUnits(amountStr, currencyCode);
-  const amountExceedsBalance = parsedAmount !== null && parsedAmount > remainingAmount;
+  // BR-05-32 / FR-05-35: the WRITABLE ceiling is the canonical NET balance, never the order's own
+  // GROSS "Falta" figure (`remainingAmount`) — see `openBalanceMinor`'s own doc for why. `Math.min`
+  // rather than trusting `openBalanceMinor` alone: it is a server snapshot that only moves again on
+  // `router.refresh()`, while `remainingAmount` already tracks this session's own optimistic adds,
+  // so the lower of the two is always the true ceiling regardless of which one is stale.
+  const netCeilingMinor = Math.max(0, Math.min(remainingAmount, openBalanceMinor));
+  // A reconciliation write-off exists for this order (independent of anything typed): the server
+  // narrowed what this order can still take below what it nominally still owes.
+  const hasReconciledGap = openBalanceMinor < remainingAmount;
+  // The write-off wiped out the WHOLE writable ceiling: nothing typed here can ever be accepted, so
+  // the field is disabled up front rather than left to react to a doomed keystroke.
+  const isNetZero = netCeilingMinor <= 0;
+  const amountExceedsBalance = parsedAmount !== null && parsedAmount > netCeilingMinor;
+  // The typed figure is refused BECAUSE of the write-off, not because it is an ordinary
+  // over-payment: it clears the order's own GROSS balance but not the narrower NET one. Kept apart
+  // from `amountExceedsBalance` (the plain "> ceiling" gate) so a truly ordinary over-amount
+  // (typed beyond the gross balance too) keeps the original message, unaffected by an adjustment
+  // that logically comes into play only inside the gross window.
+  const isReconciledRefusal =
+    amountExceedsBalance && hasReconciledGap && parsedAmount !== null && parsedAmount <= remainingAmount;
   // `orderDate` is a UTC-midnight domain date; convert to local-midnight on the same
   // calendar day so the boundary lines up with `paymentDate` (already local-midnight from
   // the picker) in every timezone — local getters here would shift the day in the Americas.
@@ -256,13 +294,20 @@ export default function OrderInlinePaymentForm({
     parsedAmount !== null &&
     parsedAmount > 0 &&
     !amountExceedsBalance &&
+    !isNetZero &&
     paymentDate !== null &&
     !dateBeforeOrder &&
     !dateFuture &&
     !(showsBreakdown && breakdownDerived.blocked) &&
     !(submitError?.blocksResend ?? false);
 
+  // The order's own GROSS balance, for the "ordinary over-amount" refusal (unchanged: BR-05-32
+  // never touches this figure). The reconciled refusal names no figure at all (see the copy itself)
+  // because the number that would explain it is the WRITE-OFF, not the balance, and the form does
+  // not hold that separately.
   const remainingLabel = formatAmountSymbolOnly(remainingAmount, currencyCode, locale);
+  // What the quick-picks actually offer: never more than the order can still take.
+  const netCeilingLabel = formatAmountSymbolOnly(netCeilingMinor, currencyCode, locale);
 
   /**
    * A new amount re-runs the split over everything the collector has not pinned, and re-arms a CTA
@@ -275,7 +320,10 @@ export default function OrderInlinePaymentForm({
   }
 
   function handleQuickPick(pick: QuickPick) {
-    const minor = pick === "all" ? remainingAmount : percentOfRemaining(remainingAmount, pick, currencyCode);
+    // Every chip is a percentage (or the whole) of what this order can still actually TAKE
+    // (`netCeilingMinor`), never of its gross "Falta" figure: a written-off order must never offer
+    // a chip the server is guaranteed to refuse (BR-05-32).
+    const minor = pick === "all" ? netCeilingMinor : percentOfRemaining(netCeilingMinor, pick, currencyCode);
     applyAmount(minor, minorUnitsToInputString(minor, currencyCode));
     setSelectedQuickPick(pick);
   }
@@ -310,7 +358,17 @@ export default function OrderInlinePaymentForm({
       case "ITEM_ORDER_MISMATCH":
         return t("detail.payments.errorItemMismatch");
       case "EXCEEDS_BALANCE":
+        // The server checks this refusal against the same canonical NET balance the client gate
+        // now uses (`createStorePayment`'s own `openBalanceMinorByOrderId` read), so a write-off is
+        // exactly why a resend that passed the client's OWN check a moment ago (stale
+        // `openBalanceMinor`) can still land here. Same branch condition as the client gate
+        // (`hasReconciledGap`), so the two can never disagree about which sentence applies.
+        return hasReconciledGap
+          ? t("detail.payments.amountExceedsBalanceReconciled")
+          : t("detail.payments.amountExceedsBalance", { remaining: remainingLabel });
       case "ALLOCATION_SUM_EXCEEDS_PAYMENT":
+        // Unrelated to the order's own balance (a breakdown whose lines outrun the payment amount
+        // itself), so this never reads the reconciled copy even on a written-off order.
         return t("detail.payments.amountExceedsBalance", { remaining: remainingLabel });
       case "DATE_BEFORE_ORDER":
         return t("detail.payments.dateBeforeOrder");
@@ -445,18 +503,32 @@ export default function OrderInlinePaymentForm({
           type="text"
           inputMode="decimal"
           aria-label={t("detail.payments.amountLabel")}
-          aria-invalid={amountExceedsBalance}
+          aria-invalid={amountExceedsBalance || isNetZero}
           value={amountStr}
           onChange={(e) => handleAmountChange(e.target.value)}
-          disabled={isPending}
+          // `isNetZero`: the write-off already took the whole balance, so there is no keystroke
+          // this field could ever accept (BR-05-32) — disabled up front rather than left to refuse
+          // on submit.
+          disabled={isPending || isNetZero}
           placeholder={t("detail.payments.amountPlaceholder")}
           className={cn(
             inputClass,
             "text-[15px] font-semibold tabular-nums",
-            amountExceedsBalance && "[border-color:var(--destructive)]",
+            (amountExceedsBalance || isNetZero) && "[border-color:var(--destructive)]",
           )}
         />
-        {amountExceedsBalance && (
+        {/* Three messages share this slot, most specific first: the write-off explanation (either
+            because it already wiped out the whole ceiling, or because the typed figure lands in the
+            gap between the net ceiling and the order's own gross balance), then the ordinary
+            over-amount refusal. Never both: the write-off explanation replaces the ordinary one
+            rather than stacking beside it, because once it applies the gross figure the ordinary
+            copy would quote is not the reason the amount was refused. */}
+        {(isNetZero || isReconciledRefusal) && (
+          <p role="alert" className="text-destructive mt-1 text-[12px]">
+            {t("detail.payments.amountExceedsBalanceReconciled")}
+          </p>
+        )}
+        {!isNetZero && !isReconciledRefusal && amountExceedsBalance && (
           <p role="alert" className="text-destructive mt-1 text-[12px]">
             {t("detail.payments.amountExceedsBalance", { remaining: remainingLabel })}
           </p>
@@ -467,18 +539,21 @@ export default function OrderInlinePaymentForm({
           form). "Todo" leads because 536 of 626 recorded payments covered the whole balance; the
           percentage chips show the PERCENTAGE and not the amount, because three amounts do not fit
           at 320px and the percentage is the intention. The amount reaches a screen reader through
-          the label and the field in the same frame. */}
-      {remainingAmount > 0 && (
+          the label and the field in the same frame. Every chip is bounded by `netCeilingMinor`
+          (BR-05-32), never `remainingAmount`: on a written-off order "Todo" must never offer the
+          order's own pre-adjustment figure, and a fully written-off order (`isNetZero`) offers no
+          chip at all, matching the disabled field beside it. */}
+      {netCeilingMinor > 0 && (
         <div className="mb-3 flex flex-wrap items-center gap-1.5">
           <button
             type="button"
             onClick={() => handleQuickPick("all")}
             disabled={isPending}
             aria-pressed={selectedQuickPick === "all"}
-            aria-label={t("detail.payments.quickPickAllAria", { amount: remainingLabel })}
+            aria-label={t("detail.payments.quickPickAllAria", { amount: netCeilingLabel })}
             className={chipClass(selectedQuickPick === "all")}
           >
-            {t("detail.payments.quickPickAll", { amount: remainingLabel })}
+            {t("detail.payments.quickPickAll", { amount: netCeilingLabel })}
           </button>
           {PERCENT_QUICK_PICKS.map((percent) => (
             <button
@@ -490,7 +565,7 @@ export default function OrderInlinePaymentForm({
               aria-label={t("detail.payments.quickPickPercentAria", {
                 pct: percent,
                 amount: formatAmountSymbolOnly(
-                  percentOfRemaining(remainingAmount, percent, currencyCode),
+                  percentOfRemaining(netCeilingMinor, percent, currencyCode),
                   currencyCode,
                   locale,
                 ),

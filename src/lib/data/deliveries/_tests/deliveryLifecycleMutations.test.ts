@@ -40,8 +40,22 @@ function makeTx(overrides: Partial<{ delivery: unknown; conflictCount: number }>
     deliveryOrderItem: { count: vi.fn().mockResolvedValue(overrides.conflictCount ?? 0) },
     // No matching orders → persistDerivedOrderStatuses skips; derivation itself is covered
     // by the existing persistDerivedOrderStatuses suite.
-    order: { findMany: vi.fn().mockResolvedValue([]), updateMany: vi.fn().mockResolvedValue({ count: 0 }) },
-  };
+    order: {
+      findMany: vi.fn().mockResolvedValue([]),
+      updateMany: vi.fn().mockResolvedValue({ count: 0 }),
+      update: vi.fn().mockResolvedValue(undefined),
+    },
+    // WO-08 (FR-08-43): reopenDelivery now looks up and deletes settlement StorePayment rows in the
+    // same transaction. None of this file's fixtures produced a settlement, so an empty result here
+    // keeps every existing scenario's behavior unchanged; the settlement-reversal scoping itself has
+    // its own dedicated coverage in deliveryMutations.test.ts.
+    storePayment: { findMany: vi.fn().mockResolvedValue([]), deleteMany: vi.fn().mockResolvedValue({ count: 0 }) },
+    // WO-08 gap closure: reopenDelivery also reads (never deletes) allocations this delivery's own
+    // close-time consumption stamped. None of this file's fixtures produced one, so an empty result
+    // keeps every existing scenario's behavior unchanged; the surviving-consumption read itself has
+    // its own dedicated coverage in deliveryMutations.test.ts.
+    paymentAllocation: { groupBy: vi.fn().mockResolvedValue([]), findMany: vi.fn().mockResolvedValue([]) },
+  } as unknown as TxMock;
 }
 
 function useTx(tx: TxMock) {
@@ -80,7 +94,10 @@ describe("markDeliveryDelivered", () => {
 
     const result = await markDeliveryDelivered("dlv-1", "user-1", receivedDate);
 
-    expect(result).toEqual({ ok: true, productCount: 2 });
+    // closedOrders is [] here: this fixture's orders never resolve (order.findMany → []), so
+    // nothing derives to COMPLETED; the producer-snapshot behavior itself is covered in
+    // deliveryMutations.test.ts.
+    expect(result).toEqual({ ok: true, productCount: 2, closedOrders: [] });
     expect(tx.delivery.update).toHaveBeenCalledWith({
       where: { id: "dlv-1" },
       data: { status: DeliveryStatus.DELIVERED, receivedDate },
@@ -105,7 +122,18 @@ describe("reopenDelivery", () => {
 
     const result = await reopenDelivery("dlv-1", "user-1");
 
-    expect(result).toEqual({ ok: true, productCount: 2 });
+    // No settlement StorePayment for this delivery in this fixture; the settlement-reversal
+    // scoping itself (FR-08-43) has its own dedicated coverage in deliveryMutations.test.ts.
+    expect(result).toEqual({
+      ok: true,
+      productCount: 2,
+      revertedSettlements: {
+        totalAmountMinor: 0,
+        payments: [],
+        survivingConsumedMinor: 0,
+        survivingConsumedAllocations: [],
+      },
+    });
     expect(tx.delivery.update).toHaveBeenCalledWith({
       where: { id: "dlv-1" },
       data: { status: DeliveryStatus.IN_TRANSIT, receivedDate: null },
@@ -134,7 +162,16 @@ describe("reopenDelivery", () => {
 
     const result = await reopenDelivery("dlv-1", "user-1");
 
-    expect(result).toEqual({ ok: true, productCount: 2 });
+    expect(result).toEqual({
+      ok: true,
+      productCount: 2,
+      revertedSettlements: {
+        totalAmountMinor: 0,
+        payments: [],
+        survivingConsumedMinor: 0,
+        survivingConsumedAllocations: [],
+      },
+    });
     expect(tx.deliveryOrderItem.count).toHaveBeenCalledWith({
       where: {
         orderItemId: { in: ["item-1", "item-2"] },

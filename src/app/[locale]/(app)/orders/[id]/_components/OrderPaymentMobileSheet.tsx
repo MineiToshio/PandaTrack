@@ -24,6 +24,13 @@ type OrderPaymentMobileSheetProps = {
   totalCost: number;
   /** Money already on this order naming no product. Named by the breakdown, never split. */
   undetailedPaidMinor: number;
+  /**
+   * This order's own canonical NET balance (`BR-05-32`, `ADR 0034`), threaded into the inline
+   * payment form's writable ceiling. Optional and defaulting to `remainingAmount` (the GROSS
+   * balance this sheet's own subtitle already renders): a caller that never asks about a
+   * reconciliation write-off gets the pre-existing behaviour unchanged.
+   */
+  openBalanceMinor?: number;
   onSubmit: (submission: OrderInlinePaymentSubmission) => Promise<OrderInlinePaymentOutcome>;
 };
 
@@ -37,6 +44,7 @@ export default function OrderPaymentMobileSheet({
   breakdownItems,
   totalCost,
   undetailedPaidMinor,
+  openBalanceMinor,
   onSubmit,
 }: OrderPaymentMobileSheetProps) {
   const t = useTranslations("orders");
@@ -71,6 +79,7 @@ export default function OrderPaymentMobileSheet({
           items={breakdownItems}
           orderTotalCostMinor={totalCost}
           undetailedPaidMinor={undetailedPaidMinor}
+          openBalanceMinor={openBalanceMinor ?? remainingAmount}
           onCancel={onClose}
           // Optimistic confirmation by default (the sheet is dismissed in the same tick and the
           // coordinator's toast reports a refusal), with ONE exception the form owns: a breakdown
