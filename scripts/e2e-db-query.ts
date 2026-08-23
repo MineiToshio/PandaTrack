@@ -17,6 +17,12 @@ import { PrismaClient } from "../generated/prisma/client";
 interface QueryRequest {
   /** Namespaced fixture prefix (e.g. `E2E Reconciliation Store 17…`), same convention as cleanup. */
   storeNamePrefix: string;
+  /**
+   * Optional. When set, the reply also carries this account's `role`, so a spec can tell whether
+   * the configured E2E user is the non-admin its assertions require. Read-only like everything
+   * else here.
+   */
+  userEmail?: string;
 }
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL, allowExitOnIdle: true });
@@ -32,6 +38,10 @@ function parseRequest(): QueryRequest {
 
 async function main(): Promise<void> {
   const request = parseRequest();
+
+  const user = request.userEmail
+    ? await prisma.user.findUnique({ where: { email: request.userEmail }, select: { role: true } })
+    : null;
 
   const stores = await prisma.store.findMany({
     where: { name: { startsWith: request.storeNamePrefix } },
@@ -76,7 +86,7 @@ async function main(): Promise<void> {
       })
     : [];
 
-  console.log(JSON.stringify({ stores, storePayments, adjustments, deliveries }));
+  console.log(JSON.stringify({ stores, storePayments, adjustments, deliveries, userRole: user?.role ?? null }));
 }
 
 main()

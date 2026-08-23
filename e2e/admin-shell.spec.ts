@@ -4,6 +4,7 @@ import {
   signInAsAdmin,
   skipUnlessAdminEnv,
   skipUnlessAuthenticatedEnv,
+  skipUnlessConfiguredUserIsNonAdmin,
 } from "./_helpers/auth";
 
 const MODERATION_NAV_LABEL = /moderación|moderation/i;
@@ -22,6 +23,7 @@ const ES_LANDING_COPY = /bandeja de moderación|todo al día/i;
 test.describe("Admin space shell and gating", () => {
   test("non-admin sees no admin nav entry and is refused at the admin space", async ({ page }) => {
     skipUnlessAuthenticatedEnv();
+    await skipUnlessConfiguredUserIsNonAdmin();
 
     await signInAndLandOnDashboard(page);
 
