@@ -2,6 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { signInAndLandOnDashboard, skipUnlessAuthenticatedEnv } from "./_helpers/auth";
 import { expandStoreGroups } from "./_helpers/storeGroups";
 import { deleteStoresByNamePrefix } from "./_helpers/dbCleanup";
+import { getStoreSnapshotByNamePrefix } from "./_helpers/dbQuery";
 
 /**
  * Store-level payments, end to end (`FR-05-42` / `42a` / `42b`).
@@ -179,17 +180,34 @@ test.describe("Store-level payments", () => {
     // coordinator still takes the "nothing declared" close-immediately path.
     await expect(sheet).toBeHidden({ timeout: 5_000 });
 
-    // And the debt really moved, not just on screen: a fresh server render says 90.00.
+    // The payment really landed: 10.00 with no allocations, which is what "on account" IS. Read
+    // from the database rather than off the screen, because the sheet closed optimistically and
+    // every on-screen figure below would look identical if the write had been silently refused.
     await expect(async () => {
-      await page.goto(`/en/stores/${createdStoreSlug}`);
-      await expect(remainingDebt(page)).toHaveText(/\b90\.00\b/, { timeout: 3_000 });
+      const snapshot = await getStoreSnapshotByNamePrefix(STORE_NAME);
+      expect(snapshot.storePayments).toHaveLength(1);
+      expect(snapshot.storePayments[0]).toMatchObject({ amount: 1000, currencyCode: "PEN" });
+      expect(snapshot.storePayments[0].allocations).toHaveLength(0);
     }).toPass({ timeout: 30_000 });
 
-    // This fixture is exactly the shape the "unassigned money" line exists for (`BR-05-27`,
-    // `FR-05-60`, `ADR 0033`): the headline says 90.00 is outstanding while the bar's own pair says
-    // 100.00 is, because none of the 10.00 was declared against the order. Without the line nothing
-    // on the page names the difference.
-    await expect(page.getByText(/10\.00\s+already paid and not assigned/i).first()).toBeVisible();
+    await page.goto(`/en/stores/${createdStoreSlug}`);
+
+    // And "Pendiente en pedidos abiertos" does NOT move, which is the whole point of this fixture.
+    // This assertion used to expect 90.00 and was stale: `ADR 0033` promoted that headline from the
+    // lifetime `debtMinor` to `openOrderDebtMinor`, which is Σ `openBalanceMinor` over the store's
+    // active orders (`BR-05-32`). On-account money is declared against no order, so it changes no
+    // order's balance and therefore cannot move this figure, by construction. The old expectation
+    // also contradicted the assertion right below it: money cannot be both "not assigned" and
+    // subtracted from a per-order total.
+    await expect(remainingDebt(page)).toHaveText(/\b100\.00\b/, { timeout: 10_000 });
+
+    // Which is exactly why the "unassigned money" line exists (`BR-05-27`, `FR-05-60`, `ADR 0033`):
+    // it is the only thing on the page that accounts for the 10.00 that left the collector's hands
+    // without naming an order. Without it the payment would be invisible here.
+    // The currency code sits between the figure and the sentence ("10.00 PEN already paid and
+    // not assigned"), which the old pattern did not allow for. It never failed before because the
+    // stale assertion above it stopped the test first.
+    await expect(page.getByText(/10\.00\s+PEN\s+already paid and not assigned/i).first()).toBeVisible();
   });
 
   test("a payment declared across two product lines waits for the server and lowers the debt", async ({ page }) => {
@@ -216,10 +234,25 @@ test.describe("Store-level payments", () => {
     // server so a refusal could still point at its own line. It closes only once the answer is in.
     await expect(sheet).toBeHidden({ timeout: 20_000 });
 
-    // 100 − 10 (previous test) − 30 = 60.00, straight from the server.
+    // 100 (the order) − 30 (declared across its two products) = 70.00, straight from the server.
+    //
+    // NOT 60.00, and the difference between the two numbers is the whole reason this test sits next
+    // to the on-account one. This headline is `openOrderDebtMinor` (`ADR 0033`, `BR-05-32`): Σ of
+    // each active order's own balance. The 10.00 the previous test paid names no order, so it never
+    // enters this figure, however much it reduced what the collector owes the store overall. The old
+    // expectation subtracted it anyway, which was the lifetime `debtMinor` arithmetic this headline
+    // stopped rendering.
     await expect(async () => {
       await page.goto(`/en/stores/${createdStoreSlug}`);
-      await expect(remainingDebt(page)).toHaveText(/\b60\.00\b/, { timeout: 3_000 });
+      await expect(remainingDebt(page)).toHaveText(/\b70\.00\b/, { timeout: 3_000 });
     }).toPass({ timeout: 30_000 });
+
+    // And the declarations really landed as two product lines, not as one lump: the figure above
+    // would read the same either way.
+    const snapshot = await getStoreSnapshotByNamePrefix(STORE_NAME);
+    const declared = snapshot.storePayments.find((payment) => payment.amount === 3000);
+    expect(declared?.allocations.map((allocation) => allocation.amountMinor).sort((a, b) => a - b)).toEqual([
+      1000, 2000,
+    ]);
   });
 });

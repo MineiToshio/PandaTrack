@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { getUserRole } from "./dbQuery";
 
 const SIGN_IN_RETURN_TO_DASHBOARD = "/en/sign-in?returnTo=%2Fen%2Fdashboard";
 const DASHBOARD_URL_REGEX = /\/en\/dashboard/;
@@ -47,7 +48,40 @@ export function skipUnlessAuthenticatedEnv() {
  * is only complete once the dashboard has finished loading.
  */
 async function settleOnDashboard(page: Page) {
+  // `waitForURL` resolves the moment the client-side route change lands, which is BEFORE the
+  // dashboard document has rendered, and `waitForLoadState("load")` can then resolve against the
+  // load event the previous document already fired. The helper therefore returned while a
+  // navigation to the dashboard was still in flight, and the `page.goto(...)` a caller issues on
+  // the very next line raced it: "Navigation to /en/orders/new is interrupted by another
+  // navigation to /en/dashboard". It reproduced on `main` with no product change involved.
+  //
+  // Waiting for the private shell's own `<main>` proves a fresh document actually rendered, so the
+  // navigation is finished rather than merely addressed.
   await page.waitForLoadState("load");
+  await expect(page.locator("main#main-content")).toBeVisible({ timeout: 15_000 });
+}
+
+/**
+ * Skips the current test unless `E2E_USER_EMAIL` really is a NON-admin account.
+ *
+ * The two specs that assert what an ordinary collector cannot reach sign in as that account. It was
+ * an ordinary collector until it was granted the `admin` role (2026-08-22, the production cutover),
+ * and from that moment both tests failed on assertions that were entirely correct about a fixture
+ * that no longer matched them. A test that cannot pass is a test everyone learns to scroll past, so
+ * this states the requirement instead: the skip reason names the cause and the fix.
+ *
+ * Restoring the coverage is a configuration change, not a code one: point `E2E_USER_EMAIL` at an
+ * account without the role (`E2E_ADMIN_EMAIL` already covers the admin side of these same flows).
+ */
+export async function skipUnlessConfiguredUserIsNonAdmin() {
+  const email = process.env.E2E_USER_EMAIL;
+  if (!email) return;
+  const role = await getUserRole(email);
+  test.skip(
+    role === "admin",
+    `E2E_USER_EMAIL (${email}) carries the admin role, so it cannot exercise the non-admin gate. ` +
+      "Point it at an account without the role to restore this test.",
+  );
 }
 
 /** True when the dedicated admin E2E account is not configured. Admin moderation specs skip then. */

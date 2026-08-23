@@ -4,6 +4,7 @@ import {
   signInAsAdmin,
   skipUnlessAdminEnv,
   skipUnlessAuthenticatedEnv,
+  skipUnlessConfiguredUserIsNonAdmin,
 } from "./_helpers/auth";
 import { deleteStoresBySlug } from "./_helpers/dbCleanup";
 
@@ -115,6 +116,7 @@ test.describe("Store moderation", () => {
 
   test("a non-admin does not see the moderation panel", async ({ page }) => {
     skipUnlessAuthenticatedEnv();
+    await skipUnlessConfiguredUserIsNonAdmin();
     await signInAndLandOnDashboard(page);
 
     await createBusinessStoreAndOpenDetail(page, `E2E Mod NonAdmin ${Date.now()}`);
@@ -293,6 +295,7 @@ test.describe("Store moderation", () => {
 
   test("a non-admin does not see the admin open-reports section (AC-04-25)", async ({ page }) => {
     skipUnlessAuthenticatedEnv();
+    await skipUnlessConfiguredUserIsNonAdmin();
     await signInAndLandOnDashboard(page);
 
     await createBusinessStoreAndOpenDetail(page, `E2E Report NonAdmin ${Date.now()}`);

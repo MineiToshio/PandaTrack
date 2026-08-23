@@ -63,3 +63,20 @@ export async function getStoreSnapshotByNamePrefix(prefix: string): Promise<Stor
   });
   return JSON.parse(stdout) as StoreQuerySnapshot;
 }
+
+/**
+ * The `role` column of one account, or `null` when there is no such user.
+ *
+ * Exists for the two specs that assert what a NON-admin cannot reach. They sign in as
+ * `E2E_USER_EMAIL`, which stopped being a non-admin the day that account was granted the role, and
+ * from then on they failed on a true assertion about a wrongly-configured fixture. A test that can
+ * never pass gets ignored, and an ignored suite is the failure mode worth avoiding here.
+ */
+export async function getUserRole(email: string): Promise<string | null> {
+  const { stdout } = await execFileAsync(
+    "npx",
+    ["tsx", QUERY_SCRIPT, JSON.stringify({ storeNamePrefix: "__no_store__", userEmail: email })],
+    { cwd: REPO_ROOT },
+  );
+  return (JSON.parse(stdout) as { userRole: string | null }).userRole;
+}
