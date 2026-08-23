@@ -4,6 +4,45 @@ This document defines how PandaTrack should use automated tests in a risk-based 
 
 The goal is not full coverage. The goal is to protect the product areas where regressions would be expensive: business rules, money-related calculations, state transitions, and the main user workflows.
 
+## The E2E accounts, and what happens when one changes role
+
+Three specs assert what an ordinary collector **cannot** reach (`admin-shell.spec.ts`,
+`store-moderation.spec.ts` x2). They sign in as `E2E_USER_EMAIL`, which has to be a genuine
+non-admin for the assertion to mean anything.
+
+It stopped being one: that account was granted the `admin` role during the 2026-08-22 production
+cutover, and from then on all three failed on assertions that were correct about a fixture that no
+longer matched them. They now check the account's role first and skip with a reason that names the
+cause (`skipUnlessConfiguredUserIsNonAdmin`), because a test that cannot pass is a test everyone
+learns to scroll past.
+
+**To restore the coverage**, point `E2E_USER_EMAIL` at an account without the role. The admin half
+of the same flows already has its own pair (`E2E_ADMIN_EMAIL` / `E2E_ADMIN_PASSWORD`), which is
+unset locally today, so those tests skip as well.
+
+## Node version: `.nvmrc` is the pin, and it is load-bearing
+
+CI reads `.nvmrc` (`node-version-file`), so the workflows and the machine the code is validated on
+run the same Node, and therefore the same npm major.
+
+That is not tidiness. It pinned CI to Node 20 (npm 10) while development ran Node 24 (npm 11), and
+the two npm majors disagree about one nested dependency: `next-intl`'s `@swc/core` wants
+`@swc/helpers >=0.5.17` while `next` pins `0.5.15` at the root. npm 10 records a nested
+`node_modules/next-intl/node_modules/@swc/helpers`; **npm 11 removes that same entry**. So every
+local `npm install` produced a lockfile CI's `npm ci` refused:
+
+```
+npm error `npm ci` can only install packages when your package.json and package-lock.json ... are in sync.
+npm error Missing: @swc/helpers@0.5.23 from lock file
+```
+
+The `Validate` job was red on every push to `main` for months because of it, which quietly cost the
+repo its CI safety net (Vercel installs its own way, so deploys kept going out green).
+
+**If you change the Node major, change `.nvmrc` and regenerate the lockfile with that Node's npm in
+the same commit.** Patching the lockfile alone does not hold: whichever npm major runs next rewrites
+it back.
+
 ## Principles
 
 - Prefer high-value tests over high test counts.

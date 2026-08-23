@@ -22,7 +22,12 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          # Read from `.nvmrc` so CI and the machine the code is validated on cannot drift apart.
+          # They did: CI pinned Node 20 (npm 10) while development runs Node 24 (npm 11), and the
+          # two npm majors disagree about one nested dependency, so every `npm install` locally
+          # produced a lockfile `npm ci` here refused ("Missing: @swc/helpers@0.5.23 from lock
+          # file"). This job had been red on every push to main for months because of it.
+          node-version-file: ".nvmrc"
           cache: "npm"
 
       - name: Install dependencies
@@ -59,7 +64,12 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          # Read from `.nvmrc` so CI and the machine the code is validated on cannot drift apart.
+          # They did: CI pinned Node 20 (npm 10) while development runs Node 24 (npm 11), and the
+          # two npm majors disagree about one nested dependency, so every `npm install` locally
+          # produced a lockfile `npm ci` here refused ("Missing: @swc/helpers@0.5.23 from lock
+          # file"). This job had been red on every push to main for months because of it.
+          node-version-file: ".nvmrc"
           cache: "npm"
 
       - name: Install dependencies
