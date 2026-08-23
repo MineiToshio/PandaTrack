@@ -264,8 +264,20 @@ function sumPaymentsInRange(order: DashboardOrderInput, range: DateRange): numbe
   );
 }
 
+/**
+ * Budget consumption for the current cycle: money that actually left the collector's hands inside
+ * the cycle, never an order total (`FR-06-06`, `BR-06-03`).
+ *
+ * It reads the same disbursed-cash-out definition `buildSpend` uses (`BR-06-04`): order payment
+ * allocations bucketed by their payment date, plus non-cancelled `Delivery.cost` bucketed by its
+ * shipping date. A shipping cost is money spent in the cycle exactly like a payment is, so leaving
+ * it out let a cycle's real cash-out exceed the budget while the meter still read under it. The two
+ * figures differ only in their window: the budget follows the configured cycle, disbursed spend
+ * follows the calendar month.
+ */
 function buildBudget(
   orders: DerivedOrder[],
+  deliveries: DashboardDeliveryInput[],
   baseCurrencyCode: string | null,
   budgetAmountMinor: number | null,
   now: Date,
@@ -273,9 +285,12 @@ function buildBudget(
   resetDay: number | null,
 ): BudgetBlock {
   const cycleRange = getBudgetCycleRange(now, timeZone, resetDay);
-  const consumedItems = orders
-    .map((order) => toRollupItem(order.input, sumPaymentsInRange(order.input, cycleRange)))
-    .filter((item) => item.amountMinor > 0);
+  const consumedItems = [
+    ...orders
+      .map((order) => toRollupItem(order.input, sumPaymentsInRange(order.input, cycleRange)))
+      .filter((item) => item.amountMinor > 0),
+    ...deliveries.filter((delivery) => isWithinRange(delivery.deliveryDate, cycleRange)).map(toDeliveryRollupItem),
+  ];
   const consumed = rollUpToBaseCurrency(consumedItems, baseCurrencyCode);
 
   const isConfigured = budgetAmountMinor !== null && budgetAmountMinor > 0;
@@ -803,7 +818,15 @@ export function buildDashboardData(input: BuildDashboardDataInput): DashboardDat
     generatedAt: now,
     range,
     cashObligations: buildCashObligations(openOrders, baseCurrencyCode, now, timeZone),
-    budget: buildBudget(nonCancelled, baseCurrencyCode, budgetAmountMinor, now, timeZone, budgetResetDayOfMonth),
+    budget: buildBudget(
+      nonCancelled,
+      nonCancelledDeliveries,
+      baseCurrencyCode,
+      budgetAmountMinor,
+      now,
+      timeZone,
+      budgetResetDayOfMonth,
+    ),
     spend: buildSpend(nonCancelled, nonCancelledDeliveries, baseCurrencyCode, range, now, timeZone),
     committedTrend: buildCommittedTrend(nonCancelled, baseCurrencyCode, range),
     outstandingTrend: buildOutstandingTrend(openOrders, baseCurrencyCode, range),

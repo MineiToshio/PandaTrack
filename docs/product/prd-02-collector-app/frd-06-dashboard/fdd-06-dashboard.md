@@ -171,7 +171,9 @@ vertically centered):
   separator renders three slashes in one line and reads as a formatting glitch before it reads as a
   ratio. Each amount is `nowrap`, so a long pair breaks between the two rather than stranding a
   symbol at the end of a row. Followed by a `kpi-sub`
-  reminding that this is the **budget cycle** and equals disbursed-this-month; then a
+  reminding that this is the **budget cycle**. It reads the same disbursed cash-out as the
+  Desembolso card (order payments plus non-cancelled shipping cost, `BR-06-04`); only the window
+  differs, cycle here versus calendar month there (`BR-06-03`). Then a
   `.budget-meter` whose fill class encodes the band (`is-ok` `< 80%` green / `is-warn`
   `80–100%` amber / `is-over` `> 100%` red), and a `.budget-legend` pairing a status **chip**
   (icon + label, `"65% · vas bien"`) with the remaining amount (`"Quedan S/ 710"`) (`FR-06-06`,

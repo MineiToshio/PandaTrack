@@ -259,6 +259,76 @@ describe("buildDashboardData - spend and budget", () => {
     expect(underData.budget.status).toBe("under");
   });
 
+  it("counts non-cancelled delivery shipping cost paid in the cycle toward budget consumption (FR-06-06, BR-06-04)", () => {
+    const data = build(
+      [makeOrder({ id: "o", totalCost: 20000, payments: [{ amount: 5000, paymentDate: utc(2026, 6, 10) }] })],
+      {
+        budgetAmountMinor: 10000,
+        budgetResetDayOfMonth: 1,
+        deliveries: [
+          makeDelivery({ id: "inCycle", cost: 800, deliveryDate: utc(2026, 6, 10) }),
+          makeDelivery({ id: "otherCycle", cost: 500, deliveryDate: utc(2026, 5, 10) }),
+          makeDelivery({ id: "cancelled", cost: 999, deliveryDate: utc(2026, 6, 12), status: "CANCELLED" }),
+        ],
+      },
+    );
+    expect(data.budget.consumedMinor).toBe(5800);
+  });
+
+  it("lets shipping cost alone move the budget band, so the meter cannot read under while cash-out is over", () => {
+    const paymentsOnly = build(
+      [makeOrder({ id: "o", totalCost: 20000, payments: [{ amount: 9500, paymentDate: utc(2026, 6, 10) }] })],
+      { budgetAmountMinor: 10000, budgetResetDayOfMonth: 1 },
+    );
+    expect(paymentsOnly.budget.status).toBe("warning");
+
+    const withShipping = build(
+      [makeOrder({ id: "o", totalCost: 20000, payments: [{ amount: 9500, paymentDate: utc(2026, 6, 10) }] })],
+      {
+        budgetAmountMinor: 10000,
+        budgetResetDayOfMonth: 1,
+        deliveries: [makeDelivery({ id: "d", cost: 800, deliveryDate: utc(2026, 6, 10) })],
+      },
+    );
+    expect(withShipping.budget.consumedMinor).toBe(10300);
+    expect(withShipping.budget.status).toBe("over");
+  });
+
+  it("buckets shipping cost by the budget cycle, not the calendar month (BR-06-03)", () => {
+    // Reset day 20 puts the cycle at 20 Jun - 20 Jul, so a 25 Jun delivery is in the cycle while
+    // sitting in the *previous* calendar month; a 5 Jun one is in neither.
+    const data = build([], {
+      budgetAmountMinor: 10000,
+      budgetResetDayOfMonth: 20,
+      deliveries: [
+        makeDelivery({ id: "inCycle", cost: 700, deliveryDate: utc(2026, 5, 25) }),
+        makeDelivery({ id: "beforeCycle", cost: 400, deliveryDate: utc(2026, 5, 5) }),
+      ],
+    });
+    expect(data.budget.cycleStart).toEqual(utc(2026, 5, 20));
+    expect(data.budget.consumedMinor).toBe(700);
+  });
+
+  it("excludes an FX-pending delivery from budget consumption and marks it partial", () => {
+    const data = build([], {
+      budgetAmountMinor: 10000,
+      budgetResetDayOfMonth: 1,
+      deliveries: [
+        makeDelivery({
+          id: "fx",
+          cost: 5000,
+          currencyCode: "EUR",
+          exchangeRate: 1.1,
+          exchangeRateBaseCode: null,
+          deliveryDate: utc(2026, 6, 10),
+        }),
+        makeDelivery({ id: "usd", cost: 300, deliveryDate: utc(2026, 6, 10) }),
+      ],
+    });
+    expect(data.budget.consumedMinor).toBe(300);
+    expect(data.budget.consumedIsPartial).toBe(true);
+  });
+
   it("resolves budget thresholds at their exact boundaries", () => {
     const budgetWith = (paidMinor: number) =>
       build(
