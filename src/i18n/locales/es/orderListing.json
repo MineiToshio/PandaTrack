@@ -19,7 +19,8 @@
   },
   "search": {
     "label": "Buscar pedidos",
-    "placeholder": "Producto, tienda o código (ORD-20260428-01, Evangelion OST…)"
+    "placeholder": "Producto, tienda o código (ORD-20260428-01, Evangelion OST…)",
+    "placeholderCompact": "Producto, tienda o código"
   },
   "filters": {
     "openButton": "Filtrar",
@@ -152,7 +153,8 @@
     "orderSummary": "{orders} {orders, plural, one {pedido abierto} other {pedidos abiertos}} · {products} {products, plural, one {producto pendiente} other {productos pendientes}}",
     "search": {
       "label": "Buscar tiendas o productos",
-      "placeholder": "Tienda o producto (Amazon, Nendoroid…)"
+      "placeholder": "Tienda o producto (Amazon, Nendoroid…)",
+      "placeholderCompact": "Tienda o producto"
     },
     "openOrderDebtAmount": "Pendiente en pedidos abiertos {amount}",
     "creditAmount": "A favor {amount}",
@@ -213,7 +215,14 @@
       "hint": "Este dinero está asignado al pedido, no a un producto en particular.",
       "trigger": "Sin desglosar · {count}",
       "triggerAria": "Sin desglosar: {count, plural, one {# pedido} other {# pedidos}} de {store}"
-    }
+    },
+    "overdueSummary": "{overdue} de {total} {overdue, plural, one {atrasado} other {atrasados}}",
+    "productSummary": "{products, plural, one {# producto} other {# productos}}",
+    "groupSummary": "{orders, plural, one {# pedido} other {# pedidos}} · {products, plural, one {# producto} other {# productos}}",
+    "pendingLabel": "pendiente",
+    "creditLabel": "a tu favor",
+    "noDebtLabel": "sin deuda",
+    "priceWithPaidPercent": "{price} · {pct}%"
   },
   "empty": {
     "noOrders": {

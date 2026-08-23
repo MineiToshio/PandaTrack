@@ -497,6 +497,45 @@ size="sm"`, text only: `ghost` is outline-only against the elevated `secondary` 
 >   plain 11px secondary text ("{amount} pagados") beside the delivery pill, with no bar and no
 >   percentage: there is no denominator to divide by.
 >
+> **Amendment — The "Por tienda" view rebuilt for touch (2026-08-22, `FR-05-70` / `FR-05-71` /
+> `FR-05-72`).** Measured in the browser at 375px on real collector data (10 stores, 66 pending
+> products) before anything was drawn: **7,916px of scroll** (9.7 screens), store headers of 165 to
+> 235px, **43 of the 66 product names truncated**, and rows ranging 66 to 106px with no rhythm. Six
+> of the ten stores were spending ~185px each to announce a zero balance. The diagnosis was not
+> width: the group's chrome weighed more than its content, and each row was trying to be a
+> four-column table inside 309px.
+>
+> Three changes, in the order they matter:
+>
+> - **Groups land closed** (`FR-05-70`), at every breakpoint, ~1,110px in place of 7,916. What
+>   closing would have hidden, the closed row now says: "15 de 20 atrasados" in the summary line,
+>   counted through the same `resolveArrivalState` predicate the rows use (`countOverdueProducts`),
+>   so header and rows cannot disagree. The whole header row is the disclosure control, wrapped in
+>   an `h3` per the APG pattern. **The target is the whole row**, padding and chevron included, via an
+>   `::after` overlay at `inset-0` of a `relative` row: the button's own box stops at the text, which
+>   shipped once and left the chevron inert, the one pixel a collector actually aims at. Same shape
+>   `OrderCard` uses for "the card is one big link" (overlay owns everything, content is inert,
+>   controls opt back in); here the chevron is `pointer-events-none` so a press falls through, and the
+>   desktop action cluster is `relative` so tree order keeps it above. "Registrar pago" /
+>   "Sin desglosar" / "Ver tienda" left the header for the group body below `md`
+>   (`StoreGroupActions`, one mount per breakpoint, the two-slot shape the "Sin desglosar" trigger
+>   already used). That order is the collector's: the two money controls together, navigation last.
+> - **The view switcher moved to the app header** (`FR-05-71`), portalled through a slot the shell
+>   publishes (`HeaderAccessoryPortal`). The owner proposed the burger menu; both places free the
+>   same 94px, so the tiebreaker was that the menu COSTS the active-view answer (the title says
+>   "Pedidos" in both views) while the header, being `sticky top-0`, keeps it visible with the list
+>   scrolled. Nav items are flat in this shell, so the menu would also have needed sub-items built
+>   for one control. The freed width let the mobile search placeholders drop their unreadable
+>   parenthetical examples (`search.placeholderCompact`) instead of being cut mid-word.
+> - **The row is leading / content / trailing** (`FR-05-72`). The name takes up to two lines
+>   (`-webkit-line-clamp:2`), which took truncation from 43 rows to 5; line 2 is two fixed slots,
+>   money then arrival, and never wraps. The state chip left line 1 for the trailing slot and stands
+>   down while selecting. The currency code prints only in a group that mixes currencies. One
+>   implementation trap is worth recording: `[display:-webkit-box]` must be the element's ONLY
+>   display utility, because a second one wins on source order and kills the clamp silently, with
+>   nothing in the class list looking wrong. It shipped that way once (a formatter reordered `block`
+>   after the arbitrary property) and is now guarded in the card's own test.
+
 > **Amendment — Search in the "Por tienda" view (2026-08-15, `FR-05-55`).** The view shipped with
 > no way to narrow anything: sort and collapse were the only controls, so finding one store or one
 > product among tens meant scrolling the whole list. It now carries a search box, and the design

@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ComponentProps, ReactNode } from "react";
 import { ToastProvider } from "@/contexts/ToastContext";
 import type { PendingProductRow, PendingProductsByStoreGroup } from "@/lib/data/orders/pendingProductsByStoreQueries";
-import { formatAmountWithSymbol } from "@/lib/currency";
+import { formatAmountSymbolOnly, formatAmountWithSymbol } from "@/lib/currency";
 import { utcMidnightToday } from "@/test/domainDateFixtures";
 import StoreGroupedView from "../StoreGroupedView";
 
@@ -87,10 +87,35 @@ vi.mock("@/components/modules/StorePaymentSheet", async (importOriginal) => ({
   },
 }));
 
+/**
+ * Every group's expand trigger. Identified by what it controls rather than by its role + name,
+ * because the whole header row is the button now and its accessible name is the store's identity
+ * block, which changes per fixture.
+ */
+function groupTriggers(): HTMLElement[] {
+  return Array.from(document.querySelectorAll<HTMLElement>('[aria-controls^="store-group-body-"]'));
+}
+
+/**
+ * Groups land CLOSED (`FR-05-70`), so any assertion about a group's CONTENT has to open it first.
+ * Done here rather than test by test so the suite keeps asserting the behaviour it was written for
+ * instead of being rewritten around a default that is not what those tests are about; the closed
+ * default has its own tests, which pass `startExpanded: false`.
+ */
+function expandAllGroups() {
+  for (const trigger of groupTriggers()) {
+    if (trigger.getAttribute("aria-expanded") === "false") fireEvent.click(trigger);
+  }
+}
+
 function renderView(
-  props: Partial<ComponentProps<typeof StoreGroupedView>> & { groups: PendingProductsByStoreGroup[] },
+  props: Partial<ComponentProps<typeof StoreGroupedView>> & {
+    groups: PendingProductsByStoreGroup[];
+    startExpanded?: boolean;
+  },
 ) {
-  return render(
+  const { startExpanded = true, ...componentProps } = props;
+  const result = render(
     <ToastProvider>
       <StoreGroupedView
         locale="es"
@@ -98,10 +123,12 @@ function renderView(
         baseCurrencyCode="PEN"
         storeSort="arrival-asc"
         today={utcMidnightToday()}
-        {...props}
+        {...componentProps}
       />
     </ToastProvider>,
   );
+  if (startExpanded) expandAllGroups();
+  return result;
 }
 
 function makeProduct(overrides: Partial<PendingProductRow> = {}): PendingProductRow {
@@ -179,10 +206,21 @@ function selectProduct(name: string, options: { shiftKey?: boolean } = {}) {
 }
 
 function storeHeadingOrder(): string[] {
+  // avatar -> identity block -> first row -> the store-name span. Walked rather than queried by
+  // text, because the name is exactly what these assertions are trying to discover.
   return screen.getAllByTestId("store-avatar").map((avatar) => {
-    const header = avatar.closest("section") as HTMLElement;
-    return header.querySelector("p")?.textContent ?? "";
+    const name = avatar.nextElementSibling?.firstElementChild?.firstElementChild;
+    return name?.textContent ?? "";
   });
+}
+
+/**
+ * "Registrar pago" is mounted once per breakpoint (header from `md:` up, group body below it), the
+ * same two-slot shape the "Sin desglosar" trigger has always used. Both are in the DOM and exactly
+ * one is ever painted, so a test that only needs to press it takes the first.
+ */
+function registerPaymentButtons(): HTMLElement[] {
+  return screen.getAllByRole("button", { name: "storeView.registerPayment" });
 }
 
 describe("StoreGroupedView", () => {
@@ -226,14 +264,21 @@ describe("StoreGroupedView", () => {
     expect(screen.queryAllByText("marked")).toHaveLength(0);
   });
 
-  it("collapses the group body when its chevron is toggled", () => {
-    renderView({ groups: [makeGroup()] });
+  it("lands with every group closed and opens one from its own header row (FR-05-70)", () => {
+    // The default flipped: at 375px on the collector's real data the open default rendered 7,916px
+    // of scroll, and six of the ten groups were announcing a zero balance. The whole header row is
+    // the disclosure now, not a 36px chevron beside two other controls.
+    renderView({ groups: [makeGroup()], startExpanded: false });
 
-    expect(screen.getAllByText("One Piece Vol. 1").length).toBeGreaterThan(0);
+    expect(screen.queryByText("One Piece Vol. 1")).not.toBeInTheDocument();
+    const [toggle] = groupTriggers();
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
 
-    const toggle = screen.getByRole("button", { name: "card.collapse" });
     fireEvent.click(toggle);
+    expect(screen.getAllByText("One Piece Vol. 1").length).toBeGreaterThan(0);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
 
+    fireEvent.click(toggle);
     expect(screen.queryByText("One Piece Vol. 1")).not.toBeInTheDocument();
   });
 
@@ -261,7 +306,7 @@ describe("StoreGroupedView", () => {
     // coordinator forwards the allocations but drops the parked slice on the way to the action.
     renderView({ groups: [makeGroup()] });
 
-    fireEvent.click(screen.getByRole("button", { name: "storeView.registerPayment" }));
+    fireEvent.click(registerPaymentButtons()[0]);
 
     await act(async () => {
       await capturedSubmitRef.current?.({
@@ -287,7 +332,7 @@ describe("StoreGroupedView", () => {
     renderView({ groups: [makeGroup()] });
 
     // The handler refuses to do anything until a group has claimed the sheet.
-    fireEvent.click(screen.getByRole("button", { name: "storeView.registerPayment" }));
+    fireEvent.click(registerPaymentButtons()[0]);
 
     const outcome = capturedSubmitRef.current?.({
       amount: 1000,
@@ -310,7 +355,7 @@ describe("StoreGroupedView", () => {
     });
     renderView({ groups: [group] });
 
-    fireEvent.click(screen.getByRole("button", { name: "storeView.registerPayment" }));
+    fireEvent.click(registerPaymentButtons()[0]);
 
     await act(async () => {
       await capturedSubmitRef.current?.({
@@ -358,7 +403,7 @@ describe("StoreGroupedView", () => {
       groups: [makeGroup({ debts: [{ currencyCode: "PEN", debtMinor: 5000, openOrderDebtMinor: 5000 }] })],
     });
 
-    fireEvent.click(screen.getByRole("button", { name: "storeView.registerPayment" }));
+    fireEvent.click(registerPaymentButtons()[0]);
     // Lets the sheet's own order fetch resolve before the submit reads `sheet.orders`.
     await act(async () => {
       await Promise.resolve();
@@ -374,11 +419,7 @@ describe("StoreGroupedView", () => {
       });
     });
 
-    expect(
-      screen.getByText(
-        `storeView.openOrderDebtAmount:${JSON.stringify({ amount: formatAmountWithSymbol(4000, "PEN", "es") })}`,
-      ),
-    ).toBeInTheDocument();
+    expect(screen.getByText(formatAmountSymbolOnly(4000, "PEN", "es"))).toBeInTheDocument();
   });
 
   describe("store debt headline (ADR 0033, WO-09)", () => {
@@ -390,12 +431,11 @@ describe("StoreGroupedView", () => {
         groups: [makeGroup({ debts: [{ currencyCode: "PEN", debtMinor: 50000, openOrderDebtMinor: 20000 }] })],
       });
 
-      expect(
-        screen.getByText(
-          `storeView.openOrderDebtAmount:${JSON.stringify({ amount: formatAmountWithSymbol(20000, "PEN", "es") })}`,
-        ),
-      ).toBeInTheDocument();
-      expect(screen.queryByText(/storeView\.debtAmount:/)).not.toBeInTheDocument();
+      // A single-currency group drops the redundant code: "S/" already IS PEN, and the suffix cost
+      // 29px on a line that had none to spare.
+      expect(screen.getByText(formatAmountSymbolOnly(20000, "PEN", "es"))).toBeInTheDocument();
+      expect(screen.getByText("storeView.pendingLabel")).toBeInTheDocument();
+      expect(screen.queryByText(formatAmountSymbolOnly(50000, "PEN", "es"))).not.toBeInTheDocument();
     });
 
     it("keeps the credit chip on the lifetime debtMinor, unchanged (FR-05-63)", () => {
@@ -405,12 +445,9 @@ describe("StoreGroupedView", () => {
         groups: [makeGroup({ debts: [{ currencyCode: "PEN", debtMinor: -16000, openOrderDebtMinor: 5000 }] })],
       });
 
-      expect(
-        screen.getByText(
-          `storeView.creditAmount:${JSON.stringify({ amount: formatAmountWithSymbol(16000, "PEN", "es") })}`,
-        ),
-      ).toBeInTheDocument();
-      expect(screen.queryByText(/storeView\.openOrderDebtAmount/)).not.toBeInTheDocument();
+      expect(screen.getByText(formatAmountSymbolOnly(16000, "PEN", "es"))).toBeInTheDocument();
+      expect(screen.getByText("storeView.creditLabel")).toBeInTheDocument();
+      expect(screen.queryByText("storeView.pendingLabel")).not.toBeInTheDocument();
     });
 
     it("keeps 'Registrar pago' enabled off the lifetime debt even when the open-orders figure is zero", () => {
@@ -425,7 +462,7 @@ describe("StoreGroupedView", () => {
         ],
       });
 
-      expect(screen.getByRole("button", { name: "storeView.registerPayment" })).not.toBeDisabled();
+      expect(registerPaymentButtons()[0]).not.toBeDisabled();
     });
 
     it("disables 'Registrar pago' when the lifetime debt is zero, even with nothing open either", () => {
@@ -435,7 +472,9 @@ describe("StoreGroupedView", () => {
 
       // Disabled swaps the accessible name to the hint (`aria-label`), so the disabled button is no
       // longer reachable by the enabled name above.
-      expect(screen.getByRole("button", { name: "storeView.registerPaymentDisabledHint" })).toBeDisabled();
+      const disabled = screen.getAllByRole("button", { name: "storeView.registerPaymentDisabledHint" });
+      expect(disabled).toHaveLength(2); // one per breakpoint slot
+      expect(disabled[0]).toBeDisabled();
     });
   });
 
@@ -470,26 +509,41 @@ describe("StoreGroupedView", () => {
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
 
-    it("mounts one trigger per breakpoint, so exactly one is ever visible, and the touch one clears 44px", () => {
-      // The owner's placement (between "Registrar pago" and "Ver tienda") is a DESKTOP layout: that
-      // cluster is already ~278px against the ~252-307px a phone leaves inside the card, so a fourth
-      // labelled control does not fit at any phone width. The touch slot is the identity block's
-      // money line instead. jsdom has no layout engine, so what is pinned here is the MECHANISM.
+    it("mounts the whole action cluster once per breakpoint, so exactly one is ever painted", () => {
+      // The split used to live on this trigger alone, because the header carried the actions at
+      // both breakpoints and only had room for a fourth control from `md:` up. Now the ENTIRE
+      // cluster moves: below `md` it renders inside the group body (where the row is full width and
+      // only exists once the collector has opened the store), and from `md` up it stays on the
+      // header row. jsdom has no layout engine, so what is pinned here is the MECHANISM.
       renderView({ groups: [makeGroup({ undetailedByOrder: UNDETAILED })] });
 
-      const [touch, desktop] = triggers().sort((a, b) =>
-        a.className.includes("md:hidden") ? -1 : b.className.includes("md:hidden") ? 1 : 0,
-      );
-      const tokens = (element: HTMLElement) => element.className.split(/\s+/).filter(Boolean);
+      const mounted = triggers();
+      expect(mounted, "one cluster per breakpoint").toHaveLength(2);
 
-      expect(tokens(touch), "touch slot must drop out from md: up").toContain("md:hidden");
-      expect(tokens(desktop), "desktop slot must be hidden below md:").toContain("hidden");
-      expect(tokens(desktop)).toContain("md:inline-flex");
-      // `Button size="sm"` is `min-h-8` (32px). The touch slot is RESIZED to the 44px floor rather
-      // than expanded with a pseudo, because its neighbours here are the debt figure and the wrapped
-      // row above (`docs/design/interface-patterns.md` §12).
-      expect(tokens(touch), "touch slot under the 44px floor").toContain("min-h-11");
-      expect(tokens(touch)).not.toContain("min-h-8");
+      const wrapperTokens = (element: HTMLElement) =>
+        (element.closest("[class*='md:hidden'], [class*='md:flex']")?.className ?? "").split(/\s+/).filter(Boolean);
+      const wrappers = mounted.map(wrapperTokens);
+      expect(
+        wrappers.some((tokens) => tokens.includes("md:hidden")),
+        "the body slot must drop out from md: up",
+      ).toBe(true);
+      expect(
+        wrappers.some((tokens) => tokens.includes("hidden") && tokens.includes("md:flex")),
+        "the header slot must be hidden below md:",
+      ).toBe(true);
+    });
+
+    it("gives the touch 'Ver tienda' a real 44px box rather than a pseudo-expansion", () => {
+      // Its neighbours in this cluster are other controls at `gap-2`, and two pseudo-expansions
+      // closer than their insets hand the whole contested band to the later one in the DOM
+      // (`docs/design/interface-patterns.md` §12). A resized box cannot mis-target.
+      renderView({ groups: [makeGroup({ undetailedByOrder: UNDETAILED })] });
+
+      const link = screen.getAllByText("storeView.viewStore")[0];
+      const tokens = link.className.split(/\s+/).filter(Boolean);
+      expect(tokens, "touch slot under the 44px floor").toContain("min-h-11");
+      expect(tokens, "compact box comes back where the pointer is precise").toContain("md:min-h-9");
+      expect(tokens.some((token) => token.startsWith("before:"))).toBe(false);
     });
 
     it("opens a dialog listing one line per order, each linking to that order", () => {
@@ -645,8 +699,9 @@ describe("StoreGroupedView", () => {
       renderView({ groups: [makeGroup()] });
 
       selectProduct("One Piece Vol. 1");
-      fireEvent.click(screen.getByRole("button", { name: "card.collapse" }));
-      fireEvent.click(screen.getByRole("button", { name: "card.expand" }));
+      const [toggle] = groupTriggers();
+      fireEvent.click(toggle); // close
+      fireEvent.click(toggle); // and open again
 
       expect(screen.queryByRole("toolbar")).not.toBeInTheDocument();
     });
@@ -811,8 +866,13 @@ describe("StoreGroupedView", () => {
       await waitFor(() => expect(screen.queryByText("Soonest")).not.toBeInTheDocument());
       // One order left contributing a pending product, down from two. Read off Akiba's own header,
       // because the second store legitimately shows the same 1/1 summary.
-      const akibaHeader = screen.getByText("Akiba Books").closest("div")?.parentElement as HTMLElement;
-      expect(akibaHeader.textContent).toContain(`storeView.orderSummary:${JSON.stringify({ orders: 1, products: 1 })}`);
+      // Read off Akiba's own section, because the second store legitimately shows the same 1/1
+      // summary. The count lives in the group BODY now: the header has no width for it once the
+      // money has a column of its own, and beside the product list is where it means something.
+      const akibaSection = screen.getByText("Akiba Books").closest("section") as HTMLElement;
+      expect(akibaSection.textContent).toContain(
+        `storeView.groupSummary:${JSON.stringify({ orders: 1, products: 1 })}`,
+      );
     });
 
     it("sends the store id and the marked products, never the whole group", async () => {
@@ -1022,13 +1082,16 @@ describe("StoreGroupedView", () => {
 
     it("never moves the store's debt figure: an arrival is not a payment", async () => {
       renderView({ groups: twoStores() });
-      const before = screen.getAllByText(/storeView\.openOrderDebtAmount/)[0].textContent;
+      // The figure sits beside the label that names it, so the label is what locates it.
+      const figureOf = (index: number) =>
+        screen.getAllByText("storeView.pendingLabel")[index].previousElementSibling?.textContent;
+      const before = figureOf(0);
 
       selectProduct("Soonest");
       await confirmArrival();
 
       await waitFor(() => expect(screen.queryByText("Soonest")).not.toBeInTheDocument());
-      expect(screen.getAllByText(/storeView\.openOrderDebtAmount/)[0].textContent).toBe(before);
+      expect(figureOf(0)).toBe(before);
     });
   });
 

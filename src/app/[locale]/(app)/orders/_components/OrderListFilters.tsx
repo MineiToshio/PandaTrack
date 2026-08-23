@@ -24,6 +24,7 @@ import {
 } from "../_utils/orderListingParams";
 import { addDays, endOfMonth, startOfMonth, toIsoDateString } from "@/lib/localDate";
 import OrderCreateMethodSelector from "@/components/modules/OrderCreateMethodSelector/OrderCreateMethodSelector";
+import HeaderAccessoryPortal from "@/app/[locale]/(app)/_components/AppLayout/HeaderAccessoryPortal";
 import OrderListGroupBy from "./OrderListGroupBy";
 import StoreViewSortCompact from "./StoreViewSortCompact";
 import type { PhotoCounterSnapshot } from "./share/photoCounterContract";
@@ -524,23 +525,38 @@ export default function OrderListFilters({
         </div>
       </div>
 
-      {/* Mobile sticky action row, below the topbar (h-14 = 56px). Same canonical order as
-          desktop, and the same geometry in both views: Search < one icon trigger < Group by. The
-          icon trigger is Filter in order view (its Sort lives inside the FilterDrawer below `lg`)
-          and Sort in store view, which has no drawer to move it into — either way sort is a
-          control you OPEN on mobile, never a value read off the toolbar. Search takes `min-w-0
+      {/* Group by ("Por pedido / Por tienda") is the one control of this screen that is also its
+          STATE, so below `lg` it lives in the app header rather than in this row (`FR-05-71`). It
+          used to sit here as a third slot and cost 94px of the 343 a 375px phone has, which is what
+          truncated the search placeholder mid-word; the header carries 250x56px of dead space on
+          every mobile screen and is `sticky top-0`, so the active view now stays readable with the
+          list scrolled. The desktop `Select` below is untouched. */}
+      <HeaderAccessoryPortal>
+        <OrderListGroupBy view={view} variant="compact" />
+      </HeaderAccessoryPortal>
+
+      {/* Mobile sticky action row, below the topbar (h-14 = 56px). Two slots now: Search < one icon
+          trigger. The icon trigger is Filter in order view (its Sort lives inside the FilterDrawer
+          below `lg`) and Sort in store view, which has no drawer to move it into — either way sort
+          is a control you OPEN on mobile, never a value read off the toolbar. Search takes `min-w-0
           flex-1` so it absorbs all shrink (an input's intrinsic min-content otherwise keeps the row
-          wider than the viewport, S9.1 overflow); the other two are `shrink-0`, so Group by pins to
-          the same x position regardless of which view is active. No "Nuevo" button here: below
-          1024px the single-action floating button is the create entry point, and the two
-          affordances must never coexist on the same screen. */}
+          wider than the viewport, S9.1 overflow); the trigger is `shrink-0`, so it pins to the same
+          x position regardless of which view is active. No "Nuevo" button here: below 1024px the
+          single-action floating button is the create entry point, and the two affordances must
+          never coexist on the same screen. */}
       <div className="sticky top-14 z-30 -mx-4 flex items-center gap-2 px-4 py-2 [background:color-mix(in_oklab,var(--background)_92%,transparent)] supports-[backdrop-filter:blur(8px)]:backdrop-blur lg:hidden">
         <div className="min-w-0 flex-1">
           <SearchInput
             value={isStoreView ? storeQuery : nameQuery}
             onChange={isStoreView ? setStoreQuery : setNameQuery}
             onSubmit={isStoreView ? submitStoreSearch : submitSearch}
-            placeholder={isStoreView ? t("storeView.search.placeholder") : t("search.placeholder")}
+            // Compact wording below `lg`. The full placeholder names examples
+            // ("Amazon, Nendoroid…") that never had room here: at 375px the field holds 215px of
+            // text and the store one measures 299, so it always read as "Tienda o produc". The
+            // desktop row above keeps the examples, where they fit and teach something.
+            placeholder={
+              isStoreView ? t("storeView.search.placeholderCompact") : t("search.placeholderCompact")
+            }
             searchLabel={isStoreView ? t("storeView.search.label") : t("search.label")}
           />
         </div>
@@ -564,7 +580,6 @@ export default function OrderListFilters({
             className="shrink-0 [background:var(--surface-elevated)] [border:1px_solid_var(--border-strong)] hover:[background:color-mix(in_oklab,var(--text-primary)_4%,var(--surface-elevated))]"
           />
         )}
-        <OrderListGroupBy view={view} variant="compact" className="shrink-0" />
       </div>
 
       <OrderCreateMethodSelector

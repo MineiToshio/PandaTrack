@@ -19,7 +19,8 @@
   },
   "search": {
     "label": "Search orders",
-    "placeholder": "Product, store or code (ORD-20260428-01, Evangelion OST…)"
+    "placeholder": "Product, store or code (ORD-20260428-01, Evangelion OST…)",
+    "placeholderCompact": "Product, store or code"
   },
   "filters": {
     "openButton": "Filter",
@@ -152,7 +153,8 @@
     "orderSummary": "{orders} {orders, plural, one {open order} other {open orders}} · {products} {products, plural, one {pending product} other {pending products}}",
     "search": {
       "label": "Search stores or products",
-      "placeholder": "Store or product (Amazon, Nendoroid…)"
+      "placeholder": "Store or product (Amazon, Nendoroid…)",
+      "placeholderCompact": "Store or product"
     },
     "openOrderDebtAmount": "Outstanding on open orders {amount}",
     "creditAmount": "Credit {amount}",
@@ -213,7 +215,14 @@
       "hint": "This money is assigned to the order, not to any one product.",
       "trigger": "Not itemized · {count}",
       "triggerAria": "Not itemized: {count, plural, one {# order} other {# orders}} from {store}"
-    }
+    },
+    "overdueSummary": "{overdue} of {total} overdue",
+    "productSummary": "{products, plural, one {# product} other {# products}}",
+    "groupSummary": "{orders, plural, one {# order} other {# orders}} · {products, plural, one {# product} other {# products}}",
+    "pendingLabel": "pending",
+    "creditLabel": "in your favor",
+    "noDebtLabel": "no debt",
+    "priceWithPaidPercent": "{price} · {pct}%"
   },
   "empty": {
     "noOrders": {
