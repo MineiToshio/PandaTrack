@@ -1,102 +1,89 @@
 "use client";
 
-import { useState } from "react";
-import { ChevronDown, HandCoins, Store as StoreIcon, Truck, User as UserIcon } from "lucide-react";
+import { ChevronDown, Store as StoreIcon, Truck, User as UserIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
-import posthog from "posthog-js";
-import Button from "@/components/core/Button/Button";
-import Chip from "@/components/core/Chip";
 import StoreAvatar from "@/components/core/StoreAvatar";
-import ViewTransitionLink from "@/components/core/ViewTransitionLink";
-import { formatAmountWithSymbol } from "@/lib/currency";
-import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
+import { formatAmountSymbolOnly, formatAmountWithSymbol } from "@/lib/currency";
 import { cn } from "@/lib/styles";
 import type { PendingProductsByStoreGroup } from "@/lib/data/orders/pendingProductsByStoreQueries";
-import StoreUndetailedPaymentsModal from "./StoreUndetailedPaymentsModal";
 
 type StoreGroupHeaderProps = {
   store: PendingProductsByStoreGroup["store"];
-  openOrdersCount: number;
   pendingProductCount: number;
+  /** Pending products of this group whose arrival window has already passed (`countOverdueProducts`). */
+  overdueProductCount: number;
   debts: PendingProductsByStoreGroup["debts"];
-  /**
-   * Orders of this store holding money that names no product (`FR-05-51`). Empty for most stores,
-   * and the trigger that opens the list does not render at all when it is.
-   */
-  undetailedByOrder: PendingProductsByStoreGroup["undetailedByOrder"];
   locale: string;
-  /** Carried into each order link of the undetailed list so the detail can come back here. */
-  returnTo: string;
   isExpanded: boolean;
   onToggleExpand: () => void;
-  /** Opens the store payment sheet for this group. Omitted (or the group has no debt row at all)
-      keeps the action disabled — nothing to declare a payment against. */
-  onRegisterPayment?: () => void;
+  /** Rendered inside the header from `md` up; below that the body carries the same cluster. */
+  desktopActions?: React.ReactNode;
+};
+
+/** One currency's figure as this header states it: what it is, and which word names it. */
+type DebtFigure = {
+  currencyCode: string;
+  amountMinor: number;
+  kind: "debt" | "credit" | "none";
 };
 
 /**
- * Collapsible header of one store group in the Orders "Por tienda" view: identity, open-orders /
- * pending-products summary, one stacked debt line per currency, and the group's actions
- * ("Registrar pago", the "Sin desglosar" list when the store has such money, and "Ver tienda").
+ * Turns the group's raw per-currency debts into the figures the header prints, in order.
+ *
+ * Credit stays on the LIFETIME `debtMinor` (`FR-05-63`): being "in credit" is a fact about the
+ * store's whole history. A positive figure reads `openOrderDebtMinor` instead (`ADR 0033`), so a
+ * store whose only balance sits on a fully delivered order shows nothing rather than a stale
+ * "Debes". A currency at zero is dropped: six of the collector's ten stores are at zero, and a
+ * header that spends a line saying so is a header offering work that does not exist. When EVERY
+ * currency is zero the first one is kept, muted, so the row still states its own figure instead of
+ * going silently blank.
+ */
+export function resolveDebtFigures(debts: PendingProductsByStoreGroup["debts"]): DebtFigure[] {
+  const figures: DebtFigure[] = debts.map((debt) =>
+    debt.debtMinor < 0
+      ? { currencyCode: debt.currencyCode, amountMinor: Math.abs(debt.debtMinor), kind: "credit" as const }
+      : { currencyCode: debt.currencyCode, amountMinor: debt.openOrderDebtMinor, kind: "debt" as const },
+  );
+  const meaningful = figures.filter((figure) => figure.amountMinor > 0);
+  if (meaningful.length > 0) return meaningful;
+  const first = figures[0];
+  return first ? [{ ...first, amountMinor: first.amountMinor, kind: "none" }] : [];
+}
+
+/**
+ * Collapsible header of one store group in the Orders "Por tienda" view.
+ *
+ * The WHOLE row is the expand control (`FR-05-70`). It used to be a chevron button sharing the row
+ * with "Registrar pago" and "Ver tienda"; those moved into the body, which leaves nothing else here
+ * to click and makes the biggest target on the screen do the most common thing. The chevron stays
+ * as the affordance, at 24px, and carries no handler of its own.
+ *
+ * The row answers three questions and nothing else: which store, how much is pending, and is
+ * anything late. Everything it used to say and no longer does was measured out rather than
+ * dropped on taste:
+ *
+ * - **The seller type as a word.** "Comercio" appeared on nine of the collector's ten rows. Only
+ *   the deviation is marked now, as an icon with its label for screen readers, which is the same
+ *   rule the list's own state chips already follow (`interface-patterns.md` §8).
+ * - **"Pendiente en pedidos abiertos {amount}".** Forty-four characters that wrapped to two lines at
+ *   375px and buried the only part anyone reads. The figure is the figure, right-aligned in its own
+ *   column so a phone can compare ten stores by running down one edge, with the word underneath it.
+ * - **The open-order count.** "16 pedidos abiertos · 20 productos pendientes" needs 159px against
+ *   the 128 this block gets once the money has its column. It moved into the body, where the row is
+ *   full-width and the count is next to the products it counts.
  */
 export default function StoreGroupHeader({
   store,
-  openOrdersCount,
   pendingProductCount,
+  overdueProductCount,
   debts,
-  undetailedByOrder,
   locale,
-  returnTo,
   isExpanded,
   onToggleExpand,
-  onRegisterPayment,
+  desktopActions,
 }: StoreGroupHeaderProps) {
   const t = useTranslations("orderListing");
   const tStores = useTranslations("stores");
-  const [isUndetailedOpen, setIsUndetailedOpen] = useState(false);
-  // The "Registrar pago" gate stays on the LIFETIME `debtMinor`, deliberately not switched to
-  // `openOrderDebtMinor` alongside the displayed chip below: the payment-validation ceiling
-  // (`STORE_DEBT_EXCEEDED`) is lifetime-wide (`FR-05-63`), so a store with only a COMPLETED order
-  // still carrying a balance must still offer the action, even though its open-order chip reads
-  // zero.
-  const canRegisterPayment = Boolean(onRegisterPayment) && debts.some((debt) => debt.debtMinor > 0);
-  const undetailedCount = undetailedByOrder.length;
-
-  const handleOpenUndetailed = () => {
-    setIsUndetailedOpen(true);
-    posthog.capture(POSTHOG_EVENTS.ORDER.LIST_STORE_UNDETAILED_OPENED, {
-      store_id: store.id,
-      order_count: undetailedCount,
-    });
-  };
-
-  /**
-   * The same trigger, mounted in two slots and shown at one breakpoint each.
-   *
-   * The owner's placement — between "Registrar pago" and "Ver tienda" — is a DESKTOP layout and only
-   * a desktop layout: measured at `--text-caption`, that cluster is already ~278px of the ~252px a
-   * 320px viewport leaves inside the card and of the ~307px a 375px one does, so a fourth labelled
-   * control does not fit on any phone (it would need a ~495px viewport). Rather than make an
-   * already-tight row wrap into three lines with the chevron stranded on its own, the touch slot is
-   * the identity block's money line, which is `flex-wrap` already, has the card's full width, and
-   * sits beside the very figure this list qualifies. `docs/design/interface-patterns.md` §12: when a
-   * desktop pattern gets crowded, switch to a dedicated mobile pattern rather than forcing it.
-   *
-   * Chosen by CSS, not by `useIsMobile()`: nothing here needs to know the viewport before paint, and
-   * a hydration-time read would render one of the two first and swap it.
-   */
-  const renderUndetailedTrigger = (className: string) => (
-    <Button
-      type="button"
-      variant="ghost"
-      size="sm"
-      onClick={handleOpenUndetailed}
-      aria-label={t("storeView.undetailed.triggerAria", { count: undetailedCount, store: store.name })}
-      className={className}
-    >
-      {t("storeView.undetailed.trigger", { count: undetailedCount })}
-    </Button>
-  );
 
   const isPerson = store.sellerType === "PERSON";
   const isProxy = store.sellerType === "PROXY";
@@ -106,134 +93,146 @@ export default function StoreGroupHeader({
     : isProxy
       ? tStores("create.sellerTypeProxy")
       : tStores("create.sellerTypeRetailer");
-  const storeHref = `/${locale}${ROUTES.stores}/${store.slug}`;
   const bodyId = `store-group-body-${store.id}`;
 
+  const figures = resolveDebtFigures(debts);
+  // The code ("PEN", "USD") only earns its 29px when the symbol alone is ambiguous, which is exactly
+  // when this store holds more than one currency. In a single-currency group "S/" already IS PEN.
+  const showCurrencyCode = figures.length > 1;
+  const money = (amountMinor: number, currencyCode: string) =>
+    showCurrencyCode
+      ? formatAmountWithSymbol(amountMinor, currencyCode, locale)
+      : formatAmountSymbolOnly(amountMinor, currencyCode, locale);
+
+  const primary = figures[0];
+  const secondary = figures.slice(1);
+  const summaryLabel =
+    overdueProductCount > 0
+      ? t("storeView.overdueSummary", { overdue: overdueProductCount, total: pendingProductCount })
+      : t("storeView.productSummary", { products: pendingProductCount });
+
   return (
-    <>
-      <div className="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between md:gap-4 md:p-5">
-        <div className="flex min-w-0 items-start gap-3">
+    // `relative` is load-bearing: it is what the disclosure's `::after` overlay resolves `inset-0`
+    // against, and therefore what makes the whole padded row the target instead of just the text.
+    <div className="relative flex items-center gap-3 p-4 md:gap-4 md:p-5">
+      {/*
+        The APG disclosure shape: a heading that wraps the button, so the list of stores has a real
+        heading structure and each group's control announces the store it opens. The heading level
+        is 3 because the page owns h1 and the list section owns h2.
+      */}
+      <h3 className="min-w-0 flex-1">
+        <button
+          type="button"
+          onClick={onToggleExpand}
+          aria-expanded={isExpanded}
+          aria-controls={bodyId}
+          // The whole row is the target, padding and chevron included, bought with an `::after`
+          // overlay at `inset-0` of the `relative` row above. Without it the button's box stops at
+          // the identity block, and the card's own padding and its chevron are dead pixels: press
+          // the chevron, which is the thing that LOOKS like the control, and nothing happens.
+          //
+          // Same shape `OrderCard` already uses for "the card is one big link": the overlay owns
+          // every pixel, the content is inert, and the controls that must survive it opt back in
+          // (`pointer-events-auto` / a later positioned sibling). `text-left` because a button
+          // centers its content by default and this one holds a whole identity block.
+          //
+          // The focus ring is drawn on the OVERLAY, not on the button's own box, so what the
+          // keyboard shows matches what the pointer can actually hit.
+          className="flex w-full min-w-0 items-center gap-3 text-left after:absolute after:inset-0 after:rounded-[var(--radius-2xl)] after:content-[''] focus-visible:outline-none focus-visible:after:outline focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:[outline-color:var(--focus-ring)] md:gap-4"
+        >
+          {/* 32, not a bespoke 36: `StoreAvatarSize` is a closed set (24/32/40/56) and the playbook
+            forbids tuning a canonical component's geometry in a consumer. It also happens to be the
+            better number here, since every pixel it gives back goes to the store name, which needs
+            121 of the 132 this leaves it. */}
           {store.logoUrl ? (
-            <StoreAvatar store={{ name: store.name, logo: { src: store.logoUrl, aspect: "square" } }} size={40} />
+            <StoreAvatar store={{ name: store.name, logo: { src: store.logoUrl, aspect: "square" } }} size={32} />
           ) : (
-            <StoreAvatar store={{ name: store.name }} size={40} isPerson={isPerson} />
+            <StoreAvatar store={{ name: store.name }} size={32} isPerson={isPerson} />
           )}
-          <div className="min-w-0">
-            <div className="flex min-w-0 items-center gap-1.5">
-              <p className="min-w-0 truncate [font-size:var(--text-body)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
+
+          <span className="min-w-0 flex-1">
+            <span className="flex min-w-0 items-center gap-1.5">
+              <span className="min-w-0 truncate [font-size:var(--text-body)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
                 {store.name}
-              </p>
-              <span className="inline-flex shrink-0 items-center gap-1 [font-size:var(--text-caption)] [color:var(--text-muted)]">
-                <TypeIcon size={12} aria-hidden />
-                {sellerTypeLabel}
               </span>
-            </div>
-            <p className="[font-size:var(--text-caption)] [color:var(--text-secondary)]">
-              {t("storeView.orderSummary", { orders: openOrdersCount, products: pendingProductCount })}
-            </p>
-            {(debts.length > 0 || undetailedCount > 0) && (
-              <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                {debts.map((debt) => {
-                  // Credit stays on the LIFETIME `debtMinor` (`FR-05-63`): "in credit" is a fact
-                  // about the store's whole history. The DISPLAYED positive figure below switches
-                  // to `openOrderDebtMinor` (`ADR 0033`): a fully delivered order leaves this chip
-                  // together with its own payments, so a store with only a settled-but-undeclared
-                  // COMPLETED order reads no chip at all rather than a stale "Debes" one.
-                  const inFavor = debt.debtMinor < 0;
-                  return inFavor ? (
-                    <Chip key={debt.currencyCode} variant="success" size="sm">
-                      <span className="tabular-nums">
-                        {t("storeView.creditAmount", {
-                          amount: formatAmountWithSymbol(Math.abs(debt.debtMinor), debt.currencyCode, locale),
-                        })}
-                      </span>
-                    </Chip>
-                  ) : (
-                    <span
-                      key={debt.currencyCode}
-                      className="[font-size:var(--text-caption)] [color:var(--text-secondary)] tabular-nums"
-                    >
-                      {t("storeView.openOrderDebtAmount", {
-                        amount: formatAmountWithSymbol(debt.openOrderDebtMinor, debt.currencyCode, locale),
-                      })}
-                    </span>
-                  );
-                })}
-                {/* Touch slot. `min-h-11` rather than a `::before`: the neighbours here are the debt
-                  figure and, on a wrap, the row above — both cases where §12 says to RESIZE the box,
-                  since two expansions closer than their insets hand the whole band to the later one
-                  in the DOM. Dropped from `md:` up, where the desktop slot below takes over. */}
-                {undetailedCount > 0 && renderUndetailedTrigger("min-h-11 md:hidden")}
-              </div>
-            )}
-          </div>
-        </div>
+              {/* Only a seller type that deviates from "Comercio" is marked, and it is marked with a
+                shape rather than with a colour, so the signal survives for a reader who cannot tell
+                the two apart (`ADR 0006`). */}
+              {(isPerson || isProxy) && (
+                <span className="inline-flex shrink-0 [color:var(--text-muted)]">
+                  <TypeIcon size={12} aria-hidden />
+                  <span className="sr-only">{sellerTypeLabel}</span>
+                </span>
+              )}
+            </span>
+            <span
+              className={cn(
+                "block truncate [font-size:var(--text-caption)]",
+                overdueProductCount > 0 ? "[color:var(--warning-chip-text)]" : "[color:var(--text-secondary)]",
+              )}
+            >
+              {summaryLabel}
+            </span>
+          </span>
 
-        <div className="flex shrink-0 items-center gap-2 self-end md:self-auto">
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            leadingIcon={<HandCoins size={14} aria-hidden />}
-            onClick={onRegisterPayment}
-            disabled={!canRegisterPayment}
-            title={canRegisterPayment ? undefined : t("storeView.registerPaymentDisabledHint")}
-            aria-label={canRegisterPayment ? undefined : t("storeView.registerPaymentDisabledHint")}
-          >
-            {t("storeView.registerPayment")}
-          </Button>
-          {/* Desktop slot: exactly between the primary action and "Ver tienda". `ghost` is outline
-            only, so it never competes with the elevated `secondary` beside it. */}
-          {undetailedCount > 0 && renderUndetailedTrigger("hidden md:inline-flex")}
-          <ViewTransitionLink
-            href={storeHref}
-            viewTransitionEntity="store"
-            // `min-h-9` renders 36px tall (caption text, no vertical padding), 8px under the touch
-            // floor. The expansion is VERTICAL ONLY (`inset:-4px_0`): the text already makes the link
-            // ~76px wide, and the row's `gap-2` (8px) is fully spoken for on the right by the chevron
-            // button's own `inset:-4px`, so any horizontal growth here would collide with it. The 4px
-            // added above and below stays inside the header's 12px column gap and its 16px bottom
-            // padding, neither of which holds another control. Dropped from `md:` up like every other
-            // expansion in this repo.
-            className="relative inline-flex min-h-9 items-center gap-1 px-2 [font-size:var(--text-caption)] [color:var(--text-secondary)] before:absolute before:[inset:-4px_0] before:content-[''] hover:[color:var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:[outline-color:var(--focus-ring)] md:before:inset-0"
-          >
-            {t("storeView.viewStore")}
-          </ViewTransitionLink>
-          <button
-            type="button"
-            onClick={onToggleExpand}
-            aria-expanded={isExpanded}
-            aria-controls={bodyId}
-            aria-label={isExpanded ? t("card.collapse") : t("card.expand")}
-            // Tap target ≥44×44 on mobile via the `::before` pseudo (same mechanism as `IconButton`):
-            // padding inside a fixed `h-9 w-9` box never grows the box, so `inset:-4px` on 36px
-            // expands the hit area outward to 44 instead. The nearest control is the "ver tienda"
-            // link at the row's `gap-2` (8px), exactly the 2×4px the two expansions need, so no extra
-            // clearance is required. `md:before:inset-0` drops the extra area on desktop.
-            className="relative inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] [color:var(--text-secondary)] before:absolute before:[inset:-4px] before:content-[''] hover:[color:var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:[outline-color:var(--focus-ring)] md:before:inset-0"
-          >
-            <ChevronDown
-              width={16}
-              height={16}
-              aria-hidden="true"
-              className={cn("transition-transform duration-200", isExpanded && "rotate-180")}
-            />
-          </button>
-        </div>
-      </div>
+          {primary && (
+            <span className="shrink-0 text-right">
+              <span
+                className={cn(
+                  "block [font-size:var(--text-body)] [font-weight:var(--font-weight-semibold)] whitespace-nowrap tabular-nums",
+                  primary.kind === "credit"
+                    ? "[color:var(--success-chip-text)]"
+                    : primary.kind === "none"
+                      ? "[font-weight:var(--font-weight-medium)] [color:var(--text-muted)]"
+                      : "[color:var(--text-primary)]",
+                )}
+              >
+                {money(primary.amountMinor, primary.currencyCode)}
+              </span>
+              {secondary.map((figure) => (
+                <span
+                  key={figure.currencyCode}
+                  className="block [font-size:var(--text-caption)] whitespace-nowrap [color:var(--text-secondary)] tabular-nums"
+                >
+                  {money(figure.amountMinor, figure.currencyCode)}
+                </span>
+              ))}
+              <span className="block [font-size:11px] [line-height:14px] whitespace-nowrap [color:var(--text-muted)]">
+                {primary.kind === "credit"
+                  ? t("storeView.creditLabel")
+                  : primary.kind === "none"
+                    ? t("storeView.noDebtLabel")
+                    : t("storeView.pendingLabel")}
+              </span>
+            </span>
+          )}
+        </button>
+      </h3>
 
-      {/* One overlay per group, whichever of the two triggers opened it. Mounted only while there is
-          something to show, so the list inside it is never empty. */}
-      {undetailedCount > 0 && (
-        <StoreUndetailedPaymentsModal
-          isOpen={isUndetailedOpen}
-          onClose={() => setIsUndetailedOpen(false)}
-          storeName={store.name}
-          entries={undetailedByOrder}
-          locale={locale}
-          returnTo={returnTo}
-        />
+      {/* Desktop keeps its actions on this row, where there has always been width for them. Below
+          `md` the same cluster renders once inside the body instead (`StoreGroupedView`), never
+          both: two mount points at one breakpoint each is the pattern this file already used for
+          the "Sin desglosar" trigger. */}
+      {/* `relative` puts this cluster above the disclosure overlay: both are positioned with
+          `z-index: auto`, so tree order decides and this comes later. Without it the overlay would
+          swallow "Registrar pago" and "Ver tienda" on desktop. */}
+      {desktopActions && (
+        <div className="relative hidden shrink-0 items-center gap-2 md:flex">{desktopActions}</div>
       )}
-    </>
+
+      <span
+        aria-hidden
+        // Decoration, and `pointer-events-none` is what makes it behave like decoration: it is the
+        // thing that looks most like the control, so a press has to fall through to the overlay
+        // underneath rather than landing on an inert span.
+        className="pointer-events-none grid size-6 shrink-0 place-items-center [color:var(--text-muted)]"
+      >
+        <ChevronDown
+          width={16}
+          height={16}
+          className={cn("transition-transform duration-200", isExpanded && "rotate-180")}
+        />
+      </span>
+    </div>
   );
 }

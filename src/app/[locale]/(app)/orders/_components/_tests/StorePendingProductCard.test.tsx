@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { PendingProductRow } from "@/lib/data/orders/pendingProductsByStoreQueries";
+import { formatAmountSymbolOnly, formatAmountWithSymbol } from "@/lib/currency";
 import { addUtcDays, utcMidnightToday } from "@/test/domainDateFixtures";
 import StorePendingProductCard from "../StorePendingProductCard";
 
@@ -53,13 +54,17 @@ function buildProduct(overrides: Partial<PendingProductRow> = {}): PendingProduc
   };
 }
 
-function renderCard(overrides: Partial<PendingProductRow> = {}, props: { isFlaggedIneligible?: boolean } = {}) {
+function renderCard(
+  overrides: Partial<PendingProductRow> = {},
+  props: { isFlaggedIneligible?: boolean; showCurrencyCode?: boolean; isSelectable?: boolean } = {},
+) {
   const { container } = render(
     <StorePendingProductCard
       product={buildProduct(overrides)}
       locale="es"
       returnTo="/es/orders"
-      isSelectable={false}
+      showCurrencyCode={props.showCurrencyCode ?? true}
+      isSelectable={props.isSelectable ?? false}
       isSelected={false}
       isFlaggedIneligible={props.isFlaggedIneligible ?? false}
       today={utcMidnightToday()}
@@ -302,5 +307,78 @@ describe("StorePendingProductCard does not predict a resolved arrival (T5)", () 
 
     expect(screen.getByText("storeView.arrival.resolvedInTransit")).toBeInTheDocument();
     expect(screen.queryByText("storeView.arrival.resolvedAtStore")).toBeNull();
+  });
+
+  describe("the rebuilt row (FR-05-70)", () => {
+    it("lets the name wrap to two lines instead of truncating it", () => {
+      // 43 of the collector's 66 names were cut on one line; the longest needs 505px and one line
+      // here is 275. Two lines are 550, so almost every name lands whole. This is the
+      // wrap-when-the-text-is-the-decision case; line 2 below is the secondary half and still cuts.
+      const container = renderCard({ name: "Bitty Pop! Going Merry Display (One Piece, incluye Bitty Nami + Usopp)" });
+
+      const link = container.querySelector('a[href*="/orders/"]') as HTMLElement;
+      const tokens = link.className.split(/\s+/).filter(Boolean);
+      expect(tokens).toContain("[-webkit-line-clamp:2]");
+      expect(tokens).toContain("[-webkit-box-orient:vertical]");
+      expect(tokens).toContain("overflow-hidden");
+      expect(tokens).not.toContain("truncate");
+      // The clamp needs `display: -webkit-box`, and it needs to be the ONLY display utility on the
+      // element: a second one wins on source order and takes the clamp with it, silently, with
+      // nothing in the class list looking wrong. That is not hypothetical, it shipped once here
+      // (a formatter reordered `block` after the arbitrary property) and rendered names on four
+      // lines. jsdom has no layout engine, so the class list is where this can be caught at all.
+      expect(tokens).toContain("[display:-webkit-box]");
+      expect(
+        tokens.filter((token) => ["block", "flex", "inline-flex", "inline-block", "grid"].includes(token)),
+        "a second display utility silently kills the line clamp",
+      ).toEqual([]);
+    });
+
+    it("keeps the name company with nothing else on its line", () => {
+      // The state control used to sit here, on 61 of 67 rows, carrying the one value this whole list
+      // is about. Line 1 is the row's identity and now holds only that.
+      const container = renderCard();
+
+      const nameLine = container.querySelector("p") as HTMLElement;
+      expect(nameLine.querySelectorAll("button")).toHaveLength(0);
+    });
+
+    it("puts the state control in the trailing slot, and stands it down while selecting", () => {
+      // Marking one product and marking several are the same decision. Offering both on one row is
+      // what made it crowded, so the trailing slot yields to the checkbox instead of joining it.
+      const withChip = renderCard();
+      expect(withChip.querySelector('[aria-label="detail.items.markAsArrived"]')).toBeInTheDocument();
+
+      const selecting = renderCard({}, { isSelectable: true });
+      expect(selecting.querySelector('[aria-label="detail.items.markAsArrived"]')).not.toBeInTheDocument();
+      expect(selecting.querySelector('input[type="checkbox"]')).toBeInTheDocument();
+    });
+
+    it("clears the state control's invisible 44px band from the product link", () => {
+      // `OrderItemStateChip` buys its target with `after:[inset:-13px]` around an 18px box, so any
+      // clearance under 13px puts that band on top of the link's own hit area and the chip, being
+      // later in the DOM, silently wins it (`interface-patterns.md` §12). `gap-4` is 16px.
+      const container = renderCard();
+
+      const row = container.querySelector("li") as HTMLElement;
+      expect(row.className.split(/\s+/)).toContain("gap-4");
+    });
+
+    it("drops the redundant currency code when the store holds a single currency", () => {
+      const bare = renderCard({ basePagableMinor: 19990 }, { showCurrencyCode: false });
+      expect(bare.textContent).toContain(formatAmountSymbolOnly(19990, "PEN", "es"));
+      expect(bare.textContent).not.toContain("PEN");
+
+      const coded = renderCard({ basePagableMinor: 19990 }, { showCurrencyCode: true });
+      expect(coded.textContent).toContain(formatAmountWithSymbol(19990, "PEN", "es"));
+    });
+
+    it("states price and paid share as one figure, not as a sentence per row", () => {
+      // "24% pagado" is 79px of a 275px line and the word repeated on every priced row.
+      const container = renderCard({ basePagableMinor: 19990, allocatedMinor: 4800 });
+
+      expect(container.textContent).toContain("storeView.priceWithPaidPercent");
+      expect(container.textContent).not.toContain("card.paymentPercentage");
+    });
   });
 });

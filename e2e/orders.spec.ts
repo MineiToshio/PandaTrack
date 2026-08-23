@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { signInAndLandOnDashboard, skipUnlessAuthenticatedEnv } from "./_helpers/auth";
 import { deleteDeliveriesById, deleteOrdersById } from "./_helpers/dbCleanup";
+import { expandStoreGroups } from "./_helpers/storeGroups";
 
 const E2E_ITEM_NAME = `E2E Order Item ${Date.now()}`;
 
@@ -292,7 +293,13 @@ test.describe("Order FX reconciliation flag", () => {
   });
 });
 
-/** The toolbar's canonical control order — every breakpoint/view renders a subsequence of it. */
+/**
+ * The toolbar's canonical control order — every breakpoint/view renders a subsequence of it.
+ *
+ * "group" still applies from `lg` up. Below `lg` the chooser is not a toolbar control at all any
+ * more: it renders in the app header (`FR-05-71`), which is why the scan below is scoped to the
+ * toolbar row rather than to the document.
+ */
 const TOOLBAR_CANONICAL_ORDER = ["search", "filter", "sort", "group", "new"] as const;
 
 /**
@@ -304,10 +311,18 @@ const TOOLBAR_CANONICAL_ORDER = ["search", "filter", "sort", "group", "new"] as 
 function readToolbarControlOrder(page: Page) {
   return page.evaluate(() => {
     const isVisible = (el: Element) => (el as HTMLElement).offsetParent !== null;
-    const search = [...document.querySelectorAll('[role="search"]')].find(isVisible);
-    const buttons = [...document.querySelectorAll("button")].filter(isVisible);
+    // Scoped to the toolbar row itself. A document-wide scan would pick up the header's own view
+    // chooser below `lg` and report it as a toolbar control sitting out of canonical order.
+    const row = [...document.querySelectorAll("div")].find(
+      (d) =>
+        d.className === "hidden items-center gap-2 lg:flex" ||
+        d.className.startsWith("sticky top-14 z-30 -mx-4 flex items-center gap-2"),
+    );
+    if (!row) return [];
+    const search = [...row.querySelectorAll('[role="search"]')].find(isVisible);
+    const buttons = [...row.querySelectorAll("button")].filter(isVisible);
     const filter = buttons.find((b) => (b.getAttribute("aria-label") || "").toLowerCase().includes("filter"));
-    const sort = [...document.querySelectorAll("#orders-sort, #orders-sort-mobile")].find(isVisible);
+    const sort = [...row.querySelectorAll("#orders-sort, #orders-sort-mobile")].find(isVisible);
     const group = buttons.find((b) => /group by/i.test(b.getAttribute("aria-label") || ""));
     const newOrder = buttons.find((b) => /new order/i.test(b.textContent || ""));
 
@@ -392,6 +407,26 @@ test.describe("Orders toolbar layout", () => {
         ).toBeGreaterThan(lastIndex);
         lastIndex = index;
       }
+
+      // Below `lg` the chooser leaves the toolbar for the app header (`FR-05-71`), which is what
+      // gave the search back the 94px that used to truncate its placeholder mid-word.
+      // VISIBLE in the header, not merely mounted there. The slot is `lg:hidden`, and a portal
+      // still renders its children into a `display:none` container, so an existence check would
+      // report the chooser as present at every width.
+      const inHeader = await page.evaluate(() =>
+        Boolean(
+          [...(document.querySelector("header")?.querySelectorAll("button") ?? [])].find(
+            (b) =>
+              (b as HTMLElement).offsetParent !== null && /group by/i.test(b.getAttribute("aria-label") || ""),
+          ),
+        ),
+      );
+      if (viewport.width < 1024) {
+        expect(inHeader, `Group by renders in the app header at ${viewport.width}px`).toBe(true);
+        expect(rendered, `the mobile toolbar carries no Group by at ${viewport.width}px`).not.toContain("group");
+      } else {
+        expect(inHeader, `Group by stays out of the header at ${viewport.width}px`).toBe(false);
+      }
     }
   });
 
@@ -438,6 +473,7 @@ test.describe("Store view batch arrival", () => {
 
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto("/en/orders?view=store");
+    await expandStoreGroups(page);
     await expect(page.getByText(firstItem).first()).toBeVisible({ timeout: 15_000 });
 
     // The tile is a real checkbox named after its product; both trees render, so take the first.

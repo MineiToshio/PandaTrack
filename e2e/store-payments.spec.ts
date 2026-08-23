@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { signInAndLandOnDashboard, skipUnlessAuthenticatedEnv } from "./_helpers/auth";
+import { expandStoreGroups } from "./_helpers/storeGroups";
 import { deleteStoresByNamePrefix } from "./_helpers/dbCleanup";
 
 /**
@@ -153,7 +154,13 @@ test.describe("Store-level payments", () => {
     await expect(group).toBeVisible({ timeout: 15_000 });
     await expect(group.getByText(/100\.00/).first()).toBeVisible();
 
-    await group.getByRole("button", { name: /^register payment$/i }).click();
+    // Groups land closed (`FR-05-70`) and the actions live inside the body below `md`, mounted once
+    // per breakpoint; exactly one is ever painted, so the visible one is what this clicks.
+    await expandStoreGroups(page);
+    await group
+      .getByRole("button", { name: /^register payment$/i })
+      .first()
+      .click();
     const sheet = paymentSheet(page);
     await expect(sheet).toBeVisible();
 

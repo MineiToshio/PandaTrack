@@ -41,7 +41,7 @@ function toDisplayBreadcrumbs(
 
 export default function Header({ locale, pathname, drawerOpen, onOpenDrawer, burgerButtonRef }: HeaderProps) {
   const t = useTranslations("appLayout");
-  const { title: titleOverride, breadcrumbMiddle } = useHeaderTitle();
+  const { title: titleOverride, breadcrumbMiddle, setAccessorySlot } = useHeaderTitle();
   const pageHeader = getPageHeader(pathname, locale);
   const displayBreadcrumbs = toDisplayBreadcrumbs(pageHeader.breadcrumbs, breadcrumbMiddle);
   const pageTitle = titleOverride ?? t(pageHeader.titleKey);
@@ -102,6 +102,14 @@ export default function Header({ locale, pathname, drawerOpen, onOpenDrawer, bur
                 {pageTitle}
               </p>
             </div>
+            {/*
+              Trailing slot for a route-owned control that states which view of this screen is on
+              (see `HeaderAccessoryPortal`). Empty on every route that does not fill it, and
+              `empty:hidden` keeps it from claiming the `gap` when it is. `lg:hidden` because from
+              the desktop band up the list toolbars have the width to carry their own controls, and
+              the shell should not grow a second place to look for them.
+            */}
+            <div ref={setAccessorySlot} className="shrink-0 empty:hidden lg:hidden" />
           </div>
         </div>
         <div className="hidden shrink-0 items-center gap-2 sm:gap-3 lg:flex">

@@ -11,6 +11,7 @@ import { useToast } from "@/contexts/ToastContext";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 import { formatAmountWithSymbol } from "@/lib/currency";
 import { isItemEligibleForDelivery } from "@/lib/orders/orderState";
+import { countOverdueProducts } from "@/lib/orders/storeGroupOverdue";
 import { sortStoreGroups, type StoreViewSort } from "@/lib/orders/storeViewSort";
 import { cn } from "@/lib/styles";
 import { createStorePaymentAction } from "@/app/[locale]/(app)/_actions/storePaymentActions";
@@ -35,7 +36,8 @@ import {
   type StorePaymentSheetSubmitInput,
   type StorePaymentSubmitOutcome,
 } from "@/components/modules/StorePaymentSheet";
-import StoreGroupHeader from "./StoreGroupHeader";
+import StoreGroupActions from "./StoreGroupActions";
+import StoreGroupHeader, { resolveDebtFigures } from "./StoreGroupHeader";
 import StoreGroupSelectionBar from "./StoreGroupSelectionBar";
 import StorePendingProductCard from "./StorePendingProductCard";
 import type { PaidDeclarationFailure } from "./share/useOrderItemPaidDeclaration";
@@ -75,9 +77,17 @@ type StoreGroupedViewProps = {
  * group's expand/collapse state is local to this component (a fresh `Set` per mount) — deliberately
  * NOT `useListExpansion`, which is the shared multi-open state the classic per-order list already
  * owns; sharing it here would let this view's toggles bleed into that one's "expand/collapse all".
- * Groups default open: this view exists precisely to show every pending product at once (no
- * pagination), so collapsing is an opt-out a collector reaches for once they know what they're
- * hiding, not the default they land on.
+ *
+ * Groups default CLOSED (`FR-05-70`). They defaulted open on the argument that this view exists to
+ * show every pending product at once, and on a desktop grid that held. On a phone it did not:
+ * measured at 375px on the collector's own data, ten stores and sixty-six products rendered 7,916px
+ * of scroll, nine and a half screens, most of it spent on six stores that owe nothing. Closing them
+ * lands the same list in about one screen and turns the first question ("who do I owe, and is
+ * anything late") into something answerable without scrolling.
+ *
+ * The cost of closing is that the urgency inside a group stops being visible, so the header pays it
+ * back: each closed row states its own overdue count (`StoreGroupHeader`), which is what keeps this
+ * from being strictly worse than the open default it replaces.
  *
  * It coordinates the view's two mutations, both optimistically, and owns the rollback and the toast
  * for each:
@@ -111,7 +121,9 @@ export default function StoreGroupedView({
   const tActions = useTranslations("orders.detail.actions");
   const router = useRouter();
   const { addToast } = useToast();
-  const [collapsedStoreIds, setCollapsedStoreIds] = useState<Set<string>>(() => new Set());
+  // Expanded, not collapsed: the default is closed, so the set holds the exceptions either way and
+  // naming it for what it contains keeps the `has()` reading the same as the state it describes.
+  const [expandedStoreIds, setExpandedStoreIds] = useState<Set<string>>(() => new Set());
   const [groupsState, setGroupsState] = useState<PendingProductsByStoreGroup[]>(groups);
   const [activeStoreId, setActiveStoreId] = useState<string | null>(null);
   const [isArrivalOpen, setIsArrivalOpen] = useState(false);
@@ -176,13 +188,13 @@ export default function StoreGroupedView({
       : t("storeView.selection.countSingleOrder", { count: selectedProducts.length });
 
   const handleToggle = (storeId: string) => {
-    setCollapsedStoreIds((prev) => {
+    setExpandedStoreIds((prev) => {
       const next = new Set(prev);
-      const willCollapse = !next.has(storeId);
-      if (willCollapse) next.add(storeId);
+      const willExpand = !next.has(storeId);
+      if (willExpand) next.add(storeId);
       else next.delete(storeId);
       posthog.capture(
-        willCollapse ? POSTHOG_EVENTS.ORDER.LIST_STORE_GROUP_COLLAPSED : POSTHOG_EVENTS.ORDER.LIST_STORE_GROUP_EXPANDED,
+        willExpand ? POSTHOG_EVENTS.ORDER.LIST_STORE_GROUP_EXPANDED : POSTHOG_EVENTS.ORDER.LIST_STORE_GROUP_COLLAPSED,
         { store_id: storeId },
       );
       return next;
@@ -651,7 +663,7 @@ export default function StoreGroupedView({
       </p>
 
       {groupsState.map((group) => {
-        const isExpanded = !collapsedStoreIds.has(group.store.id);
+        const isExpanded = expandedStoreIds.has(group.store.id);
         const bodyId = `store-group-body-${group.store.id}`;
         const isSelectingHere = selection.isSelecting(group.store.id);
         const selectedHere = selection.idsFor(group.store.id);
@@ -662,6 +674,22 @@ export default function StoreGroupedView({
         const handleMaster = (checked: boolean) => selection.setAll(group.store.id, eligibleIds, checked);
         const handleToggleProduct = (itemId: string, shiftKey: boolean) =>
           selection.toggle(group.store.id, itemId, { shiftKey, eligibleIds });
+
+        const overdueProductCount = countOverdueProducts(group.pendingProducts, today);
+        // One decision per group, taken here so the header figure and every row underneath it can
+        // never disagree about whether this store's amounts carry their currency code.
+        const showCurrencyCode = resolveDebtFigures(group.debts).length > 1;
+        const groupActions = (
+          <StoreGroupActions
+            store={group.store}
+            debts={group.debts}
+            undetailedByOrder={group.undetailedByOrder}
+            locale={locale}
+            returnTo={returnTo}
+            onRegisterPayment={() => handleOpenPayment(group.store.id)}
+            className="flex flex-wrap items-center gap-2"
+          />
+        );
 
         return (
           <section
@@ -675,19 +703,22 @@ export default function StoreGroupedView({
           >
             <StoreGroupHeader
               store={group.store}
-              openOrdersCount={group.openOrdersCount}
               pendingProductCount={group.pendingProducts.length}
+              overdueProductCount={overdueProductCount}
               debts={group.debts}
-              undetailedByOrder={group.undetailedByOrder}
               locale={locale}
-              returnTo={returnTo}
               isExpanded={isExpanded}
               onToggleExpand={() => handleToggle(group.store.id)}
-              onRegisterPayment={() => handleOpenPayment(group.store.id)}
+              desktopActions={groupActions}
             />
 
             {isExpanded && (
               <div id={bodyId} className="px-4 pb-3 [border-top:1px_solid_var(--border)] md:px-5 md:pb-4">
+                {/* Below `md` the actions live here instead of on the header row: they only mean
+                    anything once the collector has decided to work on this store, which is what
+                    expanding says, and the header has no width for them at 375px. */}
+                <div className="pt-3 md:hidden">{groupActions}</div>
+
                 {/* Desktop: column headers + grid rows */}
                 <div className="hidden lg:block">
                   <div
@@ -736,6 +767,10 @@ export default function StoreGroupedView({
                 {/* Mobile: an explicit entry strip (there is no hover to reveal a tile with) plus
                     the two-line cards. */}
                 <div className="lg:hidden">
+                  {/* One strip, two jobs, so entering selection never pushes the list down: it
+                      states the group's own counts, and it is where selection is entered and left.
+                      The order count lives here rather than in the header, which has no width for
+                      it once the money has a column of its own. */}
                   <div className="flex items-center justify-between gap-3 pt-3">
                     {isSelectingHere && eligibleIds.length > 0 ? (
                       <Checkbox
@@ -749,7 +784,12 @@ export default function StoreGroupedView({
                         className="min-h-11"
                       />
                     ) : (
-                      <span />
+                      <span className="min-w-0 truncate [font-family:var(--font-mono)] [font-size:11px] [letter-spacing:0.06em] [color:var(--text-muted)] uppercase">
+                        {t("storeView.groupSummary", {
+                          orders: group.openOrdersCount,
+                          products: group.pendingProducts.length,
+                        })}
+                      </span>
                     )}
                     <button
                       type="button"
@@ -766,6 +806,7 @@ export default function StoreGroupedView({
                         product={product}
                         locale={locale}
                         returnTo={returnTo}
+                        showCurrencyCode={showCurrencyCode}
                         isSelectable={Boolean(isSelectingHere)}
                         isSelected={selectedHere.has(product.itemId)}
                         isFlaggedIneligible={flaggedIneligibleIds.has(product.itemId)}
