@@ -11,6 +11,7 @@ import { runOrderCloseMoneyTransaction, type ClosedOrderInput } from "@/lib/data
 import { getCollectorPreferencesSnapshot } from "@/lib/data/user-settings/userSettingsQueries";
 import { deliveryStoreArrivalSchema, type SettlementOrderIntent } from "@/lib/deliveries/deliveryValidation";
 import { revalidateCollectionSurfaces } from "@/lib/cache/revalidateCollectionSurfaces";
+import type { ProgressionDelta } from "@/lib/data/progression/accrual";
 import {
   attachCurrencyCodes,
   buildClosedOrderInputs,
@@ -36,7 +37,15 @@ export type StoreArrivalActionInput = {
 };
 
 export type StoreArrivalActionResult =
-  | { ok: true; deliveryId: string; productCount: number; orderCount: number; moneyOutcomes: SettlementMoneyOutcome[] }
+  | {
+      ok: true;
+      deliveryId: string;
+      productCount: number;
+      orderCount: number;
+      moneyOutcomes: SettlementMoneyOutcome[];
+      /** `null` when the credit step itself failed; never a partial or guessed delta. */
+      progression: ProgressionDelta | null;
+    }
   | { ok: false; error: string; ineligibleProductIds?: string[] };
 
 /**
@@ -205,6 +214,7 @@ export async function storeArrivalAction(input: StoreArrivalActionInput): Promis
       productCount: result.productCount,
       orderCount: result.orderCount,
       moneyOutcomes,
+      progression: result.progression,
     };
   } catch (error) {
     Sentry.withScope((scope) => {

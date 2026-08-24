@@ -1,5 +1,6 @@
 import type { ImageIntakeDraft } from "@/lib/imageIntake/draftSchema";
 import type { UploadValidationErrorCode } from "@/lib/imageIntake/validateUpload";
+import type { ProgressionDelta } from "@/lib/data/progression/accrual";
 
 /**
  * Wire contract shared by the image-intake Server Actions and the review UI.
@@ -120,6 +121,14 @@ export type ImageIntakeSaveResult =
       skippedBreakdownIndexes: number[];
       /** Rows written WITHOUT their breakdown because a position no longer resolved. Money went in. */
       breakdownDropped: number;
+      /**
+       * What the order this save created credited, so the client can raise the unlock surfaces over
+       * the intake screen the same way every other creating flow does (`FR-12-13`, `FR-12-36`).
+       *
+       * Absent on the idempotent replay branch: that branch creates no order, so it credits nothing.
+       * `null` means the credit itself failed and the delta is unknown, never that it was zero.
+       */
+      progression?: ProgressionDelta | null;
     }
   | { ok: false; code: ImageIntakeSaveErrorCode };
 

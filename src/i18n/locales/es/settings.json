@@ -319,5 +319,32 @@
       "enableFailed": "No pudimos activar los recordatorios. Inténtalo de nuevo.",
       "toggleFailed": "No pudimos guardar tu preferencia. Inténtalo de nuevo."
     }
+  },
+  "progression": {
+    "eyebrow": "Progresión",
+    "title": "Rango y medallas",
+    "subtitle": "Tu progreso es privado. Solo tú lo ves.",
+    "hideRow": {
+      "label": "Ocultar mi progresión",
+      "helper": "Quita el acceso, el resumen del panel y los avisos. Tus puntos siguen sumando."
+    },
+    "purgeRow": {
+      "label": "Borrar mi historial de puntos",
+      "helper": "Elimina tus puntos y tus medallas para siempre.",
+      "action": "Borrar historial"
+    },
+    "purge": {
+      "title": "Borrar tu historial de puntos",
+      "subtitle": "Esta acción es permanente.",
+      "body": "Se eliminan tus puntos, tus medallas y tu rango. No se puede deshacer. Tus pedidos, pagos y entregas no cambian.",
+      "confirm": "Borrar para siempre",
+      "cancel": "Cancelar",
+      "success": "Borramos tu historial de puntos.",
+      "close": "Cerrar"
+    },
+    "errors": {
+      "toggleFailed": "No pudimos guardar el cambio. Inténtalo de nuevo.",
+      "purgeFailed": "No pudimos borrar tu historial. Inténtalo de nuevo."
+    }
   }
 }

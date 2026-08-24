@@ -2093,3 +2093,70 @@ body {
     transition: none;
   }
 }
+
+/* ───────────────────────────────────────────────────────────
+   Progression celebration — confetti, halo and the art's entrance.
+   Pure decoration: every fact the surface states is in its own text,
+   so reduced motion removes the pieces outright instead of slowing
+   them down (ADR 0036 §3, FDD-12 §5.5).
+   ─────────────────────────────────────────────────────────── */
+@keyframes celebration-confetti {
+  0% {
+    transform: translate3d(0, -120%, 0) rotate(0deg);
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(var(--confetti-drift, 0px), 320%, 0) rotate(var(--confetti-spin, 360deg));
+    opacity: 0;
+  }
+}
+
+.celebration-confetti-piece {
+  animation: celebration-confetti var(--confetti-duration, 2200ms) var(--ease-out-expressive)
+    var(--confetti-delay, 0ms) forwards;
+}
+
+@keyframes celebration-halo {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(0.94);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.06);
+  }
+}
+
+.celebration-halo {
+  animation: celebration-halo 2600ms var(--ease-emphasis) infinite;
+}
+
+@keyframes celebration-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 16px, 0) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.celebration-rise {
+  animation: celebration-rise var(--motion-slow) var(--ease-out-expressive) backwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .celebration-confetti {
+    display: none;
+  }
+
+  .celebration-halo,
+  .celebration-rise {
+    animation: none;
+  }
+}

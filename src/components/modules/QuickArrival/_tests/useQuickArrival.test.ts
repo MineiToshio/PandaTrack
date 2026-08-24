@@ -19,7 +19,7 @@ const {
 
 vi.mock("posthog-js", () => ({ default: { capture: vi.fn() } }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), refresh: refreshMock }) }));
-vi.mock("@/contexts/ToastContext", () => ({ useToast: () => ({ addToast: addToastMock }) }));
+vi.mock("@/contexts/ToastContext", () => ({ useToast: () => ({ addToast: addToastMock }), DEFAULT_DURATION_MS: 4000 }));
 
 // `orders.detail.storePayment.error.*` carries a real key per `CreateStorePaymentError`; only
 // `AMOUNT_INVALID` is registered here so the fallback-to-`server_error` branch stays exercisable.

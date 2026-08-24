@@ -24,6 +24,9 @@ vi.mock("next/navigation", () => ({
 // them exercises the toast itself.
 vi.mock("@/contexts/ToastContext", () => ({
   useToast: () => ({ addToast: vi.fn(), removeToast: vi.fn() }),
+  // The progression feedback provider this screen now reports its credit to reads the shared
+  // auto-dismiss window from here, so the mock has to carry it or the module fails to import.
+  DEFAULT_DURATION_MS: 4000,
 }));
 
 vi.mock("posthog-js", () => ({ default: { capture: vi.fn() } }));

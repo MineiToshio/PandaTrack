@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useToast, NEUTRAL_UNDO_DURATION_MS } from "@/contexts/ToastContext";
+import { useProgressionFeedback } from "@/contexts/ProgressionFeedbackContext";
 import { ROUTES } from "@/lib/constants";
 import type { DeliveryStatus } from "../../../../../../../generated/prisma/client";
 import type { DeliveryDetail } from "@/lib/data/deliveries/deliveryQueries";
@@ -72,6 +73,7 @@ export default function DeliveryDetailClient({
   const router = useRouter();
   const t = useTranslations("deliveries");
   const { addToast } = useToast();
+  const { announceProgression } = useProgressionFeedback();
 
   const [status, setStatus] = useState<DeliveryStatus>(delivery.status);
   const [receivedDate, setReceivedDate] = useState<Date | null>(delivery.receivedDate);
@@ -168,6 +170,7 @@ export default function DeliveryDetailClient({
         writePendingSettlement(entry);
         setPendingEntry(entry);
       }
+      announceProgression(result.progression);
       router.refresh();
     });
   }

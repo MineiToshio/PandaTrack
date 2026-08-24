@@ -10,9 +10,16 @@ import { deliveryCreateSchema } from "@/lib/deliveries/deliveryValidation";
 import { parseDecimalToMinorUnits } from "@/lib/money/parseDecimalToMinorUnits";
 import { prisma } from "@/lib/prisma";
 import { revalidateCollectionSurfaces } from "@/lib/cache/revalidateCollectionSurfaces";
+import type { ProgressionDelta } from "@/lib/data/progression/accrual";
 
 export type DeliveryCreateActionResult =
-  | { success: true; deliveryId: string }
+  | {
+      success: true;
+      deliveryId: string;
+      /** Absent when the action credits nothing by design (an edit), `null` when the credit step
+       *  itself failed, a delta when the ledger moved. */
+      progression?: ProgressionDelta | null;
+    }
   | { success: false; error: string; fieldErrors?: Record<string, string[]>; ineligibleProductIds?: string[] };
 
 function parseProductIds(raw: FormDataEntryValue | null): string[] {
@@ -112,7 +119,7 @@ export async function createDeliveryAction(
     });
     await posthog.shutdown();
 
-    return { success: true, deliveryId: result.deliveryId };
+    return { success: true, deliveryId: result.deliveryId, progression: result.progression };
   } catch (error) {
     Sentry.withScope((scope) => {
       scope.setTag("feature", "delivery_create");

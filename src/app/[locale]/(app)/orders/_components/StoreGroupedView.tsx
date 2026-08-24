@@ -8,6 +8,7 @@ import posthog from "posthog-js";
 import Checkbox from "@/components/core/Checkbox";
 import EmptyState from "@/components/modules/EmptyState";
 import { useToast } from "@/contexts/ToastContext";
+import { useProgressionFeedback } from "@/contexts/ProgressionFeedbackContext";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 import { formatAmountWithSymbol } from "@/lib/currency";
 import { isItemEligibleForDelivery } from "@/lib/orders/orderState";
@@ -121,6 +122,7 @@ export default function StoreGroupedView({
   const tActions = useTranslations("orders.detail.actions");
   const router = useRouter();
   const { addToast } = useToast();
+  const { announceProgression } = useProgressionFeedback();
   // Expanded, not collapsed: the default is closed, so the set holds the exceptions either way and
   // naming it for what it contains keeps the `has()` reading the same as the state it describes.
   const [expandedStoreIds, setExpandedStoreIds] = useState<Set<string>>(() => new Set());
@@ -436,11 +438,15 @@ export default function StoreGroupedView({
         const refusedOutcome = result.moneyOutcomes.find((outcome) => outcome.status === "refused");
         const needsRetry = result.moneyOutcomes.some((outcome) => outcome.status === "pending");
 
+        // The arrival itself is committed on every branch below, refusals of the MONEY step
+        // included, so each of them announces what it credited after raising its own toast. Only
+        // one branch ever runs, so the collector sees the announcement exactly once.
         if (refusedOutcome) {
           const key = `error.${refusedOutcome.error}` as const;
           addToast(tPayment.has(key as never) ? tPayment(key as never) : tPayment("error.server_error"), {
             variant: "error",
           });
+          announceProgression(result.progression);
           return;
         }
 
@@ -470,6 +476,7 @@ export default function StoreGroupedView({
               },
             },
           );
+          announceProgression(result.progression);
           return;
         }
 
@@ -488,6 +495,7 @@ export default function StoreGroupedView({
             },
           },
         );
+        announceProgression(result.progression);
       },
       () => {
         // A REJECTED promise is not a refusal the server described, it is no answer at all. Same
@@ -591,6 +599,7 @@ export default function StoreGroupedView({
           return { ok: false, error: result.error, orderId: result.orderId, orderItemId: result.orderItemId };
         }
         addToast(tPayment("toastSuccess"), { variant: "success" });
+        announceProgression(result.progression);
         return { ok: true };
       },
       (): StorePaymentSubmitOutcome => {

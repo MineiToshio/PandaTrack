@@ -1,13 +1,7 @@
 "use client";
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
-  useState,
-  type PropsWithChildren,
-} from "react";
+import { createContext, useCallback, useContext, useMemo, useState, type PropsWithChildren } from "react";
+import { useProgressionFeedback } from "@/contexts/ProgressionFeedbackContext";
 import type { PublicStoreReview, StoreViewerReview } from "@/lib/data/stores/storeQueries";
 import type { SavedStoreReview } from "../_actions/saveStoreReview";
 
@@ -69,112 +63,123 @@ export default function StoreReviewsStateProvider({
   const [state, setState] = useState<StoreReviewsState>(() =>
     buildReviewStateFromProps({ averageRating, reviewCount, reviews, viewerReview }),
   );
+  const { announceProgression } = useProgressionFeedback();
 
-  const applyOptimisticReviewSave = useCallback((draft: ReviewDraft): OptimisticReviewController => {
-    const snapshot = state;
-    const now = new Date();
-    const existingViewerCard = findViewerReviewCard(snapshot.reviews);
-    const viewerAuthorName = existingViewerCard?.authorName ?? null;
-    const currentTotal = (snapshot.averageRating ?? 0) * snapshot.reviewCount;
-    const nextReviewCount = snapshot.viewerReview ? snapshot.reviewCount : snapshot.reviewCount + 1;
-    const nextAverageRating =
-      nextReviewCount === 0
-        ? null
-        : roundAverageRating(
-            snapshot.viewerReview
-              ? (currentTotal - snapshot.viewerReview.overallRating + draft.overallRating) / nextReviewCount
-              : (currentTotal + draft.overallRating) / nextReviewCount,
-          );
+  const applyOptimisticReviewSave = useCallback(
+    (draft: ReviewDraft): OptimisticReviewController => {
+      const snapshot = state;
+      const now = new Date();
+      const existingViewerCard = findViewerReviewCard(snapshot.reviews);
+      const viewerAuthorName = existingViewerCard?.authorName ?? null;
+      const currentTotal = (snapshot.averageRating ?? 0) * snapshot.reviewCount;
+      const nextReviewCount = snapshot.viewerReview ? snapshot.reviewCount : snapshot.reviewCount + 1;
+      const nextAverageRating =
+        nextReviewCount === 0
+          ? null
+          : roundAverageRating(
+              snapshot.viewerReview
+                ? (currentTotal - snapshot.viewerReview.overallRating + draft.overallRating) / nextReviewCount
+                : (currentTotal + draft.overallRating) / nextReviewCount,
+            );
 
-    const optimisticReview: PublicStoreReview = {
-      id: existingViewerCard?.id ?? `temp-review-${Date.now()}`,
-      overallRating: draft.overallRating,
-      comment: draft.comment,
-      createdAt: existingViewerCard?.createdAt ?? now,
-      updatedAt: now,
-      authorName: viewerAuthorName,
-      isViewerReview: true,
-    };
-
-    setState({
-      averageRating: nextAverageRating,
-      reviewCount: nextReviewCount,
-      viewerReview: {
+      const optimisticReview: PublicStoreReview = {
+        id: existingViewerCard?.id ?? `temp-review-${Date.now()}`,
         overallRating: draft.overallRating,
         comment: draft.comment,
+        createdAt: existingViewerCard?.createdAt ?? now,
         updatedAt: now,
-      },
-      reviews: existingViewerCard
-        ? snapshot.reviews.map((review) => (review.isViewerReview ? optimisticReview : review))
-        : [optimisticReview, ...snapshot.reviews],
-    });
+        authorName: viewerAuthorName,
+        isViewerReview: true,
+      };
 
-    return {
-      commit: (review) => {
-        setState((current) => {
-          const currentViewerCard = findViewerReviewCard(current.reviews);
-          const reconciledReview: PublicStoreReview = {
-            id: review.id,
-            overallRating: review.overallRating,
-            comment: review.comment,
-            createdAt: review.createdAt,
-            updatedAt: review.updatedAt,
-            authorName: review.authorName,
-            isViewerReview: true,
-          };
+      setState({
+        averageRating: nextAverageRating,
+        reviewCount: nextReviewCount,
+        viewerReview: {
+          overallRating: draft.overallRating,
+          comment: draft.comment,
+          updatedAt: now,
+        },
+        reviews: existingViewerCard
+          ? snapshot.reviews.map((review) => (review.isViewerReview ? optimisticReview : review))
+          : [optimisticReview, ...snapshot.reviews],
+      });
 
-          return {
-            averageRating: current.averageRating,
-            reviewCount: current.reviewCount,
-            viewerReview: {
+      return {
+        commit: (review) => {
+          setState((current) => {
+            const currentViewerCard = findViewerReviewCard(current.reviews);
+            const reconciledReview: PublicStoreReview = {
+              id: review.id,
               overallRating: review.overallRating,
               comment: review.comment,
+              createdAt: review.createdAt,
               updatedAt: review.updatedAt,
-            },
-            reviews: currentViewerCard
-              ? current.reviews.map((item) => (item.isViewerReview ? reconciledReview : item))
-              : [reconciledReview, ...current.reviews],
-          };
-        });
-      },
-      rollback: () => {
-        setState(snapshot);
-      },
-    };
-  }, [state]);
+              authorName: review.authorName,
+              isViewerReview: true,
+            };
 
-  const applyOptimisticReviewDelete = useCallback((reviewId: string) => {
-    const snapshot = state;
-    const currentViewerReview = snapshot.viewerReview;
+            return {
+              averageRating: current.averageRating,
+              reviewCount: current.reviewCount,
+              viewerReview: {
+                overallRating: review.overallRating,
+                comment: review.comment,
+                updatedAt: review.updatedAt,
+              },
+              reviews: currentViewerCard
+                ? current.reviews.map((item) => (item.isViewerReview ? reconciledReview : item))
+                : [reconciledReview, ...current.reviews],
+            };
+          });
+          // Both review submitters (the inline composer and the edit form) reconcile through this
+          // one callback, so what the saved review credited is announced here rather than once per
+          // form, after the reconciled row is already on screen.
+          announceProgression(review.progression);
+        },
+        rollback: () => {
+          setState(snapshot);
+        },
+      };
+    },
+    [announceProgression, state],
+  );
 
-    if (!currentViewerReview) {
+  const applyOptimisticReviewDelete = useCallback(
+    (reviewId: string) => {
+      const snapshot = state;
+      const currentViewerReview = snapshot.viewerReview;
+
+      if (!currentViewerReview) {
+        return {
+          rollback: () => {
+            setState(snapshot);
+          },
+        };
+      }
+
+      const currentTotal = (snapshot.averageRating ?? 0) * snapshot.reviewCount;
+      const nextReviewCount = Math.max(0, snapshot.reviewCount - 1);
+      const nextAverageRating =
+        nextReviewCount === 0
+          ? null
+          : roundAverageRating((currentTotal - currentViewerReview.overallRating) / nextReviewCount);
+
+      setState({
+        averageRating: nextAverageRating,
+        reviewCount: nextReviewCount,
+        viewerReview: null,
+        reviews: snapshot.reviews.filter((review) => review.id !== reviewId),
+      });
+
       return {
         rollback: () => {
           setState(snapshot);
         },
       };
-    }
-
-    const currentTotal = (snapshot.averageRating ?? 0) * snapshot.reviewCount;
-    const nextReviewCount = Math.max(0, snapshot.reviewCount - 1);
-    const nextAverageRating =
-      nextReviewCount === 0
-        ? null
-        : roundAverageRating((currentTotal - currentViewerReview.overallRating) / nextReviewCount);
-
-    setState({
-      averageRating: nextAverageRating,
-      reviewCount: nextReviewCount,
-      viewerReview: null,
-      reviews: snapshot.reviews.filter((review) => review.id !== reviewId),
-    });
-
-    return {
-      rollback: () => {
-        setState(snapshot);
-      },
-    };
-  }, [state]);
+    },
+    [state],
+  );
 
   const value = useMemo<StoreReviewsStateContextValue>(
     () => ({

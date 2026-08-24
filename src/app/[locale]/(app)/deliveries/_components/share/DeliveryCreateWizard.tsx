@@ -21,6 +21,7 @@ import WizardAccordion, { type WizardAccordionHandle } from "@/components/module
 import WizardStep from "@/components/modules/WizardAccordion/WizardStep";
 import { AsideSummary, AsideSummaryRow } from "@/components/modules/AsideSummary";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { useProgressionFeedback } from "@/contexts/ProgressionFeedbackContext";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 import { WIZARD_CONFIRM_PANEL_CLASSNAME } from "@/lib/styles";
 import { formatAmountSymbolOnly, formatAmountWithSymbol } from "@/lib/currency";
@@ -82,6 +83,7 @@ export default function DeliveryCreateWizard({
   const locale = useLocale();
   const router = useRouter();
   const isMobile = useIsMobile();
+  const { announceProgression } = useProgressionFeedback();
 
   const entryPoint = sourceOrder ? "from_order" : "standalone";
 
@@ -120,8 +122,11 @@ export default function DeliveryCreateWizard({
   useEffect(() => {
     if (state?.success) {
       router.push(`/${locale}${ROUTES.deliveries}/${state.deliveryId}`);
+      // Announced from the shell, which survives this navigation, so the unlock lands on the
+      // delivery the collector just created rather than on a wizard that is already unmounting.
+      announceProgression(state.progression);
     }
-  }, [locale, router, state]);
+  }, [announceProgression, locale, router, state]);
 
   const groups = useMemo(() => (storeId ? (productsByStore[storeId]?.byOrder ?? []) : []), [productsByStore, storeId]);
   const selectedStore = useMemo(() => stores.find((s) => s.storeId === storeId) ?? null, [stores, storeId]);
