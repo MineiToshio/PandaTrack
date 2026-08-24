@@ -304,6 +304,24 @@
   --accent-cool: oklch(58% 0.1 215);
 
   --focus-ring: oklch(46% 0.2 290 / 0.55);
+
+  /* Medal rarity — ADR 0036, literal values from tokens-css.md § 12.
+     Two tokens per grade: the ring color the artwork consumes directly, and the
+     chip-text alias the label consumes over a 14% chip fill (≥3:1 ring, ≥4.5:1 text). */
+  --rarity-normal: oklch(48% 0.02 285);
+  --rarity-normal-chip-text: oklch(46% 0.02 285);
+
+  --rarity-first-print: oklch(50% 0.15 92);
+  --rarity-first-print-chip-text: oklch(46% 0.13 92);
+
+  --rarity-limited: oklch(46% 0.035 230);
+  --rarity-limited-chip-text: oklch(46% 0.035 230);
+
+  --rarity-holo: oklch(50% 0.17 265);
+  --rarity-holo-chip-text: oklch(47% 0.15 265);
+
+  --rarity-signed: oklch(48% 0.18 48);
+  --rarity-signed-chip-text: oklch(47% 0.16 48);
 }
 
 :root[data-theme="dark"] {
@@ -360,6 +378,23 @@
   --accent-cool: oklch(74% 0.11 215);
 
   --focus-ring: oklch(74% 0.19 290 / 0.65);
+
+  /* Medal rarity — ADR 0036, literal values from tokens-css.md § 12.
+     In dark the ring token is already light enough to serve as its own chip text. */
+  --rarity-normal: oklch(72% 0.02 265);
+  --rarity-normal-chip-text: var(--rarity-normal);
+
+  --rarity-first-print: oklch(78% 0.14 92);
+  --rarity-first-print-chip-text: var(--rarity-first-print);
+
+  --rarity-limited: oklch(74% 0.03 235);
+  --rarity-limited-chip-text: var(--rarity-limited);
+
+  --rarity-holo: oklch(76% 0.16 268);
+  --rarity-holo-chip-text: var(--rarity-holo);
+
+  --rarity-signed: oklch(76% 0.16 48);
+  --rarity-signed-chip-text: var(--rarity-signed);
 }
 
 /* ───────────────────────────────────────────────────────────
