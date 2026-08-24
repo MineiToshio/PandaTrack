@@ -3,7 +3,7 @@ id: FDD-12
 type: FDD
 slug: collector-progression
 title: Collector Progression — Feature Design Document
-status: DRAFT
+status: ACTIVE
 parent: FRD-12
 last_updated: 2026-08-23
 prototype: ./prototype/collector-progression.html

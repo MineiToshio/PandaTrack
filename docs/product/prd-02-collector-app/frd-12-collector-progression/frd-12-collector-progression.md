@@ -3,14 +3,14 @@ id: FRD-12
 type: FRD
 slug: collector-progression
 title: Collector Progression
-status: DRAFT
+status: ACTIVE
 parent: PRD-02
 children:
   - BP-01
 last_updated: 2026-08-23
 source_features:
   - FEAT-0021
-implementation_status: NOT_IMPLEMENTED
+implementation_status: IN_PROGRESS
 ---
 
 # FRD-12 Collector Progression
@@ -29,9 +29,11 @@ Give the collector a visible, honest reward for recordkeeping discipline during 
 
 ### Implemented
 
-Nothing. No progression model, no ledger, no rank, no medal exists in the schema, in `src/lib/data/`, or in any surface. This FRD is the first specification of the domain.
+Phase 1 is built. `BP-01`'s seven slices shipped the whole vertical: the four Prisma models and their migration, the dependency-light rule catalogue and its money-predicate adapter, the derived recompute, the credit call sites in the anchor mutations, the ten-rank ladder, the twelve phase-1 medals, the `Progreso` section with its three tabs, the dashboard widget, the unlock toast and the rank and high-rarity celebrations, the hide setting and the self-service purge, the Notion backfill script, and, in `WO-07`, the administrative surface: a read-only view of a collector's ledger and the point void with its mandatory reason (`FR-12-44`, `FR-12-45`). `WO-07` was the last slice this FRD was waiting on, and it is why this document leaves `DRAFT`.
 
-The domain does, however, sit entirely on facts that already exist and are already server-verified:
+Two things named in this FRD are deliberately still ahead: phase 2 (the remaining twelve medals, the grades inside a rank band, the eight phase-2 point rules) and the phase-3 event administration UI, which was never in scope here.
+
+The domain sits entirely on facts that already existed and were already server-verified before any of it was built:
 
 - order creation, cancellation and deletion ([`FRD-05 · FR-05-25`](../frd-05-order-payment-shipment/frd-05-order-payment-shipment.md#functional-requirements), [`FR-05-24`](../frd-05-order-payment-shipment/frd-05-order-payment-shipment.md#functional-requirements)) and the derived, never hand-edited `OrderStatus` ([`FRD-05 · FR-05-32`](../frd-05-order-payment-shipment/frd-05-order-payment-shipment.md#functional-requirements), [`FR-05-34`](../frd-05-order-payment-shipment/frd-05-order-payment-shipment.md#functional-requirements))
 - store-level payments and their declared `PaymentAllocation` rows ([`FRD-05 · FR-05-17`](../frd-05-order-payment-shipment/frd-05-order-payment-shipment.md#functional-requirements), [`FR-05-42`](../frd-05-order-payment-shipment/frd-05-order-payment-shipment.md#functional-requirements), [ADR 0025](../../../design/decisions/0025-store-level-payments-declared-allocations.md)) and the canonical `openBalanceMinor` ([`FRD-05 · BR-05-32`](../frd-05-order-payment-shipment/frd-05-order-payment-shipment.md#business-rules))
@@ -45,7 +47,7 @@ The domain does, however, sit entirely on facts that already exist and are alrea
 
 ### Planned
 
-- **Phase 1.** The points engine (schema, migration, money-predicate adapter, rule catalogue, derived recompute, the Notion backfill script), the credit call sites in the eight phase-1 rules, the ten-rank ladder with its i18n, and the first cut of surfaces: the `Progreso` section, the dashboard widget, twelve of the twenty-four medals, the unlock toast and the rank celebration.
+- ~~**Phase 1.**~~ Shipped, see `### Implemented` above.
 - **Phase 2.** The remaining twelve medals, the grades `I` / `II` / `III` inside a rank band, and the eight phase-2 point rules.
 - **Phase 3 (data model only in this FRD).** Time-limited event medals: the columns exist from phase 1, the administration UI that creates and schedules an event is deliberately excluded.
 
@@ -210,8 +212,8 @@ As a collector, I want to be certain that no amount of money I enter, anywhere, 
 
 - `FR-12-42`: The migrated Notion history must be **credited**, with every resulting entry marked `source = BACKFILL`. Because 96 % of the migrated store payments are a one-to-one backfill that fused the advance and the balance into a single record, the script must write **one synthetic entry per order** for those payments rather than attempting to reconstruct two payment events that were never separately recorded. Backfill points count toward the private rank and are structurally excluded from any future comparison between users.
 - `FR-12-43`: The backfill must be **silent**. Every medal it unlocks is written already marked as seen, so opening the app after the migration does not fire dozens of toasts, and medals whose condition is a "first time" are stamped with the backfill date rather than a fabricated original date. The collector sees **one aggregated welcome celebration** naming the rank and the medal count, not a replay of their history.
-- `FR-12-44`: An administrator must be able to **void** a user's points. The void is a signed reversal that recomputes the affected user's derived total **and their highest rank index**, not a flag that hides them from a listing, and it writes to `admin_audit_log` **in the same transaction** through the existing audit writer of [`PRD-03 · FRD-01`](../../prd-03-admin-and-moderation/frd-01-admin-identity-and-access/frd-01-admin-identity-and-access.md). Operational note: `admin_audit_log` was excluded from the production cutover, so this requirement depends on that table existing in production first.
-- `FR-12-45`: An administrator must have a **read-only** view of a user's ledger. There is no administrative path that grants, edits or reorders entries.
+- `FR-12-44`: An administrator must be able to **void** a user's points. The void is a signed reversal that recomputes the affected user's derived total **and their highest rank index**, not a flag that hides them from a listing, and it writes to `admin_audit_log` **in the same transaction** through the existing audit writer of [`PRD-03 · FRD-01`](../../prd-03-admin-and-moderation/frd-01-admin-identity-and-access/frd-01-admin-identity-and-access.md). Implemented: the mutation in `WO-01` and the admin surface in [`WO-07`](bp-01-collector-progression/work-orders/wo-07-admin-progression-surface.md), which gates it behind `requireAdmin()` on both the route and the Server Action and asks for the reason in the canonical confirmation modal. The void covers every live entry the collector holds; it takes no entry selection and no date range. The operational note that once blocked this (`admin_audit_log` excluded from the production cutover) is resolved: the table ships through migration `20260723200006` and the deploy pipeline runs `prisma migrate deploy`.
+- `FR-12-45`: An administrator must have a **read-only** view of a user's ledger. There is no administrative path that grants, edits or reorders entries. Implemented in [`WO-07`](bp-01-collector-progression/work-orders/wo-07-admin-progression-surface.md) as the `Progresión` section of the admin console: account lookup, a paginated ledger showing every entry (voided rows included, with the reason each was voided for) and a summary of points, rank and medal counts. No monetary figure is read or rendered.
 - `FR-12-46`: A collector must be able to **purge their own points history** from settings. The purge deletes the ledger, the unlocks and the progress cache for that user, is stated as permanent, and is confirmed in a modal before it runs.
 
 ### Full-screen celebration for high-rarity medals

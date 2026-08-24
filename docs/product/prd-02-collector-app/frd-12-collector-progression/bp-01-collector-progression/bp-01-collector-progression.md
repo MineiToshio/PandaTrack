@@ -3,7 +3,7 @@ id: BP-01
 type: BLUEPRINT
 slug: collector-progression
 title: Collector Progression
-status: DRAFT
+status: ACTIVE
 parent: FRD-12
 children:
   - WO-01
@@ -12,8 +12,9 @@ children:
   - WO-04
   - WO-05
   - WO-06
+  - WO-07
 last_updated: 2026-08-23
-implementation_status: NOT_IMPLEMENTED
+implementation_status: IN_PROGRESS
 ---
 
 # BP-01 Collector Progression
@@ -59,7 +60,7 @@ Define the technical shape of the progression layer specified in [`FRD-12`](../f
 - **Settlement is two transactions, not three.** Progression rides on top of [`FRD-08 · BP-01`](../../frd-08-delivery-management/bp-01-delivery-management/bp-01-delivery-management.md)'s existing two-transaction settlement split (`ADR 0032`); the ledger write happens inside whichever of those two transactions is the host mutation's own (the delivery transaction for `delivery-received`, never the independent money transaction, since the money transaction's own writer, `createStorePayment`, is where `order-first-payment` and `order-payment-detailed` credit).
 - **Medals grant no points and unlock is evaluated by the same call sites that credit points**, not by a separate pass. `WO-02` wires point crediting into every anchor mutation first and ships the Server Action contract shape (`pointsDelta`, `rankUp`, `medalsUnlocked: []`, populated with an empty array until `WO-05` exists); `WO-05` fills the same call sites with the real medal evaluator. This mirrors the incremental-delivery shape already used by `FRD-08 · BP-01`'s `WO-08`, which extended call sites `WO-02` and `WO-04` had already shipped rather than opening a parallel lifecycle path.
 - **`der.` rules have their ELIGIBILITY evaluated by the recompute, but their entry is still appended by one call site each** ([ADR 0037](../../../../design/decisions/0037-progression-deferred-credit-no-pending-state.md), written by `WO-02`). The original wording here ("no mutation writes a ledger row for them directly") was wrong in a way only the built engine could show: the recompute iterates the LEDGER, not the world, so `order-completed`, `order-settled` and `product-type-discovered` had no writer at all and were worth zero forever with every unit test green. Each now has exactly one writer, placed where the state it depends on is derived and persisted (`persistDerivedOrderStatuses` for completion, the two `PaymentAllocation` producers for settlement, the delivery mutation that moves a product to `DELIVERED` for discovery). The division of labour is unchanged and is the point: the write only PRICES the fact at the instant it happens, the recompute alone decides whether it still COUNTS. Phase 2's `order-data-complete` and `store-created-adopted` inherit the same shape when they ship.
-- **Admin void and the read-only ledger view are data-layer only in this blueprint.** A void never deletes or negates a `PointLedgerEntry`; it sets that row's `voidedAt`, `voidedReason`, and `voidedByUserId`, and the recompute excludes any row with `voidedAt != null` from the next balance calculation. `WO-01` ships `voidUserProgressionPoints` (writes `admin_audit_log` in the same transaction via `writeAuditEntry`, `FR-12-44`) and `listUserPointLedger` (`FR-12-45`) as callable mutation/query functions with no dedicated route; a thin admin route wiring them into the existing `src/app/[locale]/(app)/admin` surface is a follow-up outside this blueprint's six slices, tracked as a risk below. This mirrors the FRD's own note that `admin_audit_log` was excluded from the production cutover, so the write path exists in code before it can safely run in production.
+- **Admin void and the read-only ledger view are data-layer only in this blueprint.** A void never deletes or negates a `PointLedgerEntry`; it sets that row's `voidedAt`, `voidedReason`, and `voidedByUserId`, and the recompute excludes any row with `voidedAt != null` from the next balance calculation. `WO-01` ships `voidUserProgressionPoints` (writes `admin_audit_log` in the same transaction via `writeAuditEntry`, `FR-12-44`) and `listUserPointLedger` (`FR-12-45`) as callable mutation/query functions with no dedicated route. This mirrored the FRD's own note that `admin_audit_log` was excluded from the production cutover, so the write path existed in code before it could safely run in production. **That deferral is now closed**: `admin_audit_log` is in the schema (migration `20260723200006`) and the deploy pipeline runs `prisma migrate deploy`, so [`WO-07`](work-orders/wo-07-admin-progression-surface.md) wires both functions into the existing `src/app/[locale]/(app)/admin` surface as a `Progresión` section. `WO-07` consumes them unchanged and adds no data-layer writer of its own: the void's scope stays "every live entry for one collector", because narrowing it to a selection or a date range is a mutation change no requirement asks for.
 - **The backfill script is a one-off, not a recurring job**, invoked by an operator against the migrated Notion history (`FR-12-42`, `FR-12-43`). It calls the same `pointRules.ts` catalogue and the same idempotent ledger-write helper `WO-01` ships, so a re-run is a no-op rather than a duplicate-entry risk.
 
 ## Contracts
@@ -109,7 +110,7 @@ Define the technical shape of the progression layer specified in [`FRD-12`](../f
 
 - **recompute cost grows with ledger size.** Correct up to roughly twenty thousand entries per user per the FRD's own note; no user is near that today, so the ceiling is re-measured when it becomes real rather than pre-optimized now.
 - **the Notion backfill is a one-shot, hard-to-rehearse write** against real production history once cutover happens; `WO-06` must run it against a full dev-data copy first, and it must be provably idempotent (`BACKFILL_ALREADY_APPLIED`) before it ever runs against prod.
-- **`admin_audit_log` is not yet in production**, so `FR-12-44`'s void mutation is code without a safe place to run until that table lands there; this blueprint ships the mutation but the actual admin route that calls it is explicitly deferred (see Architecture Decisions).
+- ~~**`admin_audit_log` is not yet in production**, so `FR-12-44`'s void mutation is code without a safe place to run until that table lands there.~~ **Closed.** The table ships through migration `20260723200006` and the deploy pipeline runs `prisma migrate deploy`; [`WO-07`](work-orders/wo-07-admin-progression-surface.md) adds the admin route that calls the mutation.
 - **caps declared in the wrong unit silently break the sublinear/irrevocability guarantees** (`BR-12-15`); `WO-01`'s cap enforcement must read the unit off the rule definition rather than assuming points everywhere, since `order-created` is the one rule capped in events, not points.
 - **a rule accidentally reads a monetary field through a re-export or a shared type** rather than a direct import; the static guard scans source text for forbidden identifiers, so a renamed re-export could slip past a naive implementation. `WO-01`'s guard test must be written against the identifier list, not the import graph, mirroring `money-modules-guard.test.ts`'s own documented blind spots.
 - **medal evaluation added at the wrong call site** could double-unlock or miss a "first time" medal if the same business fact is reachable from two different mutations (for example, an order reaching `DELIVERED` through `createDelivery` with `receivedDate` set versus through `markDeliveryDelivered`); `WO-05`'s evaluator must be keyed off the same `entityType`/`entityId` shape the ledger already uses so idempotency is inherited rather than re-implemented per medal.
@@ -147,6 +148,7 @@ flowchart LR
 - After `WO-02`, `WO-05` (medal catalogue and evaluator) can start; it depends on `WO-02`'s call sites already existing because it extends them rather than opening a second set of hooks. `WO-03` (rank ladder) depends only on `WO-01`'s recompute and can be implemented in parallel with `WO-02`/`WO-05`.
 - `WO-04` (the `Progreso` section, its three tabs, and the dashboard widget) depends on both `WO-03` (ladder data for the "Rangos" tab and the rank hero) and `WO-05` (album data for the "Medallas" tab), so it is the first slice that needs the whole engine wired end to end.
 - `WO-06` (toast, celebration modal, hide setting, purge, and the Notion backfill) depends on `WO-04` because the toast and celebration are global surfaces layered over the same host flows `WO-02`/`WO-05` already credit, and the backfill needs both the point rule catalogue (`WO-02`) and the medal catalogue (`WO-05`) fully wired before it can silently replay history through them.
+- `WO-07` (the admin `Progresión` section: read-only ledger view and the point void) depends only on `WO-01`'s two data-layer functions and on `WO-03`'s rank ladder for the summary's rank name, so it could have shipped at any point after those; it runs last because the deferral it closes was an infrastructure one (`admin_audit_log` reaching production), not a code dependency.
 - Work-order numbers follow the description order given for this slice cut; they are identifiers, not the execution order. The execution order is the one stated above and in the diagram.
 
 ## Linked Work Orders
@@ -157,3 +159,4 @@ flowchart LR
 - `work-orders/wo-04-progreso-section-and-dashboard-widget.md`
 - `work-orders/wo-05-medal-album.md`
 - `work-orders/wo-06-celebration-hide-setting-and-backfill.md`
+- `work-orders/wo-07-admin-progression-surface.md`
