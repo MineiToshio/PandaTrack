@@ -398,6 +398,26 @@
 }
 
 /* ───────────────────────────────────────────────────────────
+   5b. Rank bands — literal values from tokens-css.md § 12.2
+   Pure aliases, declared once rather than per theme: every
+   aliased token is already theme-aware, so the ladder follows
+   light/dark through them without a second declaration.
+   ─────────────────────────────────────────────────────────── */
+:root {
+  --rank-band-conquered: var(--success);
+  --rank-band-conquered-text: var(--success-chip-text);
+
+  --rank-band-current: var(--accent);
+  --rank-band-current-text: var(--text-primary);
+
+  --rank-band-locked: var(--border);
+  --rank-band-locked-text: var(--text-muted);
+
+  --rank-band-top: var(--accent-warm);
+  --rank-band-top-text: var(--text-primary);
+}
+
+/* ───────────────────────────────────────────────────────────
    6. State layers — reusable color-mix recipes
    ─────────────────────────────────────────────────────────── */
 .state-hover {

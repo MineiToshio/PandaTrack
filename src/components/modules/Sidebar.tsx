@@ -11,6 +11,7 @@ import {
   Shield,
   ShoppingBag,
   Store,
+  Trophy,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -39,6 +40,8 @@ const NAV_ICON_MAP: Record<NavItemId, React.ComponentType<{ className?: string }
   orders: ShoppingBag,
   deliveries: Package,
   stores: Store,
+  // A trophy rather than a medal glyph: medal iconography belongs to the album's own rarity chips.
+  progress: Trophy,
   settings: Settings,
 };
 
@@ -58,6 +61,8 @@ type SidebarProps = {
   onFloatingChange: (open: boolean) => void;
   storesHref?: string;
   isAdmin: boolean;
+  /** `false` hides the `Progreso` entry entirely, with no placeholder left behind (`FR-12-38`). */
+  showProgression: boolean;
 };
 
 export default function Sidebar({
@@ -70,11 +75,12 @@ export default function Sidebar({
   onFloatingChange,
   storesHref,
   isAdmin,
+  showProgression,
 }: SidebarProps) {
   const pathname = usePathname();
   const t = useTranslations("appLayout");
   const tAdmin = useTranslations("admin");
-  const navItems = getAllNavItems();
+  const navItems = getAllNavItems({ showProgression });
   const activeItem = getActiveNavItem(pathname ?? "");
   const activeAdminId = getActiveAdminNavItemId(pathname ?? "");
   const isAdminRoute = activeAdminId !== undefined;

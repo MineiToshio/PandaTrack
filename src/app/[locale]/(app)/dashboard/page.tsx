@@ -9,17 +9,23 @@ import { buildPageMetadata } from "@/lib/seo";
 import { listCountryCodesCached } from "@/lib/data/catalog/countryQueries";
 import { listActiveStoreProductTypeKeysCached } from "@/lib/data/catalog/storeProductTypeQueries";
 import { getCollectorPreferencesSnapshot } from "@/lib/data/user-settings/userSettingsQueries";
+import { getMedalShowcase } from "@/lib/data/progression/medalQueries";
+import { getProgressSummary, getProgressionVisibility } from "@/lib/data/progression/progressionQueries";
 import DashboardActivityZone from "./_components/DashboardActivityZone";
 import DashboardBudgetZone from "./_components/DashboardBudgetZone";
 import DashboardCashZone from "./_components/DashboardCashZone";
 import DashboardCollectionZone from "./_components/DashboardCollectionZone";
 import DashboardCreateOrderButton from "./_components/DashboardCreateOrderButton";
 import DashboardKpiStrip from "./_components/DashboardKpiStrip";
+import DashboardProgressWidget from "./_components/DashboardProgressWidget";
 import DashboardPunctualityZone from "./_components/DashboardPunctualityZone";
 import DashboardTrendsSection from "./_components/DashboardTrendsSection";
 import DashboardUpcomingPaymentsZone from "./_components/DashboardUpcomingPaymentsZone";
 import DashboardZoneView from "./_components/DashboardZoneView";
 import { parseDashboardRangeSelection, type DashboardSearchParams } from "./_utils/dashboardRangeParams";
+
+/** Medal ticks the dashboard strip shows. Five on desktop; the widget itself trims to four below. */
+const DASHBOARD_PROGRESS_MEDAL_COUNT = 5;
 
 type DashboardPageProps = {
   params: Promise<{ locale: string }>;
@@ -48,13 +54,25 @@ export default async function DashboardPage({ params, searchParams }: DashboardP
   // The range control writes its selection to the URL, so the trend series are resolved server-side.
   const rangeSelection = parseDashboardRangeSelection(resolvedSearchParams);
 
-  const [t, data, collectorPrefs, catalogCountryCodes, catalogProductTypeKeys] = await Promise.all([
-    getTranslations({ locale, namespace: "dashboard" }),
-    getDashboardData(session.user.id, rangeSelection),
-    getCollectorPreferencesSnapshot(session.user.id),
-    listCountryCodesCached(),
-    listActiveStoreProductTypeKeysCached(),
-  ]);
+  const [t, data, collectorPrefs, catalogCountryCodes, catalogProductTypeKeys, progressionVisibility] =
+    await Promise.all([
+      getTranslations({ locale, namespace: "dashboard" }),
+      getDashboardData(session.user.id, rangeSelection),
+      getCollectorPreferencesSnapshot(session.user.id),
+      listCountryCodesCached(),
+      listActiveStoreProductTypeKeysCached(),
+      getProgressionVisibility(session.user.id),
+    ]);
+
+  // Read server-side and only when the layer is on, so a collector who switched it off never pays
+  // for the query and never sees the widget flash in (`FR-12-38`).
+  const showProgression = !progressionVisibility.hideProgression;
+  const [progressSummary, progressMedals] = showProgression
+    ? await Promise.all([
+        getProgressSummary(session.user.id),
+        getMedalShowcase(session.user.id, DASHBOARD_PROGRESS_MEDAL_COUNT),
+      ])
+    : [null, null];
 
   // Links into the public store listing must be preference-driven, like the shell nav.
   const storesHref = buildStoresNavHref(
@@ -110,6 +128,9 @@ export default async function DashboardPage({ params, searchParams }: DashboardP
         <div className="flex flex-col gap-[18px] lg:col-span-4">
           <DashboardBudgetZone data={data} locale={locale} />
           <DashboardPunctualityZone data={data} locale={locale} />
+          {progressSummary && progressMedals && (
+            <DashboardProgressWidget locale={locale} summary={progressSummary} medals={progressMedals} />
+          )}
         </div>
         <div className="lg:col-span-12">
           <DashboardTrendsSection data={data} locale={locale} selection={rangeSelection} />

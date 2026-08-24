@@ -51,6 +51,9 @@ export const ROUTES = {
   payments: "/payments",
   budget: "/budget",
   settings: "/settings",
+  progress: "/progress",
+  progressMedals: "/progress/medals",
+  progressRanks: "/progress/ranks",
   admin: "/admin",
   adminAudit: "/admin/audit",
 } as const;
@@ -336,6 +339,51 @@ export const POSTHOG_EVENTS = {
     SPACE_ENTERED: "admin_space_entered",
     AUDIT_VIEWED: "admin_audit_viewed",
     INBOX_ITEM_OPENED: "admin_inbox_item_opened",
+  },
+  /**
+   * Collector progression. The namespace exists before its events do, on purpose: the accrual layer
+   * fires nothing itself (a point credited server-side is not a user interaction), and the surfaces
+   * that DO have something to report, the toast, the album and the progress section, land in later
+   * slices and add their keys here rather than inventing a second namespace.
+   */
+  PROGRESSION: {
+    /** The `"Medallas"` album opened. Fired once per mount, client-side: opening it is a view. */
+    MEDAL_ALBUM_VIEWED: "medal_album_viewed",
+    /** One medal's detail opened. Carries `medal_key`, `rarity` and whether it is unlocked. */
+    MEDAL_DETAIL_VIEWED: "medal_detail_viewed",
+    /** The `Progreso` section opened. Carries the active tab. */
+    PROGRESS_VIEWED: "progress_viewed",
+    /** A tab of the section selected. Carries `from_tab` and `to_tab`. */
+    PROGRESS_TAB_CHANGED: "progress_tab_changed",
+    /** The rank ladder became visible. Carries `current_rank_index`. */
+    PROGRESS_RANK_LADDER_VIEWED: "progress_rank_ladder_viewed",
+    /** The dashboard's rank widget clicked through. Carries `current_rank_index`. */
+    PROGRESS_WIDGET_CLICKED: "progress_widget_clicked",
+    /**
+     * An unlock toast raised. Carries `medal_key`, `rarity` and `series`.
+     *
+     * Shown rather than dismissed: the toast auto-dismisses on a fixed timer, so a dismissal event
+     * would report the timer, not the reader.
+     */
+    MEDAL_TOAST_SHOWN: "medal_toast_shown",
+    /**
+     * One action unlocked more medals than the queue announces one by one, so the whole batch was
+     * collapsed into a single toast. Carries `medal_count`, which is what tells a batch of four
+     * apart from the ten a migrated history produces on its first credited action.
+     */
+    MEDAL_BURST_TOAST_SHOWN: "medal_burst_toast_shown",
+    /** A rank celebration actually claimed and shown. Server-side; carries `rank_index`. */
+    RANK_UP_CELEBRATED: "rank_up_celebrated",
+    /** A full-screen medal celebration shown. Carries `medal_key` and `rarity`. */
+    MEDAL_CELEBRATED: "medal_celebrated",
+    /** Any full-screen celebration closed. Carries `celebration_kind`. */
+    CELEBRATION_DISMISSED: "celebration_dismissed",
+    /** `"Ocultar mi progresión"` switched on. */
+    PROGRESSION_HIDDEN: "progression_hidden",
+    /** `"Ocultar mi progresión"` switched back off. */
+    PROGRESSION_SHOWN: "progression_shown",
+    /** The collector purged their own points history. Carries the deleted row counts. */
+    PROGRESSION_LEDGER_PURGED: "progression_ledger_purged",
   },
 } as const;
 

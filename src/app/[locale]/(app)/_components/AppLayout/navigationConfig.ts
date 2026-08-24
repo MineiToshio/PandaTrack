@@ -1,6 +1,6 @@
 import { ROUTES } from "@/lib/constants";
 
-export type NavItemId = "dashboard" | "stores" | "orders" | "deliveries" | "settings";
+export type NavItemId = "dashboard" | "stores" | "orders" | "deliveries" | "progress" | "settings";
 
 export interface NavItem {
   id: NavItemId;
@@ -36,6 +36,12 @@ const NAV_ROUTE_ITEMS: NavItem[] = [
     labelKey: "nav.deliveries",
   },
   {
+    id: "progress",
+    pathSegment: "progress",
+    href: (locale) => `/${locale}${ROUTES.progress}`,
+    labelKey: "nav.progress",
+  },
+  {
     id: "settings",
     pathSegment: "settings",
     href: (locale) => `/${locale}${ROUTES.settings}`,
@@ -43,7 +49,7 @@ const NAV_ROUTE_ITEMS: NavItem[] = [
   },
 ];
 
-const PRIMARY_NAV_ITEM_IDS: NavItemId[] = ["dashboard", "stores", "orders", "deliveries"];
+const PRIMARY_NAV_ITEM_IDS: NavItemId[] = ["dashboard", "stores", "orders", "deliveries", "progress"];
 
 export type AdminNavItemId = "moderation" | "audit" | "imageIntake";
 
@@ -89,12 +95,31 @@ export function getActiveAdminNavItemId(pathname: string): AdminNavItemId | unde
   return "moderation";
 }
 
-export function getPrivateAppNavItems(): NavItem[] {
-  return NAV_ROUTE_ITEMS.filter((item) => PRIMARY_NAV_ITEM_IDS.includes(item.id));
+/**
+ * Visibility the collector controls. `Progreso` disappears from every nav surface at once while
+ * "Ocultar mi progresión" is on, which is why the flag is read here rather than in each renderer:
+ * a surface that forgot to ask would be the one that leaks the layer back in (`FR-12-38`).
+ */
+export type NavVisibilityOptions = {
+  showProgression?: boolean;
+};
+
+function applyVisibility(items: NavItem[], options?: NavVisibilityOptions): NavItem[] {
+  if (options?.showProgression === false) {
+    return items.filter((item) => item.id !== "progress");
+  }
+  return items;
 }
 
-export function getAllNavItems(): NavItem[] {
-  return NAV_ROUTE_ITEMS;
+export function getPrivateAppNavItems(options?: NavVisibilityOptions): NavItem[] {
+  return applyVisibility(
+    NAV_ROUTE_ITEMS.filter((item) => PRIMARY_NAV_ITEM_IDS.includes(item.id)),
+    options,
+  );
+}
+
+export function getAllNavItems(options?: NavVisibilityOptions): NavItem[] {
+  return applyVisibility([...NAV_ROUTE_ITEMS], options);
 }
 
 /**

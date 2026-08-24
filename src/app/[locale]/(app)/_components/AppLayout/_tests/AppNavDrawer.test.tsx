@@ -9,6 +9,7 @@ const translationMap: Record<string, string> = {
   "nav.stores": "Stores",
   "nav.purchases": "Orders",
   "nav.deliveries": "Deliveries",
+  "nav.progress": "Progress",
   "drawer.openMenu": "Open menu",
   "drawer.closeMenu": "Close menu",
   "drawer.preferencesAriaLabel": "Preferences and account",
@@ -56,6 +57,7 @@ describe("AppNavDrawer", () => {
     onClose: vi.fn(),
     returnFocusRef: { current: null } as RefObject<HTMLButtonElement | null>,
     isAdmin: false,
+    showProgression: true,
   };
 
   it("renders nothing when closed", () => {
@@ -73,6 +75,7 @@ describe("AppNavDrawer", () => {
     expect(screen.getByRole("link", { name: "Stores" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Orders" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Deliveries" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Progress" })).toHaveAttribute("href", "/en/progress");
     expect(screen.queryByRole("link", { name: "Settings" })).not.toBeInTheDocument();
 
     expect(screen.getByRole("region", { name: "Preferences and account" })).toBeInTheDocument();
@@ -127,6 +130,14 @@ describe("AppNavDrawer", () => {
 
     expect(screen.getByRole("link", { name: "Moderation" })).toHaveAttribute("href", "/en/admin");
     expect(screen.getByRole("link", { name: "Audit log" })).toHaveAttribute("href", "/en/admin/audit");
+  });
+
+  it("drops the progression entry entirely when the collector hid the layer", () => {
+    render(<AppNavDrawer locale="en" isOpen {...drawerProps} showProgression={false} />);
+
+    expect(screen.queryByRole("link", { name: "Progress" })).not.toBeInTheDocument();
+    // The rest of the primary nav is untouched: hiding one layer never reorders the others.
+    expect(screen.getByRole("link", { name: "Deliveries" })).toBeInTheDocument();
   });
 
   it("marks current route link as current page", () => {

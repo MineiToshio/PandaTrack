@@ -4,6 +4,7 @@
     "stores": "Stores",
     "purchases": "Orders",
     "deliveries": "Deliveries",
+    "progress": "Progress",
     "settings": "Settings"
   },
   "breadcrumb": {

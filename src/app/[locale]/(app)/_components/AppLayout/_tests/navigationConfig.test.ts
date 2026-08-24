@@ -3,6 +3,7 @@ import {
   getActiveAdminNavItemId,
   getActiveNavItem,
   getAdminNavItems,
+  getAllNavItems,
   getPrivateAppNavItems,
   getPrivateAppPathSegment,
 } from "../navigationConfig";
@@ -14,6 +15,7 @@ describe("getPrivateAppPathSegment", () => {
     expect(getPrivateAppPathSegment("/es/orders")).toBe("orders");
     expect(getPrivateAppPathSegment("/en/deliveries")).toBe("deliveries");
     expect(getPrivateAppPathSegment("/es/settings")).toBe("settings");
+    expect(getPrivateAppPathSegment("/es/progress")).toBe("progress");
   });
 
   it("returns undefined when pathname has no second segment", () => {
@@ -45,7 +47,18 @@ describe("getActiveNavItem", () => {
 describe("getPrivateAppNavItems", () => {
   it("returns the collector primary nav items in order without settings", () => {
     const items = getPrivateAppNavItems();
-    expect(items).toHaveLength(4);
+    expect(items).toHaveLength(5);
+    expect(items.map((i) => i.id)).toEqual(["dashboard", "stores", "orders", "deliveries", "progress"]);
+  });
+
+  it("appends progression last, so no existing entry is reordered or demoted", () => {
+    const items = getPrivateAppNavItems();
+    expect(items.at(-1)?.id).toBe("progress");
+    expect(items.at(-1)?.href("es")).toBe("/es/progress");
+  });
+
+  it("drops progression when the collector hid the layer, leaving the rest in place", () => {
+    const items = getPrivateAppNavItems({ showProgression: false });
     expect(items.map((i) => i.id)).toEqual(["dashboard", "stores", "orders", "deliveries"]);
   });
 
@@ -53,6 +66,26 @@ describe("getPrivateAppNavItems", () => {
     const items = getPrivateAppNavItems();
     expect(items[0].href("es")).toBe("/es/dashboard");
     expect(items[1].href("en")).toBe("/en/stores");
+  });
+});
+
+describe("getAllNavItems", () => {
+  it("includes settings after progression, and drops progression when the layer is hidden", () => {
+    expect(getAllNavItems().map((i) => i.id)).toEqual([
+      "dashboard",
+      "stores",
+      "orders",
+      "deliveries",
+      "progress",
+      "settings",
+    ]);
+    expect(getAllNavItems({ showProgression: false }).map((i) => i.id)).toEqual([
+      "dashboard",
+      "stores",
+      "orders",
+      "deliveries",
+      "settings",
+    ]);
   });
 });
 

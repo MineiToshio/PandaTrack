@@ -97,6 +97,7 @@ function getNavLabelKeyForSegment(segment: NavItemId): string {
     stores: "nav.stores",
     orders: "nav.purchases",
     deliveries: "nav.deliveries",
+    progress: "nav.progress",
     settings: "nav.settings",
   };
   return map[segment] ?? "nav.dashboard";
