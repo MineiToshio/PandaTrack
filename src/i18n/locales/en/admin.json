@@ -188,7 +188,8 @@
       "changeRequest_reject": "Change request rejected",
       "productType_approve": "Product type approved",
       "productType_reject": "Product type rejected",
-      "imageIntake_quotaOverride": "AI photo quota changed"
+      "imageIntake_quotaOverride": "AI photo quota changed",
+      "progression_void": "Progression points voided"
     },
     "pagination": {
       "regionLabel": "Audit log pagination",

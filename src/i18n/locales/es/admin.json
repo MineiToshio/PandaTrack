@@ -188,7 +188,8 @@
       "changeRequest_reject": "Solicitud de cambio rechazada",
       "productType_approve": "Tipo de producto aprobado",
       "productType_reject": "Tipo de producto rechazado",
-      "imageIntake_quotaOverride": "Cuota de fotos con IA modificada"
+      "imageIntake_quotaOverride": "Cuota de fotos con IA modificada",
+      "progression_void": "Puntos de progresión anulados"
     },
     "pagination": {
       "regionLabel": "Paginación del registro de actividad",

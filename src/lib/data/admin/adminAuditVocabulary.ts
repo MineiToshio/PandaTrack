@@ -27,6 +27,8 @@ export const AUDIT_ACTIONS = {
   PRODUCT_TYPE_REJECT: "productType.reject",
   /** Set or cleared a collector's monthly AI-photo allowance from the override console. */
   IMAGE_INTAKE_QUOTA_OVERRIDE: "imageIntake.quotaOverride",
+  /** Voided a collector's progression points. The ledger rows survive, marked and excluded. */
+  PROGRESSION_VOID: "progression.void",
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];

@@ -300,6 +300,57 @@ Reference for what each table and attribute is for, where it is used, and why it
 
 ---
 
+## Progression
+
+### `point_ledger_entry`
+
+**Purpose:** Append-only ledger of every point-earning fact. One row per fact, idempotent on `(userId, ruleKey, entityId)`. The collector's balance is **not** stored anywhere: it is derived by re-checking each row against the current state of the entity it names, which is what makes cancelling, reactivating, hard-deleting and reopening all one mechanism instead of a reversal handler per path (see [ADR 0035](../design/decisions/0035-collector-progression-point-ledger.md)).
+
+- **userId** – Owner of the entry; every read is scoped by it.
+- **ruleKey** – Which catalogue rule credited this, e.g. `order-created`. A key no longer in the catalogue simply stops paying.
+- **entityType** – Kind of row `entityId` names (`order`, `delivery`, `store`, `productType`). Selects the batch eligibility resolver, nothing more.
+- **entityId** – **Deliberately not a foreign key.** A cascade would delete the evidence that points were ever earned at the exact moment the order is deleted, which is both the audit trail and the thing that closes the create-credit-delete-recreate loop.
+- **points** – Strictly positive. The ledger admits no negative entry; a reversal is never a compensating row.
+- **occurredOn** – The civil day resolved from the collector's timezone at crediting time, pinned to UTC midnight. Monthly caps are grouped by it, and a later recompute never re-buckets it.
+- **source** – `LIVE` or `BACKFILL`. Stored rather than inferred from a date so migrated history can be excluded from any future cross-user surface.
+- **createdAt** – Wall-clock write time, distinct from `occurredOn`. Breaks cap ordering ties.
+- **voidedAt / voidedReason / voidedByUserId** – Set together by an administrative void. The recompute skips any row carrying `voidedAt`, so the reversal needs no deletion. `voidedByUserId` is intentionally not a relation: the trail outlives the administrator's account.
+
+**Unique:** `[userId, ruleKey, entityId]` (the idempotency key). **Indexes:** `userId`, `voidedAt`.
+
+### `user_progress`
+
+**Purpose:** Rebuildable cache of the derived figures, never a source of truth. Deleting every row here loses nothing; the next recompute rebuilds it from the ledger. Kept out of the serializable payment path on purpose: one row per user folded into a money transaction would be a new write-write conflict surface for a figure that is derivable by definition.
+
+- **userId** – Primary key; one row per collector.
+- **maturedPoints** – Derived total after eligibility filtering and cap enforcement.
+- **rankIndex** – Rank derived from the current total. May move down when entries stop counting.
+- **highestRankIndex** – Running maximum, never decreased. Only the bar inside the band moves backwards, never the title.
+- **lastRecomputedAt** – Drives the staleness check that decides whether opening the section recomputes.
+
+### `medal_unlock`
+
+**Purpose:** One row per medal a collector has unlocked. Unlocks are permanent; a medal whose condition stops holding is labelled, never removed.
+
+- **userId / medalKey** – Owner and catalogue key; unique together, which is the unlock idempotency guarantee.
+- **unlockedAt** – A backfilled unlock carries the backfill date, never a fabricated original one.
+- **seenAt** – Null until the celebration has shown. Backfilled rows are written pre-seen so a migrated history does not replay as dozens of toasts.
+- **series / rarity** – Denormalized from the catalogue so the album can group and style without loading it.
+- **numbered / serialNumber** – Support for limited event pieces; the ordinal is stamped at unlock time.
+- **source** – `LIVE` or `BACKFILL`, reusing the ledger's enum.
+
+**Unique:** `[userId, medalKey]`. **Indexes:** `userId`.
+
+### `progression_settings`
+
+**Purpose:** The collector's own progression preferences. Separate from `user_progress` because these are choices, not a derived cache, and must survive a purge of the ledger.
+
+- **userId** – Primary key; one row per collector.
+- **hideProgression** – Hides the whole layer at once. Points keep accruing, so switching it back on does not restart from zero.
+- **lastCelebratedRankIndex** – Highest rank already celebrated, so a recompute that re-derives the same rank never replays it.
+
+---
+
 ## Enums (summary)
 
 - **StoreType** – BUSINESS, PERSON (store identity and visibility rules).
@@ -314,3 +365,4 @@ Reference for what each table and attribute is for, where it is used, and why it
 - **StoreChangeRequestStatus** – PENDING, APPROVED, REJECTED.
 - **ImageIntakeEntrySource** – IN_APP, SHARE (which door an image-intake submission came through).
 - **ImageIntakeUsageStatus** – PENDING (reservation, before the provider call), SUCCEEDED, FAILED.
+- **PointLedgerSource** – LIVE, BACKFILL (whether a progression credit came from real activity or from the migrated Notion history).
