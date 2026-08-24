@@ -17,7 +17,8 @@ children:
   - FRD-09
   - FRD-10
   - FRD-11
-last_updated: 2026-07-28
+  - FRD-12
+last_updated: 2026-08-23
 ---
 
 # PRD-02 PandaTrack Collector App
@@ -129,6 +130,7 @@ A collector with lower order volume who still wants:
 - User settings for budget, preferred currency, and notification preferences
 - User settings for account identity, profile management, preferred country and product types, budget defaults, and store-entry defaults
 - Minimal inline store moderation performed by administrators inside the collector app: approve a pending store, remove a store with a public tombstone, resolve a community report, apply or reject a community change request, and approve a suggested product type (`FRD-04`); the administrator role and the audit trail that records these actions are consumed from [PRD-03 · FRD-01](../prd-03-admin-and-moderation/frd-01-admin-identity-and-access/frd-01-admin-identity-and-access.md)
+- Collector progression: points, ranks, and collectible medals earned from tracked collector actions, an append-only point ledger with a derived balance (`ADR 0035`), and the medal rarity visual system (`ADR 0036`) ([`FRD-12`](frd-12-collector-progression/frd-12-collector-progression.md))
 
 ### Out of scope
 
@@ -262,3 +264,4 @@ Store moderation is split across two PRDs by ownership, not by feature: [PRD-03]
 - `docs/product/prd-02-collector-app/frd-09-reminders-and-notifications/frd-09-reminders-and-notifications.md`
 - `docs/product/prd-02-collector-app/frd-10-error-experience-hardening/frd-10-error-experience-hardening.md`
 - `docs/product/prd-02-collector-app/frd-11-order-image-intake/frd-11-order-image-intake.md`
+- `docs/product/prd-02-collector-app/frd-12-collector-progression/frd-12-collector-progression.md`

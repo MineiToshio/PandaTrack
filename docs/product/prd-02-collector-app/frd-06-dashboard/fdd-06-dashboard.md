@@ -112,7 +112,7 @@ with a `20px` gap above it, capped by the shell content width. Zone spans, deskt
 ```
 KPI overview strip        dash-span-12   (kpi-strip · 4 tinted tiles)
 ZONA 1 Caja y oblig.      dash-span-8    (s8-card-accent · top-accent · dash-stretch)
-Right column              dash-span-4    (right-stack · Presupuesto + Puntualidad)
+Right column              dash-span-4    (right-stack · Presupuesto + Puntualidad + Tu rango)
 ZONA 3 Tendencias         dash-span-12   (top-warm · scoped range picker + 4 line charts, 2 per row)
 ZONA 4b Movimiento        dash-span-6    (top-info · tabbed activity)
 ZONA 4c Próximos pagos    dash-span-6    (top-warning · itemized payments)
@@ -162,8 +162,8 @@ de llegada estimada — informativo, fuera de los totales por mes."` (`FR-06-05`
   (`FR-06-13`, see §5.3).
 
 **Right column** (`dash-span-4 dash-stretch right-stack`). A **flex column** (`height:100%`,
-gap `18px`) that fills the height of Caja. It holds two cards, both `rc-grow` (`flex:1 1 0`,
-vertically centered):
+gap `18px`) that fills the height of Caja. It holds two `rc-grow` cards (`flex:1 1 0`, vertically
+centered), plus a third, non-growing card beneath them (see the progression amendment below):
 
 - **ZONA 2 · Presupuesto** (`s8-card-cool top-cool`). Eyebrow `gauge · "Presupuesto"`, title
   `"Este ciclo"`. The hero pairs consumed with the budget it is measured against, joined by a
@@ -191,6 +191,23 @@ max-width:100%; max-height:280px`), horizontally centered inside a `flex:1 1 aut
 > shrinks** (staying square, up to ~280px) to absorb the difference, so Presupuesto + Puntualidad
 > always match the Caja card's height with no dead space. The donut is the single element that
 > flexes; Presupuesto's content stays fixed.
+
+**ZONA 2c · `"Tu rango"`** (progression widget, `top-accent`). Eyebrow `trophy · "Tu rango"`, title
+= the collector's rank name, trailing a neutral mono chip `"Rango N de 10"`. Body: the rank emblem,
+the point total with `"+N este mes"`, the bar toward the next rank and the points still missing;
+foot: up to five medal ticks and one link into the album. Anatomy is fixed by
+[`fdd-12-collector-progression.md § 2.1`](../frd-12-collector-progression/fdd-12-collector-progression.md);
+this section resolves only the slot that FDD left open.
+
+**Slot decision (the amendment FDD-12 § 2.1 asked for).** The widget is the **third card of the
+right column**, after `Puntualidad`. It is not `rc-grow`: the adaptive-donut rule above stays
+untouched, `Puntualidad` remains the single flexing element, and the widget simply sits below at its
+natural height. Placing a **non-monetary, non-actionable** card under `ZONA 1 · Caja y obligaciones`
+keeps the page's primary decision on top (decálogo #9, "data is the hero"), and reusing the existing
+column width avoids giving a recognition surface a full-width span it has not earned. The widget
+renders with **no animation at all**, matching the calm treatment FDD-12 mandates for the dashboard
+instance, and disappears entirely while `"Ocultar mi progresión"` is on (`FR-12-38`), leaving the
+column exactly as it was before this amendment.
 
 **ZONA 3 · Tendencias** (`top-warm`, span-12). A **scoped charts section**. The header
 (`.charts-head`) carries the eyebrow `line-chart · "Gráficos"`, the title `"Tendencias"`, a

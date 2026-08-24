@@ -866,3 +866,93 @@ of those surfaces.
 > (e.g. the marketing header/minibar `--surface` blur fill and the `--text-primary` hover tints)
 > also use `color-mix(in oklab, …)`, while brand glows and accent washes use `in oklch`. The same
 > guard applies anywhere a neutral token is mixed.
+
+---
+
+## 12. Medal rarity and rank-band tokens
+
+> **Both families are now declared in `src/app/globals.css`**, verbatim from §12.1 and §12.2:
+> `--rarity-*` shipped with the medal album, `--rank-band-*` with the `Progreso` section's rank
+> ladder. This section stays the literal source for both. See
+> [visual-foundations.md § Medal rarity](visual-foundations.md#medal-rarity) and
+> [§ Rank bands](visual-foundations.md#rank-bands) for the semantics, the hue reasoning, and the
+> measured WCAG ratios; this section documents only the literal declarations.
+
+### 12.1 Medal rarity (`--rarity-*`)
+
+Five grades, ascending: `normal`, `first-print`, `limited`, `holo`, `signed` (ADR 0036). Each grade
+is a **new** token, not a reuse of `--accent`/`--accent-warm`/`--accent-cool` — those keep their
+existing, narrower contracts. Declared per theme like `--accent` and the status tokens, because
+(unlike the rank-band aliases in §12.2) these are literal brand colors, not references to an
+already theme-aware token.
+
+```css
+:root[data-theme="light"] {
+  --rarity-normal: oklch(48% 0.02 285);
+  --rarity-normal-chip-text: oklch(46% 0.02 285);
+
+  --rarity-first-print: oklch(50% 0.15 92);
+  --rarity-first-print-chip-text: oklch(46% 0.13 92);
+
+  --rarity-limited: oklch(46% 0.035 230);
+  --rarity-limited-chip-text: oklch(46% 0.035 230);
+
+  --rarity-holo: oklch(50% 0.17 265);
+  --rarity-holo-chip-text: oklch(47% 0.15 265);
+
+  --rarity-signed: oklch(48% 0.18 48);
+  --rarity-signed-chip-text: oklch(47% 0.16 48);
+}
+
+:root[data-theme="dark"] {
+  --rarity-normal: oklch(72% 0.02 265);
+  --rarity-normal-chip-text: var(--rarity-normal);
+
+  --rarity-first-print: oklch(78% 0.14 92);
+  --rarity-first-print-chip-text: var(--rarity-first-print);
+
+  --rarity-limited: oklch(74% 0.03 235);
+  --rarity-limited-chip-text: var(--rarity-limited);
+
+  --rarity-holo: oklch(76% 0.16 268);
+  --rarity-holo-chip-text: var(--rarity-holo);
+
+  --rarity-signed: oklch(76% 0.16 48);
+  --rarity-signed-chip-text: var(--rarity-signed);
+}
+```
+
+Chip fill/border reuse the exact status-chip formula (`tokens-css.md` §3's recipe, restated in
+`visual-foundations.md`'s Chip recipes note):
+
+```css
+background: color-mix(in oklch, var(--rarity-{grade}) 14%, var(--background));
+border: color-mix(in oklch, var(--rarity-{grade}) 28%, var(--background));
+color: var(--rarity-{grade}-chip-text);
+```
+
+The medal artwork's own ring/border consumes `var(--rarity-{grade})` directly.
+
+### 12.2 Rank bands (`--rank-band-*`)
+
+Pure aliases onto existing tokens — declared once, not per theme, because every aliased token is
+already theme-aware (same pattern as §7's backward-compatibility aliases):
+
+```css
+:root {
+  --rank-band-conquered: var(--success);
+  --rank-band-conquered-text: var(--success-chip-text);
+
+  --rank-band-current: var(--accent);
+  --rank-band-current-text: var(--text-primary);
+
+  --rank-band-locked: var(--border);
+  --rank-band-locked-text: var(--text-muted);
+
+  --rank-band-top: var(--accent-warm);
+  --rank-band-top-text: var(--text-primary);
+}
+```
+
+`--rank-band-current` reuses the existing `.state-selected` recipe (§6) for its fill/border rather
+than a new `color-mix` formula; `--rank-band-locked` reuses `.state-disabled` (§6) verbatim.
