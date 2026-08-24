@@ -51,7 +51,7 @@ const NAV_ROUTE_ITEMS: NavItem[] = [
 
 const PRIMARY_NAV_ITEM_IDS: NavItemId[] = ["dashboard", "stores", "orders", "deliveries", "progress"];
 
-export type AdminNavItemId = "moderation" | "audit" | "imageIntake";
+export type AdminNavItemId = "moderation" | "audit" | "imageIntake" | "progression";
 
 /** Nested segment of the photo-quota console, composed onto `ROUTES.admin`. */
 const ADMIN_IMAGE_INTAKE_SEGMENT = "/image-intake";
@@ -74,6 +74,7 @@ const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     href: (locale) => `/${locale}${ROUTES.admin}${ADMIN_IMAGE_INTAKE_SEGMENT}`,
     labelKey: "nav.imageIntake",
   },
+  { id: "progression", href: (locale) => `/${locale}${ROUTES.adminProgression}`, labelKey: "nav.progression" },
   { id: "audit", href: (locale) => `/${locale}${ROUTES.adminAudit}`, labelKey: "nav.audit" },
 ];
 
@@ -92,6 +93,7 @@ export function getActiveAdminNavItemId(pathname: string): AdminNavItemId | unde
   if (segments[adminSegmentIndex] !== "admin") return undefined;
   if (segments[adminSegmentIndex + 1] === "audit") return "audit";
   if (segments[adminSegmentIndex + 1] === "image-intake") return "imageIntake";
+  if (segments[adminSegmentIndex + 1] === "progression") return "progression";
   return "moderation";
 }
 

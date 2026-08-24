@@ -1,16 +1,6 @@
 "use client";
 
-import {
-  Image as ImageIcon,
-  LayoutDashboard,
-  Package,
-  ScrollText,
-  Shield,
-  ShoppingBag,
-  Store,
-  Trophy,
-  X,
-} from "lucide-react";
+import { Image as ImageIcon, LayoutDashboard, Package, ScrollText, Shield, ShoppingBag, Store, TrendingUp, Trophy, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -48,6 +38,9 @@ const NAV_ICON_MAP: Record<PrimaryNavItemId, React.ComponentType<{ className?: s
 const ADMIN_ICON_MAP: Record<AdminNavItemId, React.ComponentType<{ className?: string }>> = {
   moderation: Shield,
   imageIntake: ImageIcon,
+  // Not the trophy the collector's own "Progreso" entry uses: both can sit in this drawer at once,
+  // and two identical glyphs would read as the same destination.
+  progression: TrendingUp,
   audit: ScrollText,
 };
 

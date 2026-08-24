@@ -3,7 +3,8 @@
     "section": "Administración",
     "moderation": "Moderación",
     "audit": "Registro",
-    "imageIntake": "Fotos con IA"
+    "imageIntake": "Fotos con IA",
+    "progression": "Progresión"
   },
   "landing": {
     "title": "Bandeja de moderación",
@@ -208,7 +209,8 @@
   "meta": {
     "landingTitle": "Moderación",
     "auditTitle": "Registro",
-    "imageIntakeTitle": "Fotos con IA"
+    "imageIntakeTitle": "Fotos con IA",
+    "progressionTitle": "Progresión"
   },
   "imageIntake": {
     "intro": "Ajusta la bolsa mensual de fotos con IA de una cuenta. Sin ajuste, cada cuenta tiene {defaultQuota} fotos al mes.",
@@ -236,6 +238,91 @@
     },
     "toast": {
       "overrideSaved": "Cuota actualizada."
+    }
+  },
+  "progression": {
+    "intro": "Busca una cuenta para revisar su historial de puntos. Aquí solo se lee y se anula: nada otorga, edita ni reordena un asiento.",
+    "searchLabel": "Buscar cuenta",
+    "searchPlaceholder": "Usuario o correo",
+    "searchSubmit": "Buscar",
+    "adminTag": "Admin",
+    "openLedger": "Ver historial",
+    "backToSearch": "Volver a la búsqueda",
+    "idle": {
+      "title": "Busca una cuenta",
+      "subtitle": "Escribe un usuario o un correo para ver su historial de puntos. No se lista a nadie por defecto."
+    },
+    "noResults": {
+      "title": "Sin resultados",
+      "subtitle": "Ninguna cuenta coincide con esa búsqueda. Revisa el usuario o el correo."
+    },
+    "summary": {
+      "maturedPoints": "Puntos vigentes",
+      "rank": "Rango",
+      "rankValue": "{rank} · {index} de 10",
+      "highestRank": "Rango más alto",
+      "medals": "Medallas",
+      "medalsValue": "{unlocked} de {total}",
+      "entries": "Asientos",
+      "entriesValue": "{live} vigentes · {voided} anulados"
+    },
+    "ledger": {
+      "tableLabel": "Historial de puntos de la cuenta",
+      "columns": {
+        "when": "Cuándo",
+        "rule": "Regla",
+        "entity": "Origen",
+        "points": "Puntos",
+        "source": "Fuente",
+        "state": "Estado"
+      },
+      "live": "Vigente",
+      "voided": "Anulado",
+      "empty": {
+        "title": "Sin puntos registrados",
+        "subtitle": "{username} todavía no tiene ningún asiento en su historial."
+      },
+      "pagination": {
+        "regionLabel": "Paginación del historial de puntos",
+        "older": "Más antiguos",
+        "newer": "Más recientes"
+      }
+    },
+    "rules": {
+      "order_created": "Pedido registrado",
+      "order_registered": "Pedido con datos completos",
+      "order_first_payment": "Primer pago del pedido",
+      "delivery_received": "Entrega recibida",
+      "order_completed": "Pedido completado",
+      "order_settled": "Pedido saldado",
+      "store_first_order": "Primer pedido en la tienda",
+      "product_type_discovered": "Categoría descubierta",
+      "store_reviewed": "Tienda reseñada"
+    },
+    "entityTypes": {
+      "order": "Pedido",
+      "delivery": "Entrega",
+      "store": "Tienda",
+      "productType": "Categoría"
+    },
+    "sources": {
+      "LIVE": "En vivo",
+      "BACKFILL": "Histórico"
+    },
+    "void": {
+      "trigger": "Anular puntos",
+      "title": "Anular los puntos",
+      "subtitle": "{username} tiene {count, plural, one {# asiento vigente} other {# asientos vigentes}}.",
+      "explainer": "Se anularán todos los asientos vigentes de esta cuenta, no una selección. Los asientos no se borran: quedan marcados con quién los anuló y por qué, y el total se vuelve a calcular sin ellos. El rango más alto ya alcanzado no se retira.",
+      "reasonLabel": "Motivo",
+      "reasonPlaceholder": "Por qué se anulan estos puntos",
+      "reasonHelp": "Queda registrado en el registro de administración junto a tu usuario.",
+      "reasonRequired": "Escribe un motivo para anular los puntos.",
+      "confirm": "Anular puntos",
+      "cancel": "Cancelar",
+      "toast": {
+        "voided": "{count, plural, one {# asiento anulado} other {# asientos anulados}}."
+      }
     }
   }
 }

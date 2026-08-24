@@ -56,6 +56,7 @@ export const ROUTES = {
   progressRanks: "/progress/ranks",
   admin: "/admin",
   adminAudit: "/admin/audit",
+  adminProgression: "/admin/progression",
 } as const;
 
 /**
@@ -339,6 +340,13 @@ export const POSTHOG_EVENTS = {
     SPACE_ENTERED: "admin_space_entered",
     AUDIT_VIEWED: "admin_audit_viewed",
     INBOX_ITEM_OPENED: "admin_inbox_item_opened",
+    /** The read-only point ledger of one collector opened. Fired once per mount, client-side. */
+    PROGRESSION_LEDGER_VIEWED: "admin_progression_ledger_viewed",
+    /**
+     * A collector's points voided. Fired server-side after the void commits, so a reversal that
+     * rolled back (an unwritable audit trail) is never reported as one that happened.
+     */
+    PROGRESSION_POINTS_VOIDED: "admin_progression_points_voided",
   },
   /**
    * Collector progression. The namespace exists before its events do, on purpose: the accrual layer

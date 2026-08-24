@@ -4,8 +4,8 @@ import { getTranslations } from "next-intl/server";
 import EmptyState from "@/components/modules/EmptyState";
 import SetHeaderTitle from "@/app/[locale]/(app)/_components/AppLayout/SetHeaderTitle";
 import { listAuditEntries } from "@/lib/data/admin/adminAuditQueries";
+import AdminPager from "../_components/share/AdminPager";
 import AuditLogTable from "./_components/AuditLogTable";
-import AuditPager from "./_components/AuditPager";
 import AuditViewedCapture from "./_components/AuditViewedCapture";
 
 type AdminAuditPageProps = {
@@ -53,7 +53,7 @@ export default async function AdminAuditPage({ params, searchParams }: AdminAudi
         <section className="flex flex-col gap-4">
           <AuditLogTable entries={items} locale={locale} />
           {totalPages > 1 && (
-            <AuditPager
+            <AdminPager
               currentPage={currentPage}
               totalPages={totalPages}
               regionLabel={t("audit.pagination.regionLabel")}

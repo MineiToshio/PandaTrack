@@ -92,19 +92,25 @@ describe("getAllNavItems", () => {
 describe("getAdminNavItems", () => {
   it("returns the grouped Administración section items in order", () => {
     const items = getAdminNavItems();
-    expect(items.map((i) => i.id)).toEqual(["moderation", "imageIntake", "audit"]);
+    expect(items.map((i) => i.id)).toEqual(["moderation", "imageIntake", "progression", "audit"]);
   });
 
   it("builds locale-prefixed hrefs for the admin landing and the nested routes", () => {
     const items = getAdminNavItems();
     expect(items[0].href("es")).toBe("/es/admin");
     expect(items[1].href("es")).toBe("/es/admin/image-intake");
-    expect(items[2].href("en")).toBe("/en/admin/audit");
+    expect(items[2].href("es")).toBe("/es/admin/progression");
+    expect(items[3].href("en")).toBe("/en/admin/audit");
   });
 
   it("resolves labels against the admin namespace", () => {
     const items = getAdminNavItems();
-    expect(items.map((i) => i.labelKey)).toEqual(["nav.moderation", "nav.imageIntake", "nav.audit"]);
+    expect(items.map((i) => i.labelKey)).toEqual([
+      "nav.moderation",
+      "nav.imageIntake",
+      "nav.progression",
+      "nav.audit",
+    ]);
   });
 });
 
@@ -117,6 +123,11 @@ describe("getActiveAdminNavItemId", () => {
   it("matches the audit entry for the nested audit route", () => {
     expect(getActiveAdminNavItemId("/es/admin/audit")).toBe("audit");
     expect(getActiveAdminNavItemId("/en/admin/audit")).toBe("audit");
+  });
+
+  it("matches the progression entry for the nested progression route", () => {
+    expect(getActiveAdminNavItemId("/es/admin/progression")).toBe("progression");
+    expect(getActiveAdminNavItemId("/en/admin/progression")).toBe("progression");
   });
 
   it("matches the photo-quota entry for the nested image-intake route", () => {
