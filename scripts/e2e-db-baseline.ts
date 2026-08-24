@@ -19,6 +19,7 @@
  * Usage (from repo root):
  *   npx tsx scripts/e2e-db-baseline.ts capture
  *   npx tsx scripts/e2e-db-baseline.ts verify
+ *   npx tsx scripts/e2e-db-baseline.ts sweep-progression
  */
 import "dotenv/config";
 import fs from "node:fs";
@@ -148,11 +149,71 @@ async function verify(): Promise<void> {
   throw new Error(lines.join("\n"));
 }
 
+/**
+ * Removes the progression rows the run itself produced.
+ *
+ * WHY this is not covered by `verify` above, and why it needs its own pass: the guard freezes rows
+ * that EXISTED before the suite, and progression rows are ones the suite CREATES. That asymmetry is
+ * ordinarily harmless, since a created fixture is deleted by whichever spec made it. Progression is
+ * the exception, for two reasons that compound:
+ *
+ *   - Nothing owns these rows. `point_ledger_entry.entityId` carries no foreign key by design
+ *     (`ADR 0035`), so deleting the fixture order a spec created leaves its ledger entries behind,
+ *     and `MedalUnlock` is never revoked at all (`BR-12-08`), by anything, ever.
+ *   - Merely READING triggers them. Opening `/progress` schedules a recompute (`FR-12-11`), and a
+ *     recompute evaluates every medal condition against the collector's whole real history. A spec
+ *     that only navigates to the section therefore unlocks every medal that history already
+ *     satisfies, permanently, without creating a single fixture row.
+ *
+ * Measured, not theoretical: a single pass of the suite left ten `medal_unlock` rows and a
+ * `user_progress` row on the owner's real account, and no cleanup channel could take them back.
+ *
+ * The instant the run began is the baseline file's own mtime, which `capture` writes at exactly
+ * that moment, so nothing has to be threaded from setup to teardown.
+ *
+ * Conservative on purpose: `user_progress` is dropped only while it still carries its initial
+ * shape, the same reasoning `scripts/e2e-db-cleanup.ts` applies to `progression_settings`. A row
+ * holding real derived progression is left alone and reported, because leaving a visible trace is
+ * strictly better than destroying state the collector earned.
+ */
+async function sweepProgression(): Promise<void> {
+  if (!fs.existsSync(BASELINE_PATH)) {
+    throw new Error(`[e2e guard] no baseline at ${BASELINE_PATH}. globalSetup must run 'capture' before the suite.`);
+  }
+  const runStartedAt = fs.statSync(BASELINE_PATH).mtime;
+
+  const entries = await prisma.pointLedgerEntry.deleteMany({ where: { createdAt: { gte: runStartedAt } } });
+  const unlocks = await prisma.medalUnlock.deleteMany({
+    where: { unlockedAt: { gte: runStartedAt }, source: "LIVE" },
+  });
+  const progress = await prisma.userProgress.deleteMany({
+    where: { lastRecomputedAt: { gte: runStartedAt }, maturedPoints: 0, rankIndex: 1, highestRankIndex: 1 },
+  });
+  const kept = await prisma.userProgress.count({ where: { lastRecomputedAt: { gte: runStartedAt } } });
+
+  const swept = entries.count + unlocks.count + progress.count;
+  if (swept === 0 && kept === 0) {
+    console.log("[e2e guard] progression: the run wrote nothing to sweep.");
+    return;
+  }
+  console.log(
+    `[e2e guard] progression swept: ${entries.count} ledger entries, ${unlocks.count} medal unlocks, ` +
+      `${progress.count} progress rows.`,
+  );
+  if (kept > 0) {
+    console.log(
+      `[e2e guard] progression: ${kept} user_progress row(s) carry real derived progression and were LEFT IN PLACE. ` +
+        "Review them before the next run.",
+    );
+  }
+}
+
 async function main(): Promise<void> {
   const mode = process.argv[2];
   if (mode === "capture") return capture();
   if (mode === "verify") return verify();
-  throw new Error("Usage: tsx scripts/e2e-db-baseline.ts <capture|verify>");
+  if (mode === "sweep-progression") return sweepProgression();
+  throw new Error("Usage: tsx scripts/e2e-db-baseline.ts <capture|verify|sweep-progression>");
 }
 
 // Only when invoked directly. `scripts/e2e-db-cleanup.ts` imports `BASELINE_PATH` and `Baseline`
