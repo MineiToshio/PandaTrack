@@ -8,10 +8,24 @@ import { createOrderItems, findInvalidProductTypeKey, replaceOrderItems } from "
 import { declaredAgainstOrderMinor } from "./orderOpenBalance";
 import { recalculateOrderAllocationCache } from "./orderPaymentAllocations";
 import { writeStorePaymentWithAllocations } from "./storePaymentMutations";
+import {
+  combineCredits,
+  creditOrderCreation,
+  settleProgression,
+  type CreditOutcome,
+  type ProgressionDelta,
+} from "@/lib/data/progression/accrual";
+import { isStoreCreditEligible, STORE_CREDIT_ELIGIBILITY_SELECT } from "@/lib/data/progression/storeCreditEligibility";
 import type { CancelPaymentsChoice, OrderCreateInput, OrderEditInput } from "@/lib/orders/orderValidation";
 
 type CreateOrderResult =
-  | { ok: true; orderId: string; humanReadableId: string }
+  | { ok: true; orderId: string; humanReadableId: string; progression: ProgressionDelta | null }
+  | { ok: false; error: "STORE_NOT_FOUND" | "INVALID_PRODUCT_TYPE" | "INITIAL_PAYMENT_INVALID" };
+
+/** The transaction's own shape: it carries the raw credit count, which only becomes a delta once
+ *  the transaction has committed and the progress cache can safely be re-derived outside it. */
+type CreateOrderTxOutcome =
+  | { ok: true; orderId: string; humanReadableId: string; credited: CreditOutcome }
   | { ok: false; error: "STORE_NOT_FOUND" | "INVALID_PRODUCT_TYPE" | "INITIAL_PAYMENT_INVALID" };
 
 type EditOrderResult =
@@ -82,11 +96,14 @@ async function hasLiveDeliveryLinks(orderId: string): Promise<boolean> {
 }
 
 export async function createOrder(userId: string, input: OrderCreateInput): Promise<CreateOrderResult> {
-  return prisma
-    .$transaction<CreateOrderResult>(async (tx) => {
+  const outcome = await prisma
+    .$transaction<CreateOrderTxOutcome>(async (tx) => {
+      // Widened past `id` for the progression credit gate: whether this store may credit anything is
+      // read inside the same transaction as the write, never cached from an earlier request, because
+      // a store's approval or visibility can change between the page loading and the form landing.
       const store = await tx.store.findFirst({
         where: { id: input.storeId },
-        select: { id: true },
+        select: { id: true, ...STORE_CREDIT_ELIGIBILITY_SELECT },
       });
 
       if (!store) {
@@ -147,14 +164,18 @@ export async function createOrder(userId: string, input: OrderCreateInput): Prom
         }
       }
 
+      const storeCreditEligible = isStoreCreditEligible(store);
+      let paymentCredited: CreditOutcome = 0;
+
       if (input.initialPayment) {
         // Same transaction as the order itself: an advance the collector reported while creating
         // the order must never end up recorded without it, or recorded against nothing.
         const createdItems = await tx.orderItem.findMany({ where: { orderId: order.id }, select: { id: true } });
         const singleItemId = createdItems.length === 1 ? createdItems[0].id : null;
-        await writeStorePaymentWithAllocations(tx, {
+        const written = await writeStorePaymentWithAllocations(tx, {
           userId,
           storeId: input.storeId,
+          creditEligibleStore: storeCreditEligible,
           amount: input.initialPayment.amount,
           paymentDate: input.initialPayment.paymentDate,
           currencyCode: input.currencyCode,
@@ -169,6 +190,7 @@ export async function createOrder(userId: string, input: OrderCreateInput): Prom
             },
           ],
         });
+        paymentCredited = written.credited;
       }
 
       await appendOrderHistoryEntry({
@@ -178,7 +200,21 @@ export async function createOrder(userId: string, input: OrderCreateInput): Prom
         eventType: OrderHistoryEventType.ORDER_CREATED,
       });
 
-      return { ok: true, orderId: order.id, humanReadableId: order.humanReadableId };
+      // Last thing in the transaction, well past every refusal above: an order that ends up refused
+      // must never leave a credit behind, and a credit that fails must never refuse the order.
+      const created = await creditOrderCreation(tx, {
+        userId,
+        orderId: order.id,
+        storeId: input.storeId,
+        store,
+      });
+
+      return {
+        ok: true,
+        orderId: order.id,
+        humanReadableId: order.humanReadableId,
+        credited: combineCredits(created, paymentCredited),
+      };
     })
     .catch((error: unknown) => {
       if (error instanceof InvalidProductTypeRollback) {
@@ -186,6 +222,24 @@ export async function createOrder(userId: string, input: OrderCreateInput): Prom
       }
       throw error;
     });
+
+  if (!outcome.ok) {
+    return outcome;
+  }
+
+  // Outside the transaction on purpose: re-deriving the progress cache is what turns the appended
+  // rows into an honest, cap-aware delta, and it must not add a per-user write to a transaction the
+  // money domain shares.
+  return {
+    ok: true,
+    orderId: outcome.orderId,
+    humanReadableId: outcome.humanReadableId,
+    // The order's own note is handed to the evaluator here and only here. It is the one fact the
+    // `first-photo-order` medal depends on that a later recompute cannot re-derive: the note is
+    // editable, so the request that just wrote the image-intake marker is the only honest moment to
+    // read it (`ADR 0040`).
+    progression: await settleProgression(userId, outcome.credited, { createdOrderNote: input.note ?? null }),
+  };
 }
 
 export async function editOrder(orderId: string, userId: string, input: OrderEditInput): Promise<EditOrderResult> {

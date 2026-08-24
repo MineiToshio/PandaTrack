@@ -82,7 +82,12 @@ describe("createOrder with an initial payment", () => {
       initialPayment: { amount: 4000, paymentDate: new Date("2026-08-01T00:00:00.000Z") },
     });
 
-    expect(result).toEqual({ ok: true, orderId: "order-1", humanReadableId: "ORD-20260808-01" });
+    expect(result).toEqual({
+      ok: true,
+      orderId: "order-1",
+      humanReadableId: "ORD-20260808-01",
+      progression: { pointsDelta: 0, rankUp: null, medalsUnlocked: [] },
+    });
     expect(tx.storePayment.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({ storeId: "store-1", amount: 4000, currencyCode: "USD" }),

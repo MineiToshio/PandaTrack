@@ -1,5 +1,7 @@
 import type { StorePresenceType, StoreStatus, StoreContactChannelType } from "../../../../generated/prisma/client";
 import { prisma } from "@/lib/prisma";
+import { creditStoreReviewed, settleProgression, type ProgressionDelta } from "@/lib/data/progression/accrual";
+import { STORE_CREDIT_ELIGIBILITY_SELECT } from "@/lib/data/progression/storeCreditEligibility";
 import { generateStoreSlug } from "@/lib/store/slug";
 import { normalizeStoreName } from "@/lib/store/duplicateMatch";
 import type { StoreViewerNote } from "./storeQueries";
@@ -49,6 +51,11 @@ export interface PersistedStoreReview {
   comment: string | null;
   createdAt: Date;
   updatedAt: Date;
+  /**
+   * Progression delta produced by the review, or `null` when the credit itself failed and was
+   * swallowed. Zeroes when the store cannot credit or the collector never received from it.
+   */
+  progression: ProgressionDelta | null;
 }
 
 export interface UpsertStoreReviewInput {
@@ -145,10 +152,12 @@ export async function upsertStoreReview(input: UpsertStoreReviewInput): Promise<
   const trimmedComment = input.comment?.trim() || null;
   const RATING_PERSISTENCE_TOLERANCE = 0.001;
 
-  return prisma.$transaction(async (tx) => {
-    await tx.store.findUniqueOrThrow({
+  const written = await prisma.$transaction(async (tx) => {
+    // Widened from a bare existence check to the eligibility columns the credit gate needs, so the
+    // gate reuses the lookup this mutation already had to do rather than issuing a second one.
+    const store = await tx.store.findUniqueOrThrow({
       where: { id: input.storeId },
-      select: { id: true },
+      select: { id: true, ...STORE_CREDIT_ELIGIBILITY_SELECT },
     });
 
     let review = await tx.storeReview.upsert({
@@ -223,14 +232,29 @@ export async function upsertStoreReview(input: UpsertStoreReviewInput): Promise<
       },
     });
 
+    // Last thing in the transaction, past every refusal above: a review that ends up rolled back
+    // must never leave a credit behind, and a credit that fails must never fail the review.
+    const credited = await creditStoreReviewed(tx, {
+      userId: input.userId,
+      storeId: input.storeId,
+      store,
+    });
+
     return {
-      id: review.id,
-      overallRating: review.overallRating,
-      comment: review.comment,
-      createdAt: review.createdAt,
-      updatedAt: review.updatedAt,
+      review: {
+        id: review.id,
+        overallRating: review.overallRating,
+        comment: review.comment,
+        createdAt: review.createdAt,
+        updatedAt: review.updatedAt,
+      },
+      credited,
     };
   });
+
+  // Outside the transaction, like every other call site: re-deriving the cache is what turns the
+  // appended row into an honest, cap-aware delta and evaluates the medals that just became true.
+  return { ...written.review, progression: await settleProgression(input.userId, written.credited) };
 }
 
 /**

@@ -53,13 +53,13 @@ describe("persistDerivedOrderStatuses", () => {
 
   it("does nothing when orderIds is empty", async () => {
     const tx = makeTx([]);
-    await persistDerivedOrderStatuses(tx, []);
+    await persistDerivedOrderStatuses(tx, "user-1", []);
     expect((tx as unknown as MockTx).order.findMany).not.toHaveBeenCalled();
   });
 
   it("does nothing when no matching order is found", async () => {
     const tx = makeTx([]);
-    await persistDerivedOrderStatuses(tx, ["order-1"]);
+    await persistDerivedOrderStatuses(tx, "user-1", ["order-1"]);
     expect((tx as unknown as MockTx).order.updateMany).not.toHaveBeenCalled();
   });
 
@@ -71,7 +71,7 @@ describe("persistDerivedOrderStatuses", () => {
         items: [{ id: "item-1", deliveryState: OrderItemDeliveryState.IN_TRANSIT }],
       },
     ]);
-    await persistDerivedOrderStatuses(tx, ["order-1"]);
+    await persistDerivedOrderStatuses(tx, "user-1", ["order-1"]);
     expect((tx as unknown as MockTx).order.updateMany).not.toHaveBeenCalled();
   });
 
@@ -83,7 +83,7 @@ describe("persistDerivedOrderStatuses", () => {
         items: [{ id: "item-1", deliveryState: OrderItemDeliveryState.IN_TRANSIT }],
       },
     ]);
-    await persistDerivedOrderStatuses(tx, ["order-1"]);
+    await persistDerivedOrderStatuses(tx, "user-1", ["order-1"]);
     expect((tx as unknown as MockTx).order.updateMany).toHaveBeenCalledWith({
       where: { id: { in: ["order-1"] } },
       data: { status: OrderStatus.IN_TRANSIT },
@@ -98,7 +98,7 @@ describe("persistDerivedOrderStatuses", () => {
         items: [{ id: "item-1", deliveryState: OrderItemDeliveryState.IN_TRANSIT }],
       },
     ]);
-    await persistDerivedOrderStatuses(tx, ["order-1"]);
+    await persistDerivedOrderStatuses(tx, "user-1", ["order-1"]);
     expect((tx as unknown as MockTx).order.updateMany).not.toHaveBeenCalled();
   });
 
@@ -113,7 +113,7 @@ describe("persistDerivedOrderStatuses", () => {
         ],
       },
     ]);
-    await persistDerivedOrderStatuses(tx, ["order-1"]);
+    await persistDerivedOrderStatuses(tx, "user-1", ["order-1"]);
     expect((tx as unknown as MockTx).order.updateMany).toHaveBeenCalledWith({
       where: { id: { in: ["order-1"] } },
       data: { status: OrderStatus.COMPLETED },
@@ -131,7 +131,7 @@ describe("persistDerivedOrderStatuses", () => {
         ],
       },
     ]);
-    await persistDerivedOrderStatuses(tx, ["order-1"]);
+    await persistDerivedOrderStatuses(tx, "user-1", ["order-1"]);
     expect((tx as unknown as MockTx).order.updateMany).toHaveBeenCalledWith({
       where: { id: { in: ["order-1"] } },
       data: { status: OrderStatus.OPEN },
@@ -149,7 +149,7 @@ describe("persistDerivedOrderStatuses", () => {
         ],
       },
     ]);
-    await persistDerivedOrderStatuses(tx, ["order-1"]);
+    await persistDerivedOrderStatuses(tx, "user-1", ["order-1"]);
     expect((tx as unknown as MockTx).order.updateMany).toHaveBeenCalledWith({
       where: { id: { in: ["order-1"] } },
       data: { status: OrderStatus.PARTIALLY_IN_TRANSIT },
@@ -164,10 +164,10 @@ describe("persistDerivedOrderStatuses", () => {
         items: [{ id: "item-1", deliveryState: OrderItemDeliveryState.IN_TRANSIT }],
       },
     ]);
-    await persistDerivedOrderStatuses(tx, ["order-1", "order-1", "order-1"]);
+    await persistDerivedOrderStatuses(tx, "user-1", ["order-1", "order-1", "order-1"]);
     expect((tx as unknown as MockTx).order.findMany).toHaveBeenCalledTimes(1);
     expect((tx as unknown as MockTx).order.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: { in: ["order-1"] } } }),
+      expect.objectContaining({ where: { id: { in: ["order-1"] }, userId: "user-1" } }),
     );
   });
 
@@ -189,7 +189,7 @@ describe("persistDerivedOrderStatuses", () => {
         items: [{ id: "item-3", deliveryState: OrderItemDeliveryState.DELIVERED }],
       },
     ]);
-    await persistDerivedOrderStatuses(tx, ["order-1", "order-2", "order-3"]);
+    await persistDerivedOrderStatuses(tx, "user-1", ["order-1", "order-2", "order-3"]);
     const updateMany = (tx as unknown as MockTx).order.updateMany;
     // Two IN_TRANSIT orders collapse into one write; the COMPLETED order is a second write.
     expect(updateMany).toHaveBeenCalledTimes(2);
@@ -208,8 +208,8 @@ describe("persistDerivedOrderStatuses", () => {
   describe("closedOrderIds (FR-08-46)", () => {
     it("returns [] for an empty orderIds input", async () => {
       const tx = makeTx([]);
-      const result = await persistDerivedOrderStatuses(tx, []);
-      expect(result).toEqual({ closedOrderIds: [] });
+      const result = await persistDerivedOrderStatuses(tx, "user-1", []);
+      expect(result).toEqual({ closedOrderIds: [], credited: 0 });
     });
 
     it("includes an order that flips to COMPLETED in this call", async () => {
@@ -223,8 +223,8 @@ describe("persistDerivedOrderStatuses", () => {
           ],
         },
       ]);
-      const result = await persistDerivedOrderStatuses(tx, ["order-1"]);
-      expect(result).toEqual({ closedOrderIds: ["order-1"] });
+      const result = await persistDerivedOrderStatuses(tx, "user-1", ["order-1"]);
+      expect(result).toEqual({ closedOrderIds: ["order-1"], credited: 0 });
     });
 
     it("excludes an order that was already COMPLETED before this call", async () => {
@@ -238,10 +238,10 @@ describe("persistDerivedOrderStatuses", () => {
           ],
         },
       ]);
-      const result = await persistDerivedOrderStatuses(tx, ["order-1"]);
+      const result = await persistDerivedOrderStatuses(tx, "user-1", ["order-1"]);
       // Derived status equals current status, so the loop's own `continue` already skips the write;
       // this asserts the closed-set agrees and does not separately re-count it as "just closed".
-      expect(result).toEqual({ closedOrderIds: [] });
+      expect(result).toEqual({ closedOrderIds: [], credited: 0 });
       expect((tx as unknown as MockTx).order.updateMany).not.toHaveBeenCalled();
     });
 
@@ -253,8 +253,8 @@ describe("persistDerivedOrderStatuses", () => {
           items: [{ id: "item-1", deliveryState: OrderItemDeliveryState.IN_TRANSIT }],
         },
       ]);
-      const result = await persistDerivedOrderStatuses(tx, ["order-1"]);
-      expect(result).toEqual({ closedOrderIds: [] });
+      const result = await persistDerivedOrderStatuses(tx, "user-1", ["order-1"]);
+      expect(result).toEqual({ closedOrderIds: [], credited: 0 });
     });
 
     it("mixes a closing order with a non-closing one in the same call", async () => {
@@ -273,8 +273,8 @@ describe("persistDerivedOrderStatuses", () => {
           items: [{ id: "item-3", deliveryState: OrderItemDeliveryState.IN_TRANSIT }],
         },
       ]);
-      const result = await persistDerivedOrderStatuses(tx, ["order-1", "order-2"]);
-      expect(result).toEqual({ closedOrderIds: ["order-1"] });
+      const result = await persistDerivedOrderStatuses(tx, "user-1", ["order-1", "order-2"]);
+      expect(result).toEqual({ closedOrderIds: ["order-1"], credited: 0 });
     });
   });
 });
@@ -359,7 +359,14 @@ describe("createDelivery", () => {
 
     const result = await createDelivery("user-1", input);
 
-    expect(result).toEqual({ ok: true, deliveryId: "delivery-1", productCount: 2, orderCount: 1, closedOrders: [] });
+    expect(result).toEqual({
+        ok: true,
+        deliveryId: "delivery-1",
+        productCount: 2,
+        orderCount: 1,
+        closedOrders: [],
+        progression: { pointsDelta: 0, rankUp: null, medalsUnlocked: [] },
+      });
     expect(tx.delivery.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
         humanReadableId: "DLV-20260430-01",
@@ -514,7 +521,14 @@ describe("createDelivery", () => {
 
       const result = await createDelivery("user-1", quickInput);
 
-      expect(result).toEqual({ ok: true, deliveryId: "delivery-1", productCount: 2, orderCount: 1, closedOrders: [] });
+      expect(result).toEqual({
+        ok: true,
+        deliveryId: "delivery-1",
+        productCount: 2,
+        orderCount: 1,
+        closedOrders: [],
+        progression: { pointsDelta: 0, rankUp: null, medalsUnlocked: [] },
+      });
       expect(tx.delivery.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
           status: DeliveryStatus.DELIVERED,
@@ -733,6 +747,7 @@ describe("createDelivery", () => {
             humanReadableId: "ORD-0001",
           },
         ],
+        progression: { pointsDelta: 0, rankUp: null, medalsUnlocked: [] },
       });
 
       // One association per product, all pointing at that single delivery.
@@ -747,7 +762,7 @@ describe("createDelivery", () => {
 
       // Both source orders re-derived in the same transaction, each to its own new status.
       expect(tx.order.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ where: { id: { in: ["order-1", "order-2"] } } }),
+        expect.objectContaining({ where: { id: { in: ["order-1", "order-2"] }, userId: "user-1" } }),
       );
       expect(tx.order.updateMany).toHaveBeenCalledWith({
         where: { id: { in: ["order-1"] } },
@@ -910,7 +925,14 @@ describe("createDelivery", () => {
 
       const result = await createDelivery("user-1", input);
 
-      expect(result).toEqual({ ok: true, deliveryId: "delivery-1", productCount: 2, orderCount: 1, closedOrders: [] });
+      expect(result).toEqual({
+        ok: true,
+        deliveryId: "delivery-1",
+        productCount: 2,
+        orderCount: 1,
+        closedOrders: [],
+        progression: { pointsDelta: 0, rankUp: null, medalsUnlocked: [] },
+      });
     });
   });
 });
