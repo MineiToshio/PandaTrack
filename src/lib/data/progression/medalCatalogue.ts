@@ -222,6 +222,7 @@ export const MEDAL_CATALOGUE: readonly MedalDefinition[] = Object.freeze([
     secret: false,
     controllable: true,
     ...MEDAL_DEFAULTS,
+    imageKey: "first-order",
   },
   {
     medalKey: "first-payment",
@@ -234,6 +235,7 @@ export const MEDAL_CATALOGUE: readonly MedalDefinition[] = Object.freeze([
     secret: false,
     controllable: true,
     ...MEDAL_DEFAULTS,
+    imageKey: "first-payment",
   },
   {
     medalKey: "first-arrival",
@@ -246,6 +248,7 @@ export const MEDAL_CATALOGUE: readonly MedalDefinition[] = Object.freeze([
     secret: false,
     controllable: true,
     ...MEDAL_DEFAULTS,
+    imageKey: "first-arrival",
   },
   {
     medalKey: "first-order-closed",
@@ -260,6 +263,7 @@ export const MEDAL_CATALOGUE: readonly MedalDefinition[] = Object.freeze([
     secret: false,
     controllable: true,
     ...MEDAL_DEFAULTS,
+    imageKey: "first-order-closed",
   },
   {
     medalKey: "first-review",
@@ -273,6 +277,7 @@ export const MEDAL_CATALOGUE: readonly MedalDefinition[] = Object.freeze([
     secret: false,
     controllable: true,
     ...MEDAL_DEFAULTS,
+    imageKey: "first-review",
   },
   {
     medalKey: "first-photo-order",
@@ -285,6 +290,7 @@ export const MEDAL_CATALOGUE: readonly MedalDefinition[] = Object.freeze([
     secret: false,
     controllable: true,
     ...MEDAL_DEFAULTS,
+    imageKey: "first-photo-order",
   },
   {
     medalKey: "first-store",
@@ -299,6 +305,7 @@ export const MEDAL_CATALOGUE: readonly MedalDefinition[] = Object.freeze([
     secret: false,
     controllable: true,
     ...MEDAL_DEFAULTS,
+    imageKey: "first-store",
   },
 
   // --- La espera ------------------------------------------------------------------------------
@@ -313,6 +320,7 @@ export const MEDAL_CATALOGUE: readonly MedalDefinition[] = Object.freeze([
     secret: false,
     controllable: true,
     ...MEDAL_DEFAULTS,
+    imageKey: "patience-60",
   },
   {
     medalKey: "patience-120",
@@ -325,6 +333,7 @@ export const MEDAL_CATALOGUE: readonly MedalDefinition[] = Object.freeze([
     secret: false,
     controllable: true,
     ...MEDAL_DEFAULTS,
+    imageKey: "patience-120",
   },
   {
     medalKey: "patience-200",
@@ -337,6 +346,7 @@ export const MEDAL_CATALOGUE: readonly MedalDefinition[] = Object.freeze([
     secret: false,
     controllable: true,
     ...MEDAL_DEFAULTS,
+    imageKey: "patience-200",
   },
   {
     medalKey: "split-arrival",
@@ -349,6 +359,7 @@ export const MEDAL_CATALOGUE: readonly MedalDefinition[] = Object.freeze([
     secret: false,
     controllable: true,
     ...MEDAL_DEFAULTS,
+    imageKey: "split-arrival",
   },
 
   // --- La vitrina (phase 2) -------------------------------------------------------------------
@@ -363,6 +374,7 @@ export const MEDAL_CATALOGUE: readonly MedalDefinition[] = Object.freeze([
     secret: false,
     controllable: true,
     ...MEDAL_DEFAULTS,
+    imageKey: "collection-10",
   },
   {
     medalKey: "collection-50",
@@ -375,6 +387,7 @@ export const MEDAL_CATALOGUE: readonly MedalDefinition[] = Object.freeze([
     secret: false,
     controllable: true,
     ...MEDAL_DEFAULTS,
+    imageKey: "collection-50",
   },
   {
     medalKey: "collection-150",
@@ -387,6 +400,7 @@ export const MEDAL_CATALOGUE: readonly MedalDefinition[] = Object.freeze([
     secret: false,
     controllable: true,
     ...MEDAL_DEFAULTS,
+    imageKey: "collection-150",
   },
   {
     medalKey: "arrivals-25",
@@ -399,6 +413,7 @@ export const MEDAL_CATALOGUE: readonly MedalDefinition[] = Object.freeze([
     secret: false,
     controllable: true,
     ...MEDAL_DEFAULTS,
+    imageKey: "arrivals-25",
   },
 
   // --- Explorador (phase 2) -------------------------------------------------------------------
@@ -413,6 +428,7 @@ export const MEDAL_CATALOGUE: readonly MedalDefinition[] = Object.freeze([
     secret: false,
     controllable: true,
     ...MEDAL_DEFAULTS,
+    imageKey: "variety-3",
   },
   {
     medalKey: "variety-6",
@@ -425,6 +441,7 @@ export const MEDAL_CATALOGUE: readonly MedalDefinition[] = Object.freeze([
     secret: false,
     controllable: true,
     ...MEDAL_DEFAULTS,
+    imageKey: "variety-6",
   },
   {
     medalKey: "stores-10",
@@ -437,6 +454,7 @@ export const MEDAL_CATALOGUE: readonly MedalDefinition[] = Object.freeze([
     secret: false,
     controllable: true,
     ...MEDAL_DEFAULTS,
+    imageKey: "stores-10",
   },
 
   // --- Cronista (phase 2) ---------------------------------------------------------------------
@@ -451,6 +469,7 @@ export const MEDAL_CATALOGUE: readonly MedalDefinition[] = Object.freeze([
     secret: false,
     controllable: true,
     ...MEDAL_DEFAULTS,
+    imageKey: "clean-record-1",
   },
   {
     medalKey: "clean-record-10",
@@ -463,6 +482,7 @@ export const MEDAL_CATALOGUE: readonly MedalDefinition[] = Object.freeze([
     secret: false,
     controllable: true,
     ...MEDAL_DEFAULTS,
+    imageKey: "clean-record-10",
   },
   {
     medalKey: "store-mapped-1",
@@ -477,6 +497,7 @@ export const MEDAL_CATALOGUE: readonly MedalDefinition[] = Object.freeze([
     // do can make it happen, so it must not sit in the denominator of a rank gate.
     controllable: false,
     ...MEDAL_DEFAULTS,
+    imageKey: "store-mapped-1",
   },
 
   // --- Secretas -------------------------------------------------------------------------------
@@ -491,6 +512,7 @@ export const MEDAL_CATALOGUE: readonly MedalDefinition[] = Object.freeze([
     secret: true,
     controllable: true,
     ...MEDAL_DEFAULTS,
+    imageKey: "midnight-order",
   },
   {
     medalKey: "same-day-settle",
@@ -503,6 +525,7 @@ export const MEDAL_CATALOGUE: readonly MedalDefinition[] = Object.freeze([
     secret: true,
     controllable: true,
     ...MEDAL_DEFAULTS,
+    imageKey: "same-day-settle",
   },
   {
     medalKey: "year-streak",
@@ -515,6 +538,7 @@ export const MEDAL_CATALOGUE: readonly MedalDefinition[] = Object.freeze([
     secret: true,
     controllable: true,
     ...MEDAL_DEFAULTS,
+    imageKey: "year-streak",
   },
 ]);
 

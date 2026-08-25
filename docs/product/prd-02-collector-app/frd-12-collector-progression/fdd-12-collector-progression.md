@@ -608,9 +608,11 @@ once implemented):
 | `e-lg`     | 108 | Ladder summit and rank-up "new" emblem                                          |
 | `e-xl`     | 148 | Resumen tab rank hero                                                           |
 
-Both primitives get a placeholder art hole (§4) while final medal/emblem art doesn't exist yet;
-the prototype's `data-medal` attribute and mono `"Imagen"` caption inside `.stage-note` mark
-that hole explicitly rather than shipping a guessed illustration.
+Both primitives originally shipped with a placeholder art hole (§4) while final medal/emblem art
+did not exist yet; the prototype's `data-medal` attribute and mono `"Imagen"` caption inside
+`.stage-note` marked that hole explicitly rather than shipping a guessed illustration.
+`MedalStage`'s hole was filled for all 24 medals on 2026-08-24 (see `medal-art-guide.md` §5);
+`RankEmblem`'s ten ranks still render the sober placeholder described above.
 
 **Elevation.** Cards (album, hero, detail) use the standard system elevation (list card = 1,
 section card = 2). The toast reuses the achievement-toast composition (`--elevation-3` +

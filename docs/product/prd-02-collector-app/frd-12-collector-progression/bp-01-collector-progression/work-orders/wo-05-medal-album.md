@@ -220,12 +220,14 @@ inside, the scope above.
 - **`--rarity-*` is now declared in `src/app/globals.css`**, verbatim from `tokens-css.md` §12.1,
   because the album cannot render without it. `WO-04` still owes `--rank-band-*`.
   `tokens-css.md`, `visual-foundations.md` and `ADR 0036` were updated to say so.
-- **Medal artwork is one sober placeholder for all 24 pieces** (owner decision): a plate, a ring in
-  the medal's own rarity token, and a generic medal glyph, with `data-medal="<medalKey>"` on the
-  figure. `MedalDefinition.imageKey` plus `resolveMedalArtSrc` in `MedalStage.tsx` are the single
-  substitution point, so real artwork lands by dropping files into `public/medals/` and filling in
-  one field per catalogue row. The per-grade seal glyph of `FDD-12 §3.1` is deferred with that
-  artwork; the always-present `RarityChip` text label already satisfies `ADR 0006`.
+- **Medal artwork shipped as one sober placeholder for all 24 pieces at this slice's completion**
+  (owner decision): a plate, a ring in the medal's own rarity token, and a generic medal glyph,
+  with `data-medal="<medalKey>"` on the figure. `MedalDefinition.imageKey` plus
+  `resolveMedalArtSrc` in `MedalStage.tsx` are the single substitution point, so real artwork
+  lands by dropping files into `public/medals/` and filling in one field per catalogue row; that
+  substitution happened for all 24 medals on 2026-08-24, per `medal-art-guide.md` §5. The
+  per-grade seal glyph of `FDD-12 §3.1` remains deferred; the always-present `RarityChip` text
+  label already satisfies `ADR 0006`.
 - **The `"% de coleccionistas"` block renders switched off** with the honesty copy, rather than
   being omitted. Owner decision; `FDD-12 §2.6` was amended in the same change.
 - New components registered in `docs/design/components.md`: `RarityChip` and `MedalStage` (Tier 1),
