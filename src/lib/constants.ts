@@ -380,6 +380,12 @@ export const POSTHOG_EVENTS = {
      * apart from the ten a migrated history produces on its first credited action.
      */
     MEDAL_BURST_TOAST_SHOWN: "medal_burst_toast_shown",
+    /**
+     * The order-creation points toast raised (`FR-12-05`). Carries `points_delta` and
+     * `deferred_points` (`0` when nothing is left to defer) so the funnel can tell how often the
+     * deferred sentence actually names an amount.
+     */
+    ORDER_POINTS_TOAST_SHOWN: "order_points_toast_shown",
     /** A rank celebration actually claimed and shown. Server-side; carries `rank_index`. */
     RANK_UP_CELEBRATED: "rank_up_celebrated",
     /** A full-screen medal celebration shown. Carries `medal_key` and `rarity`. */

@@ -58,6 +58,15 @@ export type ProgressionDelta = {
   pointsDelta: number;
   rankUp: { from: number; to: number } | null;
   medalsUnlocked: MedalUnlockSummary[];
+  /**
+   * Present only on the delta an order creation produces (`FR-12-05`): `null` when nothing is left
+   * to defer (the store cannot credit, or the order's first payment was declared in the same
+   * request, which already credited `order-registered`), otherwise the sublinear points that rule
+   * will still pay this order at its first assigned payment or first arrival. Absent (not `null`)
+   * on every other credited action, so a consumer can tell "this was an order creation" from
+   * "nothing is deferred" without a separate action-kind field.
+   */
+  deferredOrderPoints?: number | null;
 };
 
 /**
@@ -231,6 +240,30 @@ async function resolveStoreMonthPositions(
   }
 
   return positions;
+}
+
+/**
+ * A read-only preview of what `order-registered` will still pay a just-created order, from the
+ * ladder position it already holds among the collector's orders at this store within the current
+ * civil month (`FR-12-07`).
+ *
+ * Deliberately not a credit: it appends nothing and is safe to call even when the order will never
+ * reach that rule (a store that stops crediting later, for instance). It exists so the order
+ * creation surface can state the deferred amount in the same plain copy as the immediate one
+ * (`FR-12-05`) without re-implementing the sublinear ladder outside this module.
+ */
+export async function previewDeferredOrderPoints(
+  tx: Prisma.TransactionClient,
+  params: { userId: string; storeId: string; orderId: string; occurredOn: Date },
+): Promise<number> {
+  const positions = await resolveStoreMonthPositions(
+    tx,
+    params.userId,
+    params.storeId,
+    [params.orderId],
+    params.occurredOn,
+  );
+  return orderRegisteredPoints({ storeMonthPosition: positions.get(params.orderId) ?? 1 });
 }
 
 /**
@@ -463,15 +496,23 @@ export async function settleProgression(
   userId: string,
   credited: CreditOutcome,
   medalContext?: MedalEvaluationContext,
+  /**
+   * Order-creation-only hint (`FR-12-05`): the `previewDeferredOrderPoints` figure the write path
+   * already resolved inside its own transaction. Omitted by every other call site, which is what
+   * leaves `deferredOrderPoints` off their returned delta entirely rather than reporting `null`.
+   */
+  orderCreationHint?: { deferredOrderPoints: number | null },
 ): Promise<ProgressionDelta | null> {
   if (credited === null) {
     return null;
   }
+  const deferredOrderPoints = orderCreationHint ? { deferredOrderPoints: orderCreationHint.deferredOrderPoints } : {};
+
   // Nothing was appended, which means the store gate refused or every entry was already there. No
   // new fact reached the ledger, so no medal can have turned true from this action either; one that
   // did turn true through some other path is picked up by the next recompute, never lost.
   if (credited === 0) {
-    return { pointsDelta: 0, rankUp: null, medalsUnlocked: [] };
+    return { pointsDelta: 0, rankUp: null, medalsUnlocked: [], ...deferredOrderPoints };
   }
 
   try {
@@ -489,6 +530,7 @@ export async function settleProgression(
       pointsDelta: after.derivedTotal - (before?.maturedPoints ?? 0),
       rankUp,
       medalsUnlocked: toMedalUnlockSummaries(after.unlockedThisRun),
+      ...deferredOrderPoints,
     };
   } catch (error) {
     return captureCreditFailure(error, "settleProgression", userId);

@@ -288,7 +288,14 @@
     "ranksLink": "See the full ladder",
     "emptyTitle": "Start your record",
     "emptyBody": "You have no points yet. Register your first order and get started.",
-    "emptyCta": "Register an order"
+    "emptyCta": "Register an order",
+    "zeroPointsNotice": "Your current points are 0."
+  },
+  "creation": {
+    "toast": {
+      "withDeferred": "You earned {points} points. {deferred} more when you log the first payment or the first arrival.",
+      "immediateOnly": "You earned {points} points."
+    }
   },
   "groups": {
     "orders": "Orders registered",

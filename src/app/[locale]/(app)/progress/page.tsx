@@ -42,7 +42,9 @@ export async function generateMetadata({ params }: ProgressPageProps): Promise<M
  * schedules the recompute with `after()`, so the refresh happens once the response is already on
  * its way instead of adding its own latency to a page whose whole job is to be glanced at
  * (`FR-12-11`). The "may be a few minutes old" notice renders over those cached values rather than
- * blocking them.
+ * blocking them, and only when there are values to qualify: a collector with no points has an empty
+ * cache, which is always "stale", so the notice would otherwise greet every new account with a
+ * warning about figures the same screen says do not exist yet. The recompute is still scheduled.
  */
 export default async function ProgressSummaryPage({ params }: ProgressPageProps) {
   const { locale } = await params;
@@ -70,7 +72,7 @@ export default async function ProgressSummaryPage({ params }: ProgressPageProps)
     <>
       <SetHeaderTitle title={t("section.title")} />
 
-      {summary.stale && (
+      {summary.stale && summary.hasPoints && (
         <p
           role="status"
           className="text-text-secondary m-0 rounded-[var(--radius-lg)] border border-dashed [border-color:var(--border-strong)] px-[var(--space-3)] py-[var(--space-2)] [font-size:var(--text-caption)]"
@@ -79,7 +81,7 @@ export default async function ProgressSummaryPage({ params }: ProgressPageProps)
         </p>
       )}
 
-      {!summary.hasPoints ? (
+      {!summary.hasPoints && !summary.hasHistoricalProgress ? (
         <Card as="section" variant="outlined" padding="lg" className="flex flex-col gap-[var(--space-3)]">
           <Eyebrow as="h2">{t("summary.emptyTitle")}</Eyebrow>
           <p className="text-text-secondary m-0 [font-size:var(--text-body)]">{t("summary.emptyBody")}</p>
@@ -88,29 +90,40 @@ export default async function ProgressSummaryPage({ params }: ProgressPageProps)
           </Button>
         </Card>
       ) : (
-        <ProgressRankHero
-          summary={summary}
-          rankName={rankName}
-          rankLore={t(`ranks.${summary.currentRankKey}.lore`)}
-          copy={{
-            eyebrow: t("summary.eyebrow", { index: summary.currentRankIndex }),
-            pointsCaption: t("summary.pointsCaption"),
-            monthChip: t("summary.monthChip", { points: summary.pointsThisMonth }),
-            barLabel: t("summary.barLabel", { rank: nextRankName ?? rankName }),
-            barValue: t("summary.barValue", {
-              current: summary.totalPoints,
-              threshold: nextThreshold,
-              rank: nextRankName ?? rankName,
-            }),
-            barNote: t("summary.barNote", { current: summary.totalPoints, threshold: nextThreshold }),
-            toNextRank: t("summary.toNextRank", {
-              points: summary.pointsToNextRank,
-              rank: nextRankName ?? rankName,
-            }),
-            atTop: t("summary.atTop"),
-            emblemLabel: t("rank.emblemLabel", { rank: rankName }),
-          }}
-        />
+        <>
+          {/* A collector whose live total was voided down to zero (`BR-12-06`) still has a rank or a
+              medal from before, so the summary below renders normally instead of the "first ever
+              action" empty state above; this line is what tells them the total really is zero right
+              now, rather than leaving a bare "0" to be read as a display bug. */}
+          {!summary.hasPoints && (
+            <p role="status" className="text-text-secondary m-0 [font-size:var(--text-body)]">
+              {t("summary.zeroPointsNotice")}
+            </p>
+          )}
+          <ProgressRankHero
+            summary={summary}
+            rankName={rankName}
+            rankLore={t(`ranks.${summary.currentRankKey}.lore`)}
+            copy={{
+              eyebrow: t("summary.eyebrow", { index: summary.currentRankIndex }),
+              pointsCaption: t("summary.pointsCaption"),
+              monthChip: t("summary.monthChip", { points: summary.pointsThisMonth }),
+              barLabel: t("summary.barLabel", { rank: nextRankName ?? rankName }),
+              barValue: t("summary.barValue", {
+                current: summary.totalPoints,
+                threshold: nextThreshold,
+                rank: nextRankName ?? rankName,
+              }),
+              barNote: t("summary.barNote", { current: summary.totalPoints, threshold: nextThreshold }),
+              toNextRank: t("summary.toNextRank", {
+                points: summary.pointsToNextRank,
+                rank: nextRankName ?? rankName,
+              }),
+              atTop: t("summary.atTop"),
+              emblemLabel: t("rank.emblemLabel", { rank: rankName }),
+            }}
+          />
+        </>
       )}
 
       <div className="grid gap-[var(--space-4)] lg:grid-cols-2 lg:items-start">

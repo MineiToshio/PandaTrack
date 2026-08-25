@@ -11,10 +11,12 @@ import { writeStorePaymentWithAllocations } from "./storePaymentMutations";
 import {
   combineCredits,
   creditOrderCreation,
+  previewDeferredOrderPoints,
   settleProgression,
   type CreditOutcome,
   type ProgressionDelta,
 } from "@/lib/data/progression/accrual";
+import { resolveProgressionOccurredOn } from "@/lib/data/progression/progressionQueries";
 import { isStoreCreditEligible, STORE_CREDIT_ELIGIBILITY_SELECT } from "@/lib/data/progression/storeCreditEligibility";
 import type { CancelPaymentsChoice, OrderCreateInput, OrderEditInput } from "@/lib/orders/orderValidation";
 
@@ -25,7 +27,15 @@ type CreateOrderResult =
 /** The transaction's own shape: it carries the raw credit count, which only becomes a delta once
  *  the transaction has committed and the progress cache can safely be re-derived outside it. */
 type CreateOrderTxOutcome =
-  | { ok: true; orderId: string; humanReadableId: string; credited: CreditOutcome }
+  | {
+      ok: true;
+      orderId: string;
+      humanReadableId: string;
+      credited: CreditOutcome;
+      /** `previewDeferredOrderPoints` for the new order, or `null` when nothing is left to defer
+       *  (`FR-12-05`). See `deferredOrderPoints` on `ProgressionDelta` for the full contract. */
+      deferredOrderPoints: number | null;
+    }
   | { ok: false; error: "STORE_NOT_FOUND" | "INVALID_PRODUCT_TYPE" | "INITIAL_PAYMENT_INVALID" };
 
 type EditOrderResult =
@@ -209,11 +219,25 @@ export async function createOrder(userId: string, input: OrderCreateInput): Prom
         store,
       });
 
+      // Only previewed when no advance was declared alongside the order: an `initialPayment` above
+      // already credited `order-registered` in this same transaction, so there is nothing left to
+      // defer and the surface must not name an amount that was already paid out (`FR-12-05`).
+      const deferredOrderPoints =
+        !input.initialPayment && storeCreditEligible
+          ? await previewDeferredOrderPoints(tx, {
+              userId,
+              storeId: input.storeId,
+              orderId: order.id,
+              occurredOn: await resolveProgressionOccurredOn(userId, now, tx),
+            })
+          : null;
+
       return {
         ok: true,
         orderId: order.id,
         humanReadableId: order.humanReadableId,
         credited: combineCredits(created, paymentCredited),
+        deferredOrderPoints,
       };
     })
     .catch((error: unknown) => {
@@ -238,7 +262,14 @@ export async function createOrder(userId: string, input: OrderCreateInput): Prom
     // `first-photo-order` medal depends on that a later recompute cannot re-derive: the note is
     // editable, so the request that just wrote the image-intake marker is the only honest moment to
     // read it (`ADR 0040`).
-    progression: await settleProgression(userId, outcome.credited, { createdOrderNote: input.note ?? null }),
+    progression: await settleProgression(
+      userId,
+      outcome.credited,
+      { createdOrderNote: input.note ?? null },
+      {
+        deferredOrderPoints: outcome.deferredOrderPoints,
+      },
+    ),
   };
 }
 

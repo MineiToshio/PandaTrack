@@ -49,6 +49,7 @@ vi.mock("next-intl", () => ({
 
 const baseSummary: ProgressSummary = {
   hasPoints: true,
+  hasHistoricalProgress: true,
   totalPoints: 1500,
   currentRankIndex: 4,
   currentRankKey: "guild-senpai",

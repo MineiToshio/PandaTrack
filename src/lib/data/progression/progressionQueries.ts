@@ -150,6 +150,14 @@ export type ProgressMeritLock = {
 export type ProgressSummary = {
   /** `false` before any point exists, which is an honest empty state, not a zero dashboard. */
   hasPoints: boolean;
+  /**
+   * `true` when the collector has a rank above the first rung, or holds a medal, even though
+   * `hasPoints` is `false` right now. An admin voiding every live entry (`BR-12-06`) zeroes the
+   * live total without erasing the permanent high-water mark, so this is what tells the `Resumen`
+   * tab apart from a brand-new account: the same "no points" state, but reached from history
+   * rather than never having started.
+   */
+  hasHistoricalProgress: boolean;
   totalPoints: number;
   /** The rank every surface names, which is the permanent high-water mark, never the live one. */
   currentRankIndex: number;
@@ -272,6 +280,7 @@ export async function getProgressSummary(
 
   return {
     hasPoints: totalPoints > 0 || entries.length > 0,
+    hasHistoricalProgress: displayedRankIndex > FIRST_RANK_INDEX || unlocks.length > 0,
     totalPoints,
     currentRankIndex: currentRank.rankIndex,
     currentRankKey: currentRank.rankKey,

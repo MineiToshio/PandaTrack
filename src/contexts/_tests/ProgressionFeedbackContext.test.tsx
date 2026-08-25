@@ -138,6 +138,69 @@ describe("unlock toast queue", () => {
   });
 });
 
+describe("order-creation points toast", () => {
+  it("states both the immediate credit and the deferred amount when one is still owed (FR-12-05)", () => {
+    renderProvider();
+
+    act(() => {
+      announce(delta({ pointsDelta: 5, deferredOrderPoints: 20 }));
+    });
+
+    expect(addToastMock).toHaveBeenCalledTimes(1);
+    expect(addToastMock.mock.calls[0][0]).toBe("creation.toast.withDeferred");
+    expect(addToastMock.mock.calls[0][1].variant).toBe("success");
+    expect(captureMock).toHaveBeenCalledWith(
+      "order_points_toast_shown",
+      expect.objectContaining({ points_delta: 5, deferred_points: 20 }),
+    );
+  });
+
+  it("states only the immediate credit once nothing is left to defer", () => {
+    renderProvider();
+
+    act(() => {
+      // An initial payment declared alongside the order already credited `order-registered`, so
+      // the write path reports `null`: nothing remains, and the deferred sentence must not appear.
+      announce(delta({ pointsDelta: 25, deferredOrderPoints: null }));
+    });
+
+    expect(addToastMock).toHaveBeenCalledTimes(1);
+    expect(addToastMock.mock.calls[0][0]).toBe("creation.toast.immediateOnly");
+  });
+
+  it("stays silent when the store cannot credit anything at all", () => {
+    renderProvider();
+
+    act(() => {
+      announce(delta({ pointsDelta: 0, deferredOrderPoints: null }));
+    });
+
+    expect(addToastMock).not.toHaveBeenCalled();
+  });
+
+  it("never fires for a delta from a different credited action, which never carries this field", () => {
+    renderProvider();
+
+    act(() => {
+      // A payment/delivery/review delta has no `deferredOrderPoints` key at all (`undefined`, not
+      // `null`), which is what tells this toast apart from every other credited action.
+      announce(delta({ pointsDelta: 8 }));
+    });
+
+    expect(addToastMock).not.toHaveBeenCalled();
+  });
+
+  it("stays silent while the layer is hidden, same as every other progression surface", () => {
+    renderProvider({ visible: false });
+
+    act(() => {
+      announce(delta({ pointsDelta: 5, deferredOrderPoints: 20 }));
+    });
+
+    expect(addToastMock).not.toHaveBeenCalled();
+  });
+});
+
 describe("unlock burst collapse", () => {
   /** The ten phase-1 medals a migrated history unlocks on its very first credited action. */
   const MIGRATED_HISTORY_BURST = [

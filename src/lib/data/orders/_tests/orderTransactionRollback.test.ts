@@ -171,7 +171,9 @@ describe("createOrder transaction integrity", () => {
       ok: true,
       orderId: "order-1",
       humanReadableId: "ORD-20260729-01",
-      progression: { pointsDelta: 0, rankUp: null, medalsUnlocked: [] },
+      // The fake store carries no eligibility fields, so it reads as not credit-eligible and there
+      // is nothing to defer either (`FR-12-05`).
+      progression: { pointsDelta: 0, rankUp: null, medalsUnlocked: [], deferredOrderPoints: null },
     });
     const validationCall = tx.storeProductType.findMany.mock.invocationCallOrder[0];
     const createCall = tx.order.create.mock.invocationCallOrder[0];

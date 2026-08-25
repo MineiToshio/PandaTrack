@@ -20,6 +20,7 @@ import {
   creditOrderPayment,
   creditOrdersCompleted,
   creditStoreReviewed,
+  previewDeferredOrderPoints,
 } from "../accrual";
 import { POINT_RULE_KEYS, PROGRESSION_ENTITY_TYPES } from "../pointRules";
 
@@ -88,6 +89,18 @@ function appendedRows(tx: FakeTx): LedgerRow[] {
 
 function ruleKeys(tx: FakeTx): string[] {
   return appendedRows(tx).map((row) => row.ruleKey);
+}
+
+/** A `tx` whose store/month window holds the given order ids, in that order. */
+function txWithMonthOrders(monthOrderIds: string[], settled = false): FakeTx {
+  const tx = makeTx();
+  tx.order.findMany.mockImplementation(async (args: { select: Record<string, boolean> }) =>
+    // `resolveStoreMonthPositions` asks for ids; `resolveSettledOrderIds` asks for the money row.
+    args.select.totalCost
+      ? monthOrderIds.map((id) => ({ id, totalCost: 1000, allocatedAmountMinor: settled ? 1000 : 400 }))
+      : monthOrderIds.map((id) => ({ id })),
+  );
+  return tx;
 }
 
 beforeEach(() => {
@@ -179,18 +192,6 @@ describe("creditOrderCreation", () => {
 });
 
 describe("creditOrderPayment", () => {
-  /** A `tx` whose store/month window holds the given order ids, in that order. */
-  function txWithMonthOrders(monthOrderIds: string[], settled = false): FakeTx {
-    const tx = makeTx();
-    tx.order.findMany.mockImplementation(async (args: { select: Record<string, boolean> }) =>
-      // `resolveStoreMonthPositions` asks for ids; `resolveSettledOrderIds` asks for the money row.
-      args.select.totalCost
-        ? monthOrderIds.map((id) => ({ id, totalCost: 1000, allocatedAmountMinor: settled ? 1000 : 400 }))
-        : monthOrderIds.map((id) => ({ id })),
-    );
-    return tx;
-  }
-
   it("credits order-first-payment and order-registered for the order the payment touched", async () => {
     const tx = txWithMonthOrders(["order-1"]);
 
@@ -300,6 +301,36 @@ describe("creditOrderPayment", () => {
 
     expect(credited).toBe(0);
     expect(tx.pointLedgerEntry.createMany).toHaveBeenCalledWith(expect.objectContaining({ skipDuplicates: true }));
+  });
+});
+
+describe("previewDeferredOrderPoints", () => {
+  it("reads the same anti-split ladder order-registered will actually pay, without appending anything", async () => {
+    const tx = txWithMonthOrders(["order-1", "order-2", "order-3"]);
+
+    const preview = await previewDeferredOrderPoints(tx as never, {
+      userId: "user-1",
+      storeId: "store-1",
+      orderId: "order-3",
+      occurredOn: new Date("2026-03-15T00:00:00.000Z"),
+    });
+
+    // Third position on the ladder is worth 10 (`FR-12-07`).
+    expect(preview).toBe(10);
+    expect(tx.pointLedgerEntry.createMany).not.toHaveBeenCalled();
+  });
+
+  it("floors at 5 past the third order at the same store this month, same as the real credit", async () => {
+    const tx = txWithMonthOrders(["order-1", "order-2", "order-3", "order-4", "order-5"]);
+
+    const preview = await previewDeferredOrderPoints(tx as never, {
+      userId: "user-1",
+      storeId: "store-1",
+      orderId: "order-5",
+      occurredOn: new Date("2026-03-15T00:00:00.000Z"),
+    });
+
+    expect(preview).toBe(5);
   });
 });
 

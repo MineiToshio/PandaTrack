@@ -209,6 +209,29 @@ export function ProgressionFeedbackProvider({
     [addToast, renderToastMedia, t],
   );
 
+  /**
+   * The order-creation points toast (`FR-12-05`): the one surface that states the immediate credit
+   * and, when one is still owed, the deferred sublinear amount in the same plain sentence, rather
+   * than leaving `pointsDelta` silently unused. Raised beside the medal/rank queue below, never
+   * instead of it: an order creation can also be a collector's first credited action ever.
+   */
+  const raiseOrderPointsToast = useCallback(
+    (pointsDelta: number, deferredOrderPoints: number | null) => {
+      const message =
+        deferredOrderPoints && deferredOrderPoints > 0
+          ? t("creation.toast.withDeferred", { points: pointsDelta, deferred: deferredOrderPoints })
+          : t("creation.toast.immediateOnly", { points: pointsDelta });
+
+      addToast(message, { variant: "success" });
+
+      posthog.capture(POSTHOG_EVENTS.PROGRESSION.ORDER_POINTS_TOAST_SHOWN, {
+        points_delta: pointsDelta,
+        deferred_points: deferredOrderPoints ?? 0,
+      });
+    },
+    [addToast, t],
+  );
+
   // Ref-indirected so the timer chain below always calls the current closure. A plain dependency
   // would rebuild the chain mid-drain and drop whatever was still queued.
   const drainToastQueue = useCallback(() => {
@@ -242,6 +265,14 @@ export function ProgressionFeedbackProvider({
       // `null` is "we do not know what this credited", never "nothing": guessing a surface from it
       // would announce something that may not have happened.
       if (!delta || !visibleRef.current) return;
+
+      // `deferredOrderPoints` is only ever set on the delta an order creation produces (`FR-12-05`);
+      // every other credited action leaves the key off entirely. Skipped when neither figure is
+      // actually positive, so a private or not-yet-approved store's zero-credit order stays silent
+      // rather than reading "you earned 0 points".
+      if (delta.deferredOrderPoints !== undefined && (delta.pointsDelta > 0 || (delta.deferredOrderPoints ?? 0) > 0)) {
+        raiseOrderPointsToast(delta.pointsDelta, delta.deferredOrderPoints);
+      }
 
       // A batch too large to read as a sequence is collapsed whole: one toast, and no medal
       // celebrations either. Escalating the rarest of ten to a full-screen dialog on top of the
@@ -291,7 +322,7 @@ export function ProgressionFeedbackProvider({
 
       enqueueCelebrations(medalCelebrations);
     },
-    [drainToastQueue, enqueueCelebrations, raiseBurstToast],
+    [drainToastQueue, enqueueCelebrations, raiseBurstToast, raiseOrderPointsToast],
   );
 
   // The migrated history's single welcome, claimed once per collector on the first shell mount that

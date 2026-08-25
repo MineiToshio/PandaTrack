@@ -134,9 +134,47 @@ describe("getProgressSummary", () => {
     const summary = await summaryFor({ progress: null });
 
     expect(summary.hasPoints).toBe(false);
+    // A truly first-ever account never reached a rank above the first rung and holds no medal, so
+    // the `Resumen` tab's brand-new empty state (BUG-3's other branch) is the right one to show.
+    expect(summary.hasHistoricalProgress).toBe(false);
     expect(summary.totalPoints).toBe(0);
     expect(summary.monthlyGroups).toEqual([]);
     expect(summary.currentRankIndex).toBe(1);
+  });
+
+  it("tells a voided-down-to-zero collector apart from a brand-new one by the permanent rank they still hold", async () => {
+    // An admin void (`BR-12-16`) leaves every live entry voided and the cache's live total at zero,
+    // but the high-water mark `highestRankIndex` never demotes (`BR-12-06`): the collector already
+    // proved rank 2, so the `Resumen` tab must not greet them with "start your record" while the
+    // rank ladder underneath still shows them standing on it.
+    const summary = await summaryFor({
+      progress: { highestRankIndex: 2, rankIndex: 1, maturedPoints: 0, lastRecomputedAt: NOW },
+      ledger: [
+        ledgerEntry({
+          ruleKey: POINT_RULE_KEYS.ORDER_CREATED,
+          entityType: ORDER,
+          entityId: "order-1",
+          points: 5,
+          occurredOn: civilDay(2026, 3, 4),
+          voidedAt: NOW,
+        }),
+      ],
+    });
+
+    expect(summary.hasPoints).toBe(false);
+    expect(summary.hasHistoricalProgress).toBe(true);
+    expect(summary.totalPoints).toBe(0);
+    expect(summary.currentRankIndex).toBe(2);
+  });
+
+  it("treats a held medal alone as historical progress, even at the first rank", async () => {
+    const summary = await summaryFor({
+      progress: null,
+      unlockedMedalKeys: ["first-order"],
+    });
+
+    expect(summary.hasPoints).toBe(false);
+    expect(summary.hasHistoricalProgress).toBe(true);
   });
 
   it("marks a cache older than six hours as stale and a recent one as fresh", async () => {

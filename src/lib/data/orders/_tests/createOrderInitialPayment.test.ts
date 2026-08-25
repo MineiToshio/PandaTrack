@@ -86,7 +86,9 @@ describe("createOrder with an initial payment", () => {
       ok: true,
       orderId: "order-1",
       humanReadableId: "ORD-20260808-01",
-      progression: { pointsDelta: 0, rankUp: null, medalsUnlocked: [] },
+      // An advance was declared with the order, so `order-registered` already ran in this same
+      // transaction: nothing is left to defer (`FR-12-05`).
+      progression: { pointsDelta: 0, rankUp: null, medalsUnlocked: [], deferredOrderPoints: null },
     });
     expect(tx.storePayment.create).toHaveBeenCalledWith(
       expect.objectContaining({

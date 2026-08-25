@@ -77,11 +77,9 @@ function makeOrderTx() {
     storeAccountAdjustmentLine: { groupBy: vi.fn().mockResolvedValue([]) },
     user: { findUnique: vi.fn().mockResolvedValue({ baseCurrencyCode: null, timezone: null }) },
     pointLedgerEntry: {
-      createMany: vi
-        .fn()
-        .mockImplementation(async ({ data }: { data: unknown[] }) => ({
-          count: Array.isArray(data) ? data.length : 0,
-        })),
+      createMany: vi.fn().mockImplementation(async ({ data }: { data: unknown[] }) => ({
+        count: Array.isArray(data) ? data.length : 0,
+      })),
     },
   };
 }
@@ -126,7 +124,26 @@ describe("createOrder credit placement", () => {
       pointsDelta: 25,
       rankUp: { from: 2, to: 3 },
       medalsUnlocked: [],
+      // No `order.findMany` row for this store this month, so the new order lands at the ladder's
+      // opening position: `order-registered` will still pay 20 once it is first credited (`FR-12-05`).
+      deferredOrderPoints: 20,
     });
+  });
+
+  it("reports no deferred amount once an initial payment already credited order-registered in the same transaction", async () => {
+    const tx = makeOrderTx();
+    tx.orderItem.findMany.mockResolvedValueOnce([{ id: "item-1" }]);
+    useTx(tx);
+
+    const result = await createOrder("user-1", {
+      ...orderInput,
+      initialPayment: { amount: 10000, paymentDate: new Date("2026-08-01T00:00:00.000Z") },
+    });
+
+    expect(result.ok).toBe(true);
+    // `order-registered` already ran inside `writeStorePaymentWithAllocations`, so there is nothing
+    // left to defer, and the toast must not name an amount the collector already earned.
+    expect(result.ok && result.progression?.deferredOrderPoints).toBeNull();
   });
 
   it("appends nothing when the order is refused", async () => {
@@ -182,11 +199,9 @@ function makeDeliveryTx(overrides: { items?: Array<{ id: string; orderId: string
     storeAccountAdjustmentLine: { groupBy: vi.fn().mockResolvedValue([]) },
     user: { findUnique: vi.fn().mockResolvedValue({ baseCurrencyCode: null, timezone: null }) },
     pointLedgerEntry: {
-      createMany: vi
-        .fn()
-        .mockImplementation(async ({ data }: { data: unknown[] }) => ({
-          count: Array.isArray(data) ? data.length : 0,
-        })),
+      createMany: vi.fn().mockImplementation(async ({ data }: { data: unknown[] }) => ({
+        count: Array.isArray(data) ? data.length : 0,
+      })),
     },
   };
 }
