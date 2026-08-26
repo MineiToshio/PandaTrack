@@ -45,12 +45,12 @@ export default function ProgressRankHero({ summary, rankName, rankLore, copy }: 
         band="current"
         size="lg"
         label={copy.emblemLabel}
-        className="sm:[width:min(148px,100%)]"
+        className="order-1 sm:[--rank-emblem-size:148px]"
       />
 
-      <div className="flex min-w-0 flex-1 flex-col gap-[var(--space-2)]">
+      <div className="order-3 flex min-w-0 flex-1 flex-col gap-[var(--space-2)] sm:order-2">
         <Eyebrow as="p">{copy.eyebrow}</Eyebrow>
-        <h2 className="text-text-title m-0 [font-family:var(--font-display)] [font-size:var(--text-title)] [line-height:var(--text-title--line-height)] [letter-spacing:var(--text-title--letter-spacing)]">
+        <h2 className="text-text-title m-0 [font-family:var(--font-display)] [font-size:var(--text-title)] [line-height:var(--text-title--line-height)] [font-weight:var(--font-weight-title)] [letter-spacing:var(--text-title--letter-spacing)]">
           {rankName}
         </h2>
         <p className="text-text-secondary m-0 [font-size:var(--text-body)]">{rankLore}</p>
@@ -64,9 +64,11 @@ export default function ProgressRankHero({ summary, rankName, rankLore, copy }: 
         </div>
       </div>
 
-      <div className="flex shrink-0 flex-col items-center gap-[var(--space-2)] sm:items-end">
+      {/* Second on the phone, last on the wider viewport. Stacked, the points figure is what the
+          collector came for, and leaving it in source order buried it under the lore and the bar. */}
+      <div className="order-2 flex shrink-0 flex-col items-center gap-[var(--space-2)] sm:order-3 sm:items-end">
         <p className="m-0 flex flex-col items-center sm:items-end">
-          <span className="text-text-title [font-family:var(--font-mono)] [font-size:var(--text-display)] [line-height:1] font-bold">
+          <span className="text-text-title [font-family:var(--font-mono)] [font-size:var(--text-display)] [line-height:1] [font-weight:var(--font-weight-display)]">
             {/* Grouped with `"en"` like the dashboard's own figure, so the same total reads the
                 same way on both surfaces. */}
             {summary.totalPoints.toLocaleString("en")}

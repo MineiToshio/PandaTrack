@@ -73,17 +73,18 @@ export default function DashboardProgressWidget({ locale, summary, medals }: Das
       <div className="flex flex-1 flex-col gap-[14px]">
         <div className="flex items-center gap-3.5">
           {/*
-            Two plates, one exposed. The phone reads the 56px emblem and the wider viewport the 84px
-            one; the small copy is hidden from assistive tech rather than announced twice, and
-            nothing is lost by it, since the heading and the "Rango N de 10" chip already carry the
-            rank in words at every width.
+            One plate, resized at the breakpoint: 56px on the phone, 84px on the wider viewport.
+            It used to be two plates behind `hidden`/`sm:block` wrappers, which collapsed the
+            emblem to a couple of pixels — the wrapper span sized itself to its content while the
+            plate sized itself to a percentage of the wrapper, and neither ever resolved.
           */}
-          <span aria-hidden="true" className="sm:hidden">
-            <RankEmblem rankIndex={summary.currentRankIndex} band="current" size="sm" label={emblemLabel} />
-          </span>
-          <span className="hidden sm:block">
-            <RankEmblem rankIndex={summary.currentRankIndex} band="current" size="md" label={emblemLabel} />
-          </span>
+          <RankEmblem
+            rankIndex={summary.currentRankIndex}
+            band="current"
+            size="sm"
+            label={emblemLabel}
+            className="sm:[--rank-emblem-size:84px]"
+          />
 
           {summary.hasPoints ? (
             <div className="flex min-w-0 flex-1 flex-col items-end gap-1.5">

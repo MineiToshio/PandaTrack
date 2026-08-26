@@ -21,8 +21,8 @@ const translationMap: Record<string, string> = {
   "summary.toNextRank": "Te faltan {points} pts para {rank}",
   "summary.atTop": "Llegaste al último rango de la escalera.",
   "ranks.guild-senpai.name": "Senpai del gremio",
-  "ranks.first-print-hunter.name": "Cazador de primera edición",
-  "ranks.guild-legend.name": "Leyenda del gremio, Rango S",
+  "ranks.first-print-hunter.name": "Portador del filo",
+  "ranks.guild-legend.name": "Leyenda viva, Rango S",
   "rarity.normal": "Tirada normal",
   "rarity.holo": "Holográfica",
   "medals.first-order.name": "Primer pedido",
@@ -113,14 +113,14 @@ describe("DashboardProgressWidget", () => {
     expect(screen.getByText("puntos")).toBeInTheDocument();
     expect(screen.getByText("+120 este mes")).toBeInTheDocument();
     expect(screen.getByText("1500 de 2260 pts")).toBeInTheDocument();
-    expect(screen.getByText("Te faltan 760 pts para Cazador de primera edición")).toBeInTheDocument();
+    expect(screen.getByText("Te faltan 760 pts para Portador del filo")).toBeInTheDocument();
   });
 
   it("draws the progress bar without motion and announces the denominator", () => {
     renderWidget();
 
-    const bar = screen.getByRole("progressbar", { name: "Progreso hacia Cazador de primera edición" });
-    expect(bar).toHaveAttribute("aria-valuetext", "1500 de 2260 puntos hacia Cazador de primera edición");
+    const bar = screen.getByRole("progressbar", { name: "Progreso hacia Portador del filo" });
+    expect(bar).toHaveAttribute("aria-valuetext", "1500 de 2260 puntos hacia Portador del filo");
     expect(bar.querySelector("span")?.className).not.toContain("transition-transform");
   });
 

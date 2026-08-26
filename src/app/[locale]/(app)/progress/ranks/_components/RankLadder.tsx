@@ -9,13 +9,6 @@ import { RANK_COUNT, RANK_LADDER, type RankLadderEntry } from "@/lib/data/progre
 /** How a single rung reads: already earned, standing on it, or still ahead. */
 type RungState = "conquered" | "current" | "locked";
 
-/**
- * Opacity steps for the locked band, dimmest toward the summit. An explicit per-rung value rather
- * than a blanket `opacity` on the list: the threshold of a distant rank still has to be readable,
- * so this is a depth cue, not a disabled state.
- */
-const LOCKED_DIM_OPACITY = [0.94, 0.86, 0.78, 0.7, 0.62] as const;
-
 /** Locked rungs kept beside the current one on mobile; the band above them collapses. */
 const ADJACENT_LOCKED_RUNGS = 2;
 
@@ -55,14 +48,9 @@ function resolveRungState(rankIndex: number, currentRankIndex: number, highestRa
   return "locked";
 }
 
-/** The rung the dimming is measured from: the highest one this collector has ever stood on. */
+/** The rung the collapse is measured from: the highest one this collector has ever stood on. */
 function resolveReachedIndex(currentRankIndex: number, highestRankIndex: number): number {
   return Math.max(currentRankIndex, highestRankIndex);
-}
-
-function resolveLockedOpacity(rankIndex: number, reachedIndex: number): number {
-  const step = Math.min(LOCKED_DIM_OPACITY.length, Math.max(1, rankIndex - reachedIndex));
-  return LOCKED_DIM_OPACITY[step - 1];
 }
 
 export type RankLadderProps = {
@@ -124,16 +112,13 @@ export default function RankLadder({
         totalPoints={totalPoints}
         isSummit={options.isSummit}
         className={options.className}
-        dimOpacity={
-          state === "locked" && !options.isSummit ? resolveLockedOpacity(entry.rankIndex, reachedIndex) : undefined
-        }
         progress={state === "current" ? currentProgress : null}
       />
     );
   };
 
   return (
-    <ol aria-label={t("ranksTab.ladderLabel")} className="m-0 flex list-none flex-col gap-[var(--space-2)] p-0">
+    <ol aria-label={t("ranksTab.ladderLabel")} className="m-0 flex list-none flex-col gap-[var(--space-3)] p-0">
       {renderRung(summit, { isSummit: true })}
 
       {collapsedEntries.length > 0 ? (
@@ -167,8 +152,6 @@ type LadderRungProps = {
   state: RungState;
   totalPoints: number;
   isSummit?: boolean;
-  /** Depth cue for the locked band. Absent on the summit, which stays at full strength. */
-  dimOpacity?: number;
   className?: string;
   /** Only ever set on the rung the collector is standing on, and only below the top of the ladder. */
   progress?: { percent: number; nextRank: NonNullable<ProgressSummary["nextRank"]>; pointsToNextRank: number } | null;
@@ -176,12 +159,21 @@ type LadderRungProps = {
 
 /**
  * One rung. The band colour rides a strip at the leading edge rather than the rung's own background,
- * so a dimmed locked rung never dims its own text against the surface behind it.
+ * so it never has to fight the text sitting on that surface.
+ *
+ * Nothing here is dimmed with `opacity`. A locked rank is not a disabled control, and the ladder's
+ * whole promise is that every threshold above the collector stays readable (`FR-12-33`); the state
+ * is carried by the muted text token, the padlock and the word `Bloqueado` instead.
  */
-function LadderRung({ entry, state, totalPoints, isSummit, dimOpacity, className, progress }: LadderRungProps) {
+function LadderRung({ entry, state, totalPoints, isSummit, className, progress }: LadderRungProps) {
   const t = useTranslations("progress");
 
-  const band: RankBand = isSummit ? "top" : state;
+  // The summit earns the warm `top` band only once it is actually standing on. While it is still out
+  // of reach it is a locked rung like any other, and now that the plate carries real artwork that
+  // distinction is visible: leaving it on `top` would print rank 10 in full colour directly above a
+  // desaturated rank 9, which reads as rank 9 being the lesser piece rather than as the summit being
+  // unearned. The rung around it still carries the summit halo and the `La cima` tag either way.
+  const band: RankBand = isSummit && state !== "locked" ? "top" : state;
   const name = t(`ranks.${entry.rankKey}.name`);
   const lore = t(`ranks.${entry.rankKey}.lore`);
   const missingPoints = Math.max(0, entry.threshold - totalPoints);
@@ -201,12 +193,18 @@ function LadderRung({ entry, state, totalPoints, isSummit, dimOpacity, className
       </span>
     ) : null;
 
+  // A locked rank whose threshold is exactly what the collector still needs prints the same figure
+  // twice ("9350 pts · Te faltan 9350 pts"), which reads as a rendering fault rather than as two
+  // facts. Below the first rung that is the case for every rank, so it is the common state, not an
+  // edge one.
+  const showMissing = state === "locked" && missingPoints !== entry.threshold;
+
   const facts = (
     <>
-      <span className={cn(FACT_CLASSNAME, "text-text-title font-bold")}>
+      <span className={cn(FACT_CLASSNAME, "text-text-title [font-weight:var(--font-weight-semibold)]")}>
         {t("ranksTab.threshold", { points: entry.threshold })}
       </span>
-      {state === "locked" ? (
+      {showMissing ? (
         <span className={cn(FACT_CLASSNAME, "text-text-muted")}>
           {t("ranksTab.missing", { points: missingPoints })}
         </span>
@@ -217,8 +215,8 @@ function LadderRung({ entry, state, totalPoints, isSummit, dimOpacity, className
 
   const rungClassName = cn(
     "relative flex flex-wrap items-center gap-[var(--space-3)] overflow-hidden",
-    "rounded-[var(--radius-md)] p-[var(--space-3)] md:p-[var(--space-4)]",
-    "[background:var(--surface)] [border:1px_solid_var(--border)]",
+    "rounded-[var(--radius-lg)] p-[var(--space-3)] md:p-[var(--space-4)]",
+    "[background:var(--surface-elevated)] [border:1px_solid_var(--border)]",
     state === "current" && "[border:1.5px_solid_var(--accent)]",
     isSummit && "[border:1px_solid_color-mix(in_oklch,var(--rank-band-top)_45%,var(--border))]",
     className,
@@ -228,19 +226,41 @@ function LadderRung({ entry, state, totalPoints, isSummit, dimOpacity, className
     <span aria-hidden="true" className="absolute inset-y-0 left-0 w-[3px]" style={{ background: BAND_STRIP[band] }} />
   );
 
+  // Marks the one rung `RankLadderScrollToCurrent` scrolls to on mount, so a collector opening
+  // "Rangos" lands where they stand instead of at the summit every ladder starts with.
+  const currentAttr = state === "current" ? "true" : undefined;
+
   if (isSummit) {
     return (
-      <li className={rungClassName} style={dimOpacity ? { opacity: dimOpacity } : undefined}>
-        {bandStrip}
-        <div className="flex w-full flex-col items-center gap-[var(--space-2)] text-center">
-          <span className={cn(STATE_CLASSNAME, "[color:var(--accent-warm)]")}>
-            <Trophy aria-hidden="true" className="size-3.5 shrink-0" />
+      <li className={rungClassName} data-rank-current={currentAttr}>
+        <div className="relative flex w-full flex-col items-center gap-[var(--space-2)] text-center">
+          {/* The word stays on the readable text token; only the trophy carries the warm hue, which
+              as a graphical object answers to 3:1 rather than to the 4.5:1 text threshold. */}
+          <span className={cn(STATE_CLASSNAME, "[color:var(--rank-band-top-text)]")}>
+            <Trophy aria-hidden="true" className="size-3.5 shrink-0 [color:var(--accent-warm)]" />
             {t("ranksTab.summit")}
           </span>
 
-          <RankEmblem rankIndex={entry.rankIndex} band="top" size="md" label={t("rank.emblemLabel", { rank: name })} />
+          {/* The summit's accent used to be a wash the width of the whole card: a solid tint that,
+              at that size, read as a warm-red stain on a light background rather than as "the top
+              of the ladder" (owner feedback, 2026-08-25). The aura now sits behind the plate alone, small
+              and feathered, so it reads as light coming off the emblem instead of a background
+              colour. Rendered before the emblem in the DOM so the plate's own art paints on top of
+              it (both are positioned, so paint order follows document order). */}
+          <div className="relative flex items-center justify-center">
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 m-auto size-[150px] rounded-full [background:radial-gradient(closest-side,color-mix(in_oklch,var(--rank-band-top)_20%,transparent),transparent_78%)]"
+            />
+            <RankEmblem
+              rankIndex={entry.rankIndex}
+              band={band}
+              size="md"
+              label={t("rank.emblemLabel", { rank: name })}
+            />
+          </div>
 
-          <span className="text-text-title [font-family:var(--font-display)] [font-size:var(--text-subtitle)] [line-height:var(--text-subtitle--line-height)]">
+          <span className="text-text-title [font-family:var(--font-display)] [font-size:var(--text-subtitle)] [line-height:var(--text-subtitle--line-height)] [font-weight:var(--font-weight-semibold)]">
             {name}
           </span>
           <span className="text-text-secondary max-w-[44ch] [font-size:var(--text-caption)]">{lore}</span>
@@ -255,17 +275,20 @@ function LadderRung({ entry, state, totalPoints, isSummit, dimOpacity, className
   }
 
   return (
-    <li className={rungClassName} style={dimOpacity ? { opacity: dimOpacity } : undefined}>
+    <li className={rungClassName} data-rank-current={currentAttr}>
       {bandStrip}
 
+      {/* Smaller plate on the phone, where the row has to leave the name a column worth reading. */}
       <RankEmblem
         rankIndex={entry.rankIndex}
         band={band}
         size="sm"
         label={t("rank.emblemLabel", { rank: name })}
-        className="ml-[var(--space-1)]"
+        className="ml-[var(--space-1)] [--rank-emblem-size:44px] md:[--rank-emblem-size:56px]"
       />
 
+      {/* Takes the whole rest of the row on the phone, because the fact block below now wraps to a
+          line of its own; sharing that line was what left the name in a hundred-pixel well. */}
       <div className="flex min-w-0 flex-1 flex-col gap-[var(--space-0_5)]">
         {state === "current" ? (
           <span className={cn(STATE_CLASSNAME, "self-start")} style={{ color: STATE_TEXT_COLOR.current }}>
@@ -275,7 +298,7 @@ function LadderRung({ entry, state, totalPoints, isSummit, dimOpacity, className
         ) : null}
         <span
           className={cn(
-            "[font-size:var(--text-body)] font-bold",
+            "[font-size:var(--text-body)] [font-weight:var(--font-weight-semibold)]",
             state === "locked" ? "text-text-secondary" : "text-text-title",
           )}
         >
@@ -285,9 +308,9 @@ function LadderRung({ entry, state, totalPoints, isSummit, dimOpacity, className
         {meritNote}
       </div>
 
-      <div className="flex flex-col items-start gap-[var(--space-1)] md:items-end md:text-right">
+      <div className="flex basis-full flex-row flex-wrap items-center gap-x-[var(--space-3)] gap-y-[var(--space-1)] md:basis-auto md:flex-col md:items-end md:text-right">
         {state === "current" ? (
-          <span className={cn(FACT_CLASSNAME, "text-text-title font-bold")}>
+          <span className={cn(FACT_CLASSNAME, "text-text-title [font-weight:var(--font-weight-semibold)]")}>
             {t("ranksTab.threshold", { points: entry.threshold })}
           </span>
         ) : (

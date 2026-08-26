@@ -2,52 +2,52 @@
   "ranks": {
     "kohai": {
       "name": "Kohai",
-      "lore": "You just walked through the club's door.",
+      "lore": "Your first piece, still asleep in the rock.",
       "threshold": 0
     },
     "preorder-hunter": {
-      "name": "Pre-order Hunter",
-      "lore": "You already know the good stuff gets reserved months ahead.",
+      "name": "Relic Seeker",
+      "lore": "You rescue what everyone else gave up on.",
       "threshold": 200
     },
     "volume-keeper": {
-      "name": "Volume Keeper",
-      "lore": "Your first complete run, arrived and logged.",
+      "name": "Grimoire Scribe",
+      "lore": "Your collection now has a book of its own.",
       "threshold": 670
     },
     "guild-senpai": {
       "name": "Guild Senpai",
-      "lore": "People are starting to ask you where to buy.",
+      "lore": "Others are starting to follow your light.",
       "threshold": 1370
     },
     "first-print-hunter": {
-      "name": "First Print Hunter",
-      "lore": "You can tell a reprint from a first run.",
+      "name": "Bladebearer",
+      "lore": "The broken steel comes back whole, and now it is yours.",
       "threshold": 2260
     },
     "limited-run-curator": {
-      "name": "Limited Run Curator",
-      "lore": "You own pieces that will never be reprinted.",
+      "name": "Warden of Hours",
+      "lore": "You know how to wait, and waiting well is half the craft.",
       "threshold": 3340
     },
     "club-sensei": {
-      "name": "Club Sensei",
-      "lore": "You teach the craft: stores, dates, the waiting.",
+      "name": "Crystal Summoner",
+      "lore": "The shard you found at the start now burns in your hands.",
       "threshold": 4600
     },
     "rare-edition-archivist": {
-      "name": "Rare Edition Archivist",
-      "lore": "Your records are worth as much as your display case.",
+      "name": "Emerald Sentinel",
+      "lore": "You stand guard over what will never be reprinted.",
       "threshold": 6020
     },
     "collection-shisho": {
-      "name": "Collection Shisho",
-      "lore": "Nothing comes in or out without being logged.",
+      "name": "Vault Grandmaster",
+      "lore": "Nothing enters or leaves the vault without your key.",
       "threshold": 7610
     },
     "guild-legend": {
-      "name": "Guild Legend, Rank S",
-      "lore": "The level people talk about in the club.",
+      "name": "Living Legend, Rank S",
+      "lore": "The crystal no longer needs a display case: it has wings.",
       "threshold": 9350
     }
   },

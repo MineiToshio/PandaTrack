@@ -64,3 +64,6 @@ generated/prisma
 
 # E2E data guard baseline (regenerated on every run)
 /.e2e-data-baseline.json
+
+# Python virtualenvs used by local art-generation tooling under docs/ (never commit binaries)
+**/art-drafts/**/.venv/

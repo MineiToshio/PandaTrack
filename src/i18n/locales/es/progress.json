@@ -2,52 +2,52 @@
   "ranks": {
     "kohai": {
       "name": "Kōhai",
-      "lore": "Acabas de cruzar la puerta del club.",
+      "lore": "Tu primera pieza, todavía dormida en la roca.",
       "threshold": 0
     },
     "preorder-hunter": {
-      "name": "Cazador de preventas",
-      "lore": "Ya sabes que lo bueno se reserva meses antes.",
+      "name": "Buscador de reliquias",
+      "lore": "Rescatas lo que otros dieron por perdido.",
       "threshold": 200
     },
     "volume-keeper": {
-      "name": "Guardián del tomo",
-      "lore": "Tu primera fila completa, llegada y registrada.",
+      "name": "Escriba del grimorio",
+      "lore": "Tu colección ya tiene su propio libro.",
       "threshold": 670
     },
     "guild-senpai": {
       "name": "Senpai del gremio",
-      "lore": "Otros empiezan a preguntarte dónde comprar.",
+      "lore": "Otros empiezan a seguir tu luz.",
       "threshold": 1370
     },
     "first-print-hunter": {
-      "name": "Cazador de primera edición",
-      "lore": "Distingues una reimpresión de una primera tirada.",
+      "name": "Portador del filo",
+      "lore": "El acero roto vuelve entero, y esta vez es tuyo.",
       "threshold": 2260
     },
     "limited-run-curator": {
-      "name": "Curador de tirada limitada",
-      "lore": "Tienes piezas que ya no se reimprimen.",
+      "name": "Guardián de las horas",
+      "lore": "Sabes esperar, y esperar bien es medio oficio.",
       "threshold": 3340
     },
     "club-sensei": {
-      "name": "Sensei del club",
-      "lore": "Enseñas el oficio: tiendas, fechas, esperas.",
+      "name": "Invocador del cristal",
+      "lore": "La esquirla que hallaste al principio ya arde en tus manos.",
       "threshold": 4600
     },
     "rare-edition-archivist": {
-      "name": "Archivista de edición rara",
-      "lore": "Tu registro vale tanto como tu vitrina.",
+      "name": "Centinela de esmeralda",
+      "lore": "Custodias lo que ya no se reimprime.",
       "threshold": 6020
     },
     "collection-shisho": {
-      "name": "Shishō de la colección",
-      "lore": "Nada entra ni sale sin quedar anotado.",
+      "name": "Gran maestro de la bóveda",
+      "lore": "Nada entra ni sale de la bóveda sin tu llave.",
       "threshold": 7610
     },
     "guild-legend": {
-      "name": "Leyenda del gremio, Rango S",
-      "lore": "El nivel del que se habla en el club.",
+      "name": "Leyenda viva, Rango S",
+      "lore": "El cristal ya no necesita vitrina: tiene alas.",
       "threshold": 9350
     }
   },

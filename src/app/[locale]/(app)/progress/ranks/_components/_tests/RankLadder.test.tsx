@@ -94,10 +94,14 @@ describe("RankLadder", () => {
   });
 
   it("marks the current rung and measures it against the next rank", () => {
-    render(<RankLadder {...ladderProps} />);
+    const { container } = render(<RankLadder {...ladderProps} />);
 
     const currentRung = getFlatRungs()[10 - CURRENT_RANK_INDEX];
     expect(currentRung).toHaveTextContent("You are here");
+    // `RankLadderScrollToCurrent` finds its target through this marker, and only this one rung
+    // should ever carry it (`RankLadder.test.tsx` scroll-anchor coverage).
+    expect(container.querySelectorAll("[data-rank-current='true']")).toHaveLength(1);
+    expect(currentRung).toHaveAttribute("data-rank-current", "true");
     expect(currentRung).toHaveTextContent("1370 pts");
     expect(within(currentRung).getByRole("progressbar")).toHaveAttribute(
       "aria-valuetext",
@@ -139,5 +143,29 @@ describe("RankLadder", () => {
     const rungs = getFlatRungs();
     expect(rungs[0]).toHaveTextContent("Also asks for 60 % of the album.");
     expect(rungs[1]).toHaveTextContent("Also asks for 45 % of the album.");
+  });
+
+  it("keeps the summit locked until it is reached, so its artwork is not the one reward on show", () => {
+    const { container, rerender } = render(<RankLadder {...ladderProps} />);
+    const summitEmblem = () => container.querySelector<HTMLElement>('figure[data-rank="10"]')!;
+
+    // Unreached: a locked rung like any other, desaturated art and the locked ring.
+    expect(summitEmblem().style.borderColor).toBe("var(--rank-band-locked)");
+    expect(summitEmblem().querySelector("img")?.className).toContain("grayscale");
+
+    rerender(
+      <RankLadder
+        {...ladderProps}
+        totalPoints={9350}
+        currentRankIndex={10}
+        highestRankIndex={10}
+        nextRank={null}
+        pointsToNextRank={0}
+        nextRankProgressPercent={100}
+      />,
+    );
+
+    expect(summitEmblem().style.borderColor).toBe("var(--rank-band-top)");
+    expect(summitEmblem().querySelector("img")?.className).not.toContain("grayscale");
   });
 });
