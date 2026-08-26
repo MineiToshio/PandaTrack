@@ -13,7 +13,7 @@ children:
   - WO-05
   - WO-06
   - WO-07
-last_updated: 2026-08-23
+last_updated: 2026-08-26
 implementation_status: IN_PROGRESS
 ---
 
@@ -21,7 +21,7 @@ implementation_status: IN_PROGRESS
 
 ## Purpose
 
-Define the technical shape of the progression layer specified in [`FRD-12`](../frd-12-collector-progression.md): an append-only points ledger with a derived balance, a permanent ten-rank ladder, a 24-medal album, and the four surfaces that expose them (the `Progreso` section, the medal detail subview, the dashboard widget, and the global unlock/celebration feedback). One blueprint covers the full vertical, from the Prisma schema through the last collector-facing screen, because the engine and its surfaces share one data contract and splitting them would force every slice to re-agree on it.
+Define the technical shape of the progression layer specified in [`FRD-12`](../frd-12-collector-progression.md): an append-only points ledger with a derived balance, a permanent ten-rank ladder, a 28-medal album (24 catalogued rows when this blueprint was written, grown and relanguaged by the catalogue v2 pass of 2026-08-26), and the four surfaces that expose them (the `Progreso` section, the medal detail subview, the dashboard widget, and the global unlock/celebration feedback). One blueprint covers the full vertical, from the Prisma schema through the last collector-facing screen, because the engine and its surfaces share one data contract and splitting them would force every slice to re-agree on it.
 
 ## Runtime Components
 
@@ -114,11 +114,11 @@ Define the technical shape of the progression layer specified in [`FRD-12`](../f
 - **caps declared in the wrong unit silently break the sublinear/irrevocability guarantees** (`BR-12-15`); `WO-01`'s cap enforcement must read the unit off the rule definition rather than assuming points everywhere, since `order-created` is the one rule capped in events, not points.
 - **a rule accidentally reads a monetary field through a re-export or a shared type** rather than a direct import; the static guard scans source text for forbidden identifiers, so a renamed re-export could slip past a naive implementation. `WO-01`'s guard test must be written against the identifier list, not the import graph, mirroring `money-modules-guard.test.ts`'s own documented blind spots.
 - **medal evaluation added at the wrong call site** could double-unlock or miss a "first time" medal if the same business fact is reachable from two different mutations (for example, an order reaching `DELIVERED` through `createDelivery` with `receivedDate` set versus through `markDeliveryDelivered`); `WO-05`'s evaluator must be keyed off the same `entityType`/`entityId` shape the ledger already uses so idempotency is inherited rather than re-implemented per medal.
-- **the merit lock's denominator (shipped medals only) can move underneath a collector** as phase 2 ships twelve more medals; `WO-03`'s rank-9/10 gate must recompute the percentage against the catalogue's current shipped count at read time, never cache a fixed denominator.
+- **the merit lock's denominator (shipped medals only) can move underneath a collector** as more medals ship; `WO-03`'s rank-9/10 gate must recompute the percentage against the catalogue's current shipped count at read time, never cache a fixed denominator. This is no longer hypothetical: catalogue v2 moved the denominator from 12 to 28 on 2026-08-26, so ranks 9 and 10 went from 6 and 8 medals to 13 and 17 (`FR-12-17`).
 
 ## Extension Points
 
-- phase 2's twelve remaining medals and eight remaining point rules slot into the same `pointRules.ts` and `medalCatalogue.ts` tables without a schema change
+- phase 2's eight remaining point rules slot into the same `pointRules.ts` table without a schema change; its twelve remaining medals did exactly that on 2026-08-26, when catalogue v2 promoted them, replaced one row and added four more, all inside `medalCatalogue.ts` and `medalEvaluation.ts` with no migration
 - phase 2's `I` / `II` / `III` grades subdivide a rank band without moving any threshold
 - phase 3's time-limited events reuse `MedalUnlock`'s `series`, `availableFrom`, `availableTo`, and `numbered` columns, shipped from `WO-01`; only the administration UI that authors an event is future work
 - a future shareable progress card (an exportable image naming only the current user's own rank and medal count) can read `getProgressSummary` without a new query

@@ -5,7 +5,7 @@ slug: collector-progression
 title: Collector Progression — Feature Design Document
 status: ACTIVE
 parent: FRD-12
-last_updated: 2026-08-23
+last_updated: 2026-08-26
 prototype: ./prototype/collector-progression.html
 design_system: ../../../design/README.md
 demo_anchors:
@@ -95,12 +95,18 @@ implement.
 
 Requirements traced throughout: `FR-12-01 … FR-12-47`, `BR-12-01 … BR-12-21`,
 `AC-12-01 … AC-12-16` (see [`frd-12-collector-progression.md`](./frd-12-collector-progression.md),
-status `DRAFT` at the time of this FDD). Its Implementation Notes call for six ADRs numbered
-from `0035`; two are accepted, [`0035`](../../../design/decisions/0035-collector-progression-point-ledger.md)
-(the point ledger) and [`0036`](../../../design/decisions/0036-medal-rarity-visual-system.md) (the
-medal rarity visual system), so this document cites those two for anything they cover — the
-remaining four (`0037`–`0040`) are still unwritten and this document does not cite numbers for
-them.
+`DRAFT` at the time of this FDD and `ACTIVE` since `WO-07` closed). Its Implementation Notes call
+for six ADRs numbered from `0035`. All six now exist and are accepted:
+[`0035`](../../../design/decisions/0035-collector-progression-point-ledger.md) (the point ledger),
+[`0036`](../../../design/decisions/0036-medal-rarity-visual-system.md) (the medal rarity visual
+system), [`0037`](../../../design/decisions/0037-progression-deferred-credit-no-pending-state.md)
+(deferred credit with no pending state),
+[`0038`](../../../design/decisions/0038-permanent-rank-and-merit-lock.md) (the permanent rank and
+its merit lock), [`0039`](../../../design/decisions/0039-phased-social-surface.md) (the phased
+social surface) and
+[`0040`](../../../design/decisions/0040-medals-grant-no-points-and-are-never-revoked.md) (medals
+grant no points and are never revoked, amended 2026-08-26). Earlier revisions of this document
+cited only the first two, because the other four were unwritten when it was drafted.
 
 ---
 
@@ -180,6 +186,21 @@ canonical case for tabs, not an edge case. The prototype's `.subtab` treatment (
 target; reconcile it against `Tabs`' actual current API and extend the component in place if it
 doesn't yet support an underline-active recipe — do not fork a parallel tab bar.
 
+**The panel owns the rhythm** (recorded 2026-08-25). The `role="tabpanel"` element the bar's
+`aria-controls` names carries `flex flex-col gap-[var(--space-6)] lg:gap-[var(--space-8)]`. Each tab
+renders a flat list of blocks and no wrapper of its own, so with no gap declared here all sixteen
+block pairs across the three tabs sat at **0 px** and the section read as one undifferentiated slab —
+the defect that opened this design pass. Fixing it in the layout fixes all four routes at once; do
+not re-add per-page spacing wrappers.
+
+Each tab page also renders its own `sr-only` `h1` (`"Progreso · Resumen"` and siblings). The section
+name is already in the topbar and the tab name in the bar, so a visible one would say twice what the
+chrome says, but the document still needs a top heading: without it the three pages start their
+outline at `h2`.
+
+The underline tab items use `--text-caption` and `px-[var(--space-2)]`, not the off-scale `12.5px`
+and 4px they shipped with.
+
 ### 2.3 Resumen tab (`#p2`)
 
 ```
@@ -195,15 +216,30 @@ pg-grid (two cards, side by side desktop / stacked mobile)
   card "Puntos de este mes" — Chip success "+{N}" + list, one row per rule group ("Pedidos
     registrados +90 pts", "Datos completos +64 pts", …)
   card "Candado de mérito" — plain-copy line + ProgressBar (thin) + bar-note
-p.muted "Los puntos miden tu registro, no tu gasto." (permanent, not dismissible)
-card.sunken "soon" — "Comparación entre coleccionistas" · "Próximamente: compara con otros
-  coleccionistas."
 section-title "Medallas" + Chip neutral mono "{N} de {M}" + ghost "Ver el álbum completo →"
-medal-grid (showcase — the most recently unlocked, not all 24)
+medal-grid (showcase — the most recently unlocked, not all 28)
 card "Rangos"
   mini-ladder: 3 rungs (previous · current · next), RankEmblem e-xs (38px) each
   ghost "Ver la escalera completa →"
+card.sunken "soon" — "Comparación entre coleccionistas" · "Próximamente: compara con otros
+  coleccionistas."
 ```
+
+**Placement corrections recorded at the design pass (2026-08-25).** Three of the blocks above moved
+from where the prototype drew them, and the moves are the shipped truth:
+
+- The **honesty line** is the FOOTER of the `Puntos de este mes` card (a rule plus muted caption
+  inside it), not a bare `<p>` standing between two cards. It qualifies the figures in that card;
+  free-floating between blocks it read as a stray caption belonging to neither.
+- The **comparison placeholder** is LAST on the page, under the `Rangos` card. What is switched off
+  must not sit between two things that work. Its dashed border is declared as a whole `border`
+  shorthand: the `subtle` card variant already sets a transparent 1px border, so a bare
+  `border-dashed` class loses to it and the border never draws.
+- The **mini-ladder** is three columns abreast from `sm` up (the prototype's `.mini-ladder` flex row)
+  and stacks below it, where three columns would leave every rank name in a hundred-pixel well.
+- Section titles under the screen title use `SectionTitleWithAccent`, per
+  [interface-patterns.md § Section titles](../../../design/interface-patterns.md), rather than a
+  bare display-face `h2`.
 
 **The four elements `FRD-12` requires here and the prototype originally omitted are now
 present**, in the block above, beneath the hero and above the `Medallas` showcase:
@@ -212,7 +248,7 @@ present**, in the block above, beneath the hero and above the `Medallas` showcas
   group and a `+{N}` total chip, reusing the existing `card`/`section-title`/`chip` grammar —
   no new component.
 - The **merit-lock counter** (`FR-12-31`, `FR-12-17`) as a second card with the mandated plain
-  copy — `"Leyenda del gremio pide el 60 % del álbum. Llevas 9 de 24."` — never only a bare
+  copy — `"Leyenda viva pide el 60 % del álbum. Llevas 9 de 28."` — never only a bare
   percentage, plus a thin `ProgressBar`. **The demo collector is rank 4, below the rank-6
   visibility floor `FR-12-17` sets.** The prototype renders the card anyway, unconditionally, so
   this static reference has one place that shows every Resumen element at once; that is a
@@ -235,14 +271,13 @@ coleccionistas."`), reusing the same `.soon` sunken-card treatment the medal det
 ```
 p.sec intro, "Diez rangos, de la puerta del club a la leyenda…"
 ladder-legend: dot(success) "Conquistado" · dot(accent) "Estás aquí" ·
-               dot(border-strong) "Bloqueado, se atenúa hacia la cima" ·
+               dot(border-strong) "Bloqueado, todavía no lo alcanzas" ·
                "El rango alcanzado es permanente: retrocede la barra, nunca el nombre."
 ol.ladder (vertical, summit first)
   li.is-summit.is-locked      rank 10 — "La cima" tag, RankEmblem e-lg em-summit glow-summit,
                                centered name+lore, threshold + "te faltan N pts" + Bloqueado
-  li.is-locked.dim-{5..1}     ranks 9→5 — RankEmblem e-sm em-high, name+lore,
-                               threshold + gap + Bloqueado (opacity steps toward the summit:
-                               0.94 → 0.86 → 0.78 → 0.70 → 0.62, see §3.3)
+  li.is-locked                ranks 9→5 — RankEmblem e-sm em-high, name+lore,
+                               threshold + gap + Bloqueado
   li.is-current                rank 4 — "Estás aquí" pill+icon, name+lore,
                                threshold, plus its own ProgressBar tall + bar-note
   li.is-done ×3                ranks 3→1 — RankEmblem e-sm em-steel, name+lore,
@@ -261,6 +296,38 @@ rendered** on the conquered rungs. The prototype's `"alcanzado el 21 jul 2026"` 
 behind it, since nothing in the schema records when a rank was reached; the rungs carry the
 `Conquistado` label and a check instead of a fabricated date.
 
+**Two further corrections recorded at the design pass (2026-08-25).**
+
+**No `opacity` anywhere on the ladder.** The prototype's five dimming steps (0.94 → 0.62 toward the
+summit) are withdrawn, in both this section and §3.3. Measured on the shipped screen they pushed a
+locked rank's name to **2.90:1**, under AA, which contradicts `FR-12-33` outright: a ladder whose
+thresholds have to stay readable at every width cannot fade the ranks a collector is planning
+against. `visual-foundations.md` already forbids `opacity` as a low-contrast device
+("Never `opacity`. Low contrast is achieved with semantic tokens"), and `--rank-band-locked-text`
+carries the same instruction. Distance is now carried by the muted text token, the padlock and the
+word `Bloqueado` (measured after the change: **6.74:1** light, **9.02:1** dark). The legend's copy
+moved with it, since it described the dimming: `"Bloqueado, se atenúa hacia la cima"` →
+`"Bloqueado, todavía no lo alcanzas"` (`en`: `"Locked, not reached yet"`).
+
+**The summit is a halo, not a rail.** The 3px band strip every other rung carries is replaced on the
+summit by a soft radial in `--rank-band-top`. The `La cima` word also moved off `--accent-warm`
+(3.33:1) onto `--rank-band-top-text` (**15.01:1** light, **17.26:1** dark); only the trophy glyph
+stays warm, which as a graphical object answers to 3:1 rather than to the 4.5:1 text threshold.
+
+**The halo was rescoped to the plate, not the card (owner feedback, 2026-08-25).** The first shipped
+version ran the radial full-height and near-full-width behind the whole rung (`110% 65%`, 14% mix):
+at that size it read as a warm-red stain across the card rather than as light coming off the summit,
+especially in light theme where the pale surface let the full-strength hue show through. The halo now
+sits in a fixed `150px` circle centered behind the `RankEmblem` alone (`20%` mix, `closest-side`
+feather), rendered before the emblem in the DOM so the plate's own art paints on top of it. This
+reads as an aura on the piece itself in both themes instead of a background tint, and it does not
+touch `--accent-warm` or any other consumer of `--rank-band-top` (the emblem ring, the trophy glyph,
+the card border): only the wash behind the summit rung changed.
+
+Locked rungs also drop the repeated figure: where `missingPoints` equals the threshold — the common
+case, not an edge one, for every rank above the collector's first — the rung prints the threshold
+once instead of `"9350 pts · Te faltan 9350 pts"`, which read as a rendering fault.
+
 **Mobile (`.compact`)** does not render all ten rungs unconditionally: the summit stays, the
 rungs adjacent to the current one stay, and the distant locked band between them collapses into
 one dashed `rung-jump` row (`"3 rangos más entre la cima y ti, con sus umbrales"`). `FR-12-33`
@@ -275,6 +342,18 @@ exposed to assistive tech the same way any other disclosure widget's is. Impleme
 keep the native `<details>`/`<summary>` pair or use a `<button aria-expanded>` toggling a
 revealed list instead (see §8) — either satisfies the requirement; a static summary row that
 never reveals ranks 7–9 does not.
+
+**Opening the tab scrolls to the current rung (owner feedback, 2026-08-25).** The ladder paints
+summit first, so a collector below the top ranks used to land on a page showing someone else's
+rank and had to scroll past it to find their own. `RankLadder` publishes `data-rank-current="true"`
+on the one rung with `state === "current"`; a small client island, `RankLadderScrollToCurrent`
+(mirroring `RankLadderViewedCapture`'s "tiny island beside a server-rendered ladder" shape), reads
+that marker on mount and calls the platform's own `scrollIntoView({ block: "center" })`. It skips
+the jump entirely when the rung is already fully inside the viewport (rank 1, or any viewport tall
+enough to show the whole ladder), and drops the animation for `prefers-reduced-motion` collectors
+(`behavior: "auto"` instead of `"smooth"`), the same `matchMedia` check `useAnimatedNumber` already
+uses. The ladder itself stays entirely server-rendered; nothing about this adds a client boundary
+to the surrounding page.
 
 ### 2.5 Medallas tab / album (`#p4`)
 
@@ -297,11 +376,38 @@ per series (×6, repeated)
 | -------------------------------------------- | ------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Unlocked                                     | Full-color `MedalStage s-lg` (168px), rarity ring + seal, sheen active                           | `h3` name, `p.cond` condition text, footer: `RarityChip` + unlock date                                                                                                                                                                                                            |
 | Locked, hinted                               | Grayscale silhouette (`filter: grayscale(1) brightness(.42) contrast(1.15)`) + lock icon overlay | `h3` "Medalla bloqueada"-style title **is not shown**; instead `h3` name **is** shown for hinted locks (the prototype keeps the real name, e.g. "La espera imposible"), `hint-label` "Cómo conseguirla" + `p.cond` states the real condition, footer: `RarityChip` only (no date) |
-| Locked, secret (3 pieces, `Secretas` series) | Same silhouette + lock                                                                           | `h3` "Medalla bloqueada" (neutral, generic), `hint-label` "Cómo conseguirla" but the body reads `"Sin pista todavía"`, footer: `RarityChip` only                                                                                                                                  |
+| Locked, secret (4 pieces, `Secretas` series) | Same silhouette + lock                                                                           | `h3` "Medalla bloqueada" (neutral, generic), `hint-label` "Cómo conseguirla" but the body reads `"Sin pista todavía"`, footer: `RarityChip` only                                                                                                                                  |
 
 This is `FR-12-25`'s distinction rendered exactly: every locked medal outside `Secretas` shows
 its real name and condition as a hint; the three `Secretas` pieces alone hide both behind a
 neutral label. Do not generalize the "hidden name" treatment to any other series.
+
+**Grid and card corrections (2026-08-25).**
+
+- The card is `h-full` and its foot (rarity chip plus unlock date) is anchored with `mt-auto`.
+  Cards in one row differ by a line or two of hint, and without the anchor every chip in the row
+  sat at a different height.
+- The album grid keeps `auto-fill`: the empty slot at the end of a short series is the album's own
+  rhythm, and every page has to draw its pieces at the same size. The **showcase** grid and the
+  "siguiente de la página" preview use `auto-fit` instead, because they carry a fixed handful of
+  medals and `auto-fill` was laying out tracks for cards that are not there, leaving ~198px of dead
+  grid beside the last one. Gap is `--space-4`.
+- The series header aligns its figure and its bar on `items-end`; centred, the tall figure and the
+  short bar floated at different heights.
+
+**Catalogue v2: the album has no `"Próximamente"` state left (2026-08-26).** All 28 medals are
+shipped and evaluable (`FR-12-20`), so no series header prints the `"Próximamente"` label in place
+of its counter and bar, and no `MedalCard` renders the upcoming variant, whose body read
+`"Próximamente"` instead of `"Cómo conseguirla"` because an instruction the collector cannot follow
+is not a hint. Every locked card now carries a real hint, the four `Secretas` aside. **The mechanism
+stays in place**, unused: the catalogue's phase field, the album's shipped-versus-catalogued split,
+the series header's label branch and the card's status label are all still wired, so a future
+time-limited event medal (`FR-12-28`) has a rendering path to switch on rather than one to invent.
+
+**Series sizes after v2.** `Primeros pasos` is 8 pieces and the other five pages are 4 each, so
+every page fills its rows at 2 columns (mobile) and at 4 (a typical desktop width). The `auto-fill`
+note above still governs the widths in between, where a page can end on a partial row: that empty
+slot is the album's own rhythm, not a layout fault to correct.
 
 ### 2.6 Medal detail subview (`#p5`)
 
@@ -332,6 +438,15 @@ detail-wrap  (grid: 320px art column + flexible fact column; 1 col below 900px)
     section-title "Siguiente de la página"
     medal-grid.tight → MedalCard s-md (116px), the next locked piece in the same series
 ```
+
+**Art column corrections (2026-08-25).** The art card fills its own column (`w-full`, no
+`justify-self-center`) and draws the piece at `s-2xl` (262px), the size §3.3 always specified;
+shipped at `s-xl` inside a centred card it left ~133px of dead margin on either side of the medal.
+`MedalStage` gained the `2xl` step for it. The card carries the prototype's soft radial behind the
+piece, mixed from the medal's own rarity ring token. The `.soon` block's dashed border is declared
+as a whole `border` shorthand for the same reason as the Resumen placeholder (§2.3), and the
+"siguiente de la página" preview is capped at 240px so a single card is card-sized rather than
+stretched across the fact column.
 
 **The `"% de coleccionistas que la tienen"` block needs different handling than the
 prototype's.** `FR-12-27` says this figure "must **not** render while the platform has too few
@@ -535,6 +650,22 @@ what follows is that decision's token-level detail:
 | Holográfica      | Violet→teal→green iridescent ring, animated sweep (`holo-sweep`, 3.8s) | `HOLO`     | album, detail, toast, celebration |
 | Firmada          | Warm coral/gold ring + halo glow + a traced signature overlay          | `FIRMA`    | album, detail, toast, celebration |
 
+**Rarity in the ARTWORK is a different channel from rarity in the RING (relanguaged 2026-08-26).**
+The table above is what the app paints around the piece, and it is unchanged. What changed is the
+art inside it. The album used to encode rarity by changing the medal's DRAWING STYLE, so a
+`Primera edición` piece was literally drawn in a different technique from a `Tirada normal` one.
+Catalogue v2 moves all 28 pieces into the single painted style the rank emblems already use, which
+removes that channel, and rebuilds rarity inside the art on three bounded signals instead: the frame
+METAL (blackened iron, brass and copper, satin silver steel, prismatic crystal, antique gold), a
+bounded piece COUNT on the rim (one plain band, four rivets, two bands, eight facets, two bands plus
+one cabochon) and the LIGHT level (none, none, one contained spark, a clear glow, a full aura). The
+ladder is built as a VALUE ladder because it has to survive greyscale at 32 px: `MedalStage` renders
+a locked medal of any grade as that same art desaturated, so a grade that only existed in colour
+would vanish exactly where the collector has not earned the piece yet. Series is likewise carried by
+the plate shape (unchanged) plus one enamel field colour per page. The specification, including the
+measured greyscale ladder and where it is still weak, is
+[`medal-catalogue-v2.md`](./medal-catalogue-v2.md) §2, §3 and §3a.
+
 None of these five hues have an AA-contrast pass documented anywhere in
 [visual-foundations.md](../../../design/visual-foundations.md) the way the status colors do
 (`--{status}-chip-text` aliases) — **they are pending promotion to `tokens-css.md`, gated on an
@@ -579,6 +710,14 @@ new arbitrary palette. Confirm it the same way: named, not improvised per-instan
   mono, standard `Eyebrow` treatment.
 - Medal condition/lore/hint text: body, `--text-secondary`.
 - Event serial callout (`#042`): large mono, bold, tabular — same register as the points figure.
+- **Every heading declares its own weight** (added 2026-08-25). Tailwind's Preflight resets
+  `h1`–`h6` to `font-weight: inherit`, so a heading class that sets only a size renders at 400 and
+  the whole section reads as body copy with no hierarchy. Titles in the 32px slot carry
+  `[font-weight:var(--font-weight-title)]`, those in the 22px slot
+  `[font-weight:var(--font-weight-semibold)]`. Never `font-bold` as a literal: the weight token is
+  what light and dark are calibrated against.
+- **No italics.** The system has no italic register; a `statusLabel` such as `"Próximamente"` is set
+  apart with `--text-muted`, not with `italic`.
 
 ### 3.3 Shape, radius & elevation
 
@@ -611,8 +750,50 @@ once implemented):
 Both primitives originally shipped with a placeholder art hole (§4) while final medal/emblem art
 did not exist yet; the prototype's `data-medal` attribute and mono `"Imagen"` caption inside
 `.stage-note` marked that hole explicitly rather than shipping a guessed illustration.
-`MedalStage`'s hole was filled for all 24 medals on 2026-08-24 (see `medal-art-guide.md` §5);
-`RankEmblem`'s ten ranks still render the sober placeholder described above.
+`MedalStage`'s hole was filled for all 24 medals of the then-current catalogue on 2026-08-24 (see
+`medal-art-guide.md` §5), and `RankEmblem`'s for all ten ranks on 2026-08-25 (see
+`rank-art-guide.md` §9). The medal art was then relanguaged and regrown to 28 pieces by the
+catalogue v2 pass approved on 2026-08-26, which is the album's current art record
+([`medal-catalogue-v2.md`](./medal-catalogue-v2.md) §2, §3, §3a). That art shipped the same day:
+`public/medals/` now holds the 28 v2 pieces, every catalogue row carries its `imageKey`, and no
+medal falls back to the placeholder medallion any more. `medal-art-guide.md` keeps its
+series-to-shape mapping (§0), which v2 does not touch; its rarity-to-drawing-style mapping is
+superseded by the frame/count/light system recorded in §3.1 above.
+
+**`RankEmblem` with artwork (2026-08-25).** Filling the hole settled three things the placeholder
+never had to answer, and all three are decisions, not defaults:
+
+1. **The numeral is gone from the plate.** It was only ever there because the middle of the plate was
+   empty; the artwork occupies exactly that spot, and a numeral on top of it would hide the one thing
+   the emblem now carries. Nothing is lost, because every surface that draws an emblem already states
+   the position in words beside it: the dashboard widget's `"Rango N de 10"` chip, the `Resumen`
+   hero's eyebrow (`"Rango 1 de 10 · solo tú lo ves"`), the celebration's `"Rango N de 10, y este no
+se pierde nunca."`, and the `Rangos` tab, which is an ordered list of ten. The numeral is kept as
+   the fallback for a rank index off the ladder, which the ladder itself cannot produce.
+2. **The band ring stays, as the plate's own border.** It is the only carrier of ladder state on the
+   emblem itself — the artwork of rank 4 is identical whether it has been passed or not — so removing
+   it would drop information. Merging the old inner ring into the plate border keeps the state frame
+   and hands the whole plate to the art instead of the smaller disc left inside a second ring.
+3. **A locked rank is the real artwork, desaturated** (`grayscale` plus 60% opacity), which is the
+   same reading `MedalStage` gives a locked medal: visible but drained, so what is waiting up the
+   ladder stays legible (`FR-12-33`). It carries **no padlock**, unlike `MedalStage`: a rank plate is
+   drawn as small as 38 px, where a padlock covers the motif entirely, and every surface that shows a
+   locked rank already labels it `"Bloqueado"` in text on the same row.
+
+**The summit is no longer exempt from its own state.** `LadderRung` used to hand the summit the warm
+`top` band unconditionally, which was harmless while all ten plates were the same numeral. With real
+art it printed rank 10 in full colour directly above a desaturated rank 9, which reads as rank 9
+being the lesser piece rather than as the summit being unearned. The summit now takes `top` only once
+it is reached and is a locked rung like any other until then; the rung around it keeps the halo and
+the `"La cima"` tag either way.
+
+**Surfaces (corrected 2026-08-25).** Every leaf card in this section sits directly on the app canvas
+(`--background`), so it takes the `elevated` `Card` variant, not `outlined`. `outlined` paints
+`--surface`, which in the dark theme lands **1.023:1** against the canvas — the cards were there and
+could not be seen. This is L013 (`--surface` vs `--surface-elevated`, Δ 3% versus 6%) applied to this
+section; the ladder rungs and the locked `MedalCard` follow the same rule, the locked card because a
+dashed border with no fill of its own read as a hole punched in the grid rather than as a card.
+Padding on those cards is `lg`, not `md`.
 
 **Elevation.** Cards (album, hero, detail) use the standard system elevation (list card = 1,
 section card = 2). The toast reuses the achievement-toast composition (`--elevation-3` +
@@ -641,7 +822,7 @@ own pattern when `MedalCard`/`MedalStage` land in `components.md`.
 | `Button`                        | core   | Primary/ghost hierarchy throughout                                                                                                                                                                                                                                               |
 | `Modal`                         | module | **Required** wrapper for the full-screen celebration (`FR-12-37`) — see §2.7. Do not hand-roll the `.epic` overlay as a parallel dialog system                                                                                                                                   |
 | `Toast` infrastructure          | core   | Recommended base for the unlock toast: extend `src/components/core/Toast/` with an `achievement` variant carrying medal art + rarity accent, rather than a fully separate `.steam-toast` implementation — one canonical toast surface, consistent extension                      |
-| `EmptyState`                    | module | First-run empty (`FR-12-40`) and the "0 de 12" all-silhouette album state                                                                                                                                                                                                        |
+| `EmptyState`                    | module | First-run empty (`FR-12-40`) and the "0 de 28" all-silhouette album state                                                                                                                                                                                                        |
 | `Skeleton`                      | core   | `Progreso` section loading, matching the real tab layout                                                                                                                                                                                                                         |
 | `MonoCode`                      | core   | `ORD-…` reference inside a medal's "Cómo la conseguiste" fact                                                                                                                                                                                                                    |
 | **New, FRD-12-specific**        |        |                                                                                                                                                                                                                                                                                  |
@@ -669,11 +850,12 @@ empieza."` — encouraging tone, primary CTA into order creation. Gated on the c
   being zero.
 - **Voided-with-history zero** (`FR-12-40`): a collector whose live total was voided down to
   zero (`FR-12-44`) but who already reached a higher rank or holds a medal renders the normal
-  rank hero at `0` points plus a neutral status line, `"Tus puntos actuales son 0."` — never the
-  first-run empty above, which would contradict the rank ladder and album already shown lower on
-  the same screen.
+  rank hero at `0` points, with no separate status line: the hero card already prints the
+  figure, so a standalone sentence restating it read as redundant next to it (owner feedback,
+  2026-08-25). Never the first-run empty above, which would contradict the rank ladder and album
+  already shown lower on the same screen.
 - **Album, nothing unlocked**: every medal renders as a silhouette; the counter reads
-  `"0 de 12"` (phase 1's shipped total), not an empty container.
+  `"0 de 28"` (the whole shipped catalogue since catalogue v2, §2.5), not an empty container.
 - **Recompute in progress** (`FR-12-11`, Error Contract `PROGRESS_RECOMPUTE_BUSY`): a
   non-blocking notice over the cached values ("may be a few minutes old"), never a full-page
   loading replacement of already-known data.
@@ -683,7 +865,7 @@ empieza."` — encouraging tone, primary CTA into order creation. Gated on the c
 | State                          | Visual                                                      | Copy                                                               |
 | ------------------------------ | ----------------------------------------------------------- | ------------------------------------------------------------------ |
 | `locked` (hinted)              | Silhouette + lock icon                                      | Real name + real condition text as the hint (`FR-12-25`)           |
-| `locked-secret` (3 pieces)     | Silhouette + lock                                           | Neutral title `"Medalla bloqueada"`, `"Sin pista todavía"`         |
+| `locked-secret` (4 pieces)     | Silhouette + lock                                           | Neutral title `"Medalla bloqueada"`, `"Sin pista todavía"`         |
 | `unlocked`                     | Full color, rarity ring + seal                              | Real name, condition, unlock date                                  |
 | `unlocked-not-current`         | Full color (same as `unlocked` — never dims)                | Adds `"ya no vigente"` without withdrawing the unlock (`BR-12-08`) |
 | `expired` (event, past window) | Silhouette, permanently — never re-offered as merely locked | States the window has closed, per `BR-12-20`                       |
@@ -737,7 +919,7 @@ Key strings (es), by surface and tone:
 | Rank hero eyebrow                 | matter-of-fact, private | `"Rango N de 10 · solo tú lo ves"`                                                                                                                                                                                                                                                                                                                                        |
 | First order-created feedback      | confidence-building     | `"Sumaste {points} puntos. Se suman {deferred} más cuando registres el primer pago o la primera llegada."`, `{deferred}` from the server-resolved sublinear ladder position (`FR-12-05`, `FR-12-07`); collapses to `"Sumaste {points} puntos."` when an advance declared with the order already credited `order-registered` in the same request, leaving nothing to defer |
 | Honesty line (permanent)          | plain, reassuring       | `"Los puntos miden tu registro, no tu gasto."` (`FR-12-41`)                                                                                                                                                                                                                                                                                                               |
-| Merit-lock counter                | concrete, not alarming  | `"Leyenda del gremio pide el 60 % del álbum. Llevas 9 de 24."` (`FR-12-17`)                                                                                                                                                                                                                                                                                               |
+| Merit-lock counter                | concrete, not alarming  | `"Leyenda viva pide el 60 % del álbum. Llevas 9 de 28."` (`FR-12-17`)                                                                                                                                                                                                                                                                                                     |
 | Ladder legend, permanence         | reassuring              | `"El rango alcanzado es permanente: retrocede la barra, nunca el nombre."`                                                                                                                                                                                                                                                                                                |
 | Comparison placeholder (disabled) | neutral, closed door    | `"Próximamente: compara con otros coleccionistas."` (`FR-12-39`)                                                                                                                                                                                                                                                                                                          |
 | Medal "no points" fact            | plain                   | `"Las medallas no dan puntos y no se revocan."`                                                                                                                                                                                                                                                                                                                           |
@@ -748,7 +930,6 @@ Key strings (es), by surface and tone:
 | Unlock toast kicker               | celebratory-restrained  | `"Medalla desbloqueada"`                                                                                                                                                                                                                                                                                                                                                  |
 | Rank-up celebration sub           | celebratory, reassuring | `"{lore} Rango N de 10, y este no se pierde nunca."`                                                                                                                                                                                                                                                                                                                      |
 | First-run empty                   | encouraging             | `"Todavía no tienes puntos. Registra tu primer pedido y empieza."`                                                                                                                                                                                                                                                                                                        |
-| Voided-with-history zero          | neutral, not alarming   | `"Tus puntos actuales son 0."` (`FR-12-40`)                                                                                                                                                                                                                                                                                                                               |
 
 Per [ux-copy.md § 2.1](../../../design/ux-copy.md), success/achievement moments are the one
 register allowed **one** celebratory emoji and `--ease-bounce`. The prototype's own copy uses
@@ -782,19 +963,31 @@ the real nav on the strength of the prototype alone.
 
 - **Dashboard widget**: `RankEmblem e-md` (84px) → `e-sm` (56px); tick row `s-tick` (38px, 5
   shown) → `s-tick-mob` (32px, 4 shown); footer ghost-button-plus-row collapses to one text
-  link, `"{N} de {M} · Ver el álbum"`.
-- **`Progreso` tab bar**: three tabs never need horizontal scroll at any supported width; font
-  drops 13px → 12.5px on mobile, matching the m-head-scoped `.subtabs` override. (This is the
-  in-page `Resumen`/`Medallas`/`Rangos` `Tabs` module, unrelated to the prototype-only bottom
-  `.tabbar` above.)
-- **Resumen hero**: `RankEmblem e-xl` (148px) desktop; centered, stacked, `e-md` (84px) on
-  mobile.
+  link, `"{N} de {M} · Ver el álbum"`. **One plate, resized by the `--rank-emblem-size` class**
+  (see `components.md`), never two plates behind `hidden` / `sm:block` wrappers — that pairing
+  collapsed the emblem to a couple of pixels on every width.
+- **`Progreso` tab bar**: three tabs never need horizontal scroll at any supported width; the item
+  uses `--text-caption` at both sizes rather than the prototype's 13px / 12.5px pair, which is off
+  the type scale. (This is the in-page `Resumen`/`Medallas`/`Rangos` `Tabs` module, unrelated to
+  the prototype-only bottom `.tabbar` above.)
+- **Resumen hero**: `RankEmblem e-xl` (148px) desktop; centered, stacked, `e-lg` (120px) on
+  mobile, where the points figure also reorders to sit directly under the emblem instead of at
+  the foot of the card.
+- **Resumen two-card row**: the `lg:grid-cols-2` applies only when the merit lock is actually
+  rendered (rank 6+, `FR-12-17`). Unconditionally, the single-child grid reserved 480px of empty
+  row on every account below that floor.
+- **Rangos rung (mobile)**: the fact block takes `basis-full` so it wraps to its own line and the
+  rank name gets the rest of the first row; sharing that row with a plate and a right-hand column
+  left the name in a hundred-pixel well. The plate itself drops to 44px below `md`.
 - **Rangos ladder**: full ten-row list desktop; mobile `.compact` collapses the distant locked
   band (ranks 9–7) into one disclosure row (§2.4, §5.3); the current rung's side content
   (threshold/progress) reflows from a right-aligned column to a full-width row beneath the name.
 - **Album grid**: `repeat(auto-fill, minmax(216px, 1fr))` — the column count comes from a
   minimum card width, not a breakpoint, the same philosophy the dashboard's trend-chart grid
-  already uses (`fdd-06-dashboard.md § 2.2`); no bespoke mobile-only grid class is needed.
+  already uses (`fdd-06-dashboard.md § 2.2`); no bespoke mobile-only grid class is needed. The
+  showcase / preview grid uses `auto-fit` at `minmax(168px, 1fr)` instead (§2.5).
+- **Mini-ladder (Resumen)**: three columns abreast from `sm` up, stacked rows below it. The rank
+  name wraps to two lines in the column and truncates to one in the stacked row.
 - **Medal detail**: 320px art column + flexible fact column desktop; single column, centered,
   below 900px (`MedalStage s-xl`, 208px, replacing `s-2xl`), with the fact list trimmed to three
   rows (§2.6).
@@ -889,10 +1082,10 @@ todavía"`), never desaturation alone — already compliant in the prototype.
   exclusion, D5), 0014 (motion / view transitions), 0035 (accepted — the point ledger this
   domain is built on), and 0036 (accepted — the medal rarity visual system §3.1 details).
 - **Functional contract**: [`frd-12-collector-progression.md`](./frd-12-collector-progression.md)
-  (`FR-12-01…47`, `BR-12-01…21`, `AC-12-01…16`), status `DRAFT`. Its Implementation Notes call
-  for six new ADRs (numbered from `0035`); two are accepted (`0035`, `0036`, cited above) and
-  four remain unwritten (`0037`–`0040`), one per remaining work order — this document cites only
-  the two that exist.
+  (`FR-12-01…47`, `BR-12-01…21`, `AC-12-01…16`), status `ACTIVE` since `WO-07` closed. Its
+  Implementation Notes call for six new ADRs (numbered from `0035`); all six are now accepted
+  (`0035`–`0040`, cited in §1), one per work order that owed one, and `0040` carries a dated
+  amendment from the medal catalogue v2 pass.
 - **Gaps between the prototype and the functional contract**, tracked so they aren't
   rediscovered as regressions: the `"% de coleccionistas"` row that must be **omitted** entirely
   below the user-count threshold rather than rendered dimmed (§2.6); the celebration overlay's

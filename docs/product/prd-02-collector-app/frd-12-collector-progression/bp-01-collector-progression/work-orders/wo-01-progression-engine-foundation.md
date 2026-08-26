@@ -36,7 +36,7 @@ Establish the progression persistence model, the point-rule catalogue, the money
 - any collector-facing route
 - call sites inside the existing order/payment/delivery/store mutations that invoke `awardPoints` (belongs to `WO-02`)
 - the rank ladder's threshold table and its i18n (belongs to `WO-03`)
-- the medal catalogue's content (24 medals, 6 series) and its unlock evaluator logic (belongs to `WO-05`; this slice ships only the hook the recompute calls)
+- the medal catalogue's content (24 medals, 6 series) and its unlock evaluator logic (belongs to `WO-05`; this slice ships only the hook the recompute calls) [superseded 2026-08-26: the catalogue is 28 medals across the same 6 series, see [`WO-05`](wo-05-medal-album.md)]
 - the admin route/page that would call `voidUserProgressionPoints` and `listUserPointLedger` from a UI (deferred, see `BP-01` Risks)
 - PostHog events (belong to the vertical slices that introduce user-visible actions)
 - the Notion backfill script (belongs to `WO-06`, though it will call the `awardPoints` helper this slice ships)

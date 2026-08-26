@@ -75,7 +75,7 @@ function isMeritLockSatisfied(rankIndex: 9 | 10, unlockedMedalCount: number, shi
 }
 ```
 
-`shippedMedalCount` excludes medals the collector cannot control by construction (a medal dependent on another user's action such as `store-mapped-1`, and any event medal whose window has closed) — `medalCatalogue.ts`'s accessor (from `WO-05`) is responsible for that exclusion; `rankLadder.ts` only calls it and applies the fraction. A collector who has the points for rank 9/10 but not the album sits at the highest rank whose threshold and merit lock are both satisfied, with the lock counter shown for the next one, never at a half state (State Model, `FRD-12`).
+`shippedMedalCount` excludes medals the collector cannot control by construction (a medal dependent on another user's action such as `store-mapped-1`, and any event medal whose window has closed) [superseded 2026-08-26: `store-mapped-1` was replaced by the controllable `store-charted-1`, so the accessor excludes nothing today and the denominator is the full 28; the exclusion contract itself still stands for a future event medal, see [`WO-05`](wo-05-medal-album.md)] — `medalCatalogue.ts`'s accessor (from `WO-05`) is responsible for that exclusion; `rankLadder.ts` only calls it and applies the fraction. A collector who has the points for rank 9/10 but not the album sits at the highest rank whose threshold and merit lock are both satisfied, with the lock counter shown for the next one, never at a half state (State Model, `FRD-12`).
 
 ## Technical Notes
 

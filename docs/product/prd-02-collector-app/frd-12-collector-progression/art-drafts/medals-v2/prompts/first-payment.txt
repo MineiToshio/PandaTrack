@@ -1,0 +1,54 @@
+Use your image generation tool to create ONE image and save it in the current directory as exactly "first-payment.png".
+
+TRANSPARENCY. Render the medal on a flat, uniform, fully saturated pure MAGENTA background, then remove that
+background so the file ships with a real alpha channel. Remove it with an edge connected flood fill starting from
+the four canvas borders, never with a global colour match, so that no pixel INSIDE the artwork is ever deleted.
+Nothing in the medal itself may be anywhere near pure MAGENTA. The finished PNG has no canvas colour, no scene, no
+drop shadow and no cast shadow on the ground; self shadowing on the object itself is wanted.
+
+SUBJECT. ONE single collectible medal: a struck, enamelled metal plate, and nothing else.
+
+PLATE. The plate is cut into a perfect CIRCLE, a struck coin seen dead on. Its face is filled edge to edge with warm honey amber enamel, glassy and deep. That enamel field is completely SMOOTH and PLAIN: it may have glassy depth, a soft reflection and a slight value shift, but it carries no pattern, no sunburst, no radiating stripes, no carved scrollwork and no filigree of any kind.
+
+FRAME. The raised rim around the plate is made of BLACKENED IRON with a warm grey cast: matte, with visible casting grain and a little soot darkening every recess. It is the humblest metal in the album and it is not shiny. ONE single plain bevelled band running all the way around the plate, with a fine milled (reeded) texture cut into its outermost edge like the edge of a struck coin. No studs, no rivets, no second band, no gem, nothing set into it anywhere.
+
+MOTIF. A drawstring leather coin pouch, plump and cinched shut at the neck, standing upright, with ONE single struck coin leaning against its base. It is rendered in cream ivory and pale stone with only small accents of the frame's own metal, never in the frame's metal as its body, so it separates cleanly from the enamel behind it. It sits raised off the field with its own bevel and its own drop of ambient occlusion under it.
+
+LIGHT. There is NO emitted light in this medal at all. Every bright pixel on it is the key light falling on metal, enamel or stone. Nothing glows, nothing is lit from within.
+
+ONE SOLID PLATE. The medal is ONE single closed silhouette. If you traced its outline you would draw one
+single continuous closed line, and there is no gap, no slot, no notch and no background visible anywhere inside
+it. It has no wings, no laurel branches, no crown, no spires, no ribbon, no chain, no foot and no hanging
+pendant: nothing at all sticks out of the geometric plate. This is what separates a medal from a rank emblem in
+this product, and it is not negotiable.
+
+STYLE. Render it as a semi-realistic painted game asset in the visual language of Japanese role-playing
+game equipment icons and collectible insignia (the polished fantasy emblem look of Final Fantasy, Granblue
+Fantasy and Octopath Traveler). It must read as a real physical object that was struck, cast and then enamelled
+by hand: believable materials with visible surface character, real volume with bevelled edges and chamfers,
+ambient occlusion darkening every recess and every undercut, one dramatic warm key light from the upper left, a
+cool rim light grazing the lower right edge, crisp specular glints along the raised edges, and soft self
+shadowing where one part overlaps another. The palette is noble and slightly muted, rich and deep rather than
+neon. Separation between two materials comes from value, from the bevel and from a thin dark seam where they
+meet, NOT from a drawn outline. DO NOT draw any of the following: flat vector art, sticker art, a thick black
+cartoon keyline around the shapes, cel shading, hard-edged comic book flat colour, comic speed lines, an impact
+starburst behind the subject, pixel art, screentone dots, manga ink hatching, glossy plastic toy shine, a
+western cartoon or Saturday morning cartoon look, an esports mascot logo, clip art, a chibi mascot.
+
+COMPOSITION. The plate is centered, upright, front facing and bilaterally symmetrical, with no rotation
+and no three quarter perspective: you are looking at it straight on, the way you look at a coin lying face up.
+It fills a SQUARE footprint, its full width and its full height each about 88 percent of the canvas, and EVERY
+point of its outline stays inside a centered circle at 85 percent of the canvas diameter, because the
+application displays every medal through a circular crop. The motif is the biggest recognizable shape inside
+the plate and takes up between 45 and 55 percent of the plate's width. All four corners of the canvas are empty
+and transparent.
+
+NEVER INCLUDE. No text, no numbers, no letters, no roman numerals, no watermark, no signature and no logo.
+No ribbon, no banderole, no scroll banner and no name plate. No sparks, no embers, no floating fragments, no
+scattered small pieces, no smoke and no separate flame tongues. No second concentric ring, halo ring, circular
+frame or plate drawn around the OUTSIDE of the medal: the application paints a coloured rarity ring around the
+artwork itself and a drawn one would collide with it. No animal, no bird, no creature and no character of any
+kind, and no face, no eyes and no hands. No existing character, franchise, trademark or copyrighted material of
+any kind: an original generic design only. No background scenery and no cast shadow on the ground.
+
+OUTPUT. One PNG image, 1024 by 1024 pixels, RGBA, with a real alpha channel.

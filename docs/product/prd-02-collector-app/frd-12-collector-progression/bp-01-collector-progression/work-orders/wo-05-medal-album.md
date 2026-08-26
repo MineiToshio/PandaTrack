@@ -9,23 +9,23 @@ source_features:
   - FEAT-0021
 source_issue: 144
 implementation_status: IN_PROGRESS
-last_updated: 2026-08-23
+last_updated: 2026-08-26
 ---
 
 # WO-05 Medal Album
 
 ## Summary
 
-Ship the phase-1 medal catalogue (12 of the 24 medals: the 7 of `Primeros pasos`, the 4 of `La espera`, and 1 secret medal), the unlock evaluator wired into the call sites [`WO-02`](wo-02-accrual-in-existing-flows.md) already opened, the `"Medallas"` album tab content, and the medal detail subview. Extends `store-reviewed`'s own credit call site alongside the medal evaluator since both read the same store-review anchor. Writes the ADR for medals granting no points and never being revoked.
+Ship the phase-1 medal catalogue (12 of the 24 medals: the 7 of `Primeros pasos`, the 4 of `La espera`, and 1 secret medal), the unlock evaluator wired into the call sites [`WO-02`](wo-02-accrual-in-existing-flows.md) already opened, the `"Medallas"` album tab content, and the medal detail subview. Extends `store-reviewed`'s own credit call site alongside the medal evaluator since both read the same store-review anchor. Writes the ADR for medals granting no points and never being revoked. **Amended 2026-08-26 (medal catalogue v2):** this slice's catalogue now carries **28 medals, all of them shipped and evaluable**; the twelve phase-2 rows it had left as silhouettes were promoted, `store-mapped-1` was replaced and four rows were added. See `Implementation Notes`.
 
 ## In Scope
 
-- `src/lib/data/progression/medalCatalogue.ts`: the phase-1 catalogue (12 entries) with `medalKey`, name/hint keys, condition predicate, rarity, series, `publicSafe`, `stateful` flag, and the phase-3 columns already modeled by `WO-01` (`series`, `availableFrom`, `availableTo`, `numbered`) left `null`/unset for every phase-1 medal
+- `src/lib/data/progression/medalCatalogue.ts`: the catalogue (12 awardable entries at the time of this slice, all 28 since catalogue v2) with `medalKey`, name/hint keys, condition predicate, rarity, series, `publicSafe`, `stateful` flag, and the phase-3 columns already modeled by `WO-01` (`series`, `availableFrom`, `availableTo`, `numbered`) left `null`/unset for every phase-1 medal
 - `evaluateUnlocks(userId, context): Promise<MedalUnlockCandidate[]>`, called from `WO-01`'s recompute (replacing its stub) and from each `WO-02` call site directly after `awardPoints`, so a same-transaction action can report a same-response unlock (`FR-12-13`) without waiting for the next recompute
-- the accessor `rankLadder.ts` (`WO-03`) calls for the merit lock: shipped-medal count excluding event medals whose window has closed and medals dependent on another user's action (`store-mapped-1`)
+- the accessor `rankLadder.ts` (`WO-03`) calls for the merit lock: shipped-medal count excluding event medals whose window has closed and medals dependent on another user's action (`store-mapped-1`, replaced on 2026-08-26 by the controllable `store-charted-1`, so the accessor excludes nothing today and the two exclusions stand only for a future event medal)
 - credit/evaluation call site for `store-reviewed` in `upsertStoreReview` (`src/lib/data/stores/storeMutations.ts:144`): 20 points, `entityId` is the **store**, not the review row (`FR-12-04`, `AC-12-05`), gated by `BR-12-07` (approved, non-private store; authorship is not read) and by "the user already received a product from this store" (an existence check against delivered order items, no money read)
 - the one secret medal shipping in phase 1: pick it from the FRD's three candidates (`midnight-order`, `same-day-settle`, `year-streak`) on evaluation cost; `year-streak` requires a 12-consecutive-month scan and is the most expensive, `midnight-order` is a single-row time check on `createOrder`, `same-day-settle` needs same-day cross-reference between an order's settlement and its delivery. Ship `midnight-order` (cheapest to evaluate, no cross-entity join) and record the choice in the ADR this slice writes, closing the FRD's open question
-- `"Medallas"` album tab content (inside `WO-04`'s tab shell): one page per series, global counter (`"12 de 24"`), per-series counter, unlocked medals in colour, locked medals as silhouettes with hint, the secret medal as a silhouette with no hint and a neutral label (`FR-12-25`)
+- `"Medallas"` album tab content (inside `WO-04`'s tab shell): one page per series, global counter (`"12 de 28"`), per-series counter, unlocked medals in colour, locked medals as silhouettes with hint, the secret medals as silhouettes with no hint and a neutral label (`FR-12-25`)
 - medal detail subview `src/app/[locale]/(app)/progress/medals/[medalKey]/page.tsx`: name, series, rarity, condition text, hint, `publicSafe`, unlock date, `stateful` currency (`"vigente"` / `"ya no vigente"`) when it applies; back navigation returns to the album page with scroll position preserved (`FR-12-34`); unknown key resolves to 404
 - `stateful` medal currency: a medal whose condition is a state, not an event, additionally computes and displays whether that state still holds, without ever revoking the unlock (`FR-12-23`, `BR-12-08`)
 - i18n additions to `progress.json`: `medals.<key>.name`, `medals.<key>.hint`, `rarity.<level>` (five grades, reusing `ADR 0036`'s vocabulary)
@@ -35,7 +35,7 @@ Ship the phase-1 medal catalogue (12 of the 24 medals: the 7 of `Primeros pasos`
 
 ## Out of Scope
 
-- the twelve phase-2 medals (future work order)
+- ~~the twelve phase-2 medals (future work order)~~ shipped by the catalogue v2 pass of 2026-08-26 instead of by a later work order, together with four new rows and one replacement; see `Implementation Notes`
 - the unlock toast that renders a `medalsUnlocked` entry (belongs to `WO-06`)
 - the `"% de coleccionistas que la tienen"` line (explicitly deferred per `FR-12-27`, not a phase-1 or phase-2 deliverable)
 - the administration UI for time-limited events (explicitly out of scope for the whole FRD)
@@ -43,7 +43,7 @@ Ship the phase-1 medal catalogue (12 of the 24 medals: the 7 of `Primeros pasos`
 ## Requirements
 
 - `FR-12-04` (`store-reviewed` anchor and cap)
-- `FR-12-20` (24-medal catalogue; this slice ships the phase-1 12)
+- `FR-12-20` (28-medal catalogue; this slice shipped the phase-1 12 and, after the catalogue v2 pass of 2026-08-26, all 28)
 - `FR-12-21` (rarity via `ADR 0036`'s print-run metaphor; this slice wires the catalogue's `rarity` field to that vocabulary, the visual treatment itself is FDD-owned)
 - `FR-12-22`, `FR-12-23` (no points from medals, never revoked, `stateful` currency)
 - `FR-12-24` (`publicSafe` flag on every medal)
@@ -125,7 +125,7 @@ This keeps `WO-03`'s statement ("must call a catalogue accessor, not hardcode 12
 
 - Given a collector opens `"Medallas"` with nothing unlocked
 - When the tab renders
-- Then all 12 phase-1 medals render as silhouettes, the secret medal renders with no hint and a neutral label, and the global counter reads `"0 de 12"`
+- Then all 28 medals render as silhouettes, the four secret medals render with no hint and a neutral label, and the global counter reads `"0 de 28"` (before catalogue v2 this read `"0 de 12"` with the phase-2 twelve excluded from the counter)
 
 - Given a delivery that took 65 days from order to arrival
 - When the progression is recomputed
@@ -164,7 +164,7 @@ This keeps `WO-03`'s statement ("must call a catalogue accessor, not hardcode 12
 | `midnight-order` for an order created at 04:01 civil time                           | Not unlocked                                                       |
 | `first-photo-order` when the call-site context carries the image-intake note marker | Unlocked                                                           |
 | `first-photo-order` when the order's note is later edited after unlock              | Still `unlocked` (immutable `MedalUnlock` row, never re-derived)   |
-| `getMeritLockDenominator` excluding `store-mapped-1`-class and closed-window medals | Returns the shipped count minus excluded medals                    |
+| `getMeritLockDenominator` excluding `store-mapped-1`-class and closed-window medals | Returns the shipped count minus excluded medals; since catalogue v2 nothing is excluded, so the case guards the accessor for a future event medal |
 | Store private, `PENDING` or `REJECTED`                                              | No medal in any series unlocks (`BR-12-07`)                        |
 | Store `APPROVED` and public, registered by the collector themselves                 | Medals unlock normally (`BR-12-07`, amended 2026-08-23)            |
 
@@ -196,6 +196,28 @@ inside, the scope above.
   counter, so the album's counters read `"N de 12"` per this work order's own E2E test while the
   grid still shows twenty-four pieces. A phase-2 card reads `"Próximamente"` rather than
   `"Cómo conseguirla"`, since an instruction the collector cannot follow is not a hint.
+  **Superseded 2026-08-26 by the catalogue v2 pass below**: nothing is catalogued as `phase: 2` any
+  more, so no counter excludes a row and no card reads `"Próximamente"`.
+- **Catalogue v2: all 28 medals ship (2026-08-26).** Approved from
+  [`medal-catalogue-v2.md`](../../medal-catalogue-v2.md), which verified condition by condition that
+  every deferred row was already resolvable against the schema as it stood: the phase-2 deferral was
+  an ordering decision taken on evaluation cost, not a capability gap (`ADR 0040`, amended the same
+  day). What landed:
+  - the twelve `phase: 2` rows became shipped and evaluable, and `La vitrina`, `Explorador`,
+    `Cronista` and `Secretas` are awardable pages rather than promises;
+  - `store-mapped-1` was replaced by `store-charted-1` (`STORE_APPROVED_1`), because it was the one
+    row the collector could not control on their own; its resolver reuses the same creditable-store
+    gate every other medal query applies (`APPROVED`, public, not private, `BR-12-07`), which is
+    stricter than approval alone and is the honest reading of "on the shared map";
+  - four rows were added, `first-preorder`, `countries-3`, `reviews-5` and `swift-arrival`, so every
+    series holds at least four pieces and `Primeros pasos` fills both of its rows at eight;
+  - `first-store` stopped resolving `ANY_ORDER` (the same condition as `first-order`, so two pieces
+    unlocked from one click) and now resolves an order at a SECOND distinct store;
+  - `first-order-closed` and `clean-record-10` each rose one rarity level, giving a print-run spread
+    of 10 normal, 7 primera edición, 5 limitada, 5 holográfica, 1 firmada;
+  - `getMeritLockDenominator` moved from 12 to 28 with nothing excluded, so ranks 9 and 10 now ask
+    for 13 and 17 medals (`FR-12-17`). That is the intended effect of shipping the album: the gate
+    was written as a fraction precisely so the catalogue could grow under it.
 - **`store-reviewed` did not exist as a point rule and was added here.** `FR-12-04` lists it as a
   phase-2 rule, but this work order scopes its call site, so `pointRules.ts` gains the rule (20
   points, 60 pts/month, `entityType: store`) plus a new `store-product-received` condition the
@@ -225,7 +247,9 @@ inside, the scope above.
   with `data-medal="<medalKey>"` on the figure. `MedalDefinition.imageKey` plus
   `resolveMedalArtSrc` in `MedalStage.tsx` are the single substitution point, so real artwork
   lands by dropping files into `public/medals/` and filling in one field per catalogue row; that
-  substitution happened for all 24 medals on 2026-08-24, per `medal-art-guide.md` §5. The
+  substitution happened for all 24 medals on 2026-08-24, per `medal-art-guide.md` §5, and the art
+  was relanguaged and regrown to 28 pieces by catalogue v2 (`medal-catalogue-v2.md` §2, §3, §3a);
+  publishing those files into `public/medals/` is tracked separately from this work order. The
   per-grade seal glyph of `FDD-12 §3.1` remains deferred; the always-present `RarityChip` text
   label already satisfies `ADR 0006`.
 - **The `"% de coleccionistas"` block renders switched off** with the honesty copy, rather than

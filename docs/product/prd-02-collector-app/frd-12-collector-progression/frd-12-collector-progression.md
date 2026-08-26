@@ -7,7 +7,7 @@ status: ACTIVE
 parent: PRD-02
 children:
   - BP-01
-last_updated: 2026-08-23
+last_updated: 2026-08-26
 source_features:
   - FEAT-0021
 implementation_status: IN_PROGRESS
@@ -17,9 +17,9 @@ implementation_status: IN_PROGRESS
 
 ## Overview
 
-Define the personal progression layer that sits on top of what the collector already does in PandaTrack: registering orders, logging payments, receiving deliveries, discovering stores and keeping product records complete. Every server-verifiable fact appends an entry to a points ledger; the balance is **derived** from those entries; the accumulated total drives a **permanent private rank**; and, in parallel, the collector fills a **medal album** of 24 collectible pieces that grant status and never grant points.
+Define the personal progression layer that sits on top of what the collector already does in PandaTrack: registering orders, logging payments, receiving deliveries, discovering stores and keeping product records complete. Every server-verifiable fact appends an entry to a points ledger; the balance is **derived** from those entries; the accumulated total drives a **permanent private rank**; and, in parallel, the collector fills a **medal album** of 28 collectible pieces that grant status and never grant points.
 
-This FRD covers **phase 1 and phase 2** of the approved direction: the points engine, the ten-rank ladder, the medal album with its rarity model, and the four surfaces that expose them (the `Progreso` section with its three tabs, the medal detail subview, the dashboard widget, and the global unlock feedback). The data model is also prepared for **time-limited events** (phase 3), but no administration UI for them is in scope here. Comparison between collectors (a leaderboard, a public profile, a shareable card that names other people) is **out of scope** and is deferred to a future FRD gated on hard preconditions.
+This FRD covers **phase 1 and phase 2** of the approved direction: the points engine, the ten-rank ladder, the full 28-piece medal album with its rarity model, and the four surfaces that expose them (the `Progreso` section with its three tabs, the medal detail subview, the dashboard widget, and the global unlock feedback). The data model is also prepared for **time-limited events** (phase 3), but no administration UI for them is in scope here. Comparison between collectors (a leaderboard, a public profile, a shareable card that names other people) is **out of scope** and is deferred to a future FRD gated on hard preconditions.
 
 ## Domain Goal
 
@@ -29,9 +29,9 @@ Give the collector a visible, honest reward for recordkeeping discipline during 
 
 ### Implemented
 
-Phase 1 is built. `BP-01`'s seven slices shipped the whole vertical: the four Prisma models and their migration, the dependency-light rule catalogue and its money-predicate adapter, the derived recompute, the credit call sites in the anchor mutations, the ten-rank ladder, the twelve phase-1 medals, the `Progreso` section with its three tabs, the dashboard widget, the unlock toast and the rank and high-rarity celebrations, the hide setting and the self-service purge, the Notion backfill script, and, in `WO-07`, the administrative surface: a read-only view of a collector's ledger and the point void with its mandatory reason (`FR-12-44`, `FR-12-45`). `WO-07` was the last slice this FRD was waiting on, and it is why this document leaves `DRAFT`.
+Phase 1 is built. `BP-01`'s seven slices shipped the whole vertical: the four Prisma models and their migration, the dependency-light rule catalogue and its money-predicate adapter, the derived recompute, the credit call sites in the anchor mutations, the ten-rank ladder, the medal album (twelve awardable pieces at first, all twenty-eight since the catalogue v2 pass of 2026-08-26), the `Progreso` section with its three tabs, the dashboard widget, the unlock toast and the rank and high-rarity celebrations, the hide setting and the self-service purge, the Notion backfill script, and, in `WO-07`, the administrative surface: a read-only view of a collector's ledger and the point void with its mandatory reason (`FR-12-44`, `FR-12-45`). `WO-07` was the last slice this FRD was waiting on, and it is why this document leaves `DRAFT`.
 
-Two things named in this FRD are deliberately still ahead: phase 2 (the remaining twelve medals, the grades inside a rank band, the eight phase-2 point rules) and the phase-3 event administration UI, which was never in scope here.
+Two things named in this FRD are deliberately still ahead: phase 2 (the grades inside a rank band and the eight phase-2 point rules) and the phase-3 event administration UI, which was never in scope here. The twelve medals phase 2 once held are **not** among them: the catalogue v2 pass of 2026-08-26 shipped them, replaced `store-mapped-1` and added four new pieces, so the album is complete at 28 and no medal reads `"Próximamente"` (`FR-12-20`).
 
 The domain sits entirely on facts that already existed and were already server-verified before any of it was built:
 
@@ -48,7 +48,7 @@ The domain sits entirely on facts that already existed and were already server-v
 ### Planned
 
 - ~~**Phase 1.**~~ Shipped, see `### Implemented` above.
-- **Phase 2.** The remaining twelve medals, the grades `I` / `II` / `III` inside a rank band, and the eight phase-2 point rules.
+- **Phase 2.** The grades `I` / `II` / `III` inside a rank band, and the eight phase-2 point rules. The twelve medals this phase used to hold shipped ahead of it on 2026-08-26 (`FR-12-20`), so no medal is deferred any more.
 - **Phase 3 (data model only in this FRD).** Time-limited event medals: the columns exist from phase 1, the administration UI that creates and schedules an event is deliberately excluded.
 
 ## User Stories
@@ -123,72 +123,80 @@ As a collector, I want to be certain that no amount of money I enter, anywhere, 
 
 ### The rank ladder
 
-- `FR-12-14`: The system must expose **ten ranks**, whose thresholds come from the superlinear curve `pointsForRank(n) = round(200 * (n - 1) ^ 1.75 / 10) * 10`, calibrated against the base profile of 210 points per month so that reaching rank 10 takes roughly forty-five months of steady recordkeeping. The names are a fan-club hierarchy crossed with print-run vocabulary, generic to the medium and free of any brand or title:
+- `FR-12-14`: The system must expose **ten ranks**, whose thresholds come from the superlinear curve `pointsForRank(n) = round(200 * (n - 1) ^ 1.75 / 10) * 10`, calibrated against the base profile of 210 points per month so that reaching rank 10 takes roughly forty-five months of steady recordkeeping. The names follow the rank ARTWORK, not the other way round: each rung is designed first as a fantasy artefact of a single mythology (the life of one crystal, from the shard asleep in the rock to the creature that carries it burning) and then named after what the emblem shows. They keep the guild flavour of the club (Kōhai, Senpai) and stay generic to the medium, free of any brand or title. The art record is `rank-art-guide.md`:
 
-  | #   | es                          | en                     | Threshold | Lore (es)                                             | Typical month |
-  | --- | --------------------------- | ---------------------- | --------- | ----------------------------------------------------- | ------------- |
-  | 1   | Kōhai                       | Kohai                  | 0         | `"Acabas de cruzar la puerta del club."`              | 0             |
-  | 2   | Cazador de preventas        | Pre-order Hunter       | 200       | `"Ya sabes que lo bueno se reserva meses antes."`     | 1             |
-  | 3   | Guardián del tomo           | Volume Keeper          | 670       | `"Tu primera fila completa, llegada y registrada."`   | 4             |
-  | 4   | Senpai del gremio           | Guild Senpai           | 1.370     | `"Otros empiezan a preguntarte dónde comprar."`       | 7             |
-  | 5   | Cazador de primera edición  | First Print Hunter     | 2.260     | `"Distingues una reimpresión de una primera tirada."` | 11            |
-  | 6   | Curador de tirada limitada  | Limited Run Curator    | 3.340     | `"Tienes piezas que ya no se reimprimen."`            | 16            |
-  | 7   | Sensei del club             | Club Sensei            | 4.600     | `"Enseñas el oficio: tiendas, fechas, esperas."`      | 22            |
-  | 8   | Archivista de edición rara  | Rare Edition Archivist | 6.020     | `"Tu registro vale tanto como tu vitrina."`           | 29            |
-  | 9   | Shishō de la colección      | Collection Shisho      | 7.610     | `"Nada entra ni sale sin quedar anotado."`            | 37            |
-  | 10  | Leyenda del gremio, Rango S | Guild Legend, Rank S   | 9.350     | `"El nivel del que se habla en el club."`             | 45            |
+  | #   | es                        | en                    | Threshold | Lore (es)                                                       | Typical month |
+  | --- | ------------------------- | --------------------- | --------- | --------------------------------------------------------------- | ------------- |
+  | 1   | Kōhai                     | Kohai                 | 0         | `"Tu primera pieza, todavía dormida en la roca."`               | 0             |
+  | 2   | Buscador de reliquias     | Relic Seeker          | 200       | `"Rescatas lo que otros dieron por perdido."`                   | 1             |
+  | 3   | Escriba del grimorio      | Grimoire Scribe       | 670       | `"Tu colección ya tiene su propio libro."`                      | 4             |
+  | 4   | Senpai del gremio         | Guild Senpai          | 1.370     | `"Otros empiezan a seguir tu luz."`                             | 7             |
+  | 5   | Portador del filo         | Bladebearer           | 2.260     | `"El acero roto vuelve entero, y esta vez es tuyo."`            | 11            |
+  | 6   | Guardián de las horas     | Warden of Hours       | 3.340     | `"Sabes esperar, y esperar bien es medio oficio."`              | 16            |
+  | 7   | Invocador del cristal     | Crystal Summoner      | 4.600     | `"La esquirla que hallaste al principio ya arde en tus manos."` | 22            |
+  | 8   | Centinela de esmeralda    | Emerald Sentinel      | 6.020     | `"Custodias lo que ya no se reimprime."`                        | 29            |
+  | 9   | Gran maestro de la bóveda | Vault Grandmaster     | 7.610     | `"Nada entra ni sale de la bóveda sin tu llave."`               | 37            |
+  | 10  | Leyenda viva, Rango S     | Living Legend, Rank S | 9.350     | `"El cristal ya no necesita vitrina: tiene alas."`              | 45            |
 
 - `FR-12-15`: Every surface that names a rank must print **`"Rango N de 10"`** next to the name. A themed ladder has no intuitive order on its own, and the position is the part that actually answers "how far along am I".
 - `FR-12-16`: The **highest rank reached is permanent**. The stored highest index never decreases, even when the derived point total falls because an entity was deleted or became ineligible. What moves backwards is the progress bar inside the current band, never the title.
-- `FR-12-17`: Ranks 9 and 10 must additionally require a **merit lock** expressed as a percentage of the **shipped** medal catalogue: **45 %** for rank 9 and **60 %** for rank 10. The denominator excludes medals the collector cannot control (a medal that depends on another user's action, and any event medal whose window has closed). Expressing it as a percentage rather than a count is what keeps it reachable while the catalogue grows from twelve medals in phase 1 to twenty-four in phase 2. The lock must be **visible from rank 6 onward**, with the count stated in plain copy (`"Leyenda del gremio pide el 60 % del álbum. Llevas 9 de 24."`), never revealed only at the moment the collector hits it.
+- `FR-12-17`: Ranks 9 and 10 must additionally require a **merit lock** expressed as a percentage of the **shipped** medal catalogue: **45 %** for rank 9 and **60 %** for rank 10. The denominator excludes medals the collector cannot control (a medal that depends on another user's action, and any event medal whose window has closed). Since the catalogue v2 pass of 2026-08-26 **no catalogued medal falls under either exclusion**: `store-mapped-1`, the only row that waited on a stranger, was replaced by `store-charted-1`, and no event medal exists yet. The denominator is therefore the whole shipped album, **28**, and the two ranks need **13** and **17** medals (`ceil(0.45 × 28)` and `ceil(0.60 × 28)`). Expressing the lock as a percentage rather than a count is what kept it reachable while the catalogue grew from twelve awardable pieces to twenty-eight without the rule itself changing. The exclusions stay in the accessor because a future event medal will need them. The lock must be **visible from rank 6 onward**, with the count stated in plain copy (`"Leyenda viva pide el 60 % del álbum. Llevas 9 de 28."`), never revealed only at the moment the collector hits it.
 - `FR-12-18`: A collector's rank, points and medals are **visible only to that collector**. No surface in this FRD shows another user's progression in any form, aggregated or otherwise.
 - `FR-12-19`: Reaching a new rank must raise a **one-time, dismissible celebration** distinct from the medal toast. It fires once per rank per user and is never replayed, including after a recompute that re-derives the same rank.
 
 ### The medal album
 
-- `FR-12-20`: The system must ship a catalogue of **24 medals across 6 series**. Series are the album's pages and are the only grouping the album offers.
+- `FR-12-20`: The system must ship a catalogue of **28 medals across 6 series**, every one of them shipped and evaluable. Series are the album's pages and are the only grouping the album offers.
 
-  | id                              | Name (es)            | Condition                                                                   | Rarity           | `publicSafe` |
-  | ------------------------------- | -------------------- | --------------------------------------------------------------------------- | ---------------- | ------------ |
-  | **Primeros pasos (7)**          |                      |                                                                             |                  |              |
-  | `first-order`                   | Primer pedido        | first order registered                                                      | Tirada normal    | yes          |
-  | `first-payment`                 | Primer pago          | first payment logged                                                        | Tirada normal    | yes          |
-  | `first-arrival`                 | Primera llegada      | first delivery received                                                     | Tirada normal    | yes          |
-  | `first-order-closed`            | Círculo cerrado      | one order fully paid and fully arrived                                      | Tirada normal    | yes          |
-  | `first-review`                  | Primera reseña       | reviewed a store the collector already received from                        | Tirada normal    | yes          |
-  | `first-photo-order`             | Del papel a la ficha | created an order from an image                                              | Tirada normal    | yes          |
-  | `first-store`                   | Puerta nueva         | first order at a store new to the collector                                 | Tirada normal    | yes          |
-  | **La espera (4)**               |                      |                                                                             |                  |              |
-  | `patience-60`                   | Dos meses de espera  | an order delivered 60 or more days after it was placed                      | Primera edición  | yes          |
-  | `patience-120`                  | La espera larga      | 120 or more days                                                            | Edición limitada | yes          |
-  | `patience-200`                  | La espera imposible  | 200 or more days, and it arrived                                            | Holográfica      | yes          |
-  | `split-arrival`                 | Llega por partes     | one order that arrived across more than one delivery                        | Primera edición  | yes          |
-  | **La vitrina (4)**              |                      |                                                                             |                  |              |
-  | `collection-10`                 | Diez piezas          | 10 products delivered                                                       | Tirada normal    | no           |
-  | `collection-50`                 | Media centena        | 50 products delivered                                                       | Primera edición  | no           |
-  | `collection-150`                | Vitrina llena        | 150 products delivered                                                      | Holográfica      | no           |
-  | `arrivals-25`                   | Puerto conocido      | 25 deliveries received                                                      | Edición limitada | no           |
-  | **Explorador (3)**              |                      |                                                                             |                  |              |
-  | `variety-3`                     | Gustos amplios       | 3 distinct product types delivered                                          | Tirada normal    | no           |
-  | `variety-6`                     | Colección mixta      | 6 distinct product types delivered                                          | Edición limitada | no           |
-  | `stores-10`                     | Mapa propio          | 10 distinct stores with a delivery                                          | Holográfica      | no           |
-  | **Cronista (3)**                |                      |                                                                             |                  |              |
-  | `clean-record-1`                | Ficha impecable      | one order with every product field complete                                 | Tirada normal    | yes          |
-  | `clean-record-10`               | Archivo limpio       | 10 orders with complete records                                             | Edición limitada | yes          |
-  | `store-mapped-1`                | Aporte al mapa       | a store the collector created was approved and another user ordered from it | Primera edición  | yes          |
-  | **Secretas (3, no hint shown)** |                      |                                                                             |                  |              |
-  | `midnight-order`                | Turno de madrugada   | an order registered between 00:00 and 04:00 civil time                      | Primera edición  | yes          |
-  | `same-day-settle`               | Cuentas al día       | an order paid off and closed on the day it arrived                          | Holográfica      | yes          |
-  | `year-streak`                   | Un año contigo       | 12 consecutive months with at least one order                               | Firmada          | yes          |
+  | id                              | Name (es)            | Condition                                                                 | Rarity           | `publicSafe` |
+  | ------------------------------- | -------------------- | ------------------------------------------------------------------------- | ---------------- | ------------ |
+  | **Primeros pasos (8)**          |                      |                                                                           |                  |              |
+  | `first-order`                   | Primer pedido        | first order registered                                                    | Tirada normal    | yes          |
+  | `first-payment`                 | Primer pago          | first payment logged                                                      | Tirada normal    | yes          |
+  | `first-arrival`                 | Primera llegada      | first delivery received                                                   | Tirada normal    | yes          |
+  | `first-order-closed`            | Círculo cerrado      | one order fully paid and fully arrived                                    | Primera edición  | yes          |
+  | `first-review`                  | Primera reseña       | reviewed a store the collector already received from                      | Tirada normal    | yes          |
+  | `first-photo-order`             | Del papel a la ficha | created an order from an image                                            | Tirada normal    | yes          |
+  | `first-store`                   | Puerta nueva         | an order at a second distinct store                                       | Tirada normal    | yes          |
+  | `first-preorder`                | Pre-reserva anotada  | an order carries an expected arrival window                               | Tirada normal    | yes          |
+  | **La espera (4)**               |                      |                                                                           |                  |              |
+  | `patience-60`                   | Dos meses de espera  | an order delivered 60 or more days after it was placed                    | Primera edición  | yes          |
+  | `patience-120`                  | La espera larga      | 120 or more days                                                          | Edición limitada | yes          |
+  | `patience-200`                  | La espera imposible  | 200 or more days, and it arrived                                          | Holográfica      | yes          |
+  | `split-arrival`                 | Llega por partes     | one order that arrived across more than one delivery                      | Primera edición  | yes          |
+  | **La vitrina (4)**              |                      |                                                                           |                  |              |
+  | `collection-10`                 | Diez piezas          | 10 products delivered                                                     | Tirada normal    | no           |
+  | `collection-50`                 | Media centena        | 50 products delivered                                                     | Primera edición  | no           |
+  | `collection-150`                | Vitrina llena        | 150 products delivered                                                    | Holográfica      | no           |
+  | `arrivals-25`                   | Puerto conocido      | 25 deliveries received                                                    | Edición limitada | no           |
+  | **Explorador (4)**              |                      |                                                                           |                  |              |
+  | `variety-3`                     | Gustos amplios       | 3 distinct product types delivered                                        | Tirada normal    | no           |
+  | `countries-3`                   | Tres fronteras       | delivered products from stores in 3 distinct countries                    | Primera edición  | no           |
+  | `variety-6`                     | Colección mixta      | 6 distinct product types delivered                                        | Edición limitada | no           |
+  | `stores-10`                     | Mapa propio          | 10 distinct stores with a delivery                                        | Holográfica      | no           |
+  | **Cronista (4)**                |                      |                                                                           |                  |              |
+  | `clean-record-1`                | Ficha impecable      | one order with every product field complete                               | Tirada normal    | yes          |
+  | `store-charted-1`               | Tienda cartografiada | a store the collector registered was approved (and is public, `BR-12-07`) | Primera edición  | yes          |
+  | `reviews-5`                     | Voz de confianza     | five reviews of stores the collector received from                        | Edición limitada | yes          |
+  | `clean-record-10`               | Archivo limpio       | 10 orders with complete records                                           | Holográfica      | yes          |
+  | **Secretas (4, no hint shown)** |                      |                                                                           |                  |              |
+  | `midnight-order`                | Turno de madrugada   | an order registered between 00:00 and 04:00 civil time                    | Primera edición  | yes          |
+  | `swift-arrival`                 | Llegó volando        | an order fully arrived in 7 days or less                                  | Edición limitada | yes          |
+  | `same-day-settle`               | Cuentas al día       | an order paid off and closed on the day it arrived                        | Holográfica      | yes          |
+  | `year-streak`                   | Un año contigo       | 12 consecutive months with at least one order                             | Firmada          | yes          |
 
-  Phase 1 ships **twelve**: the seven of `Primeros pasos`, the four of `La espera`, and one secret medal chosen by the blueprint. The remaining twelve stay visible as silhouettes so half the album reads as a promise rather than as missing content.
+  **All 28 ship and are evaluable, and no medal renders as `"Próximamente"`.** Phase 1 opened with twelve awardable pieces (the seven `Primeros pasos` rows as the page then stood, the four of `La espera`, and one secret medal chosen by the blueprint) while the other twelve stayed visible as silhouettes. The catalogue v2 pass approved on 2026-08-26 closed that gap: every deferred condition was already resolvable against the schema exactly as it stood, so the deferral was an ordering decision and not a capability gap. The pass promoted the twelve, corrected `first-store` (it used to resolve the same condition as `first-order`, so two pieces unlocked from one click), raised `first-order-closed` and `clean-record-10` one rarity level each, replaced `store-mapped-1` with `store-charted-1`, and added `first-preorder`, `countries-3`, `reviews-5` and `swift-arrival` so no series is left short of four and `Primeros pasos` fills both of its rows.
+
+  `store-mapped-1` ("a store the collector created was approved **and another user ordered from it**") was the only row in the catalogue flagged as outside the collector's control, and that flag existed so a rank gate is never hostage to a stranger's behaviour. `store-charted-1` keeps the intent, putting a real place on the shared map, and moves the finish line to the part the collector controls: registering a store that survives moderation. Its resolver applies the same creditable-store gate as every other medal query (`APPROVED`, public, not private, `BR-12-07`), which is stricter than approval alone on purpose, because a private store is not on the shared map at all. No collector can hold `store-mapped-1`, since it was catalogued but never awardable.
+
+  Rarity across the 28 descends like a real print run: **10 `Tirada normal`, 7 `Primera edición`, 5 `Edición limitada`, 5 `Holográfica`, 1 `Firmada`**. `Primeros pasos` stays almost entirely `Tirada normal` so the first page a collector sees is where they learn what the baseline looks like.
 
 - `FR-12-21`: Rarity must be communicated through a single metaphor, the **print run**, with five levels and a distinct visual treatment each: `"Tirada normal"` (matte, no shine), `"Primera edición"` (gold corner seal), `"Edición limitada"` (numbered border), `"Holográfica"` (animated iridescent ring), `"Firmada"` (a signature drawn over the piece). Rarity must never be carried by colour alone: it also carries a monospaced eyebrow label naming the level.
 - `FR-12-22`: Medals must grant **no points**. They are status only. A medal must never appear in the ledger as a `ruleKey` and must never change a rank threshold.
 - `FR-12-23`: A medal, once unlocked, is **never revoked**. Medals whose condition is a **state** rather than an event are marked `stateful` in the catalogue and additionally display `"vigente"` or `"ya no vigente"` without ever losing the unlock: the album records that the collector reached it, not that they still hold it.
 - `FR-12-24`: Every medal must carry a **`publicSafe`** flag stating whether it could ever be shown on a public surface. Medals that would leak collection volume, product categories or store choices are `publicSafe: false`. Nothing in this FRD renders a public surface; the flag exists so a future one cannot be built without the classification already being made.
-- `FR-12-25`: A locked medal must render as a **silhouette with its hint visible**, so the album shows what is still out there. The three secret medals are the exception: they render as a silhouette with **no hint** and a neutral label, and reveal their name and condition only once unlocked.
-- `FR-12-26`: The album must show progress at two levels: a global counter (`"12 de 24"`) and a per-series counter on each page (`"2 de 4"`).
+- `FR-12-25`: A locked medal must render as a **silhouette with its hint visible**, so the album shows what is still out there. The four secret medals are the exception: they render as a silhouette with **no hint** and a neutral label, and reveal their name and condition only once unlocked.
+- `FR-12-26`: The album must show progress at two levels: a global counter (`"12 de 28"`) and a per-series counter on each page (`"2 de 4"`).
 - `FR-12-27`: A medal must have a **detail view** showing how it was obtained, the date it was unlocked, its rarity and its series. The `"% de coleccionistas que la tienen"` line is specified but must **not** render while the platform has too few users for the figure to be meaningful; it is not a phase-1 or phase-2 deliverable.
 - `FR-12-28`: The medal catalogue's persistence must carry, from phase 1, the fields that time-limited events need: `series`, `availableFrom`, `availableTo` and `numbered`. A numbered medal stamps its ordinal at unlock time and displays it (`"#042 de 200"`). Outside its window a medal can never be unlocked, retroactively or otherwise. **The administration surface that creates and schedules an event is explicitly a future phase** and is not specified here; phase 1 and phase 2 ship no way to author an event, only the shape that will hold one.
 - `FR-12-29`: Unlock toasts must be **queued one at a time** with a short separation between them, so an action that unlocks several medals at once does not stack overlapping surfaces. Past **three** medals in one action the sequence stops being readable (ten unlocks would hold the screen for roughly forty seconds), so the batch collapses into a **single toast naming the count** and its qualifying-rarity unlocks do not escalate to the full-screen celebration either; the album is where a batch that size is read. Same principle as `FR-12-43`. Added by the 2026-08-23 review, see `fdd-12` §2.7.
@@ -205,7 +213,7 @@ As a collector, I want to be certain that no amount of money I enter, anywhere, 
 - `FR-12-37`: The rank celebration must be a light, dismissible modal following the repository's canonical modal pattern, shown once per rank per `FR-12-19`.
 - `FR-12-38`: Settings must expose a single switch, `"Ocultar mi progresión"`, in the `Preferences` section ([`FRD-07 · FR-07-30`](../frd-07-user-settings/frd-07-user-settings.md#functional-requirements)). When it is on, the navigation entry, the dashboard widget, the toasts and the celebrations all disappear together. Points keep accruing in the ledger unless the collector also purges it (`FR-12-46`), so turning the layer back on does not start them from zero.
 - `FR-12-39`: The `Progreso` section must show a **visible but disabled** placeholder for comparison between collectors: `"Próximamente: compara con otros coleccionistas."` It must not link anywhere, must not accept an opt-in, and must not collect any preference, because the feature it names is out of scope (see `## Out of Scope`).
-- `FR-12-40`: The section must have honest empty states. Before any points exist AND the collector has never reached a rank above the first rung or held a medal: `"Todavía no tienes puntos. Registra tu primer pedido y empieza."` An album with nothing unlocked shows all silhouettes and its counter at `"0 de 12"` rather than an empty container. A collector whose live total was voided down to zero (`FR-12-44`) but who reached a higher rank or holds a medal beforehand is a **different** honest state, not the first-run one: the rank ladder underneath already shows that history, so greeting them with "start your record" would contradict what the same screen says a moment lower. That collector instead sees the normal rank hero at `0` points, with a neutral line: `"Tus puntos actuales son 0."`.
+- `FR-12-40`: The section must have honest empty states. Before any points exist AND the collector has never reached a rank above the first rung or held a medal: `"Todavía no tienes puntos. Registra tu primer pedido y empieza."` An album with nothing unlocked shows all silhouettes and its counter at `"0 de 28"` rather than an empty container. A collector whose live total was voided down to zero (`FR-12-44`) but who reached a higher rank or holds a medal beforehand is a **different** honest state, not the first-run one: the rank ladder underneath already shows that history, so greeting them with "start your record" would contradict what the same screen says a moment lower. That collector instead sees the normal rank hero at `0` points, with no separate zero-points line: the hero card already prints the figure, so a standalone sentence restating it read as redundant next to the rank ladder and album that carry the actual history.
 - `FR-12-41`: The `"Resumen"` tab must carry a permanent honesty line: `"Los puntos miden tu registro, no tu gasto."` It is not a tooltip and not a dismissible hint.
 
 ### Backfill and administration
@@ -450,13 +458,13 @@ An entry is immutable once written. Its only dimensions are `source` (`LIVE` or 
 
 ### Medal
 
-| State                  | Meaning                                                                                             | Reachable from                       |
-| ---------------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------ |
-| `locked`               | condition not met; silhouette plus hint                                                             | initial                              |
-| `locked-secret`        | condition not met; silhouette, no hint, neutral label                                               | initial, for the three secret medals |
-| `unlocked`             | condition met at least once; permanent (`BR-12-08`)                                                 | `locked`, `locked-secret`            |
-| `unlocked-not-current` | `stateful` medal whose condition no longer holds; still unlocked, labelled `"ya no vigente"`        | `unlocked`                           |
-| `expired`              | event medal whose `availableTo` has passed without an unlock; permanently unobtainable (`BR-12-20`) | `locked`                             |
+| State                  | Meaning                                                                                             | Reachable from                      |
+| ---------------------- | --------------------------------------------------------------------------------------------------- | ----------------------------------- |
+| `locked`               | condition not met; silhouette plus hint                                                             | initial                             |
+| `locked-secret`        | condition not met; silhouette, no hint, neutral label                                               | initial, for the four secret medals |
+| `unlocked`             | condition met at least once; permanent (`BR-12-08`)                                                 | `locked`, `locked-secret`           |
+| `unlocked-not-current` | `stateful` medal whose condition no longer holds; still unlocked, labelled `"ya no vigente"`        | `unlocked`                          |
+| `expired`              | event medal whose `availableTo` has passed without an unlock; permanently unobtainable (`BR-12-20`) | `locked`                            |
 
 There is no transition out of `unlocked`. `unlocked-not-current` and `unlocked` move back and forth freely as the underlying state changes; neither is a revocation.
 
@@ -471,7 +479,7 @@ Two values are tracked: the **current** rank index derived from the current poin
 - the rank is permanent, private to its owner, and always displayed as `"Rango N de 10"`
 - the ten-rank ladder of `FR-12-14` is approved as written, names and lore included
 - rarity uses the print-run metaphor, five levels, approved as written
-- the album is twenty-four medals across six series, twelve of them shipping in phase 1
+- the album is twenty-eight medals across six series, all of them shipped and evaluable (catalogue v2, approved 2026-08-26; it opened at twenty-four catalogued rows of which twelve were awardable)
 - medals grant no points and are never revoked
 - the `Progreso` section has exactly three tabs, and the medal detail is a subview of `"Medallas"`, not a fourth tab
 - the dashboard carries a `"Tu rango"` widget with a compact strip of recent medals
@@ -483,10 +491,11 @@ Two values are tracked: the **current** rank index derived from the current poin
 
 ## Open Questions
 
-- which of the three secret medals ships in phase 1 alongside `Primeros pasos` and `La espera`; the blueprint picks it on evaluation cost, and the choice does not change any rule
+- ~~which of the three secret medals ships in phase 1 alongside `Primeros pasos` and `La espera`~~ Answered by [ADR 0040](../../../design/decisions/0040-medals-grant-no-points-and-are-never-revoked.md) (`midnight-order`, the cheapest to evaluate) and then made moot on 2026-08-26, when the whole `Secretas` page shipped
 - whether the phase-2 grades `I` / `II` / `III` are rendered as separate ladder steps in the `"Rangos"` tab or only as a subdivision of the current band's progress bar
 - whether the shareable progress card (an exportable image carrying rank and medal counts, and nothing about another collector) belongs to this FRD's phase 2 or waits for the comparison FRD; it is the one growth surface that works with a single user, but it is also the first surface that leaves the app
 - whether `"% de coleccionistas que la tienen"` (`FR-12-27`) has a privacy-safe form at low user counts, or whether it must simply wait for the same threshold the comparison FRD waits for
+- whether the phase-2 point rule `store-created-adopted` (`FR-12-04`, 40 points, capped at 80 pts/month) should keep waiting on a stranger. Its anchor is "a store this user created is `APPROVED` **and** another user has ordered from it", which is the same non-controllability that got `store-mapped-1` replaced by `store-charted-1` on 2026-08-26. The two are not the same object, and that may be the whole answer: a capped point rule is an upside a collector may never collect, where a medal sits in a rank gate and reads as a locked door with no handle. But on a product whose user base is currently one person the rule can never fire at all, so the question for the owner is whether to leave it as written, narrow it to the part the collector controls (the store being approved, mirroring `store-charted-1`), or drop it and redistribute its points. Nothing depends on the answer until phase 2's point rules ship
 - whether the phase-2 gate stands: at least two of the three recordkeeping-hygiene metrics (share of orders with complete product records, median lag between an arrival and its registration, share of payments logged within three days) improving by 20 % or more within sixty days of phase 1, measured against the pre-launch baseline computable today
 
 ## Out of Scope
