@@ -29,7 +29,7 @@ export type MedalAlbumEntry = {
   rarity: MedalRarity;
   /** A secret piece hides its name and condition until it is held (`FR-12-25`). */
   secret: boolean;
-  /** Whether this build can award it at all. A phase-2 entry is a promise, not a locked medal. */
+  /** Whether this build can award it at all. Every catalogue row currently can. */
   shipped: boolean;
   unlocked: boolean;
   unlockedAt: Date | null;
@@ -48,14 +48,14 @@ export type MedalAlbumPage = {
   series: MedalSeries;
   medals: MedalAlbumEntry[];
   unlockedCount: number;
-  /** Medals of this series this build can award. Zero for a series that is entirely phase 2. */
+  /** Medals of this series this build can award, which is currently all of them. */
   shippedCount: number;
 };
 
 export type MedalAlbum = {
   pages: MedalAlbumPage[];
   unlockedCount: number;
-  /** The global denominator: what this build ships, not the twenty-four the catalogue describes. */
+  /** The global denominator: what this build ships, which is the whole catalogue. */
   shippedCount: number;
 };
 
@@ -92,9 +92,10 @@ function toAlbumEntry(
 /**
  * The whole album for one collector, grouped into its six pages.
  *
- * Phase-2 medals are included as silhouettes so half the album reads as a promise rather than as
- * missing content (`FR-12-20`), but they are excluded from every counter: telling a collector they
- * have "3 of 24" when twelve of those twenty-four cannot be earned in this build would be a lie.
+ * Every row is awardable, so nothing renders as a promise and the counters divide by the whole
+ * catalogue. A row this build could NOT award would still be drawn, and still be left out of the
+ * counters (`FR-12-20`): telling a collector they are "3 de 28" against medals nobody can earn yet
+ * would be a lie.
  */
 export async function getMedalAlbum(userId: string, tx?: Prisma.TransactionClient): Promise<MedalAlbum> {
   const db = tx ?? prisma;
@@ -120,7 +121,7 @@ export async function getMedalAlbum(userId: string, tx?: Prisma.TransactionClien
 
 export type MedalDetail = {
   medal: MedalAlbumEntry;
-  /** Whether the collector may still earn it. `false` for a phase-2 entry or a closed window. */
+  /** Whether the collector may still earn it. `false` for an unshipped row or a closed window. */
   obtainable: boolean;
   /** The next piece of the same series the collector does not hold yet, for the preview row. */
   nextInSeries: MedalAlbumEntry | null;

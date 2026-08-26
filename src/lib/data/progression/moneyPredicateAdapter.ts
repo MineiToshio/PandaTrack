@@ -70,6 +70,38 @@ export async function isFullyAllocated(
 }
 
 /**
+ * How many of this collector's orders have a COMPLETE product record.
+ *
+ * "Complete" is not a judgement: `OrderItem.name` and `OrderItem.quantity` are non-null in the
+ * schema, so the two nullable columns (`unitPrice` and `productTypeKey`) are exactly what a
+ * collector can leave blank, and filling both on every line of an order is the whole definition.
+ *
+ * It lives in THIS module, and not beside the other medal resolvers, for one reason: naming
+ * `unitPrice` at all is forbidden everywhere else in the progression domain, and
+ * `src/test/progression-money-guard.test.ts` fails the build over it. The asymmetry the guard
+ * protects is preserved exactly: this function looks at whether a price was WRITTEN DOWN and hands
+ * back a count of orders. No amount, no total and no currency crosses the boundary, so a medal for
+ * good recordkeeping can never become a medal for spending.
+ */
+export async function countOrdersWithCompleteProductRecords(
+  userId: string,
+  orderFilter: Prisma.OrderWhereInput,
+  db: Prisma.TransactionClient = prisma,
+): Promise<number> {
+  return db.order.count({
+    where: {
+      ...orderFilter,
+      userId,
+      items: {
+        // An order with no products at all is not a spotless record, it is an empty one.
+        some: {},
+        none: { OR: [{ unitPrice: null }, { productTypeKey: null }] },
+      },
+    },
+  });
+}
+
+/**
  * Orders whose payments came in as part of the one-to-one Notion import rather than being recorded
  * through the app.
  *

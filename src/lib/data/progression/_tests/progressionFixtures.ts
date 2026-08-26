@@ -29,6 +29,8 @@ export type FakeStore = {
   visibility?: StoreVisibility;
   isPrivate?: boolean;
   createdByUserId?: string;
+  /** ISO country of the store. Drives `countries-3`; defaults to one shared country. */
+  countryCode?: string;
 };
 
 export type FakeOrder = {
@@ -43,6 +45,9 @@ export type FakeOrder = {
   createdAt?: Date;
   /** Private note; only ever read at the call site that just wrote it. */
   note?: string | null;
+  /** Expected arrival window. Either end present is what makes an order a pre-reserva. */
+  expectedDeliveryFrom?: Date | null;
+  expectedDeliveryTo?: Date | null;
 };
 
 export type FakeDelivery = {
@@ -55,10 +60,16 @@ export type FakeDelivery = {
 
 export type FakeItem = {
   orderId: string;
-  productTypeKey: string;
+  /** `null` models a product the collector never categorised, which breaks a complete record. */
+  productTypeKey: string | null;
   deliveryState?: OrderItemDeliveryState;
   /** Deliveries this specific product arrived through. Defaults to every delivery of its order. */
   deliveryIds?: string[];
+  /**
+   * Whether a price was written down. Only ever compared against `null`: the fake mirrors the
+   * complete-record query, which asks whether the field is FILLED and never what it holds.
+   */
+  unitPrice?: number | null;
 };
 
 export type FakeLedgerRow = RecomputeLedgerEntry & { voidedAt?: Date | null };
@@ -68,6 +79,11 @@ export type FakeWorld = {
   orders?: FakeOrder[];
   /** Orders that carry at least one assigned payment. Existence only; no amount is modelled. */
   paidOrderIds?: string[];
+  /**
+   * The civil day money was declared against an order, for the conditions that compare a payment
+   * day against an arrival day. An order listed here is paid; `paidOrderIds` need not repeat it.
+   */
+  paymentDays?: Array<{ orderId: string; paymentDate: Date }>;
   deliveries?: FakeDelivery[];
   items?: FakeItem[];
   ledger?: FakeLedgerRow[];
@@ -133,24 +149,32 @@ export function ledgerEntry(
   };
 }
 
+/** The country every fixture store shares unless it says otherwise, so `countries-3` stays opt-in. */
+const DEFAULT_COUNTRY_CODE = "PE";
+
 function inList(value: string, filter: { in?: string[] } | undefined): boolean {
   return filter?.in ? filter.in.includes(value) : true;
 }
 
 type ItemFilter = { deliveryState?: OrderItemDeliveryState };
 
+/** `{ unitPrice: null }` / `{ productTypeKey: null }`, the two shapes the complete-record query uses. */
+type ItemNullClause = { unitPrice?: null; productTypeKey?: null };
+
 type OrderWhere = {
   id?: { in?: string[] };
   storeId?: { in?: string[] };
   status?: { not?: OrderStatus };
   store?: unknown;
-  items?: { some?: ItemFilter; every?: ItemFilter };
+  items?: { some?: ItemFilter; every?: ItemFilter; none?: ItemNullClause & { OR?: ItemNullClause[] } };
+  OR?: Array<{ expectedDeliveryFrom?: { not: null }; expectedDeliveryTo?: { not: null } }>;
 };
 
 type AnyArgs = {
   where?: Record<string, unknown>;
   select?: Record<string, unknown>;
   distinct?: string[];
+  take?: number;
   data?: unknown;
 };
 
@@ -162,7 +186,8 @@ type AnyArgs = {
 export function makeFakeDb(world: FakeWorld) {
   const stores = world.stores ?? [];
   const orders = world.orders ?? [];
-  const paidOrderIds = new Set(world.paidOrderIds ?? []);
+  const paymentDays = world.paymentDays ?? [];
+  const paidOrderIds = new Set([...(world.paidOrderIds ?? []), ...paymentDays.map((row) => row.orderId)]);
   const deliveries = world.deliveries ?? [];
   const items = world.items ?? [];
   const ledger = world.ledger ?? [];
@@ -190,6 +215,9 @@ export function makeFakeDb(world: FakeWorld) {
     if (where.store && !isStoreCreditEligible(order.storeId)) {
       return false;
     }
+    if (where.OR && !where.OR.some((clause) => matchesArrivalWindowClause(order, clause))) {
+      return false;
+    }
     if (!where.items) {
       return true;
     }
@@ -208,8 +236,32 @@ export function makeFakeDb(world: FakeWorld) {
       );
       if (!everyMatch) return false;
     }
+    if (where.items.none) {
+      const clauses = where.items.none.OR ?? [where.items.none];
+      const offending = orderItems.some((item) =>
+        clauses.some(
+          (clause) =>
+            ("unitPrice" in clause && (item.unitPrice ?? null) === null) ||
+            ("productTypeKey" in clause && (item.productTypeKey ?? null) === null),
+        ),
+      );
+      if (offending) return false;
+    }
     return true;
   };
+
+  /** The only `OR` any medal-side order query uses: "this order declares an expected arrival". */
+  const matchesArrivalWindowClause = (
+    order: FakeOrder,
+    clause: { expectedDeliveryFrom?: { not: null }; expectedDeliveryTo?: { not: null } },
+  ): boolean =>
+    (clause.expectedDeliveryFrom !== undefined && (order.expectedDeliveryFrom ?? null) !== null) ||
+    (clause.expectedDeliveryTo !== undefined && (order.expectedDeliveryTo ?? null) !== null);
+
+  /** A delivery that actually reached the collector, through a store that may credit. */
+  const matchesReceivedDelivery = (delivery: FakeDelivery, status: DeliveryStatus | undefined): boolean =>
+    (status === undefined || (delivery.status ?? DeliveryStatus.IN_TRANSIT) === status) &&
+    isStoreCreditEligible(delivery.storeId);
 
   const resolveStore = (storeId: string) => {
     const store = storeById.get(storeId);
@@ -224,11 +276,44 @@ export function makeFakeDb(world: FakeWorld) {
   const isStoreCreditEligible = (storeId: string): boolean => {
     const store = resolveStore(storeId);
     return Boolean(
-      store &&
-        store.status === StoreStatus.APPROVED &&
-        store.visibility === StoreVisibility.PUBLIC &&
-        !store.isPrivate,
+      store && store.status === StoreStatus.APPROVED && store.visibility === StoreVisibility.PUBLIC && !store.isPrivate,
     );
+  };
+
+  /** The item filters the medal side and the discovery side share, in one place. */
+  /** Mirrors the real review filter: the store must be able to credit AND have delivered something. */
+  const creditableReviewedStoreIds = (): string[] =>
+    (world.reviewedStoreIds ?? []).filter(
+      (storeId) =>
+        isStoreCreditEligible(storeId) &&
+        orders.some(
+          (order) =>
+            order.storeId === storeId &&
+            (order.status ?? OrderStatus.OPEN) !== OrderStatus.CANCELLED &&
+            itemsOf(order.id).some((item) => item.deliveryState === OrderItemDeliveryState.DELIVERED),
+        ),
+    );
+
+  const matchesItem = (item: FakeItem, rawWhere: Record<string, unknown> | undefined): boolean => {
+    const where = (rawWhere ?? {}) as {
+      productTypeKey?: { in?: string[]; not?: null };
+      deliveryState?: OrderItemDeliveryState;
+      order?: unknown;
+    };
+
+    if (where.productTypeKey?.not === null && (item.productTypeKey ?? null) === null) return false;
+    if (where.productTypeKey?.in && !where.productTypeKey.in.includes(item.productTypeKey ?? "")) return false;
+    if (where.deliveryState && (item.deliveryState ?? OrderItemDeliveryState.NONE) !== where.deliveryState) {
+      return false;
+    }
+    // The nested filter is the store gate; a discovery through an ineligible store is not one.
+    if (where.order) {
+      const order = orderById.get(item.orderId);
+      if (!order) return false;
+      if ((order.status ?? OrderStatus.OPEN) === OrderStatus.CANCELLED) return false;
+      if (!isStoreCreditEligible(order.storeId)) return false;
+    }
+    return true;
   };
 
   const progressRow: { current: FakeProgressRow | null } = { current: world.progress ?? null };
@@ -274,7 +359,11 @@ export function makeFakeDb(world: FakeWorld) {
         // sibling "…and actually received something from", told apart by the item filter.
         if (args.distinct?.includes("storeId")) {
           const matched = orders.filter((order) => inList(order.storeId, where.storeId) && matchesOrder(order, where));
-          return [...new Set(matched.map((order) => order.storeId))].map((storeId) => ({ storeId }));
+          const distinctStoreIds = [...new Set(matched.map((order) => order.storeId))];
+          // `take` is load bearing on the medal side: `stores-ordered-2` asks "are there two", and a
+          // fake that ignored the bound would hide a resolver that forgot to apply it.
+          const bounded = args.take === undefined ? distinctStoreIds : distinctStoreIds.slice(0, args.take);
+          return bounded.map((storeId) => ({ storeId }));
         }
 
         const matched = orders.filter((order) => inList(order.id, where.id) && matchesOrder(order, where));
@@ -283,6 +372,7 @@ export function makeFakeDb(world: FakeWorld) {
         // product arrived through) and the midnight check (the write instant, never the civil day).
         if (args.select?.items) {
           return matched.map((order) => ({
+            id: order.id,
             orderDate: order.orderDate ?? civilDay(2026, 1, 1),
             items: itemsOf(order.id).map((item) => ({
               deliveryState: item.deliveryState ?? OrderItemDeliveryState.NONE,
@@ -298,6 +388,10 @@ export function makeFakeDb(world: FakeWorld) {
         }
         if (args.select?.createdAt) {
           return matched.map((order) => ({ createdAt: order.createdAt ?? new Date("2026-03-10T15:00:00Z") }));
+        }
+        // The streak's read: the civil day only, with no join behind it.
+        if (args.select?.orderDate) {
+          return matched.map((order) => ({ orderDate: order.orderDate ?? civilDay(2026, 1, 1) }));
         }
         if (args.select && !args.select.status) {
           return matched.map((order) => ({ id: order.id }));
@@ -315,6 +409,10 @@ export function makeFakeDb(world: FakeWorld) {
           (order) => inList(order.id, where.id) && inList(order.storeId, where.storeId) && matchesOrder(order, where),
         );
         return match ? { id: match.id } : null;
+      }),
+      count: vi.fn(async (args: AnyArgs) => {
+        const where = (args.where ?? {}) as OrderWhere;
+        return orders.filter((order) => inList(order.id, where.id) && matchesOrder(order, where)).length;
       }),
     },
 
@@ -338,6 +436,12 @@ export function makeFakeDb(world: FakeWorld) {
         if (where.payment) {
           return [];
         }
+        // `same-day-settle` is the only reader that needs the day money was declared on.
+        if (args.select?.payment) {
+          return paymentDays
+            .filter((row) => inList(row.orderId, where.orderId))
+            .map((row) => ({ orderId: row.orderId, payment: { paymentDate: row.paymentDate } }));
+        }
         return [...paidOrderIds].filter((orderId) => inList(orderId, where.orderId)).map((orderId) => ({ orderId }));
       }),
     },
@@ -357,7 +461,13 @@ export function makeFakeDb(world: FakeWorld) {
         return match ? { id: match.id } : null;
       }),
       findMany: vi.fn(async (args: AnyArgs) => {
-        const where = (args.where ?? {}) as { id?: { in?: string[] } };
+        const where = (args.where ?? {}) as { id?: { in?: string[] }; status?: DeliveryStatus };
+
+        if (args.distinct?.includes("storeId")) {
+          const matched = deliveries.filter((delivery) => matchesReceivedDelivery(delivery, where.status));
+          return [...new Set(matched.map((delivery) => delivery.storeId))].map((storeId) => ({ storeId }));
+        }
+
         return deliveries
           .filter((delivery) => inList(delivery.id, where.id))
           .map((delivery) => ({
@@ -367,43 +477,70 @@ export function makeFakeDb(world: FakeWorld) {
             orderItems: delivery.orderIds.map((orderId) => ({ orderItem: { orderId } })),
           }));
       }),
+      count: vi.fn(async (args: AnyArgs) => {
+        const where = (args.where ?? {}) as { status?: DeliveryStatus };
+        return deliveries.filter((delivery) => matchesReceivedDelivery(delivery, where.status)).length;
+      }),
     },
 
     store: {
       findMany: vi.fn(async (args: AnyArgs) => {
-        const where = (args.where ?? {}) as { id?: { in?: string[] } };
+        const where = (args.where ?? {}) as { id?: { in?: string[] }; deliveries?: unknown };
+
+        // `countries-3`: the countries of the stores something actually arrived from.
+        if (args.distinct?.includes("countryCode")) {
+          const matched = stores.filter(
+            (store) =>
+              isStoreCreditEligible(store.id) &&
+              (where.deliveries
+                ? deliveries.some(
+                    (delivery) =>
+                      delivery.storeId === store.id &&
+                      (delivery.status ?? DeliveryStatus.IN_TRANSIT) === DeliveryStatus.DELIVERED,
+                  )
+                : true),
+          );
+          return [...new Set(matched.map((store) => store.countryCode ?? DEFAULT_COUNTRY_CODE))].map((countryCode) => ({
+            countryCode,
+          }));
+        }
+
         return stores
           .filter((store) => inList(store.id, where.id))
           .map((store) => ({ id: store.id, ...resolveStore(store.id)! }));
+      }),
+      findFirst: vi.fn(async (args: AnyArgs) => {
+        const where = (args.where ?? {}) as {
+          createdByUserId?: string;
+          status?: StoreStatus;
+          visibility?: StoreVisibility;
+          isPrivate?: boolean;
+        };
+        // The gate is read OFF THE QUERY, never assumed: a resolver that forgot to push `BR-12-07`
+        // down would otherwise be handed eligibility for free by the fake and pass a test it fails.
+        const match = stores.find((store) => {
+          const resolved = resolveStore(store.id)!;
+          if (
+            where.createdByUserId !== undefined &&
+            (store.createdByUserId ?? OTHER_USER_ID) !== where.createdByUserId
+          ) {
+            return false;
+          }
+          if (where.status !== undefined && resolved.status !== where.status) return false;
+          if (where.visibility !== undefined && resolved.visibility !== where.visibility) return false;
+          if (where.isPrivate !== undefined && resolved.isPrivate !== where.isPrivate) return false;
+          return true;
+        });
+        return match ? { id: match.id } : null;
       }),
     },
 
     orderItem: {
       findMany: vi.fn(async (args: AnyArgs) => {
-        const where = (args.where ?? {}) as {
-          userId?: string;
-          productTypeKey?: { in?: string[] };
-          deliveryState?: OrderItemDeliveryState;
-          order?: unknown;
-        };
-
-        const matched = items.filter((item) => {
-          if (!inList(item.productTypeKey, where.productTypeKey)) return false;
-          if (where.deliveryState && (item.deliveryState ?? OrderItemDeliveryState.NONE) !== where.deliveryState) {
-            return false;
-          }
-          // The nested filter is the store gate; a discovery through an ineligible store is not one.
-          if (where.order) {
-            const order = orderById.get(item.orderId);
-            if (!order) return false;
-            if ((order.status ?? OrderStatus.OPEN) === OrderStatus.CANCELLED) return false;
-            if (!isStoreCreditEligible(order.storeId)) return false;
-          }
-          return true;
-        });
-
+        const matched = items.filter((item) => matchesItem(item, args.where));
         return [...new Set(matched.map((item) => item.productTypeKey))].map((productTypeKey) => ({ productTypeKey }));
       }),
+      count: vi.fn(async (args: AnyArgs) => items.filter((item) => matchesItem(item, args.where)).length),
     },
 
     userProgress: {
@@ -427,19 +564,10 @@ export function makeFakeDb(world: FakeWorld) {
 
     storeReview: {
       findFirst: vi.fn(async () => {
-        // Mirrors the real filter: the store must be able to credit AND have delivered something.
-        const match = (world.reviewedStoreIds ?? []).find(
-          (storeId) =>
-            isStoreCreditEligible(storeId) &&
-            orders.some(
-              (order) =>
-                order.storeId === storeId &&
-                (order.status ?? OrderStatus.OPEN) !== OrderStatus.CANCELLED &&
-                itemsOf(order.id).some((item) => item.deliveryState === OrderItemDeliveryState.DELIVERED),
-            ),
-        );
+        const match = creditableReviewedStoreIds()[0];
         return match ? { id: `review-${match}` } : null;
       }),
+      count: vi.fn(async () => creditableReviewedStoreIds().length),
     },
 
     user: {

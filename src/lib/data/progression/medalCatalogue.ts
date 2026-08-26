@@ -1,5 +1,5 @@
 /**
- * The medal catalogue: twenty-four pieces across six series, and the pure rules over them.
+ * The medal catalogue: twenty-eight pieces across six series, and the pure rules over them.
  *
  * This module is a LEAF, exactly like `pointRules.ts` and `rankLadder.ts`: it imports nothing, reads
  * no database and never names a monetary field, and `src/test/progression-money-guard.test.ts`
@@ -72,52 +72,74 @@ export const MEDAL_SERIES_ORDER: readonly MedalSeries[] = [
 export const MEDAL_CONDITIONS = {
   /** One order exists at a store that may credit (`BR-12-07`). */
   ANY_ORDER: "any-order",
+  /** Orders at two DISTINCT creditable stores. Deliberately not "one order", which is `ANY_ORDER`. */
+  STORES_ORDERED_2: "stores-ordered-2",
   /** One order at a creditable store carries an assigned payment. Existence only, never an amount. */
   ANY_PAYMENT: "any-payment",
+  /** One order carries an expected arrival window: the collector recorded a pre-order as a pre-order. */
+  PREORDER_WINDOW_RECORDED: "preorder-window-recorded",
   /** One delivery from a creditable store has reached its delivered state. */
   ANY_ARRIVAL: "any-arrival",
   /** One order is both fully covered and fully arrived. The money half is a boolean from the adapter. */
   ORDER_FULLY_CLOSED: "order-fully-closed",
   /** A review exists for a creditable store the collector already received a product from. */
   REVIEW_AFTER_ARRIVAL: "review-after-arrival",
+  /** Five such reviews. `StoreReview` is unique per store and collector, so five reviews are five stores. */
+  REVIEWS_5: "reviews-5",
   /** The order this very request created carries the image-intake marker. Call-time only. */
   ORDER_FROM_IMAGE: "order-from-image",
   /** An order fully arrived 60 / 120 / 200 or more days after the day it was placed. */
   WAIT_60_DAYS: "wait-60-days",
   WAIT_120_DAYS: "wait-120-days",
   WAIT_200_DAYS: "wait-200-days",
+  /** An order fully arrived within a week of the day it was placed. The mirror of the patience set. */
+  SWIFT_ARRIVAL_7: "swift-arrival-7",
   /** One order whose products arrived across more than one delivery. */
   SPLIT_ARRIVAL: "split-arrival",
   /** An order created between 00:00 and 04:00 of the collector's own civil day. */
   MIDNIGHT_ORDER: "midnight-order",
-  /** Phase 2, no resolver in this build: delivered-product counters. */
+  /** Delivered product LINES, not units: what "ten pieces" means to somebody looking at a shelf. */
   PRODUCTS_DELIVERED_10: "products-delivered-10",
   PRODUCTS_DELIVERED_50: "products-delivered-50",
   PRODUCTS_DELIVERED_150: "products-delivered-150",
-  /** Phase 2: deliveries received. */
+  /** Deliveries received. */
   ARRIVALS_25: "arrivals-25",
-  /** Phase 2: distinct product types delivered. */
+  /** Distinct product types delivered. */
   PRODUCT_TYPES_3: "product-types-3",
   PRODUCT_TYPES_6: "product-types-6",
-  /** Phase 2: distinct stores with at least one delivery. */
+  /** Distinct stores with at least one delivery. */
   STORES_WITH_ARRIVAL_10: "stores-with-arrival-10",
-  /** Phase 2: orders whose every product field is filled in. */
+  /** Distinct countries of the stores something actually arrived from. */
+  COUNTRIES_3: "countries-3",
+  /** Orders whose every product field is filled in. */
   COMPLETE_RECORD_1: "complete-record-1",
   COMPLETE_RECORD_10: "complete-record-10",
-  /** Phase 2: a store this collector created was approved and somebody else ordered from it. */
-  STORE_ADOPTED: "store-adopted",
-  /** Phase 2 secret: an order paid off and closed on the day it arrived. */
+  /**
+   * A store this collector registered survived moderation.
+   *
+   * Replaces the phase-2 `store-adopted`, which additionally waited on a STRANGER ordering from that
+   * store: the only condition in the catalogue nothing the collector did could bring about.
+   */
+  STORE_APPROVED_1: "store-approved-1",
+  /** Secret: an order paid off and closed on the day it arrived. */
   SAME_DAY_SETTLE: "same-day-settle",
-  /** Phase 2 secret: twelve consecutive civil months with at least one order. */
+  /** Secret: twelve consecutive civil months with at least one order. */
   YEAR_STREAK: "year-streak",
 } as const;
 
 export type MedalCondition = (typeof MEDAL_CONDITIONS)[keyof typeof MEDAL_CONDITIONS];
 
 /**
- * Which build a medal is awardable in. Phase 2 entries are catalogued but NOT shipped: they render
- * in the album as silhouettes so half the album reads as a promise rather than as missing content
- * (`FR-12-20`), and they are excluded from every counter and from the evaluator.
+ * Which build a medal is awardable in.
+ *
+ * Every one of the twenty-eight rows is phase 1: the twelve pieces that used to be catalogued but
+ * not shipped were never blocked by the data model, only by an ordering decision about evaluation
+ * cost, so the album no longer renders a single "próximamente" tile (`FR-12-20`).
+ *
+ * The grade survives the promotion because a phase-2 entry is still the shape a time-limited event
+ * medal arrives in (`FR-12-28`): catalogued, rendered as a promise, excluded from every counter and
+ * from the evaluator. Removing it would mean rebuilding that path the first time an event is
+ * authored, and the album's own copy for it already exists.
  */
 export type MedalPhase = 1 | 2;
 
@@ -172,14 +194,18 @@ export type MedalDefinition = {
 
 const {
   ANY_ORDER,
+  STORES_ORDERED_2,
   ANY_PAYMENT,
+  PREORDER_WINDOW_RECORDED,
   ANY_ARRIVAL,
   ORDER_FULLY_CLOSED,
   REVIEW_AFTER_ARRIVAL,
+  REVIEWS_5,
   ORDER_FROM_IMAGE,
   WAIT_60_DAYS,
   WAIT_120_DAYS,
   WAIT_200_DAYS,
+  SWIFT_ARRIVAL_7,
   SPLIT_ARRIVAL,
   MIDNIGHT_ORDER,
   PRODUCTS_DELIVERED_10,
@@ -189,9 +215,10 @@ const {
   PRODUCT_TYPES_3,
   PRODUCT_TYPES_6,
   STORES_WITH_ARRIVAL_10,
+  COUNTRIES_3,
   COMPLETE_RECORD_1,
   COMPLETE_RECORD_10,
-  STORE_ADOPTED,
+  STORE_APPROVED_1,
   SAME_DAY_SETTLE,
   YEAR_STREAK,
 } = MEDAL_CONDITIONS;
@@ -202,12 +229,13 @@ const { NORMAL, FIRST_PRINT, LIMITED, HOLO, SIGNED } = MEDAL_RARITIES;
 const MEDAL_DEFAULTS = { availableFrom: null, availableTo: null, numbered: false, imageKey: null } as const;
 
 /**
- * The twenty-four medals, in album order.
+ * The twenty-eight medals, in album order.
  *
- * Phase 1 ships twelve: the seven of `first-steps`, the four of `the-wait`, and one secret. The
- * secret shipping first is `midnight-order`, chosen on evaluation cost: it is a single-row check
- * over a timestamp the order already carries, where `same-day-settle` needs a cross-entity join and
- * `year-streak` a twelve-month scan (`ADR 0040`).
+ * Every row ships. The catalogue is laid out so each of the six album pages fills its grid rows
+ * (`first-steps` carries eight, every other page four), and so the rarity spread reads like a real
+ * print run rather than a difficulty curve: ten `normal`, seven `first-print`, five `limited`, five
+ * `holo` and a single `signed`. `first-steps` stays almost entirely `normal` on purpose, because
+ * page one is where a collector learns what the baseline looks like.
  */
 export const MEDAL_CATALOGUE: readonly MedalDefinition[] = Object.freeze([
   // --- Primeros pasos -------------------------------------------------------------------------
@@ -253,7 +281,9 @@ export const MEDAL_CATALOGUE: readonly MedalDefinition[] = Object.freeze([
   {
     medalKey: "first-order-closed",
     series: MEDAL_SERIES.FIRST_STEPS,
-    rarity: NORMAL,
+    // The one piece of page one that asks for both halves of the app at once, so it is the one
+    // piece of page one that is not `normal`.
+    rarity: FIRST_PRINT,
     condition: ORDER_FULLY_CLOSED,
     phase: 1,
     publicSafe: true,
@@ -296,9 +326,10 @@ export const MEDAL_CATALOGUE: readonly MedalDefinition[] = Object.freeze([
     medalKey: "first-store",
     series: MEDAL_SERIES.FIRST_STEPS,
     rarity: NORMAL,
-    // The first order a collector ever places is by definition their first order at a store new to
-    // them, so this reads the same fact as `first-order` rather than a second, subtly different one.
-    condition: ANY_ORDER,
+    // A SECOND distinct store, not the first one. Reading `ANY_ORDER` here (which a collector's very
+    // first order satisfies by definition, since that store is new to them) meant one click handed
+    // out two medals in the same instant, and the second one read as padding.
+    condition: STORES_ORDERED_2,
     phase: 1,
     publicSafe: true,
     stateful: false,
@@ -306,6 +337,19 @@ export const MEDAL_CATALOGUE: readonly MedalDefinition[] = Object.freeze([
     controllable: true,
     ...MEDAL_DEFAULTS,
     imageKey: "first-store",
+  },
+  {
+    medalKey: "first-preorder",
+    series: MEDAL_SERIES.FIRST_STEPS,
+    rarity: NORMAL,
+    condition: PREORDER_WINDOW_RECORDED,
+    phase: 1,
+    publicSafe: true,
+    stateful: false,
+    secret: false,
+    controllable: true,
+    ...MEDAL_DEFAULTS,
+    imageKey: "first-preorder",
   },
 
   // --- La espera ------------------------------------------------------------------------------
@@ -362,13 +406,13 @@ export const MEDAL_CATALOGUE: readonly MedalDefinition[] = Object.freeze([
     imageKey: "split-arrival",
   },
 
-  // --- La vitrina (phase 2) -------------------------------------------------------------------
+  // --- La vitrina -----------------------------------------------------------------------------
   {
     medalKey: "collection-10",
     series: MEDAL_SERIES.THE_DISPLAY_CASE,
     rarity: NORMAL,
     condition: PRODUCTS_DELIVERED_10,
-    phase: 2,
+    phase: 1,
     publicSafe: false,
     stateful: true,
     secret: false,
@@ -381,7 +425,7 @@ export const MEDAL_CATALOGUE: readonly MedalDefinition[] = Object.freeze([
     series: MEDAL_SERIES.THE_DISPLAY_CASE,
     rarity: FIRST_PRINT,
     condition: PRODUCTS_DELIVERED_50,
-    phase: 2,
+    phase: 1,
     publicSafe: false,
     stateful: true,
     secret: false,
@@ -394,7 +438,7 @@ export const MEDAL_CATALOGUE: readonly MedalDefinition[] = Object.freeze([
     series: MEDAL_SERIES.THE_DISPLAY_CASE,
     rarity: HOLO,
     condition: PRODUCTS_DELIVERED_150,
-    phase: 2,
+    phase: 1,
     publicSafe: false,
     stateful: true,
     secret: false,
@@ -407,7 +451,7 @@ export const MEDAL_CATALOGUE: readonly MedalDefinition[] = Object.freeze([
     series: MEDAL_SERIES.THE_DISPLAY_CASE,
     rarity: LIMITED,
     condition: ARRIVALS_25,
-    phase: 2,
+    phase: 1,
     publicSafe: false,
     stateful: true,
     secret: false,
@@ -416,13 +460,13 @@ export const MEDAL_CATALOGUE: readonly MedalDefinition[] = Object.freeze([
     imageKey: "arrivals-25",
   },
 
-  // --- Explorador (phase 2) -------------------------------------------------------------------
+  // --- Explorador -----------------------------------------------------------------------------
   {
     medalKey: "variety-3",
     series: MEDAL_SERIES.EXPLORER,
     rarity: NORMAL,
     condition: PRODUCT_TYPES_3,
-    phase: 2,
+    phase: 1,
     publicSafe: false,
     stateful: true,
     secret: false,
@@ -431,11 +475,26 @@ export const MEDAL_CATALOGUE: readonly MedalDefinition[] = Object.freeze([
     imageKey: "variety-3",
   },
   {
+    medalKey: "countries-3",
+    series: MEDAL_SERIES.EXPLORER,
+    rarity: FIRST_PRINT,
+    condition: COUNTRIES_3,
+    phase: 1,
+    // Names which parts of the world a collector imports from, which is the same class of fact as
+    // the store count beside it.
+    publicSafe: false,
+    stateful: true,
+    secret: false,
+    controllable: true,
+    ...MEDAL_DEFAULTS,
+    imageKey: "countries-3",
+  },
+  {
     medalKey: "variety-6",
     series: MEDAL_SERIES.EXPLORER,
     rarity: LIMITED,
     condition: PRODUCT_TYPES_6,
-    phase: 2,
+    phase: 1,
     publicSafe: false,
     stateful: true,
     secret: false,
@@ -448,7 +507,7 @@ export const MEDAL_CATALOGUE: readonly MedalDefinition[] = Object.freeze([
     series: MEDAL_SERIES.EXPLORER,
     rarity: HOLO,
     condition: STORES_WITH_ARRIVAL_10,
-    phase: 2,
+    phase: 1,
     publicSafe: false,
     stateful: true,
     secret: false,
@@ -457,13 +516,13 @@ export const MEDAL_CATALOGUE: readonly MedalDefinition[] = Object.freeze([
     imageKey: "stores-10",
   },
 
-  // --- Cronista (phase 2) ---------------------------------------------------------------------
+  // --- Cronista -------------------------------------------------------------------------------
   {
     medalKey: "clean-record-1",
     series: MEDAL_SERIES.CHRONICLER,
     rarity: NORMAL,
     condition: COMPLETE_RECORD_1,
-    phase: 2,
+    phase: 1,
     publicSafe: true,
     stateful: true,
     secret: false,
@@ -472,32 +531,47 @@ export const MEDAL_CATALOGUE: readonly MedalDefinition[] = Object.freeze([
     imageKey: "clean-record-1",
   },
   {
-    medalKey: "clean-record-10",
+    medalKey: "store-charted-1",
+    series: MEDAL_SERIES.CHRONICLER,
+    rarity: FIRST_PRINT,
+    condition: STORE_APPROVED_1,
+    phase: 1,
+    publicSafe: true,
+    // Approval is granted once and the medal records that it happened. A store later removed from
+    // the map does not un-happen the contribution (`BR-12-08`).
+    stateful: false,
+    secret: false,
+    // The whole point of the replacement: the finish line moved to the part the collector controls.
+    controllable: true,
+    ...MEDAL_DEFAULTS,
+    imageKey: "store-charted-1",
+  },
+  {
+    medalKey: "reviews-5",
     series: MEDAL_SERIES.CHRONICLER,
     rarity: LIMITED,
+    condition: REVIEWS_5,
+    phase: 1,
+    publicSafe: true,
+    // Reviews can be deleted, exactly as `first-review`'s can.
+    stateful: true,
+    secret: false,
+    controllable: true,
+    ...MEDAL_DEFAULTS,
+    imageKey: "reviews-5",
+  },
+  {
+    medalKey: "clean-record-10",
+    series: MEDAL_SERIES.CHRONICLER,
+    rarity: HOLO,
     condition: COMPLETE_RECORD_10,
-    phase: 2,
+    phase: 1,
     publicSafe: true,
     stateful: true,
     secret: false,
     controllable: true,
     ...MEDAL_DEFAULTS,
     imageKey: "clean-record-10",
-  },
-  {
-    medalKey: "store-mapped-1",
-    series: MEDAL_SERIES.CHRONICLER,
-    rarity: FIRST_PRINT,
-    condition: STORE_ADOPTED,
-    phase: 2,
-    publicSafe: true,
-    stateful: false,
-    secret: false,
-    // Waits on a stranger deciding to order from a store this collector contributed. Nothing they
-    // do can make it happen, so it must not sit in the denominator of a rank gate.
-    controllable: false,
-    ...MEDAL_DEFAULTS,
-    imageKey: "store-mapped-1",
   },
 
   // --- Secretas -------------------------------------------------------------------------------
@@ -515,11 +589,24 @@ export const MEDAL_CATALOGUE: readonly MedalDefinition[] = Object.freeze([
     imageKey: "midnight-order",
   },
   {
+    medalKey: "swift-arrival",
+    series: MEDAL_SERIES.SECRETS,
+    rarity: LIMITED,
+    condition: SWIFT_ARRIVAL_7,
+    phase: 1,
+    publicSafe: true,
+    stateful: false,
+    secret: true,
+    controllable: true,
+    ...MEDAL_DEFAULTS,
+    imageKey: "swift-arrival",
+  },
+  {
     medalKey: "same-day-settle",
     series: MEDAL_SERIES.SECRETS,
     rarity: HOLO,
     condition: SAME_DAY_SETTLE,
-    phase: 2,
+    phase: 1,
     publicSafe: true,
     stateful: false,
     secret: true,
@@ -532,7 +619,7 @@ export const MEDAL_CATALOGUE: readonly MedalDefinition[] = Object.freeze([
     series: MEDAL_SERIES.SECRETS,
     rarity: SIGNED,
     condition: YEAR_STREAK,
-    phase: 2,
+    phase: 1,
     publicSafe: true,
     stateful: false,
     secret: true,
@@ -549,7 +636,7 @@ export function findMedal(medalKey: string): MedalDefinition | undefined {
   return MEDALS_BY_KEY.get(medalKey);
 }
 
-/** Whether a medal can actually be awarded by this build. Phase-2 entries are catalogued, not shipped. */
+/** Whether a medal can actually be awarded by this build. Every row of the catalogue currently is. */
 export function isShippedMedal(medal: MedalDefinition): boolean {
   return medal.phase === 1;
 }
@@ -567,7 +654,7 @@ export function getShippedMedalCount(): number {
   return SHIPPED_MEDALS.length;
 }
 
-/** Whether an event window is closed as of `now`. No phase-1 or phase-2 medal carries one. */
+/** Whether an event window is closed as of `now`. No medal in the catalogue carries one yet. */
 function isWindowClosed(medal: MedalDefinition, now: Date): boolean {
   return medal.availableTo !== null && new Date(medal.availableTo).getTime() < now.getTime();
 }
@@ -635,7 +722,7 @@ export function selectUnlockedMedals(input: SelectUnlockedMedalsInput): readonly
  * every time, since that is the whole point of marking it stateful).
  *
  * Narrowing the set is what keeps the evaluator cheap as a collector's album fills: a collector
- * holding every medal costs one query for the single stateful condition left, not eleven.
+ * holding every medal costs one query per surviving stateful condition, not one per catalogue row.
  */
 export function resolveConditionsToEvaluate(alreadyUnlockedKeys: readonly string[]): ReadonlySet<MedalCondition> {
   const alreadyUnlocked = new Set(alreadyUnlockedKeys);
@@ -656,7 +743,7 @@ export function listStatefulUnlockedMedals(alreadyUnlockedKeys: readonly string[
   return SHIPPED_MEDALS.filter((medal) => medal.stateful && alreadyUnlocked.has(medal.medalKey));
 }
 
-/** The catalogue grouped into album pages, in series order, phase-2 silhouettes included. */
+/** The catalogue grouped into album pages, in series order. */
 export function listMedalsBySeries(): ReadonlyArray<{ series: MedalSeries; medals: readonly MedalDefinition[] }> {
   return MEDAL_SERIES_ORDER.map((series) => ({
     series,

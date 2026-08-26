@@ -112,7 +112,7 @@
     },
     "explorer": {
       "name": "Explorador",
-      "caption": "Tiendas y categorías nuevas."
+      "caption": "Tiendas, categorías y países nuevos."
     },
     "chronicler": {
       "name": "Cronista",
@@ -163,8 +163,13 @@
     },
     "first-store": {
       "name": "Puerta nueva",
-      "hint": "Haz tu primer pedido en una tienda nueva para ti.",
+      "hint": "Haz un pedido en una segunda tienda distinta.",
       "lore": "Una tienda más en tu mapa."
+    },
+    "first-preorder": {
+      "name": "Pre-reserva anotada",
+      "hint": "Registra un pedido con fecha de entrega estimada.",
+      "lore": "Ya sabes cuándo esperarlo."
     },
     "patience-60": {
       "name": "Dos meses de espera",
@@ -211,6 +216,11 @@
       "hint": "Recibe productos de 3 tipos distintos.",
       "lore": "No coleccionas una sola cosa."
     },
+    "countries-3": {
+      "name": "Tres fronteras",
+      "hint": "Recibe productos de tiendas de 3 países distintos.",
+      "lore": "Tu colección cruzó tres fronteras."
+    },
     "variety-6": {
       "name": "Colección mixta",
       "hint": "Recibe productos de 6 tipos distintos.",
@@ -226,20 +236,30 @@
       "hint": "Completa todos los datos de los productos de un pedido.",
       "lore": "Un pedido sin campos vacíos."
     },
+    "store-charted-1": {
+      "name": "Tienda cartografiada",
+      "hint": "Registra una tienda y espera a que sea aprobada.",
+      "lore": "Lo que anotaste ya está en el mapa de todos."
+    },
+    "reviews-5": {
+      "name": "Voz de confianza",
+      "hint": "Reseña 5 tiendas de las que ya recibiste un producto.",
+      "lore": "Cinco tiendas con tu opinión encima."
+    },
     "clean-record-10": {
       "name": "Archivo limpio",
       "hint": "Completa el registro de 10 pedidos.",
       "lore": "El registro vale tanto como la vitrina."
     },
-    "store-mapped-1": {
-      "name": "Aporte al mapa",
-      "hint": "Una tienda que creaste fue aprobada y otra persona compró en ella.",
-      "lore": "Lo que anotaste le sirvió a alguien más."
-    },
     "midnight-order": {
       "name": "Turno de madrugada",
       "hint": "Registra un pedido entre las 00:00 y las 04:00.",
       "lore": "Nadie te dijo que existía."
+    },
+    "swift-arrival": {
+      "name": "Llegó volando",
+      "hint": "Recibe un pedido completo en 7 días o menos.",
+      "lore": "Ni tiempo de acostumbrarte a esperar."
     },
     "same-day-settle": {
       "name": "Cuentas al día",

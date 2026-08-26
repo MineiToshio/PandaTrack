@@ -112,7 +112,7 @@
     },
     "explorer": {
       "name": "Explorer",
-      "caption": "New stores and new categories."
+      "caption": "New stores, new categories, new countries."
     },
     "chronicler": {
       "name": "Chronicler",
@@ -163,8 +163,13 @@
     },
     "first-store": {
       "name": "A new door",
-      "hint": "Place your first order at a store that is new to you.",
+      "hint": "Place an order at a second, different store.",
       "lore": "One more store on your map."
+    },
+    "first-preorder": {
+      "name": "Pre-order logged",
+      "hint": "Register an order with an estimated delivery date.",
+      "lore": "Now you know when to expect it."
     },
     "patience-60": {
       "name": "Two months of waiting",
@@ -211,6 +216,11 @@
       "hint": "Receive products of 3 different types.",
       "lore": "You do not collect just one thing."
     },
+    "countries-3": {
+      "name": "Three borders",
+      "hint": "Receive products from stores in 3 different countries.",
+      "lore": "Your collection crossed three borders."
+    },
     "variety-6": {
       "name": "Mixed collection",
       "hint": "Receive products of 6 different types.",
@@ -226,20 +236,30 @@
       "hint": "Fill in every product detail of one order.",
       "lore": "An order with no empty fields."
     },
+    "store-charted-1": {
+      "name": "Store charted",
+      "hint": "Register a store and wait for it to be approved.",
+      "lore": "What you wrote down is on everybody's map now."
+    },
+    "reviews-5": {
+      "name": "Voice of trust",
+      "hint": "Review 5 stores you have already received a product from.",
+      "lore": "Five stores carrying your opinion."
+    },
     "clean-record-10": {
       "name": "Clean archive",
       "hint": "Complete the record of 10 orders.",
       "lore": "The record is worth as much as the display case."
     },
-    "store-mapped-1": {
-      "name": "Mapmaker",
-      "hint": "A store you created was approved and somebody else ordered from it.",
-      "lore": "What you wrote down helped somebody else."
-    },
     "midnight-order": {
       "name": "Night shift",
       "hint": "Register an order between 00:00 and 04:00.",
       "lore": "Nobody told you it existed."
+    },
+    "swift-arrival": {
+      "name": "It flew here",
+      "hint": "Receive a whole order in 7 days or less.",
+      "lore": "No time to get used to waiting."
     },
     "same-day-settle": {
       "name": "Books in order",
