@@ -8,6 +8,7 @@ import { getSession } from "@/lib/auth/auth-server";
 import { ROUTES } from "@/lib/constants";
 import { getProgressSummary } from "@/lib/data/progression/progressionQueries";
 import RankLadder from "./_components/RankLadder";
+import RankLadderScrollToCurrent from "./_components/RankLadderScrollToCurrent";
 import RankLadderViewedCapture from "./_components/RankLadderViewedCapture";
 
 type RankLadderPageProps = {
@@ -52,10 +53,14 @@ export default async function RankLadderPage({ params }: RankLadderPageProps) {
     <>
       <SetHeaderTitle title={t("meta.ranksTitle")} />
       <RankLadderViewedCapture currentRankIndex={summary.currentRankIndex} />
+      <RankLadderScrollToCurrent />
+      {/* The section name is in the topbar and the tab name in the bar above; the document still
+          needs its top heading. */}
+      <h1 className="sr-only">{t("section.headingRanks")}</h1>
 
       <p className="text-text-secondary m-0 [font-size:var(--text-body)]">{t("ranksTab.intro")}</p>
 
-      <Card as="section" variant="subtle" padding="sm" className="flex flex-col gap-[var(--space-2)]">
+      <Card as="section" variant="elevated" padding="lg" className="flex flex-col gap-[var(--space-2)]">
         <Eyebrow as="h2">{t("ranksTab.legendLabel")}</Eyebrow>
         <ul className="m-0 flex list-none flex-wrap gap-x-[var(--space-4)] gap-y-[var(--space-1)] p-0">
           {LEGEND_BANDS.map((legendBand) => (

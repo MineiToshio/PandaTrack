@@ -46,8 +46,16 @@ export default async function ProgressSectionLayout({ children, params }: Progre
         }}
       />
       {/* The region the bar's `aria-controls` names. One element for all three tabs, because each
-          tab is a route: only the selected panel is ever in the document. */}
-      <div id={PROGRESS_PANEL_ID} role="tabpanel">
+          tab is a route: only the selected panel is ever in the document.
+
+          It also owns the rhythm between the blocks every tab stacks inside it. Each page renders a
+          flat list of sections and no wrapper of its own, so without a gap here the blocks sit flush
+          against each other and the whole section reads as one undifferentiated slab. */}
+      <div
+        id={PROGRESS_PANEL_ID}
+        role="tabpanel"
+        className="flex flex-col gap-[var(--space-6)] lg:gap-[var(--space-8)]"
+      >
         {children}
       </div>
     </div>

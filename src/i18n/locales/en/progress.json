@@ -259,7 +259,10 @@
     "tabMedals": "Medals",
     "tabRanks": "Ranks",
     "pointsChip": "{points} pts",
-    "staleNotice": "We are refreshing your points. What you see may be a few minutes old."
+    "staleNotice": "We are refreshing your points. What you see may be a few minutes old.",
+    "headingSummary": "Progress · Summary",
+    "headingMedals": "Progress · Medals",
+    "headingRanks": "Progress · Ranks"
   },
   "summary": {
     "eyebrow": "Rank {index} of 10 · only you can see it",
@@ -288,8 +291,7 @@
     "ranksLink": "See the full ladder",
     "emptyTitle": "Start your record",
     "emptyBody": "You have no points yet. Register your first order and get started.",
-    "emptyCta": "Register an order",
-    "zeroPointsNotice": "Your current points are 0."
+    "emptyCta": "Register an order"
   },
   "creation": {
     "toast": {
@@ -307,7 +309,7 @@
     "intro": "Ten ranks, from the club door to the guild legend.",
     "legendConquered": "Reached",
     "legendCurrent": "You are here",
-    "legendLocked": "Locked, dimming toward the summit",
+    "legendLocked": "Locked, not reached yet",
     "legendPermanence": "A rank once reached is permanent: the bar can go back, the title never does.",
     "legendLabel": "How to read the ladder",
     "ladderLabel": "Rank ladder",

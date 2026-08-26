@@ -9,7 +9,9 @@ import Card from "@/components/core/Card";
 import Chip from "@/components/core/Chip";
 import Eyebrow from "@/components/core/Eyebrow";
 import ProgressBar from "@/components/core/ProgressBar";
+import SectionTitleWithAccent from "@/components/modules/SectionTitleWithAccent";
 import { getSession } from "@/lib/auth/auth-server";
+import { cn } from "@/lib/styles";
 import { ROUTES } from "@/lib/constants";
 import { getMedalShowcase } from "@/lib/data/progression/medalQueries";
 import { getProgressSummary } from "@/lib/data/progression/progressionQueries";
@@ -71,6 +73,9 @@ export default async function ProgressSummaryPage({ params }: ProgressPageProps)
   return (
     <>
       <SetHeaderTitle title={t("section.title")} />
+      {/* The section name lives in the topbar and the tab name in the bar above, so a visible one
+          would say twice what the chrome already says. The document still needs its top heading. */}
+      <h1 className="sr-only">{t("section.headingSummary")}</h1>
 
       {summary.stale && summary.hasPoints && (
         <p
@@ -82,7 +87,7 @@ export default async function ProgressSummaryPage({ params }: ProgressPageProps)
       )}
 
       {!summary.hasPoints && !summary.hasHistoricalProgress ? (
-        <Card as="section" variant="outlined" padding="lg" className="flex flex-col gap-[var(--space-3)]">
+        <Card as="section" variant="elevated" padding="lg" className="flex flex-col gap-[var(--space-3)]">
           <Eyebrow as="h2">{t("summary.emptyTitle")}</Eyebrow>
           <p className="text-text-secondary m-0 [font-size:var(--text-body)]">{t("summary.emptyBody")}</p>
           <Button as="a" href={`/${locale}${ROUTES.ordersNew}`} variant="primary" size="md" className="self-start">
@@ -93,13 +98,9 @@ export default async function ProgressSummaryPage({ params }: ProgressPageProps)
         <>
           {/* A collector whose live total was voided down to zero (`BR-12-06`) still has a rank or a
               medal from before, so the summary below renders normally instead of the "first ever
-              action" empty state above; this line is what tells them the total really is zero right
-              now, rather than leaving a bare "0" to be read as a display bug. */}
-          {!summary.hasPoints && (
-            <p role="status" className="text-text-secondary m-0 [font-size:var(--text-body)]">
-              {t("summary.zeroPointsNotice")}
-            </p>
-          )}
+              action" empty state above. No separate zero-points line is needed: the hero card right
+              below already prints the current total, so a bare "0" there reads as the true figure,
+              not as a display bug, once the rank ladder and album beneath it show that history. */}
           <ProgressRankHero
             summary={summary}
             rankName={rankName}
@@ -126,8 +127,10 @@ export default async function ProgressSummaryPage({ params }: ProgressPageProps)
         </>
       )}
 
-      <div className="grid gap-[var(--space-4)] lg:grid-cols-2 lg:items-start">
-        <Card as="section" variant="outlined" padding="md" className="flex flex-col gap-[var(--space-3)]">
+      {/* Two columns only when there IS a second card. The merit lock is gated on rank 6, so below
+          it the single-child grid was reserving half the row for nothing. */}
+      <div className={cn("grid gap-[var(--space-6)]", summary.meritLock && "lg:grid-cols-2 lg:items-start")}>
+        <Card as="section" variant="elevated" padding="lg" className="flex flex-col gap-[var(--space-3)]">
           <header className="flex flex-wrap items-center justify-between gap-[var(--space-2)]">
             <Eyebrow as="h2">{t("summary.monthTitle")}</Eyebrow>
             {summary.pointsThisMonth > 0 && (
@@ -152,10 +155,16 @@ export default async function ProgressSummaryPage({ params }: ProgressPageProps)
               ))}
             </ul>
           )}
+
+          {/* The honesty line belongs to the figures it qualifies (`FR-12-41`). Standing on its own
+              between two cards it read as a stray caption belonging to neither. */}
+          <p className="text-text-muted border-border m-0 border-t pt-[var(--space-3)] [font-size:var(--text-caption)]">
+            {t("summary.honesty")}
+          </p>
         </Card>
 
         {summary.meritLock && (
-          <Card as="section" variant="outlined" padding="md" className="flex flex-col gap-[var(--space-3)]">
+          <Card as="section" variant="elevated" padding="lg" className="flex flex-col gap-[var(--space-3)]">
             <Eyebrow as="h2">{t("summary.meritTitle")}</Eyebrow>
             <p className="text-text-body m-0 [font-size:var(--text-body)]">
               {summary.meritLock.satisfied
@@ -185,31 +194,23 @@ export default async function ProgressSummaryPage({ params }: ProgressPageProps)
         )}
       </div>
 
-      <p className="text-text-muted m-0 [font-size:var(--text-caption)]">{t("summary.honesty")}</p>
-
-      {/* Disabled on purpose: it names a surface that does not exist yet, links nowhere, and
-          collects nothing, not even an opt-in (FR-12-39, BR-12-21). */}
-      <Card as="section" variant="subtle" padding="md" className="flex flex-col gap-[var(--space-1)] border-dashed">
-        <Eyebrow as="h2">{t("summary.soonTitle")}</Eyebrow>
-        <p className="text-text-muted m-0 [font-size:var(--text-caption)]">{t("summary.soonCaption")}</p>
-      </Card>
-
-      <section className="flex flex-col gap-[var(--space-3)]">
-        <header className="flex flex-wrap items-center justify-between gap-[var(--space-2)]">
-          <div className="flex items-center gap-[var(--space-2)]">
-            <h2 className="text-text-title m-0 [font-family:var(--font-display)] [font-size:var(--text-subtitle)] [line-height:var(--text-subtitle--line-height)]">
+      <section className="flex flex-col gap-[var(--space-4)]">
+        <header className="flex flex-wrap items-center justify-between gap-[var(--space-3)]">
+          <SectionTitleWithAccent as="h2" className="gap-[var(--space-2)]">
+            <span className="flex flex-wrap items-center gap-[var(--space-2)]">
               {t("summary.medalsTitle")}
-            </h2>
-            <Chip variant="neutral" className="[font-family:var(--font-mono)]">
-              {t("summary.medalsCounter", { unlocked: showcase.unlockedCount, total: showcase.shippedCount })}
-            </Chip>
-          </div>
+              <Chip variant="neutral" className="[font-family:var(--font-mono)]">
+                {t("summary.medalsCounter", { unlocked: showcase.unlockedCount, total: showcase.shippedCount })}
+              </Chip>
+            </span>
+          </SectionTitleWithAccent>
           <Button
             as="a"
             href={`/${locale}${ROUTES.progressMedals}`}
             variant="ghost"
             size="sm"
             trailingIcon={<ArrowRight className="size-4" aria-hidden="true" />}
+            className="max-sm:w-full max-sm:justify-center"
           >
             {t("summary.medalsLink")}
           </Button>
@@ -222,8 +223,8 @@ export default async function ProgressSummaryPage({ params }: ProgressPageProps)
         )}
       </section>
 
-      <Card as="section" variant="outlined" padding="md" className="flex flex-col gap-[var(--space-3)]">
-        <header className="flex flex-wrap items-center justify-between gap-[var(--space-2)]">
+      <Card as="section" variant="elevated" padding="lg" className="flex flex-col gap-[var(--space-4)]">
+        <header className="flex flex-wrap items-center justify-between gap-[var(--space-3)]">
           <Eyebrow as="h2">{t("summary.ranksTitle")}</Eyebrow>
           <Button
             as="a"
@@ -231,11 +232,28 @@ export default async function ProgressSummaryPage({ params }: ProgressPageProps)
             variant="ghost"
             size="sm"
             trailingIcon={<ArrowRight className="size-4" aria-hidden="true" />}
+            className="max-sm:w-full max-sm:justify-center"
           >
             {t("summary.ranksLink")}
           </Button>
         </header>
         <ProgressMiniLadder locale={locale} currentRankIndex={summary.currentRankIndex} />
+      </Card>
+
+      {/* Disabled on purpose: it names a surface that does not exist yet, links nowhere, and
+          collects nothing, not even an opt-in (FR-12-39, BR-12-21). Last on the page for the same
+          reason: what is switched off must not sit between two things that work.
+
+          The dashed border is declared whole rather than as `border-dashed`, because the `subtle`
+          variant already sets a transparent 1px border and the shorthand-less class loses to it. */}
+      <Card
+        as="section"
+        variant="subtle"
+        padding="md"
+        className="flex flex-col gap-[var(--space-1)] [border:1px_dashed_var(--border-strong)]"
+      >
+        <Eyebrow as="h2">{t("summary.soonTitle")}</Eyebrow>
+        <p className="text-text-muted m-0 [font-size:var(--text-caption)]">{t("summary.soonCaption")}</p>
       </Card>
     </>
   );

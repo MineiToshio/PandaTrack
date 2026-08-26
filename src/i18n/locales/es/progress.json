@@ -259,7 +259,10 @@
     "tabMedals": "Medallas",
     "tabRanks": "Rangos",
     "pointsChip": "{points} pts",
-    "staleNotice": "Estamos actualizando tus puntos. Lo que ves puede tener unos minutos."
+    "staleNotice": "Estamos actualizando tus puntos. Lo que ves puede tener unos minutos.",
+    "headingSummary": "Progreso · Resumen",
+    "headingMedals": "Progreso · Medallas",
+    "headingRanks": "Progreso · Rangos"
   },
   "summary": {
     "eyebrow": "Rango {index} de 10 · solo tú lo ves",
@@ -288,8 +291,7 @@
     "ranksLink": "Ver la escalera completa",
     "emptyTitle": "Empieza tu registro",
     "emptyBody": "Todavía no tienes puntos. Registra tu primer pedido y empieza.",
-    "emptyCta": "Registrar un pedido",
-    "zeroPointsNotice": "Tus puntos actuales son 0."
+    "emptyCta": "Registrar un pedido"
   },
   "creation": {
     "toast": {
@@ -307,7 +309,7 @@
     "intro": "Diez rangos, de la puerta del club a la leyenda del gremio.",
     "legendConquered": "Conquistado",
     "legendCurrent": "Estás aquí",
-    "legendLocked": "Bloqueado, se atenúa hacia la cima",
+    "legendLocked": "Bloqueado, todavía no lo alcanzas",
     "legendPermanence": "El rango alcanzado es permanente: retrocede la barra, nunca el nombre.",
     "legendLabel": "Cómo leer la escalera",
     "ladderLabel": "Escalera de rangos",
