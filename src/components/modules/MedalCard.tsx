@@ -63,10 +63,14 @@ export default function MedalCard({
       href={href}
       aria-label={linkLabel}
       className={cn(
-        "group relative flex flex-col items-center gap-1 overflow-hidden text-center no-underline",
+        "group relative flex h-full flex-col items-center gap-1 overflow-hidden text-center no-underline",
         "rounded-[var(--radius-lg)] border px-[var(--space-3)] pt-[var(--space-5)] pb-[var(--space-4)]",
         "focus-visible:ring-ring focus-visible:ring-offset-background transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
-        locked ? "border-border-strong border-dashed" : "border-border bg-surface hover:border-border-strong",
+        // A locked piece keeps the dashed border that marks it, but not a transparent background:
+        // with no fill of its own it read as a hole punched in the grid rather than as a card.
+        locked
+          ? "border-border-strong bg-surface-elevated border-dashed"
+          : "border-border bg-surface hover:border-border-strong",
         className,
       )}
     >
@@ -79,7 +83,9 @@ export default function MedalCard({
 
       <MedalStage medalKey={medalKey} grade={grade} size={size} locked={locked} imageSrc={imageSrc} label={artLabel} />
 
-      <h3 className="text-text-title mt-[var(--space-3)] [font-size:var(--text-body)] font-bold">{title}</h3>
+      <h3 className="text-text-title mt-[var(--space-3)] [font-size:var(--text-body)] [font-weight:var(--font-weight-semibold)]">
+        {title}
+      </h3>
 
       {hintLabel && (
         <span className="text-text-muted mt-[var(--space-2)] [font-family:var(--font-mono)] [font-size:var(--text-mono)] [letter-spacing:var(--text-mono--letter-spacing)] uppercase">
@@ -91,7 +97,9 @@ export default function MedalCard({
         {description}
       </p>
 
-      <div className="mt-[var(--space-3)] flex flex-wrap items-center justify-center gap-[var(--space-2)]">
+      {/* `mt-auto` so the foot sits on the floor of the card. In a grid row whose cards differ by a
+          line or two of hint, an unanchored foot leaves every chip at a different height. */}
+      <div className="mt-auto flex flex-wrap items-center justify-center gap-[var(--space-2)] pt-[var(--space-3)]">
         <RarityChip grade={grade} label={rarityLabel} />
         {unlockedOn && (
           <span className="text-text-muted [font-family:var(--font-mono)] [font-size:var(--text-mono)]">
@@ -100,10 +108,9 @@ export default function MedalCard({
         )}
       </div>
 
+      {/* Set apart by the muted token, not by italics: the system has no italic register. */}
       {statusLabel && (
-        <span className="text-text-muted mt-[var(--space-2)] [font-size:var(--text-caption)] italic">
-          {statusLabel}
-        </span>
+        <span className="text-text-muted mt-[var(--space-2)] [font-size:var(--text-caption)]">{statusLabel}</span>
       )}
     </Link>
   );

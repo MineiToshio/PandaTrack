@@ -33,10 +33,15 @@ export default function MedalGrid({ entries, size = "lg" }: MedalGridProps) {
   return (
     <ul
       className={cn(
-        "grid list-none grid-cols-2 gap-[var(--space-3)] p-0",
+        "grid list-none grid-cols-2 gap-[var(--space-4)] p-0",
+        // `auto-fill` in the album, where the empty slot at the end of a short series is the album's
+        // own rhythm and every page has to draw its pieces at the same size. `auto-fit` in the
+        // showcase and the "next in this series" preview, which carry a fixed handful of medals:
+        // there `auto-fill` kept laying out tracks for cards that are not there, leaving a couple of
+        // hundred pixels of dead grid beside the last one.
         size === "lg"
           ? "sm:[grid-template-columns:repeat(auto-fill,minmax(216px,1fr))]"
-          : "sm:[grid-template-columns:repeat(auto-fill,minmax(168px,1fr))]",
+          : "sm:[grid-template-columns:repeat(auto-fit,minmax(168px,1fr))]",
       )}
     >
       {entries.map((entry) => {
@@ -45,8 +50,9 @@ export default function MedalGrid({ entries, size = "lg" }: MedalGridProps) {
         const rarityLabel = t(`rarity.${entry.rarity}`);
         const locked = !entry.unlocked;
 
-        // A phase-2 piece is not "locked": it is a promise. Saying "how to get it" about something
-        // this build cannot award would be an instruction the collector cannot follow.
+        // An unshipped piece is not "locked": it is a promise. Saying "how to get it" about something
+        // this build cannot award would be an instruction the collector cannot follow. No medal is
+        // in that state today; the branch is what keeps it true if one ever is.
         const statusLabel = !entry.shipped
           ? t("album.seriesUpcoming")
           : entry.isCurrentlyValid === false

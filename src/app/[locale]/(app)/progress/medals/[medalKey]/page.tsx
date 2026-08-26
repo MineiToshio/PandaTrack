@@ -7,7 +7,8 @@ import BackNavLink from "@/components/core/BackNavLink";
 import Card from "@/components/core/Card";
 import Eyebrow from "@/components/core/Eyebrow";
 import MedalStage, { resolveMedalArtSrc } from "@/components/core/MedalStage";
-import RarityChip from "@/components/core/RarityChip";
+import RarityChip, { getRarityRingVar } from "@/components/core/RarityChip";
+import SectionTitleWithAccent from "@/components/modules/SectionTitleWithAccent";
 import { getSession } from "@/lib/auth/auth-server";
 import { ROUTES } from "@/lib/constants";
 import { MEDAL_SERIES } from "@/lib/data/progression/medalCatalogue";
@@ -89,15 +90,26 @@ export default async function MedalDetailPage({ params }: MedalDetailPageProps) 
       </div>
 
       <div className="grid items-start gap-[var(--space-6)] lg:grid-cols-[320px_1fr]">
+        {/* Fills its own column rather than floating centred inside it: at 320px a 208px stage left
+            a third of the column as dead margin on either side of the piece. */}
         <Card
-          variant="outlined"
+          variant="elevated"
           padding="lg"
-          className="flex flex-col items-center gap-[var(--space-5)] justify-self-center lg:justify-self-start"
+          className="relative flex w-full flex-col items-center gap-[var(--space-5)] overflow-hidden"
         >
+          {/* The prototype's soft radial behind the piece, in its own rarity hue. */}
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background: `radial-gradient(70% 50% at 50% 34%, color-mix(in oklch, ${getRarityRingVar(medal.rarity)} 14%, transparent), transparent 70%)`,
+            }}
+          />
           <MedalStage
+            className="relative"
             medalKey={medal.medalKey}
             grade={medal.rarity}
-            size="xl"
+            size="2xl"
             locked={!medal.unlocked}
             imageSrc={resolveMedalArtSrc(medal.imageKey)}
             label={
@@ -106,12 +118,14 @@ export default async function MedalDetailPage({ params }: MedalDetailPageProps) 
                 : t("detail.lockedArtLabel", { rarity: rarityLabel })
             }
           />
-          <RarityChip grade={medal.rarity} label={rarityLabel} />
+          <span className="relative">
+            <RarityChip grade={medal.rarity} label={rarityLabel} />
+          </span>
         </Card>
 
         <div className="min-w-0">
           <Eyebrow as="p">{isSecretSeries ? t("detail.secretEyebrow") : seriesName}</Eyebrow>
-          <h1 className="text-text-title mt-[var(--space-2)] mb-[var(--space-2)] [font-family:var(--font-display)] [font-size:var(--text-title)] [line-height:var(--text-title--line-height)] [letter-spacing:var(--text-title--letter-spacing)]">
+          <h1 className="text-text-title mt-[var(--space-2)] mb-[var(--space-2)] [font-family:var(--font-display)] [font-size:var(--text-title)] [line-height:var(--text-title--line-height)] [font-weight:var(--font-weight-title)] [letter-spacing:var(--text-title--letter-spacing)]">
             {revealed ? name : t("album.lockedTitle")}
           </h1>
           <p className="text-text-secondary m-0 mb-[var(--space-5)] max-w-[56ch] [font-size:var(--text-body)]">
@@ -154,7 +168,7 @@ export default async function MedalDetailPage({ params }: MedalDetailPageProps) 
           <Card
             variant="subtle"
             padding="sm"
-            className="border-border-strong mt-[var(--space-5)] flex items-center gap-[var(--space-3)] border border-dashed"
+            className="mt-[var(--space-5)] flex items-center gap-[var(--space-3)] [border:1px_dashed_var(--border-strong)]"
           >
             <Users className="text-text-muted size-5 shrink-0" aria-hidden />
             <div className="min-w-0">
@@ -165,11 +179,14 @@ export default async function MedalDetailPage({ params }: MedalDetailPageProps) 
             </div>
           </Card>
 
-          <h2 className="text-text-title mt-[var(--space-6)] mb-[var(--space-3)] [font-family:var(--font-display)] [font-size:var(--text-subtitle)] [line-height:var(--text-subtitle--line-height)]">
+          <SectionTitleWithAccent as="h2" className="mt-[var(--space-6)] mb-[var(--space-3)]">
             {t("detail.nextTitle")}
-          </h2>
+          </SectionTitleWithAccent>
           {detail.nextInSeries ? (
-            <div className="max-w-[400px]">
+            // Capped only from `sm` up, where the grid is a single stretching track. Below it the
+            // grid is still two columns, and capping the wrapper would squeeze the one card into
+            // half of 240px.
+            <div className="sm:max-w-[240px]">
               <MedalGrid entries={[detail.nextInSeries]} size="md" />
             </div>
           ) : (

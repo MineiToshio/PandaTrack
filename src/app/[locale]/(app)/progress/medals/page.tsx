@@ -6,6 +6,7 @@ import Card from "@/components/core/Card";
 import Eyebrow from "@/components/core/Eyebrow";
 import ProgressBar from "@/components/core/ProgressBar";
 import RarityChip from "@/components/core/RarityChip";
+import SectionTitleWithAccent from "@/components/modules/SectionTitleWithAccent";
 import { getSession } from "@/lib/auth/auth-server";
 import { ROUTES } from "@/lib/constants";
 import { MEDAL_RARITY_ORDER } from "@/lib/data/progression/medalCatalogue";
@@ -32,10 +33,10 @@ function toPercentage(unlocked: number, shipped: number): number {
  * The `"Medallas"` album: one page per series, every medal in the catalogue, and two levels of
  * counter.
  *
- * The counters divide by what this build can actually AWARD, not by the twenty-four the catalogue
- * describes. The twelve pieces of a later phase still render, as silhouettes labelled as such, so
- * half the album reads as a promise rather than as missing content, but counting them would tell a
- * collector they are behind on medals nobody can earn yet.
+ * The counters divide by what this build can actually AWARD, which is now the whole catalogue: no
+ * page is labelled as upcoming and no tile says "próximamente". The distinction survives in the
+ * code because a piece this build could not award would still render, as a silhouette labelled as
+ * such, and counting it would tell a collector they are behind on medals nobody can earn yet.
  *
  * Server-rendered end to end; the only client island is the analytics capture.
  */
@@ -54,10 +55,15 @@ export default async function MedalAlbumPage({ params }: MedalAlbumPageProps) {
     <>
       <SetHeaderTitle title={t("album.title")} />
       <MedalAlbumViewedCapture unlockedCount={album.unlockedCount} shippedCount={album.shippedCount} />
+      {/* The section name is in the topbar and the tab name in the bar above; the document still
+          needs its top heading. */}
+      <h1 className="sr-only">{t("section.headingMedals")}</h1>
 
-      <Card as="section" variant="outlined" padding="md" className="flex flex-wrap items-center gap-[var(--space-5)]">
+      {/* `items-end`, not `items-center`: the figure and the bar are one reading, and centring the
+          tall figure against the short bar left the two floating at different heights. */}
+      <Card as="section" variant="elevated" padding="lg" className="flex flex-wrap items-end gap-[var(--space-5)]">
         <p className="m-0 flex flex-col items-center text-center">
-          <span className="text-text-title [font-family:var(--font-mono)] [font-size:var(--text-title)] [line-height:var(--text-title--line-height)] font-bold">
+          <span className="text-text-title [font-family:var(--font-mono)] [font-size:var(--text-title)] [line-height:var(--text-title--line-height)] [font-weight:var(--font-weight-title)]">
             {album.unlockedCount}
           </span>
           <span className="text-text-muted [font-size:var(--text-caption)]">
@@ -91,12 +97,10 @@ export default async function MedalAlbumPage({ params }: MedalAlbumPageProps) {
       </Card>
 
       {album.pages.map((page) => (
-        <section key={page.series} className="flex flex-col gap-[var(--space-3)]">
+        <section key={page.series} className="flex flex-col gap-[var(--space-4)]">
           <header className="flex flex-wrap items-end justify-between gap-[var(--space-3)]">
-            <div className="min-w-0">
-              <h2 className="text-text-title m-0 [font-family:var(--font-display)] [font-size:var(--text-subtitle)] [line-height:var(--text-subtitle--line-height)] [letter-spacing:var(--text-subtitle--letter-spacing)]">
-                {t(`series.${page.series}.name`)}
-              </h2>
+            <div className="flex min-w-0 flex-col gap-[var(--space-1)]">
+              <SectionTitleWithAccent as="h2">{t(`series.${page.series}.name`)}</SectionTitleWithAccent>
               <p className="text-text-secondary m-0 [font-size:var(--text-caption)]">
                 {t(`series.${page.series}.caption`)}
               </p>

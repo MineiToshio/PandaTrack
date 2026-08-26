@@ -5,7 +5,7 @@ import { getRarityRingVar, type RarityGrade } from "@/components/core/RarityChip
 import { cn } from "@/lib/styles";
 
 /** Art slot sizes, in pixels, matching the surfaces that render a medal. */
-export type MedalStageSize = "sm" | "md" | "lg" | "xl";
+export type MedalStageSize = "sm" | "md" | "lg" | "xl" | "2xl";
 
 const STAGE_PIXELS: Readonly<Record<MedalStageSize, number>> = {
   /** Toast and dense preview rows. */
@@ -14,8 +14,10 @@ const STAGE_PIXELS: Readonly<Record<MedalStageSize, number>> = {
   md: 116,
   /** The album grid. */
   lg: 168,
-  /** The medal detail hero. */
+  /** The mobile medal detail hero, and the celebration panel. */
   xl: 208,
+  /** The desktop medal detail hero. */
+  "2xl": 262,
 };
 
 const ICON_PIXELS: Readonly<Record<MedalStageSize, number>> = {
@@ -23,6 +25,7 @@ const ICON_PIXELS: Readonly<Record<MedalStageSize, number>> = {
   md: 40,
   lg: 58,
   xl: 72,
+  "2xl": 92,
 };
 
 /** Public folder the finished medal artwork will live in, once it exists. */
