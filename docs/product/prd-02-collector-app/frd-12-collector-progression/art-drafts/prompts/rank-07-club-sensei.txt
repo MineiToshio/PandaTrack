@@ -1,0 +1,19 @@
+Generate ONE image and save it in the current directory as exactly "club-sensei.png". Do not write any other file.
+
+MANDATORY BACKGROUND HANDLING, read this first. A previous attempt failed because the background removal step erased the artwork's own interior. Follow this exactly:
+- Generate the subject on a solid flat BRIGHT MAGENTA (#FF00FF) background. Never use a green, blue, cyan or white background for this image.
+- Remove the background using an EDGE CONNECTED flood fill starting from the four canvas borders only. Do NOT use a global color match key. No pixel that is enclosed inside the emblem's outer contour may ever be made transparent, whatever its color.
+- After saving, open the file with Python and print the RGBA value at pixel (512, 470). It MUST be an opaque dark blue, alpha 255. If it is white, transparent, or any light color, the artwork's interior was destroyed: regenerate and fix it before finishing.
+- Also verify the pixel at (20, 20) is fully transparent.
+
+Image prompt:
+A single collectible guild rank crest, bold 1990s shonen anime style like a hand inked anime eyecatch badge, heavy black ink outlines, hard cel shading, flat saturated color, no gradients.
+Structure, exactly these parts and nothing else:
+1. A thick heavy circular GOLD rim in the middle of the image, taking up about 60 percent of the image width.
+2. Inside that rim, a solid DEEP ROYAL BLUE enamel disc, completely filled with opaque dark blue paint, one flat uniform color, no pattern, no sunburst, no stripes, no texture, no white area, no empty area, no hole.
+3. Centered on the blue disc, one cream white folding fan, shaped like a wide pie slice covering about one third of a circle with its point at the bottom, with four thin gold lines fanning out across it and a short dark brown handle at the point. The fan is one single solid cream shape, never split into alternating dark sectors. The fan is large: about 45 percent of the whole image width, so it is still readable at thumbnail size. Strong contrast: cream fan on dark blue.
+4. On the left of the rim, one gold laurel branch with EXACTLY FIVE leaves. On the right, one gold laurel branch with EXACTLY FIVE leaves. Ten leaves in the entire image, no more. Each leaf is large, broad and simple, and there is a wide obvious empty gap between each leaf and the next one, and between the branches and the gold rim, so the frame never fuses into a solid mass when the image is shrunk. Do not draw six leaves. Do not draw seven leaves. Five per side.
+5. Where the two branches meet above the rim, one single pointed gold crest peak holding one large faceted deep violet gem.
+6. Where the two branches meet below the rim, one small round gold boss with one smaller faceted deep violet gem on each side of it. Nothing hangs below the boss: no tail, no spike, no drop, no finial.
+Three gems in total and no others. There are absolutely no wings, no feathers, no rays, no sparks, no flames, no shards, no scrollwork, no filigree, no extra leaves and no other ornament anywhere.
+The crest is centered, upright, front facing and bilaterally symmetrical, and fits a square footprint: its full width and its full height are each about 90 percent of the canvas, so its width to height ratio is 1 to 1, and every extremity including both branch tips, the crest peak and the lowest point stays inside a centered circle at 90 percent of the canvas diameter. All four corners of the canvas are empty and transparent. No text, no numbers, no letters, no watermark, no signature, no logo, no banner scroll. No existing characters, franchises, trademarks or copyrighted material of any kind, an original generic design only. Transparent background outside the crest, no drop shadow, no background scenery. Square canvas, 1024 by 1024 pixels, PNG with a transparent alpha channel.

@@ -16,8 +16,9 @@ export type ToastAchievement = {
   /**
    * Rendered where the variant icon sits. Decorative: the three text lines carry every fact.
    *
-   * The slot has no intrinsic width, so a percentage-sized child (`MedalStage` draws at
-   * `min(size, 100%)` so it can fit a narrow grid cell) collapses. Size the node before passing it.
+   * The slot has no intrinsic width of its own, so size the node before passing it: `MedalStage`
+   * carries a `max-width: 100%` ceiling for the narrow grid cell, and a slot that never states a
+   * width leaves that ceiling resolving against nothing.
    */
   media: React.ReactNode;
   /** Mono uppercase line above the name. */

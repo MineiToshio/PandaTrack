@@ -15,6 +15,11 @@ vi.mock("next/image", () => ({
   ),
 }));
 
+/** The emblem the caller sees, whatever wraps it. */
+function getEmblem(label = "l"): HTMLElement {
+  return screen.getByRole("img", { name: label }) as HTMLElement;
+}
+
 describe("RankEmblem", () => {
   it("resolves every rung of the ladder to its own file by convention alone", () => {
     expect(RANK_KEYS.map((_, index) => resolveRankArtSrc(index + 1))).toEqual(
@@ -36,54 +41,58 @@ describe("RankEmblem", () => {
     expect(screen.queryByText("10")).not.toBeInTheDocument();
   });
 
-  it("desaturates a locked rank instead of hiding it, and only a locked one", () => {
-    const { rerender } = render(<RankEmblem rankIndex={7} band="locked" label="Emblema de Invocador" />);
-    expect(screen.getByTestId("rank-art").className).toContain("grayscale");
+  it("draws the artwork full bleed, with no frame of its own around it", () => {
+    render(<RankEmblem rankIndex={4} band="current" size="md" label="l" />);
+    const emblem = getEmblem();
+    const art = screen.getByTestId("rank-art");
 
-    rerender(<RankEmblem rankIndex={7} band="conquered" label="Emblema de Invocador" />);
-    expect(screen.getByTestId("rank-art").className).not.toContain("grayscale");
+    // The pieces already carry their own metal rim, so a ring here was a frame around a frame that
+    // also cost the art a fifth of its box (owner feedback, 2026-08-26). Nothing may draw one back:
+    // not a border, not a plate colour, not a glow, and not an inset between the two.
+    expect(emblem.style.borderColor).toBe("");
+    expect(emblem.style.background).toBe("");
+    expect(emblem.style.boxShadow).toBe("");
+    expect(emblem.className).not.toMatch(/rounded|border/);
+    // The art is a direct child of the emblem box, so `fill` resolves against the emblem itself.
+    expect(art.parentElement).toBe(emblem);
+    expect(art.className).toContain("object-contain");
   });
 
-  it("carries the ladder state as the plate's own ring token, one per band", () => {
+  it("publishes the band it was given even though three of the four look alike", () => {
     const bands: RankBand[] = ["conquered", "current", "locked", "top"];
-    const rings = bands.map((band) => {
+
+    const published = bands.map((band) => {
       const { unmount } = render(<RankEmblem rankIndex={4} band={band} label="l" />);
-      const ring = (screen.getByRole("img", { name: "l" }) as HTMLElement).style.borderColor;
+      const value = getEmblem().dataset.band;
       unmount();
-      return ring;
+      return value;
     });
 
-    expect(rings).toEqual([
-      "var(--rank-band-conquered)",
-      "var(--rank-band-current)",
-      "var(--rank-band-locked)",
-      "var(--rank-band-top)",
-    ]);
+    // State left the emblem when the ring did: the ladder rung, the mini ladder and the summit each
+    // carry it in chrome and in words. The attribute stays so a surface can still read it.
+    expect(published).toEqual(bands);
   });
 
-  it("keeps the size a redeclarable custom property rather than a fixed inline width", () => {
-    render(<RankEmblem rankIndex={1} band="current" size="xl" label="l" />);
+  it("drains a locked rank through the themed token, and only a locked one", () => {
+    const { rerender } = render(<RankEmblem rankIndex={7} band="locked" label="l" />);
+    // A `filter`, and one that has to differ per theme, is a thing no colour variable can carry, so
+    // the recipe is its own token. A literal filter string here would ship one theme's answer to
+    // both, which is how the previous `grayscale(1) opacity(.6)` came to read as a dead smudge on a
+    // pale card and a floating ghost on a dark one.
+    expect(screen.getByTestId("rank-art").className).toContain("[filter:var(--locked-art-filter)]");
 
-    // The fallback carries the size; a caller raising `--rank-emblem-size` at a breakpoint has to
-    // win, which an inline width would never let it do.
-    expect((screen.getByRole("img", { name: "l" }) as HTMLElement).style.width).toBe(
-      "var(--rank-emblem-size, 148px)",
-    );
+    for (const band of ["conquered", "current", "top"] as const) {
+      rerender(<RankEmblem rankIndex={7} band={band} label="l" />);
+      expect(screen.getByTestId("rank-art").className).not.toContain("filter");
+    }
   });
 
-  it("takes its ceiling from `max-width`, never from a percentage inside the width itself", () => {
-    render(<RankEmblem rankIndex={1} band="current" size="md" label="l" />);
-    const emblem = screen.getByRole("img", { name: "l" }) as HTMLElement;
+  it("carries no padlock, because it is drawn as small as 38 px and labelled in text beside it", () => {
+    const { container } = render(<RankEmblem rankIndex={7} band="locked" label="l" />);
 
-    // The regression this pins: `width: min(<size>, 100%)`. It reads as a harmless ceiling and
-    // behaves as one in a container of known width, but in a SHRINK-TO-FIT container the percentage
-    // asks for a width the container is still deriving from this very element. CSS breaks the cycle
-    // by handing `min()` a zero, and the emblem collapses — 84px became 4.6px on the ladder summit,
-    // silently, with the artwork gone and the ring around it left painting on bare card.
-    expect(emblem.style.width).not.toContain("%");
-    expect(emblem.style.maxWidth).toBe("100%");
-    // Both axes definite the moment the width is, or `fill` finds a zero-height parent.
-    expect(emblem.style.aspectRatio).toBe("1 / 1");
+    // Unlike `MedalStage`. At `xs` a padlock covers the motif outright, and every surface that draws
+    // a locked rank already says "Bloqueado" on the same row.
+    expect(container.querySelector("svg")).toBeNull();
   });
 
   it("points every rung of the ladder at a file that actually exists in public/ranks", () => {
@@ -95,5 +104,28 @@ describe("RankEmblem", () => {
     );
 
     expect(missing).toEqual([]);
+  });
+
+  it("keeps the size a redeclarable custom property rather than a fixed inline width", () => {
+    render(<RankEmblem rankIndex={1} band="current" size="xl" label="l" />);
+
+    // The fallback carries the size; a caller raising `--rank-emblem-size` at a breakpoint has to
+    // win, which an inline width would never let it do.
+    expect(getEmblem().style.width).toBe("var(--rank-emblem-size, 148px)");
+  });
+
+  it("takes its ceiling from `max-width`, never from a percentage inside the width itself", () => {
+    render(<RankEmblem rankIndex={1} band="current" size="md" label="l" />);
+    const emblem = getEmblem();
+
+    // The regression this pins: `width: min(<size>, 100%)`. It reads as a harmless ceiling and
+    // behaves as one in a container of known width, but in a SHRINK-TO-FIT container the percentage
+    // asks for a width the container is still deriving from this very element. CSS breaks the cycle
+    // by handing `min()` a zero, and the emblem collapses — 84px became 4.6px on the ladder summit,
+    // silently, with the artwork gone and the aura behind it left painting on bare card.
+    expect(emblem.style.width).not.toContain("%");
+    expect(emblem.style.maxWidth).toBe("100%");
+    // Both axes definite the moment the width is, or `fill` finds a zero-height parent.
+    expect(emblem.style.aspectRatio).toBe("1 / 1");
   });
 });

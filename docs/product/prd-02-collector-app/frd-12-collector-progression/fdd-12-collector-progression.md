@@ -373,11 +373,11 @@ per series (×6, repeated)
 
 **`MedalCard` anatomy**, three states:
 
-| State                                        | Art treatment                                                                                    | Body                                                                                                                                                                                                                                                                              |
-| -------------------------------------------- | ------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Unlocked                                     | Full-color `MedalStage s-lg` (168px), rarity ring + seal, sheen active                           | `h3` name, `p.cond` condition text, footer: `RarityChip` + unlock date                                                                                                                                                                                                            |
-| Locked, hinted                               | Grayscale silhouette (`filter: grayscale(1) brightness(.42) contrast(1.15)`) + lock icon overlay | `h3` "Medalla bloqueada"-style title **is not shown**; instead `h3` name **is** shown for hinted locks (the prototype keeps the real name, e.g. "La espera imposible"), `hint-label` "Cómo conseguirla" + `p.cond` states the real condition, footer: `RarityChip` only (no date) |
-| Locked, secret (4 pieces, `Secretas` series) | Same silhouette + lock                                                                           | `h3` "Medalla bloqueada" (neutral, generic), `hint-label` "Cómo conseguirla" but the body reads `"Sin pista todavía"`, footer: `RarityChip` only                                                                                                                                  |
+| State                                        | Art treatment                                                                           | Body                                                                                                                                                                                                                                                                              |
+| -------------------------------------------- | --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Unlocked                                     | Full-color `MedalStage s-lg` (168px), drawn full bleed: no plate, no rarity ring (§3.3) | `h3` name, `p.cond` condition text, footer: `RarityChip` + unlock date                                                                                                                                                                                                            |
+| Locked, hinted                               | Art drained through `--locked-art-filter` + a padlock chip in the corner (§3.3)         | `h3` "Medalla bloqueada"-style title **is not shown**; instead `h3` name **is** shown for hinted locks (the prototype keeps the real name, e.g. "La espera imposible"), `hint-label` "Cómo conseguirla" + `p.cond` states the real condition, footer: `RarityChip` only (no date) |
+| Locked, secret (4 pieces, `Secretas` series) | Same drain + chip                                                                       | `h3` "Medalla bloqueada" (neutral, generic), `hint-label` "Cómo conseguirla" but the body reads `"Sin pista todavía"`, footer: `RarityChip` only                                                                                                                                  |
 
 This is `FR-12-25`'s distinction rendered exactly: every locked medal outside `Secretas` shows
 its real name and condition as a hint; the three `Secretas` pieces alone hide both behind a
@@ -771,15 +771,72 @@ never had to answer, and all three are decisions, not defaults:
    hero's eyebrow (`"Rango 1 de 10 · solo tú lo ves"`), the celebration's `"Rango N de 10, y este no
 se pierde nunca."`, and the `Rangos` tab, which is an ordered list of ten. The numeral is kept as
    the fallback for a rank index off the ladder, which the ladder itself cannot produce.
-2. **The band ring stays, as the plate's own border.** It is the only carrier of ladder state on the
-   emblem itself — the artwork of rank 4 is identical whether it has been passed or not — so removing
-   it would drop information. Merging the old inner ring into the plate border keeps the state frame
-   and hands the whole plate to the art instead of the smaller disc left inside a second ring.
-3. **A locked rank is the real artwork, desaturated** (`grayscale` plus 60% opacity), which is the
-   same reading `MedalStage` gives a locked medal: visible but drained, so what is waiting up the
-   ladder stays legible (`FR-12-33`). It carries **no padlock**, unlike `MedalStage`: a rank plate is
+2. ~~**The band ring stays, as the plate's own border.**~~ **Superseded on 2026-08-26** by the
+   frameless pass below: the ring is gone entirely, and the ladder's state is carried by the rung
+   rather than by the art. The reasoning recorded here (that the ring was the emblem's only carrier
+   of state) was sound and is exactly what the frameless pass had to answer.
+3. **A locked rank is the real artwork, drained** — visible but not earned, so what is waiting up
+   the ladder stays legible (`FR-12-33`). It carries **no padlock**, unlike `MedalStage`: a rank is
    drawn as small as 38 px, where a padlock covers the motif entirely, and every surface that shows a
-   locked rank already labels it `"Bloqueado"` in text on the same row.
+   locked rank already labels it `"Bloqueado"` in text on the same row. The recipe itself
+   (`grayscale` plus 60% opacity) was **replaced on 2026-08-26**; see the frameless pass below.
+
+**Frameless artwork, and the locked state that had to follow (2026-08-26).** The single largest
+visual decision of this section, taken on the owner's report that the emblems looked "small and
+boxed in" and the medals carried a "borde raro". Both readings were correct, and they had the same
+cause: **the art already carries its own frame.** Every rank emblem is drawn with a metal rim or a
+heater shield; every medal is drawn with a rim whose rivets, facets and light are how the catalogue's
+own art system encodes the print run ([`medal-catalogue-v2.md`](./medal-catalogue-v2.md) §3a). The
+plate the UI drew around them was therefore a frame around a frame, and it charged the art a fifth of
+its own box for the privilege. On the medals it did worse than that: the plate's ring was a **circle**
+clipping a set that is full of shields, pentagons and a star, so the corners of those pieces were
+simply cut off.
+
+Three consequences, all of them rules rather than settings:
+
+1. **`RankEmblem` and `MedalStage` draw the artwork full bleed.** No ring, no disc, no plate colour,
+   no glow, no inset. The image is a direct child of the sized box and fills it, with
+   `object-contain` — never `object-cover`, which is half of what cropped the non-circular medals.
+   The documented pixel sizes are unchanged; what changed is how much of each box the art is allowed
+   to occupy, which rose from roughly 73% to the ~87% the illustrator drew.
+2. **Ladder state left the emblem with the ring.** `conquered`, `current` and `top` now draw
+   identically, because the artwork of a rank IS identical whether it has been passed or not, and
+   every surface already states which it is without depending on colour (`ADR 0006`): the current
+   rung's 1.5 px accent border, its `"Estás aquí"` pill and the progress bar no other rung has; the
+   conquered rung's green strip, check and `"Conquistado"`; the summit's warm aura and `"La cima"`
+   tag; the mini ladder's own labels. The `band` prop survives as published state (`data-band`) and
+   as the one branch that still changes the drawing: `locked`. Re-adding a coloured ring would only
+   repeat what the rung says, in the one register the art cannot afford to share.
+3. **Locked art is a per-theme token, `--locked-art-filter`** (`globals.css` §5c), not a class and
+   not a literal filter string: the recipe has to differ between light and dark, and a `filter` is a
+   thing no colour variable can carry.
+
+**Why the locked recipe is `grayscale(1) contrast(1.18) brightness(0.92)` (light) and
+`grayscale(1) contrast(1.12) brightness(0.72)` (dark).** The owner's complaint about the old
+`grayscale(1) opacity(.6)` was that it made the pieces look "bien muertas", and the diagnosis is
+precise: the `opacity` and the flattened contrast together drained not just the colour but the
+_material_, leaving a pale beige smear on a pale card. Six candidates were implemented and captured
+in the real app at 32, 56 and 168 px in both themes before this one was chosen:
+
+| Candidate                                  | Verdict                                                                                                                |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| Solid silhouette (`brightness(0)` + alpha) | Rejected. At every size the motif collapses to one flat blob: the sword, the hourglass and the coin all read the same. |
+| Veil + partial desaturation                | Rejected. Lands on bronze/sepia, which reads as a **different rarity**, not as unearned.                               |
+| Full colour at reduced opacity + padlock   | Rejected. A 55%-opacity gold coin is still a gold coin; ambiguous beside an earned one, and reads as a loading state.  |
+| "Unlit": soft desaturation + slight blur   | Rejected. Muddy at large sizes and illegible at 32 px, where any blur is most of the motif.                            |
+| **Pewter: full drain, contrast kept**      | **Chosen.** Reads as a real material — a struck but unfinished piece — crisp at 32 px, motif fully legible at 168 px.  |
+| Pewter with a residual 15% of hue          | Rejected, narrowly. The surviving tint reads as tarnish; the clean version is livelier, not deader.                    |
+
+The rule the winner encodes, and the one to keep if the values are ever retuned: **remove the colour,
+keep the contrast.** Contrast is what makes a monochrome piece look like metal instead of like a
+faded print, and it is exactly what the previous recipe threw away.
+
+**The padlock became a corner chip.** `MedalStage`'s lock used to sit in the middle of the piece
+behind a translucent veil. The veil was part of the frame that just left, and covering the motif to
+say "you have not got this" defeats an album whose whole job is to show the collector what is
+waiting. It is now a small chip on `--surface-elevated` with a `--border-strong` hairline, sized per
+stage size, sitting at the art's lower-right corner. `RankEmblem` still carries no padlock at all,
+for the reasons above.
 
 **The summit is no longer exempt from its own state.** `LadderRung` used to hand the summit the warm
 `top` band unconditionally, which was harmless while all ten plates were the same numeral. With real
@@ -833,11 +890,11 @@ recipe beyond the documented `--elevation-4` ceiling (larger blur radius, rarity
 glow) — the same kind of one-off `--modal-shadow` treatment the canonical `<Modal>` already
 carries for its own desktop panel; do not reuse `--elevation-4` unmodified.
 
-**Locked-medal treatment** (`grayscale(1) brightness(.42) contrast(1.15)` + a centered lock
-icon) is a new, domain-specific "locked art" recipe — distinct from the generic interactive
-`disabled` state layer (`visual-foundations.md § Focus and state layers`), which governs
-controls, not illustrative art. The two do not conflict; record the locked-art recipe as its
-own pattern when `MedalCard`/`MedalStage` land in `components.md`.
+**Locked-art treatment** is a domain-specific recipe of this section — distinct from the generic
+interactive `disabled` state layer (`visual-foundations.md § Focus and state layers`), which governs
+controls, not illustrative art. The two do not conflict. It is recorded as its own pattern in
+`components.md` (`MedalStage`, `RankEmblem`) and as the `--locked-art-filter` token in
+`visual-foundations.md`; the values and the reasoning are above.
 
 ---
 
@@ -893,13 +950,13 @@ empieza."` — encouraging tone, primary CTA into order creation. Gated on the c
 
 ### 5.2 Lock states (medal album)
 
-| State                          | Visual                                                      | Copy                                                               |
-| ------------------------------ | ----------------------------------------------------------- | ------------------------------------------------------------------ |
-| `locked` (hinted)              | Silhouette + lock icon                                      | Real name + real condition text as the hint (`FR-12-25`)           |
-| `locked-secret` (4 pieces)     | Silhouette + lock                                           | Neutral title `"Medalla bloqueada"`, `"Sin pista todavía"`         |
-| `unlocked`                     | Full color, rarity ring + seal                              | Real name, condition, unlock date                                  |
-| `unlocked-not-current`         | Full color (same as `unlocked` — never dims)                | Adds `"ya no vigente"` without withdrawing the unlock (`BR-12-08`) |
-| `expired` (event, past window) | Silhouette, permanently — never re-offered as merely locked | States the window has closed, per `BR-12-20`                       |
+| State                          | Visual                                                  | Copy                                                               |
+| ------------------------------ | ------------------------------------------------------- | ------------------------------------------------------------------ |
+| `locked` (hinted)              | Drained art + padlock chip                              | Real name + real condition text as the hint (`FR-12-25`)           |
+| `locked-secret` (4 pieces)     | Drained art + padlock chip                              | Neutral title `"Medalla bloqueada"`, `"Sin pista todavía"`         |
+| `unlocked`                     | Full color, drawn full bleed (no ring)                  | Real name, condition, unlock date                                  |
+| `unlocked-not-current`         | Full color (same as `unlocked` — never dims)            | Adds `"ya no vigente"` without withdrawing the unlock (`BR-12-08`) |
+| `expired` (event, past window) | Drained permanently — never re-offered as merely locked | States the window has closed, per `BR-12-20`                       |
 
 ### 5.3 Ladder states and the merit lock
 

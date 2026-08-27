@@ -19,17 +19,27 @@ import { signInAndLandOnDashboard, skipUnlessAuthenticatedEnv } from "./_helpers
  *  - the tab bar grew a full-height vertical scrollbar, because `overflow-x-auto` makes an element a
  *    scroll container in BOTH axes and the items' `-mb-px` hung one pixel past it.
  *
+ * The second describe covers the `Progreso` section's ARTWORK contract, which has the same shape of
+ * risk and rides the same sign-in: the pieces are drawn frameless, and a locked one is drained by a
+ * per-theme `filter` token. Both are questions only a real cascade can answer — jsdom sees the class
+ * but never the value it resolves to, and a token declared in one theme block and forgotten in the
+ * other fails nowhere else.
+ *
  * Read-only: it signs in, reads a few pages and asserts on layout. It writes nothing, so it is safe
  * against the dev database's real imported history.
  */
 
 const LADDER_URL = "/en/progress/ranks";
+const ALBUM_URL = "/en/progress/medals";
 
 /** Smallest emblem the design draws anywhere (`xs`, the mini-ladder rung). Below it, something collapsed. */
 const SMALLEST_EMBLEM_PX = 38;
 
 /** Half a CSS pixel of slack, for a centering assertion against fractional layout. */
 const CENTERING_TOLERANCE_PX = 0.5;
+
+/** A piece is drawn edge to edge in its box; a pixel of slack for fractional layout. */
+const FULL_BLEED_TOLERANCE_PX = 1;
 
 test.describe("Rangos ladder", () => {
   test.beforeEach(async ({ page }) => {
@@ -100,5 +110,105 @@ test.describe("Rangos ladder", () => {
     // regression: one pixel of it is all Chrome needs to paint a scrollbar down the side of the bar.
     expect(overflow.vertical).toBeLessThanOrEqual(0);
     expect(overflow.horizontal).toBeLessThanOrEqual(0);
+  });
+});
+
+/** Every visible piece on the page: its box, the box its artwork actually fills, and how it is drawn. */
+async function readPieces(page: import("@playwright/test").Page, selector: string) {
+  return page.evaluate((sel) => {
+    return [...document.querySelectorAll(sel)]
+      .filter((piece) => piece.checkVisibility())
+      .map((piece) => {
+        const image = piece.querySelector("img");
+        const box = piece.getBoundingClientRect();
+        const artBox = image?.getBoundingClientRect();
+        return {
+          key: (piece as HTMLElement).dataset.rank ?? (piece as HTMLElement).dataset.medal ?? "",
+          locked: (piece as HTMLElement).dataset.band === "locked" || (piece as HTMLElement).dataset.locked === "true",
+          width: box.width,
+          artWidth: artBox?.width ?? 0,
+          artHeight: artBox?.height ?? 0,
+          hasArt: Boolean(image),
+          filter: image ? getComputedStyle(image).filter : "",
+          // The three shapes the old frame took, in order: the ring (a border on the piece), the
+          // plate behind it (a background), and the second ring the art was nested inside (a wrapper
+          // between the piece and its image). The padlock chip is deliberately NOT counted: it is a
+          // badge in the corner, not a frame around the motif.
+          framed: (() => {
+            const style = getComputedStyle(piece);
+            return (
+              style.borderTopWidth !== "0px" ||
+              style.backgroundImage !== "none" ||
+              style.backgroundColor !== "rgba(0, 0, 0, 0)" ||
+              (Boolean(image) && image?.parentElement !== piece)
+            );
+          })(),
+        };
+      });
+  }, selector);
+}
+
+test.describe("Progreso artwork", () => {
+  test.beforeEach(async ({ page }) => {
+    skipUnlessAuthenticatedEnv();
+    await signInAndLandOnDashboard(page);
+  });
+
+  test("draws rank and medal artwork edge to edge, with no frame of the UI's own", async ({ page }) => {
+    for (const [url, selector] of [
+      [LADDER_URL, "figure[data-rank]"],
+      [ALBUM_URL, "figure[data-medal]"],
+    ]) {
+      await page.goto(url);
+      // Only the pieces that actually draw artwork: a catalogue row with no `imageKey` renders the
+      // placeholder glyph, which has no box of its own to compare against.
+      const pieces = (await readPieces(page, selector)).filter((piece) => piece.hasArt);
+      expect(pieces.length).toBeGreaterThan(0);
+
+      // The pieces already carry their own rim, so the ring the UI used to draw was a frame around a
+      // frame — and it cost the art a fifth of its own box, because the plate reserved an inset for
+      // it. Both halves are asserted: the artwork fills the box, and nothing paints a border or a
+      // plate behind it. A unit test sees the classes; only a browser sees the boxes they produce.
+      for (const piece of pieces) {
+        expect(
+          Math.abs(piece.artWidth - piece.width),
+          `${selector} ${piece.key} art is inset from its box`,
+        ).toBeLessThanOrEqual(FULL_BLEED_TOLERANCE_PX);
+        expect(piece.artHeight).toBeCloseTo(piece.artWidth, 0);
+        expect(piece.framed, `${selector} ${piece.key} draws a frame`).toBe(false);
+      }
+    }
+  });
+
+  test("drains a locked piece through a filter that answers to the theme", async ({ page }) => {
+    await page.goto(ALBUM_URL);
+
+    const readByTheme = async (theme: string) => {
+      await page.evaluate((value) => document.documentElement.setAttribute("data-theme", value), theme);
+      const pieces = (await readPieces(page, "figure[data-medal]")).filter((piece) => piece.hasArt);
+      return {
+        locked: pieces.filter((piece) => piece.locked),
+        unlocked: pieces.filter((piece) => !piece.locked),
+      };
+    };
+
+    const light = await readByTheme("light");
+    const dark = await readByTheme("dark");
+
+    // The album has to SAY which pieces are locked before anything can check how they are drawn.
+    expect(light.locked.length, "no medal published `data-locked`").toBeGreaterThan(0);
+    expect(light.unlocked.length, "every medal reads as locked").toBeGreaterThan(0);
+
+    // An earned piece is never touched: a filter here would be the app dimming its own reward.
+    for (const piece of [...light.unlocked, ...dark.unlocked]) {
+      expect(piece.filter, `${piece.key} is earned but filtered`).toBe("none");
+    }
+    // A locked one always is, and the recipe is NOT the same in both themes. `--locked-art-filter`
+    // declared in one theme block and forgotten in the other resolves to `none` there and the album
+    // silently stops distinguishing locked from earned, with nothing failing anywhere else.
+    for (const piece of [...light.locked, ...dark.locked]) {
+      expect(piece.filter, `${piece.key} is locked but undrained`).not.toBe("none");
+    }
+    expect(dark.locked[0].filter).not.toBe(light.locked[0].filter);
   });
 });

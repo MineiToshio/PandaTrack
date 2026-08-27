@@ -3,7 +3,7 @@ import type { CSSProperties } from "react";
 import { RANK_KEYS } from "@/lib/data/progression/rankLadder";
 import { cn } from "@/lib/styles";
 
-/** Which band of the ladder the emblem is drawn in. Maps one to one onto `--rank-band-*`. */
+/** Which band of the ladder the emblem is drawn in. */
 export type RankBand = "conquered" | "current" | "locked" | "top";
 
 /** Emblem sizes, in pixels, matching the surfaces that render a rank. */
@@ -43,13 +43,6 @@ export function resolveRankArtSrc(rankIndex: number): string | null {
   return rankKey ? `${RANK_ART_BASE_PATH}/${rankKey}.png` : null;
 }
 
-const BAND_RING_VAR: Readonly<Record<RankBand, string>> = {
-  conquered: "var(--rank-band-conquered)",
-  current: "var(--rank-band-current)",
-  locked: "var(--rank-band-locked)",
-  top: "var(--rank-band-top)",
-};
-
 const BAND_TEXT_VAR: Readonly<Record<RankBand, string>> = {
   conquered: "var(--rank-band-conquered-text)",
   current: "var(--rank-band-current-text)",
@@ -60,6 +53,10 @@ const BAND_TEXT_VAR: Readonly<Record<RankBand, string>> = {
 export type RankEmblemProps = {
   /** 1-based position in the ladder. Resolves the artwork, and is published as `data-rank`. */
   rankIndex: number;
+  /**
+   * Where the rank sits relative to the collector. Published as `data-band`, and drawn only when it
+   * is `locked`; see the note on the component below for why the other three look alike.
+   */
   band: RankBand;
   size?: RankEmblemSize;
   /**
@@ -71,40 +68,37 @@ export type RankEmblemProps = {
 };
 
 /**
- * The plate a rank is drawn on, everywhere one is rendered.
+ * A rank's artwork, drawn full bleed in the box the caller gives it.
  *
- * The plate holds three things and no more: the rank's own artwork, a ring in the band's token, and
- * the state of that ring. Three deliberate decisions shape it, all of them consequences of the art
- * finally existing:
+ * **There is no plate.** No ring, no disc, no background, no inset. The emblems are finished
+ * illustrations that already carry their own frame — a metal rim, a heater shield, a faceted crest —
+ * so the ring this component used to draw was a second frame around the first one, and it cost the
+ * art a fifth of its own box to do it (owner feedback, 2026-08-26). The artwork now occupies the
+ * whole box, which is both larger and, being the piece's real silhouette rather than a circle, the
+ * shape the illustrator actually drew.
  *
- * 1. **No numeral.** It used to sit in the middle of the plate because there was nothing else to put
- *    there. The artwork occupies exactly that centre now, and a numeral over it would cover the one
- *    thing the emblem is for. Nothing is lost: every surface that draws an emblem already spells the
- *    position out beside it, in words rather than as a bare ordinal (the dashboard widget's `Rango N
- *    de 10` chip, the `Resumen` hero's eyebrow, the celebration's permanence line, and the ladder
- *    itself, which is an ordered list). The numeral survives only as the fallback below.
- * 2. **The ring stays, and becomes the plate's own border.** It is the only place the ladder's state
- *    (conquered, current, locked, summit) is carried on the emblem itself, and the artwork does not
- *    carry it: rank 4 looks the same whether the collector has passed it or not. Merging the old
- *    inner ring into the plate border keeps that state frame while giving the art the whole plate
- *    instead of the disc left inside a second ring.
- * 3. **Locked is the real artwork, desaturated.** The same reading `MedalStage` gives a locked
- *    medal: the piece is visible but drained, so what is waiting up the ladder is legible rather
- *    than hidden. Unlike `MedalStage` it carries no padlock, because a rank plate is drawn as small
- *    as 38 px, where a padlock covers the motif entirely, and because every surface that shows a
- *    locked rank labels it in text on the same row.
+ * **Which means state is not on the emblem any more.** The ring used to be the one place the ladder's
+ * reading (conquered, current, locked, summit) touched the plate, and three of those four now look
+ * identical here on purpose: the artwork of rank 4 is the same piece whether it has been passed or
+ * not, and every surface that draws an emblem already says which it is, in a form that does not
+ * depend on colour (`ADR 0006`) — the ladder rung's accent border and `Estás aquí` pill, its check
+ * and `Conquistado`, the summit's halo and `La cima` tag, the mini ladder's own labels. Re-adding a
+ * coloured ring here would only repeat those, in the one register the art cannot afford to share.
  *
- * The band reaches the ring as a CSS variable, never as a hardcoded colour, so light and dark follow
- * the palette. Nothing here animates: the dashboard instance of this emblem has to stay calm, and a
- * component that animates by default cannot be made calm by its caller without fighting it.
+ * `locked` is the exception, because nothing else can say it: the piece is drawn through
+ * `--locked-art-filter`, the theme-aware "struck but unfinished" recipe (`globals.css` §5c). It
+ * carries no padlock, unlike `MedalStage` — a rank is drawn as small as 38 px, where a padlock covers
+ * the motif entirely, and every surface that shows a locked rank labels it in text on the same row.
+ *
+ * Nothing here animates: the dashboard instance of this emblem has to stay calm, and a component that
+ * animates by default cannot be made calm by its caller without fighting it.
  */
 export default function RankEmblem({ rankIndex, band, size = "md", label, className }: RankEmblemProps) {
   const pixels = EMBLEM_PIXELS[size];
-  const ring = BAND_RING_VAR[band];
   const isLocked = band === "locked";
   const artSrc = resolveRankArtSrc(rankIndex);
 
-  const plateStyle: CSSProperties = {
+  const emblemStyle: CSSProperties = {
     // The `size` prop is the FALLBACK of a custom property the caller may redeclare at a breakpoint
     // (`className="sm:[--rank-emblem-size:148px]"`). Declaring the property here instead would put
     // it in the inline style, which outranks any class, and every responsive emblem would stay
@@ -116,49 +110,44 @@ export default function RankEmblem({ rankIndex, band, size = "md", label, classN
     // content. There, the container's width comes from this emblem while `100%` asks for the
     // container's width: a cycle, which CSS breaks by resolving the percentage against nothing and
     // handing `min()` a zero. The emblem collapsed to 4.6 px on the ladder summit exactly that way
-    // (owner report, 2026-08-26) — the art vanished and the ring around it, sized in absolute
-    // pixels and so immune to the collapse, was left painting on bare card as a stray circle. A
+    // (owner report, 2026-08-26) — the art vanished and the warm aura behind it, sized in absolute
+    // pixels and so immune to the collapse, was left painting on bare card as a red smudge. A
     // percentage `max-width` has no such cycle: it is ignored while the container measures its
     // contents, so the emblem contributes its real size and is only ever capped afterwards, which is
     // all the ceiling was ever for (a narrow rung, a stacked mobile hero).
     width: `var(--rank-emblem-size, ${pixels}px)`,
     maxWidth: "100%",
+    // Squares the box against the width, so `fill` below always has a definite height to resolve
+    // against. Without it `next/image` finds a zero-height parent and warns on every load.
     aspectRatio: "1 / 1",
-    borderColor: ring,
-    boxShadow: isLocked ? "none" : `0 0 24px -14px ${ring}`,
-    background: isLocked
-      ? "var(--surface-elevated)"
-      : `radial-gradient(circle at 50% 30%, color-mix(in oklch, ${ring} 12%, var(--surface-elevated)), var(--surface-elevated) 74%)`,
   };
 
   return (
     <figure
       data-rank={rankIndex}
+      data-band={band}
       role="img"
       aria-label={label}
-      className={cn(
-        // The padding is what keeps the artwork inside the ring. `fill` resolves against the
-        // PADDING box of this figure, so an 8 percent pad is the frame, and `object-contain` keeps
-        // the widest emblem of the set (the winged shield of rank 4, whose wing tips reach the
-        // corners of its own canvas) inside the circle instead of cropping them off.
-        "relative m-0 flex shrink-0 items-center justify-center rounded-full border-2 p-[8%]",
-        className,
-      )}
-      style={plateStyle}
+      className={cn("relative m-0 flex shrink-0 items-center justify-center", className)}
+      style={emblemStyle}
     >
       {artSrc ? (
+        // `object-contain`, so the widest emblem of the set (the winged crest of rank 10, whose wing
+        // tips reach the edges of its own canvas) is drawn whole rather than cropped. The pieces are
+        // authored with their own margin inside a square canvas, which is the breathing room the
+        // inset used to add a second time.
         <Image
           src={artSrc}
           alt=""
           fill
-          // Twice the CSS box, so the plate stays crisp on a 2x screen at its largest breakpoint.
+          // Twice the CSS box, so the art stays crisp on a 2x screen at its largest breakpoint.
           sizes={`${pixels * 2}px`}
-          className={cn("object-contain", isLocked && "opacity-60 grayscale")}
+          className={cn("object-contain", isLocked && "[filter:var(--locked-art-filter)]")}
         />
       ) : (
         // Only reachable for a position off the ten-rung ladder, which the ladder itself cannot
-        // produce. Kept as an honest stand-in rather than an empty plate, so a future eleventh rank
-        // renders as a plate with a numeral instead of silently as a blank disc.
+        // produce. Kept as an honest stand-in rather than an empty box, so a future eleventh rank
+        // renders as a numeral instead of silently as nothing at all.
         <span
           aria-hidden="true"
           className={cn(

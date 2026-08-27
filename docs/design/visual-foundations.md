@@ -255,7 +255,9 @@ The rank ladder (conquered, current, locked, top/cima) needs a state ramp, but n
 
 `--rank-band-locked`'s border itself is decorative framing (like `--border` everywhere else in this system), so it is not held to 3:1 on its own; the lock state is read from the muted label and (per ADR 0006's contract, extended by ADR 0036) an adjacent lock icon, not from the border alone.
 
-`--rank-band-*` is declared in `src/app/globals.css`, once rather than per theme, and shipped with the `Progreso` section's rank ladder. `RankEmblem` (`core/RankEmblem.tsx`) is the only component that consumes the family directly.
+`--rank-band-*` is declared in `src/app/globals.css`, once rather than per theme, and shipped with the `Progreso` section's rank ladder. `RankLadder` consumes it for the rung's leading band strip and its state labels; `RankEmblem` keeps only the `*-text` half, for the numeral it falls back to off the ladder. The emblem itself stopped consuming the ring half on 2026-08-26, when the plate around the artwork was removed: the ladder's state now lives in the rung's own chrome and words, never as a ring on the art (see `components.md` -> `RankEmblem`).
+
+**`--locked-art-filter`** (§5c of `globals.css`) is the sibling token that recipe left behind: the `filter` a rank emblem or a medal is drawn with while it is not earned. It is a token and not a utility class for one reason — the recipe has to differ per theme, and a `filter` is a thing no colour variable can carry. Both values express the same idea against two grounds: saturation gone, **contrast kept**, so the piece reads as raw metal rather than as a washed-out smudge. Dropping the contrast, or dimming with `opacity`, is what made the previous `grayscale(1) opacity(.6)` look dead. It is never the only carrier of the state (`ADR 0006`): the word `"Bloqueado"`, a padlock chip, or both, always sit with it.
 
 #### Focus and state layers
 

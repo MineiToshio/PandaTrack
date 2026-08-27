@@ -128,8 +128,8 @@ export function ProgressionFeedbackProvider({
     }
   }, [progressionVisible]);
 
-  // Sized by the caller: `MedalStage` draws at `min(size, 100%)` so it can fit a narrow grid cell,
-  // and the toast's media slot has no intrinsic width to resolve that against.
+  // Sized by the caller: the stage's `max-width: 100%` ceiling exists for the narrow grid cell, and
+  // the toast's media slot has no width of its own for that percentage to resolve against.
   const renderToastMedia = useCallback(
     (medal: MedalUnlockSummary, medalName: string, rarityLabel: string) => (
       <span className="block w-[72px]">

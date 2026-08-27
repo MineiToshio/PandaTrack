@@ -149,9 +149,11 @@ describe("RankLadder", () => {
     const { container, rerender } = render(<RankLadder {...ladderProps} />);
     const summitEmblem = () => container.querySelector<HTMLElement>('figure[data-rank="10"]')!;
 
-    // Unreached: a locked rung like any other, desaturated art and the locked ring.
-    expect(summitEmblem().style.borderColor).toBe("var(--rank-band-locked)");
-    expect(summitEmblem().querySelector("img")?.className).toContain("grayscale");
+    // Unreached: a locked rung like any other, its art drained by the same token every other locked
+    // rank gets. Leaving it on `top` printed rank 10 in full colour directly above a drained rank 9,
+    // which reads as rank 9 being the lesser piece rather than as the summit being unearned.
+    expect(summitEmblem().dataset.band).toBe("locked");
+    expect(summitEmblem().querySelector("img")?.className).toContain("[filter:var(--locked-art-filter)]");
 
     rerender(
       <RankLadder
@@ -165,8 +167,25 @@ describe("RankLadder", () => {
       />,
     );
 
-    expect(summitEmblem().style.borderColor).toBe("var(--rank-band-top)");
-    expect(summitEmblem().querySelector("img")?.className).not.toContain("grayscale");
+    expect(summitEmblem().dataset.band).toBe("top");
+    expect(summitEmblem().querySelector("img")?.className).not.toContain("filter");
+  });
+
+  it("marks the current rung in chrome and in words, now that the emblem carries no ring", () => {
+    const { container } = render(<RankLadder {...ladderProps} />);
+    const currentRung = getFlatRungs()[10 - CURRENT_RANK_INDEX];
+    const conqueredRung = getFlatRungs()[10 - (CURRENT_RANK_INDEX - 1)];
+
+    // The emblem used to carry the ladder's state as a coloured ring. It does not any more (the art
+    // owns its whole box), so this rung has to be unmistakable on its own. Four carriers, none of
+    // them colour alone (`ADR 0006`): an accent border, the "You are here" line, the progress bar
+    // that no other rung has, and the scroll anchor.
+    expect(currentRung.className).toContain("[border:1.5px_solid_var(--accent)]");
+    expect(conqueredRung.className).not.toContain("var(--accent)");
+    expect(currentRung).toHaveTextContent("You are here");
+    expect(within(currentRung).getByRole("progressbar")).toBeTruthy();
+    expect(container.querySelectorAll('[role="progressbar"]')).toHaveLength(1);
+    expect(currentRung).toHaveAttribute("data-rank-current", "true");
   });
 
   it("centers the summit aura on the emblem it belongs to, not with auto margins", () => {
