@@ -319,7 +319,8 @@ version ran the radial full-height and near-full-width behind the whole rung (`1
 at that size it read as a warm-red stain across the card rather than as light coming off the summit,
 especially in light theme where the pale surface let the full-strength hue show through. The halo now
 sits in a fixed `150px` circle centered behind the `RankEmblem` alone (`20%` mix, `closest-side`
-feather), rendered before the emblem in the DOM so the plate's own art paints on top of it. This
+feather, centered with a translate rather than auto margins, see §3.3), rendered before the emblem in
+the DOM so the plate's own art paints on top of it. This
 reads as an aura on the piece itself in both themes instead of a background tint, and it does not
 touch `--accent-warm` or any other consumer of `--rank-band-top` (the emblem ring, the trophy glyph,
 the card border): only the wash behind the summit rung changed.
@@ -787,6 +788,36 @@ being the lesser piece rather than as the summit being unearned. The summit now 
 it is reached and is a locked rung like any other until then; the rung around it keeps the halo and
 the `"La cima"` tag either way.
 
+**How the plate is sized, and why it is a rule rather than a detail (2026-08-26).** The emblem takes
+a **definite width** (`var(--rank-emblem-size, <size>)`) with a **separate `max-width: 100%`**
+ceiling, and it insets its artwork with an **absolutely positioned concentric square** (`inset: 8%`),
+never with padding. Both halves are load-bearing, and both were learned from the same owner report:
+
+- `width: min(<size>, 100%)` reads as a harmless ceiling and behaves as one inside a container of
+  known width, but not inside a **shrink-to-fit** one. On the summit the plate sits in a centered
+  `flex` box (added to hold the aura), whose width is derived from the plate while the plate's `100%`
+  asks for the box's width. CSS breaks that cycle by handing `min()` a zero, and the 84 px plate
+  rendered at **4.6 px**: the rank 10 artwork simply was not there. A percentage `max-width` has no
+  cycle, because it is ignored while a container measures its contents. This is the same failure the
+  responsive-notes bullet below already records ("collapsed the emblem to a couple of pixels"),
+  returning by a different route, so the shape of the declaration is the rule, not the callsite.
+- Padding on the plate could never draw the frame it claimed to: `next/image`'s `fill` positions the
+  image against the plate's **padding box**, so the image was laid over that padding rather than kept
+  out of it. Worse, a percentage padding resolves against the **containing block**, so `p-[8%]` on a
+  950 px-wide rung asked for 76 px a side and, through `min-width: auto`, inflated the 56 px rung
+  plate to **172 px** and the 148 px `Resumen` hero to 170 px. Sizes across the whole section were
+  quietly wrong; the table above is what the section renders now.
+
+**The summit aura is centered with a translate, never with `inset-0` + auto margins (2026-08-26).**
+The aura is deliberately **wider** than the plate it sits behind, and auto margins are forbidden from
+resolving negative on the **inline** axis (CSS 2.1 §10.3.7): asked to center a 150 px circle in an
+84 px box, the browser pins it left and hangs the whole surplus off the right. It therefore sat
+beside the rank name instead of behind the emblem, reading in the light theme as exactly the warm-red
+smudge the rescoping above was meant to remove. The block axis has no such rule, which is why it
+looked correct vertically and wrong horizontally. `top-1/2 left-1/2` plus `-translate-x-1/2
+-translate-y-1/2` centers it on both axes at any size. Any future decor drawn larger than the element
+it belongs to inherits this constraint.
+
 **Surfaces (corrected 2026-08-25).** Every leaf card in this section sits directly on the app canvas
 (`--background`), so it takes the `elevated` `Card` variant, not `outlined`. `outlined` paints
 `--surface`, which in the dark theme lands **1.023:1** against the canvas — the cards were there and
@@ -969,7 +1000,15 @@ the real nav on the strength of the prototype alone.
 - **`Progreso` tab bar**: three tabs never need horizontal scroll at any supported width; the item
   uses `--text-caption` at both sizes rather than the prototype's 13px / 12.5px pair, which is off
   the type scale. (This is the in-page `Resumen`/`Medallas`/`Rangos` `Tabs` module, unrelated to
-  the prototype-only bottom `.tabbar` above.)
+  the prototype-only bottom `.tabbar` above.) The bar's rule is an **inset box-shadow** and its
+  items carry **no negative margin** (`Tabs`, `underline` recipe, corrected 2026-08-26). The bar
+  keeps `overflow-x-auto` for bars of many tabs, and that makes it a scroll container in **both**
+  axes, because CSS gives an element whose other axis is `visible` an implied `auto`. The usual
+  `-mb-px` on the items — the trick for pulling the active underline over the bar's own `border-b`
+  — hung one pixel past the scrollport, and Chrome answered with a full vertical scrollbar down the
+  side of a 44px tab bar, stealing its width and clipping the last pixel of that same underline. An
+  inset shadow paints the rule inside the box with nothing to overhang, and the active item's own
+  `border-b-2` covers it (a parent's inset shadow paints beneath its descendants).
 - **Resumen hero**: `RankEmblem e-xl` (148px) desktop; centered, stacked, `e-lg` (120px) on
   mobile, where the points figure also reorders to sit directly under the emblem instead of at
   the foot of the card.

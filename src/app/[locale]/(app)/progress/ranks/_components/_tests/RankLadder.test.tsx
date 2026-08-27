@@ -168,4 +168,21 @@ describe("RankLadder", () => {
     expect(summitEmblem().style.borderColor).toBe("var(--rank-band-top)");
     expect(summitEmblem().querySelector("img")?.className).not.toContain("grayscale");
   });
+
+  it("centers the summit aura on the emblem it belongs to, not with auto margins", () => {
+    const { container } = render(<RankLadder {...ladderProps} />);
+    const summitEmblem = container.querySelector<HTMLElement>('figure[data-rank="10"]')!;
+    const aura = summitEmblem.previousElementSibling as HTMLElement;
+
+    // The aura is deliberately wider than the plate, and `inset-0` + `m-auto` cannot center a box
+    // wider than its container on the INLINE axis: auto margins are forbidden from resolving
+    // negative there, so the browser pins it left and hangs the whole surplus off the right. That
+    // is how it came to read as a red smudge beside the summit's name rather than as light behind
+    // its emblem, while looking perfectly centered vertically, where CSS has no such rule.
+    expect(aura.className).not.toContain("m-auto");
+    expect(aura.className).toContain("-translate-x-1/2");
+    expect(aura.className).toContain("-translate-y-1/2");
+    // Before the emblem in document order, so the plate's own art paints over it.
+    expect(aura.nextElementSibling).toBe(summitEmblem);
+  });
 });

@@ -45,14 +45,24 @@ type TabsProps = {
 
 const CONTAINER_CLASSNAMES: Record<TabsVariant, string> = {
   segmented: "bg-muted/45 inline-flex w-full flex-wrap gap-1 rounded-2xl p-1",
-  underline: "border-border flex w-full items-stretch gap-[var(--space-4)] overflow-x-auto border-b",
+  // The bar's rule is an INSET SHADOW, not `border-b`, and the items below carry no negative
+  // margin. The pair is deliberate and has to stay a pair. `overflow-x-auto` (there so a bar of many
+  // tabs can scroll on a phone) makes this a scroll container in BOTH axes: CSS gives an element
+  // whose other axis is `visible` an implied `auto`. A `-mb-px` on the items, the usual trick for
+  // pulling the active underline over the bar's own border, then pushed their bottom edge one pixel
+  // past the scrollport and Chrome answered with a full vertical scrollbar beside a 44 px tab bar
+  // (owner report, 2026-08-26) — which also stole its width and clipped the last pixel of the
+  // active underline. An inset shadow paints the same one-pixel rule inside the box, so there is
+  // nothing to overhang: the active item's own `border-b-2` covers it (a parent's inset shadow
+  // paints under its descendants) and no axis overflows.
+  underline: "flex w-full items-stretch gap-[var(--space-4)] overflow-x-auto [box-shadow:inset_0_-1px_0_var(--border)]",
 };
 
 const ITEM_BASE_CLASSNAMES: Record<TabsVariant, string> = {
   segmented:
     "inline-flex min-h-11 flex-1 items-center justify-center rounded-xl px-4 py-2.5 text-base font-semibold transition-all sm:text-[1.0625rem]",
   underline: cn(
-    "-mb-px inline-flex min-h-11 items-center justify-center border-b-2 whitespace-nowrap transition-colors",
+    "inline-flex min-h-11 items-center justify-center border-b-2 whitespace-nowrap transition-colors",
     "px-[var(--space-2)] py-[var(--space-2)] [font-size:var(--text-caption)] [font-weight:var(--font-weight-semibold)]",
   ),
 };

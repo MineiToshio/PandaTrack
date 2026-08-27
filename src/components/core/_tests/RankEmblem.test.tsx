@@ -1,3 +1,5 @@
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import RankEmblem, { resolveRankArtSrc, type RankBand } from "@/components/core/RankEmblem";
@@ -65,7 +67,33 @@ describe("RankEmblem", () => {
     // The fallback carries the size; a caller raising `--rank-emblem-size` at a breakpoint has to
     // win, which an inline width would never let it do.
     expect((screen.getByRole("img", { name: "l" }) as HTMLElement).style.width).toBe(
-      "min(var(--rank-emblem-size, 148px), 100%)",
+      "var(--rank-emblem-size, 148px)",
     );
+  });
+
+  it("takes its ceiling from `max-width`, never from a percentage inside the width itself", () => {
+    render(<RankEmblem rankIndex={1} band="current" size="md" label="l" />);
+    const emblem = screen.getByRole("img", { name: "l" }) as HTMLElement;
+
+    // The regression this pins: `width: min(<size>, 100%)`. It reads as a harmless ceiling and
+    // behaves as one in a container of known width, but in a SHRINK-TO-FIT container the percentage
+    // asks for a width the container is still deriving from this very element. CSS breaks the cycle
+    // by handing `min()` a zero, and the emblem collapses — 84px became 4.6px on the ladder summit,
+    // silently, with the artwork gone and the ring around it left painting on bare card.
+    expect(emblem.style.width).not.toContain("%");
+    expect(emblem.style.maxWidth).toBe("100%");
+    // Both axes definite the moment the width is, or `fill` finds a zero-height parent.
+    expect(emblem.style.aspectRatio).toBe("1 / 1");
+  });
+
+  it("points every rung of the ladder at a file that actually exists in public/ranks", () => {
+    // The path is convention alone, so a rank whose art nobody dropped in ships a blank box with no
+    // error anywhere: the request 404s and `next/image` renders nothing. Only a check against the
+    // filesystem can see that, and the types certainly cannot.
+    const missing = RANK_KEYS.filter(
+      (rankKey) => !existsSync(join(process.cwd(), "public", "ranks", `${rankKey}.png`)),
+    );
+
+    expect(missing).toEqual([]);
   });
 });

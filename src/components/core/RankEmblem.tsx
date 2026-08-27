@@ -110,9 +110,19 @@ export default function RankEmblem({ rankIndex, band, size = "md", label, classN
     // it in the inline style, which outranks any class, and every responsive emblem would stay
     // silently pinned to its base size — a bug that produced no error and no warning.
     //
-    // The `min()` is a ceiling rather than a fixed square: in a narrow rung or a stacked mobile hero
-    // the slot is smaller than the nominal size, and a fixed width would simply overflow it.
-    width: `min(var(--rank-emblem-size, ${pixels}px), 100%)`,
+    // A DEFINITE width with a separate `max-width` ceiling, never `min(<size>, 100%)`. The two read
+    // the same and behave the same in a container of known width, but they part company in a
+    // shrink-to-fit one — a centered `flex` box, a `fit-content` column, a grid track sized to its
+    // content. There, the container's width comes from this emblem while `100%` asks for the
+    // container's width: a cycle, which CSS breaks by resolving the percentage against nothing and
+    // handing `min()` a zero. The emblem collapsed to 4.6 px on the ladder summit exactly that way
+    // (owner report, 2026-08-26) — the art vanished and the ring around it, sized in absolute
+    // pixels and so immune to the collapse, was left painting on bare card as a stray circle. A
+    // percentage `max-width` has no such cycle: it is ignored while the container measures its
+    // contents, so the emblem contributes its real size and is only ever capped afterwards, which is
+    // all the ceiling was ever for (a narrow rung, a stacked mobile hero).
+    width: `var(--rank-emblem-size, ${pixels}px)`,
+    maxWidth: "100%",
     aspectRatio: "1 / 1",
     borderColor: ring,
     boxShadow: isLocked ? "none" : `0 0 24px -14px ${ring}`,

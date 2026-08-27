@@ -248,9 +248,16 @@ function LadderRung({ entry, state, totalPoints, isSummit, className, progress }
               colour. Rendered before the emblem in the DOM so the plate's own art paints on top of
               it (both are positioned, so paint order follows document order). */}
           <div className="relative flex items-center justify-center">
+            {/* Centered with `left-1/2` plus a translate, NOT with `inset-0 m-auto`. The aura is
+                deliberately WIDER than the plate it sits behind, and auto margins refuse to go
+                negative on the inline axis (CSS 2.1 §10.3.7): asked to center a 150px circle in an
+                84px box they pin it left and let the whole difference hang off the right, which is
+                how the aura came to sit beside the summit's name as a detached red smudge rather
+                than behind its emblem (owner report, 2026-08-26). The block axis has no such rule,
+                which is why it looked vertically right and horizontally wrong. */}
             <span
               aria-hidden="true"
-              className="pointer-events-none absolute inset-0 m-auto size-[150px] rounded-full [background:radial-gradient(closest-side,color-mix(in_oklch,var(--rank-band-top)_20%,transparent),transparent_78%)]"
+              className="pointer-events-none absolute top-1/2 left-1/2 size-[150px] -translate-x-1/2 -translate-y-1/2 rounded-full [background:radial-gradient(closest-side,color-mix(in_oklch,var(--rank-band-top)_20%,transparent),transparent_78%)]"
             />
             <RankEmblem
               rankIndex={entry.rankIndex}

@@ -230,9 +230,9 @@ export default function ProgressionCelebration({
           {t("celebration.rank.kicker")}
         </p>
         {/*
-          Both plates are sized by this row, not by themselves: `RankEmblem` draws at
-          `min(size, 100%)` so it can fit a narrow rung, and a flex row gives its children no
-          width to resolve that against, which collapses them to nothing.
+          Both emblems are sized by this row, not by themselves. The emblem carries a
+          `max-width: 100%` ceiling for the narrow rung it also has to fit, and a flex row gives its
+          children no width for that percentage to resolve against.
         */}
         <div className="flex items-center justify-center gap-3">
           <span className="block w-14 shrink-0">
