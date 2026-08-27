@@ -86,6 +86,7 @@ Three constraints shape every visual decision here:
 | 7a  | Global · full-screen celebration, medal variant   | (overlay, any authenticated screen)    | `#p7`            |
 | 7b  | Global · full-screen celebration, rank-up variant | (overlay, any authenticated screen)    | `#p7`            |
 | 8   | Medal detail · event / numbered variant           | `/{locale}/progress/medals/[medalKey]` | `#p8`            |
+| 9   | Progreso · Resumen · rules explainer (subview)    | `/{locale}/progress/how-it-works`      | none, see §2.9   |
 
 The prototype's `#p0` is a **structural map, not a shipped screen** — a diagram of how the
 `Progreso` entry fans out into its three tabs, where the medal detail subview hangs off
@@ -93,8 +94,8 @@ The prototype's `#p0` is a **structural map, not a shipped screen** — a diagra
 is cited here only as the reading order for this document, not as a ninth anchor to
 implement.
 
-Requirements traced throughout: `FR-12-01 … FR-12-47`, `BR-12-01 … BR-12-21`,
-`AC-12-01 … AC-12-16` (see [`frd-12-collector-progression.md`](./frd-12-collector-progression.md),
+Requirements traced throughout: `FR-12-01 … FR-12-48`, `BR-12-01 … BR-12-22`,
+`AC-12-01 … AC-12-17` (see [`frd-12-collector-progression.md`](./frd-12-collector-progression.md),
 `DRAFT` at the time of this FDD and `ACTIVE` since `WO-07` closed). Its Implementation Notes call
 for six ADRs numbered from `0035`. All six now exist and are accepted:
 [`0035`](../../../design/decisions/0035-collector-progression-point-ledger.md) (the point ledger),
@@ -616,6 +617,40 @@ The permanence-of-unavailability sentence in the banner is the user-facing face 
 ("an event window is absolute") — keep it verbatim; do not soften it into something that implies
 a future reopening.
 
+### 2.9 Rules explainer subview (no prototype anchor)
+
+Shipped after the prototype was drawn (2026-08-26, `FR-12-48`), so it has no `#p` anchor. Route
+`/{locale}/progress/how-it-works`, one level under the section, which keeps the tab bar's own
+`Resumen` marked while it is open exactly as the medal detail keeps `Medallas` marked.
+
+```
+BackNavLink "← Volver al resumen"
+header
+  Eyebrow "Progreso"
+  h1 (font-display, --text-title) "Cómo funciona la progresión"
+  p.lead (max-width 64ch) one sentence: what the layer rewards
+guide grid (1 col; 2 cols from lg)
+  6 × card.elevated, equal height
+    header: tonal icon circle 36px (accent 14 % mix, the Modal's recipe at a smaller size)
+            + h2 (--text-body, semibold) = the rule
+    p = what the rule does
+    p.muted (rule above it, pushed to the card foot) = why the rule exists
+card.subtle dashed "soon" — Users icon + "Nadie te compara con nadie"
+```
+
+Three decisions worth keeping:
+
+- **Not a fourth tab, and not a modal.** A tab would rank the rulebook with the album and the
+  ladder, which are read every visit; a modal would make a page of prose unlinkable and would turn
+  into a full-height scrolling sheet on mobile. The entry is the quiet inline accent link on the
+  `Resumen` card footer, beside the honesty line (§2.3), matching the settings/dashboard inline-link
+  recipe rather than a `Button`.
+- **Every card carries its reason.** The muted foot line is not decoration and is not optional in the
+  data shape: a rule with no reason reads as a decree, and the two rules that generated real
+  confusion (deferred credit, the store gate) are exactly the ones whose reason does the work.
+- **Two columns from `lg`, one below.** Six single-column cards push the last rule off a screen whose
+  whole promise is that it reads in a minute.
+
 ---
 
 ## 3. Visual treatment
@@ -1018,6 +1053,9 @@ Key strings (es), by surface and tone:
 | Unlock toast kicker               | celebratory-restrained  | `"Medalla desbloqueada"`                                                                                                                                                                                                                                                                                                                                                  |
 | Rank-up celebration sub           | celebratory, reassuring | `"{lore} Rango N de 10, y este no se pierde nunca."`                                                                                                                                                                                                                                                                                                                      |
 | First-run empty                   | encouraging             | `"Todavía no tienes puntos. Registra tu primer pedido y empieza."`                                                                                                                                                                                                                                                                                                        |
+| Rules explainer, entry link       | quiet, unpushy          | `"Cómo funciona"` (§2.9, `FR-12-48`)                                                                                                                                                                                                                                                                                                                                      |
+| Rules explainer, deferred credit  | plain, de-dramatising   | `"No es un error ni un retraso: un pedido sin ningún pago anotado todavía es una intención. El primer pago es lo que lo vuelve real."` (`BR-12-13`)                                                                                                                                                                                                                       |
+| Rules explainer, reserved figures | candid                  | `"Los números exactos no se publican, justamente para que no se puedan optimizar."` (`BR-12-22`)                                                                                                                                                                                                                                                                          |
 
 Per [ux-copy.md § 2.1](../../../design/ux-copy.md), success/achievement moments are the one
 register allowed **one** celebratory emoji and `--ease-bounce`. The prototype's own copy uses

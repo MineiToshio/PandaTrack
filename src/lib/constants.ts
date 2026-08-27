@@ -54,6 +54,7 @@ export const ROUTES = {
   progress: "/progress",
   progressMedals: "/progress/medals",
   progressRanks: "/progress/ranks",
+  progressHowItWorks: "/progress/how-it-works",
   admin: "/admin",
   adminAudit: "/admin/audit",
   adminProgression: "/admin/progression",
@@ -365,6 +366,11 @@ export const POSTHOG_EVENTS = {
     PROGRESS_TAB_CHANGED: "progress_tab_changed",
     /** The rank ladder became visible. Carries `current_rank_index`. */
     PROGRESS_RANK_LADDER_VIEWED: "progress_rank_ladder_viewed",
+    /**
+     * The rules explainer opened. Carries no property at all: the page is the same for every
+     * collector, and the only question it answers is how many people ever look for the rules.
+     */
+    PROGRESS_HOW_IT_WORKS_VIEWED: "progress_how_it_works_viewed",
     /** The dashboard's rank widget clicked through. Carries `current_rank_index`. */
     PROGRESS_WIDGET_CLICKED: "progress_widget_clicked",
     /**

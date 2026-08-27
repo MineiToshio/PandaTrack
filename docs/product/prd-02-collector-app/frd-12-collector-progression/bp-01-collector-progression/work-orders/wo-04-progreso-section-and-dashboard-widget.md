@@ -9,7 +9,7 @@ source_features:
   - FEAT-0021
 source_issue: 143
 implementation_status: IN_PROGRESS
-last_updated: 2026-08-23
+last_updated: 2026-08-26
 ---
 
 # WO-04 Progreso Section and Dashboard Widget
@@ -49,6 +49,7 @@ Ship the collector-facing `Progreso` section: the route, its three tabs (`Resume
 - `FR-12-39` (disabled comparison placeholder)
 - `FR-12-40` (honest empty state)
 - `FR-12-41` (permanent honesty line)
+- `FR-12-48` (the rules explainer, a subview of `Resumen` reached from a quiet inline link beside the honesty line; added 2026-08-26)
 - `FR-06-15` (dashboard stays read-only)
 - `BR-12-02` (one collector's data is never shown to another; every query here is scoped to the session `userId`, with no user parameter anywhere in the route contract)
 - `BR-12-10` (no streaks/leagues/annual goals rendered)
@@ -93,6 +94,7 @@ Recorded during implementation, so the next reader does not have to diff the cod
 - **The ladder's spine is a per-rung band strip**, not the prototype's absolutely-positioned timeline with dots. The prototype's offsets are hand-tuned pixel values that break inside the mobile disclosure and at 320px; a 3px strip on each rung's leading edge, painted with the rung's own `--rank-band-*` token, carries the same information at every width.
 - **The mobile disclosure renders its collapsed band twice**, once inside `<details>` (`md:hidden`) and once flat (`hidden md:flex`), because CSS cannot force a `<details>` open at a breakpoint. Exactly one is displayed at any width, and every threshold stays reachable either way (`FR-12-33`).
 - **A held secret medal is named on every surface**, including the dashboard tick row, matching the album's own `isMedalRevealed` rule: secrecy ends at the unlock (`FR-12-25`), and a second, stricter rule for the same medal on one surface would be a bug waiting to be reported as one.
+- **The rules explainer shipped as a subview, not a fourth tab** (2026-08-26, `FR-12-48`, `BR-12-22`). `/{locale}/progress/how-it-works` renders six cards, each stating one rule and, beneath it, the reason that rule exists; the way in is a quiet inline accent link in the `Puntos de este mes` card footer, beside the honesty line. A tab was rejected because it would rank a document read once with the album and the ladder, which are read every visit; a modal was rejected because a page of prose has to be linkable and would become a full-height scrolling sheet on mobile. The page loads no collector data, so it needs no query, no cache and no state. What it publishes is the rule and its reason; every figure of the point table stays reserved, guarded by `howItWorksCopy.test.ts`, which fails on any digit under `progress.howItWorks`. The block catalogue lives in `_utils/howItWorksBlocks.ts` so adding a seventh rule has to bring its copy in both locales.
 - **`applyCapsDetailed` was added to `recompute.ts`** so the monthly breakdown can report what each entry actually contributed. `applyCaps` now delegates to it, so there is still exactly one cap implementation.
 
 ## Security Notes
@@ -112,6 +114,7 @@ Recorded during implementation, so the next reader does not have to diff the cod
 - `progress_viewed`: fired on `/progress` render, carries `{ active_tab }`.
 - `progress_tab_changed`: fired when the `tab` URL param changes, carries `{ from_tab, to_tab }`.
 - `progress_rank_ladder_viewed`: fired when the `"Rangos"` tab's ladder becomes visible (tab activation, not scroll), carries `{ current_rank_index }`.
+- `progress_how_it_works_viewed`: fired once per mount of the rules explainer, with no properties. The page is identical for every collector, so the only thing worth counting is how often anybody goes looking for the rules.
 - `progress_widget_clicked`: fired on the dashboard widget's click-through, carries `{ current_rank_index }`, consistent with other dashboard zone-link events (`dashboard_top_store_cta_clicked`, `dashboard_reconcile_cta_clicked`) already using `data-ph-event`/`data-ph-props`.
 - The existing `app_shell_nav_clicked` event already fires for every primary nav entry (`AppNavDrawer.tsx`, `Sidebar.tsx`) with `{ destination, navigation_level }`; the new `"progress"` `NavItemId` is covered automatically once added to `navigationConfig.ts`, no new event needed for the nav click itself.
 
@@ -141,35 +144,46 @@ Recorded during implementation, so the next reader does not have to diff the cod
 
 ### `progressTabs.test.ts`
 
-| Scenario                                | Expected                                          |
-| --------------------------------------- | ------------------------------------------------- |
-| `/{locale}/progress`                    | resolves to `"summary"` (default)                 |
-| `/{locale}/progress/ranks`              | resolves to `"ranks"`                             |
-| `/{locale}/progress/medals`             | resolves to `"medals"`                            |
-| `/{locale}/progress/medals/[medalKey]`  | still resolves to `"medals"` (the parent tab)     |
-| An unknown segment                      | falls back to `"summary"`, never throws           |
-| Building an href for the default tab    | writes no segment of its own, `/{locale}/progress` |
-| Building an href for a non-default tab  | writes `/{locale}/progress/<segment>`             |
-| Round trip                              | every href it builds resolves back to its own tab |
+| Scenario                               | Expected                                           |
+| -------------------------------------- | -------------------------------------------------- |
+| `/{locale}/progress`                   | resolves to `"summary"` (default)                  |
+| `/{locale}/progress/ranks`             | resolves to `"ranks"`                              |
+| `/{locale}/progress/medals`            | resolves to `"medals"`                             |
+| `/{locale}/progress/medals/[medalKey]` | still resolves to `"medals"` (the parent tab)      |
+| An unknown segment                     | falls back to `"summary"`, never throws            |
+| Building an href for the default tab   | writes no segment of its own, `/{locale}/progress` |
+| Building an href for a non-default tab | writes `/{locale}/progress/<segment>`              |
+| Round trip                             | every href it builds resolves back to its own tab  |
 
 ### `getProgressSummary` (integration-level, `progressionQueries.test.ts`)
 
-| Scenario                                | Expected                                                                                    |
-| --------------------------------------- | ------------------------------------------------------------------------------------------- |
-| Cached row present                      | the cached total and rank are reported, never a total re-derived behind the collector's back |
-| Bar between two thresholds              | progress is measured across the current rung, not from zero                                 |
-| An entry in an older civil month        | counted in the total, absent from this month's breakdown                                    |
-| A points cap truncating the last entry  | the breakdown reports the CREDITED figure, not the face value                                |
-| Zero ledger entries                     | `hasPoints` is `false`, so the page renders the empty state rather than a zero-value layout |
-| `lastRecomputedAt` older than 6 hours   | `stale` is `true`, which is what schedules `after(() => recomputeUserProgress(...))`        |
-| `lastRecomputedAt` within 6 hours       | `stale` is `false`, no recompute scheduled                                                  |
-| Current rank below 6                    | `meritLock` is `null`                                                                       |
-| Current rank 6+                         | `meritLock` points at the next merit-locked rank above, with its live denominator           |
+| Scenario                               | Expected                                                                                     |
+| -------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Cached row present                     | the cached total and rank are reported, never a total re-derived behind the collector's back |
+| Bar between two thresholds             | progress is measured across the current rung, not from zero                                  |
+| An entry in an older civil month       | counted in the total, absent from this month's breakdown                                     |
+| A points cap truncating the last entry | the breakdown reports the CREDITED figure, not the face value                                |
+| Zero ledger entries                    | `hasPoints` is `false`, so the page renders the empty state rather than a zero-value layout  |
+| `lastRecomputedAt` older than 6 hours  | `stale` is `true`, which is what schedules `after(() => recomputeUserProgress(...))`         |
+| `lastRecomputedAt` within 6 hours      | `stale` is `false`, no recompute scheduled                                                   |
+| Current rank below 6                   | `meritLock` is `null`                                                                        |
+| Current rank 6+                        | `meritLock` points at the next merit-locked rank above, with its live denominator            |
+
+### Rules explainer (`HowItWorksLink.test.tsx`, `HowItWorksGuide.test.tsx`, `howItWorksCopy.test.ts`)
+
+| Scenario                                              | Expected                                                                        |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------- |
+| The entry link rendered for a locale                  | href is `/{locale}/progress/how-it-works`, never the unprefixed path            |
+| The trailing arrow of the entry link                  | stays out of the link's accessible name                                         |
+| The guide rendered with the six blocks                | six level-2 headings, each followed by what the rule does and why it exists     |
+| A block's glyph                                       | hidden from the accessible name of its heading                                  |
+| Explainer copy, both locales                          | every block declared by the surface has `title`, `body` and `why`               |
+| Any digit or percent sign under `progress.howItWorks` | fails: the page publishes rules and reasons, never the point table (`BR-12-22`) |
 
 ### Navigation gate (`navigationConfig.test.ts`, `AppNavDrawer.test.tsx`)
 
-| Scenario                       | Expected                                                                       |
-| ------------------------------ | ------------------------------------------------------------------------------ |
-| Default visibility             | `progress` is appended last, no existing entry reordered or demoted            |
-| `showProgression: false`       | the entry is dropped entirely, the other four (five with `settings`) unchanged |
-| Drawer with the layer hidden   | no `Progreso` link rendered, the rest of the primary nav untouched             |
+| Scenario                     | Expected                                                                       |
+| ---------------------------- | ------------------------------------------------------------------------------ |
+| Default visibility           | `progress` is appended last, no existing entry reordered or demoted            |
+| `showProgression: false`     | the entry is dropped entirely, the other four (five with `settings`) unchanged |
+| Drawer with the layer hidden | no `Progreso` link rendered, the rest of the primary nav untouched             |

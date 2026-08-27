@@ -19,7 +19,7 @@ implementation_status: IN_PROGRESS
 
 Define the personal progression layer that sits on top of what the collector already does in PandaTrack: registering orders, logging payments, receiving deliveries, discovering stores and keeping product records complete. Every server-verifiable fact appends an entry to a points ledger; the balance is **derived** from those entries; the accumulated total drives a **permanent private rank**; and, in parallel, the collector fills a **medal album** of 28 collectible pieces that grant status and never grant points.
 
-This FRD covers **phase 1 and phase 2** of the approved direction: the points engine, the ten-rank ladder, the full 28-piece medal album with its rarity model, and the four surfaces that expose them (the `Progreso` section with its three tabs, the medal detail subview, the dashboard widget, and the global unlock feedback). The data model is also prepared for **time-limited events** (phase 3), but no administration UI for them is in scope here. Comparison between collectors (a leaderboard, a public profile, a shareable card that names other people) is **out of scope** and is deferred to a future FRD gated on hard preconditions.
+This FRD covers **phase 1 and phase 2** of the approved direction: the points engine, the ten-rank ladder, the full 28-piece medal album with its rarity model, and the surfaces that expose them (the `Progreso` section with its three tabs, the medal detail subview, the rules explainer subview, the dashboard widget, and the global unlock feedback). The data model is also prepared for **time-limited events** (phase 3), but no administration UI for them is in scope here. Comparison between collectors (a leaderboard, a public profile, a shareable card that names other people) is **out of scope** and is deferred to a future FRD gated on hard preconditions.
 
 ## Domain Goal
 
@@ -228,6 +228,10 @@ As a collector, I want to be certain that no amount of money I enter, anywhere, 
 
 - `FR-12-47`: The full-screen celebration of `FR-12-36`/`FR-12-37` fires for exactly two triggers, and no other: a rank-up (`FR-12-37`), and a medal unlock whose rarity is **Holográfica** or **Firmada**, the two highest tiers of the print-run ramp (`FR-12-21`). A medal unlock at the other three tiers (Tirada normal, Primera edición, Edición limitada) is announced only by the unlock toast (`FR-12-36`); it never escalates to the full-screen surface. The medal variant follows the same canonical modal pattern as the rank-up variant, not a separate overlay system, and is dismissed the same way (`FR-12-37`).
 
+### The rules explainer
+
+- `FR-12-48`: The `"Resumen"` tab must offer a way to read **how the progression works**, in plain copy, at `/{locale}/progress/how-it-works`. It is a **subview of `"Resumen"`**, never a fourth tab: a tab would give the rulebook the standing of the album and the ladder, which are read on every visit, where the rules are read once. The entry point is a **quiet inline link** beside the honesty line of `FR-12-41`, not a button and not a banner, and the page keeps `"Resumen"` marked in the tab bar exactly as the medal detail keeps `"Medallas"` marked (`FR-12-34`). The page states, at minimum: which actions credit points and why those; that an order's points **mature once that order carries an assigned payment** (`BR-12-13`), and that its arrival and its closing wait for the same thing; that caps exist and why (`FR-12-06`); that repeating orders at the same store within a month is worth progressively less and never zero (`FR-12-07`); that deleting an order removes its points and cancelling one keeps only the points for having registered it, because the balance is recomputed over what still exists (`BR-12-05`, `BR-12-16`); that a store credits only while approved and public, and why approval is the lock (`BR-12-07`); that the rank reached is permanent (`BR-12-06`); that medals grant no points and are never revoked (`BR-12-08`); the honesty line of `FR-12-41` and the fact that no amount of money ever credits (`BR-12-01`); and that no comparison between collectors exists today and any future one is optional (`BR-12-21`). It publishes **no figure** of the point table, per `BR-12-22`. It loads no collector data: the page is identical for every reader.
+
 ## Business Rules
 
 - `BR-12-01`: **No point rule reads money.** The rule module must not import, mention or dereference `amount`, `amountMinor`, `allocatedAmountMinor`, `totalCost`, `unitPrice`, `cost`, `openBalanceMinor`, `currencyCode`, `exchangeRate` or any identifier ending in `Minor`. Money-derived conditions arrive as booleans from the adapter of `FR-12-09`. This is enforced by a **static guard test** over the rule module with an allowlist of imports **and an inline fixture containing a forbidden token that the scanner must actually flag**, so the guard proves it sees the real shape of the file rather than passing over an empty one.
@@ -251,6 +255,7 @@ As a collector, I want to be certain that no amount of money I enter, anywhere, 
 - `BR-12-19`: In user-facing copy the unlockable object is `"medalla"` / `"medal"`. The word `"badge"` stays reserved for the design system's status chip and must never label a medal. `"rango"` / `"rank"`, `"rareza"` / `"rarity"`, `"punto"` / `"point"` and `"álbum"` / `"album"` are registered in `docs/product/glossary.md` in the same change that implements this FRD.
 - `BR-12-20`: **An event window is absolute.** A medal with an `availableTo` in the past can never be unlocked again, by recompute, by backfill, or by administrative action. That irreversibility is the entire value of a numbered event piece; making it recoverable would make it worthless.
 - `BR-12-21`: **No comparison between collectors ships under this FRD.** The placeholder of `FR-12-39` is disabled and collects nothing, including any opt-in preference, because collecting a consent before the legal preconditions are met would be the wrong order.
+- `BR-12-22`: **The collector is told the rules, never the price list.** Every rule that changes what a collector sees is published in plain copy (`FR-12-48`): what credits, what does not, what defers, what expires, what a store has to be, what is permanent. What stays reserved is every **figure** behind those rules: the point value of each rule of `FR-12-04`, the cap numbers of `FR-12-06`, the exact steps of the anti-split ladder of `FR-12-07`, the merit-lock percentages of `FR-12-17` beyond the counter the surface already prints, and the conditions of the secret medals of `FR-12-25`. The split is deliberate and asymmetric: a rule a collector cannot see reads as a bug (the deferred credit of `BR-12-13` was reported as one during development), while a figure a collector can see is a figure that can be optimised against, and a published number can never be recalled. Enforced mechanically rather than by review, by a copy guard that fails on any digit in the explainer's strings.
 
 ## Acceptance Criteria
 
@@ -368,6 +373,13 @@ As a collector, I want to be certain that no amount of money I enter, anywhere, 
 - Then the reversal, the recomputed derived total and the recomputed **highest rank index** are all persisted
 - And an `admin_audit_log` entry naming actor, action, target and reason was written in the same transaction (`FR-12-44`)
 
+### `AC-12-17`
+
+- Given the explainer copy of `FR-12-48` in both locales
+- When the copy guard runs
+- Then no string under `progress.howItWorks` carries a digit or a percent sign, so no point value, cap, threshold or merit-lock percentage is published (`BR-12-22`)
+- And every block declared by the surface has a rule and its reason in `es` and in `en`, so a rule can never ship in one language or without the reason it exists
+
 ## Implementation Notes
 
 - The domain lives in a new data-layer module, `src/lib/data/progression/`, split into `*Queries.ts` and `*Mutations.ts` per [ADR 0015](../../../design/decisions/0015-data-access-layer-shape.md) and the project-structure rule. The rule catalogue itself is a separate, dependency-light module so the static guard of `BR-12-01` has a small, stable surface to scan.
@@ -410,7 +422,7 @@ Progression is a **secondary effect** and must never turn a successful business 
 
 Progression events are namespaced under a new `POSTHOG_EVENTS.PROGRESSION` group in `src/lib/constants.ts`:
 
-- section: `progress_viewed` (carries the active tab), `progress_tab_changed`, `progress_rank_ladder_viewed`
+- section: `progress_viewed` (carries the active tab), `progress_tab_changed`, `progress_rank_ladder_viewed`, `progress_how_it_works_viewed` (no properties: the page is the same for everyone, so the only question is how many collectors go looking for the rules)
 - album: `medal_album_viewed`, `medal_series_page_viewed` (carries `series`), `medal_detail_viewed` (carries `medal_key`, `rarity`, `unlocked`)
 - unlocks: `medal_unlocked` (server, carries `medal_key`, `rarity`, `series`, `source`), `medal_toast_dismissed`, `rank_up_celebrated` (server, carries the new rank index)
 - dashboard: `progress_widget_clicked`
@@ -435,6 +447,13 @@ All routes live under `/{locale}/(app)/progress`, are authenticated, and are sco
 - **Data loaded:** `getMedalDetail(medalKey, userId)` → name, series, rarity, condition text, hint, `publicSafe`, unlock date and ordinal when numbered, `stateful` currency when it applies, and the event window when the medal carries one.
 - **Actions:** back to the album page it came from, preserving that page's scroll position. No mutations.
 - **States:** unlocked; locked with hint; locked and secret (neutral label, no hint, per `FR-12-25`); event medal outside its window (shown as permanently unobtainable, never as merely locked); an unknown key resolves to 404.
+
+### Rules explainer — `/{locale}/progress/how-it-works`
+
+- **Purpose:** answer "how does this work" once, in plain copy. A **subview of `"Resumen"`** (`FR-12-48`), not a fourth tab.
+- **Data loaded:** none. The page is identical for every collector and reads only its own copy and the session the section layout already requires.
+- **Actions:** back to `"Resumen"`. No mutations.
+- **States:** one. There is no empty, loading or error state, because there is nothing to fetch; the section's `"Ocultar mi progresión"` gate is inherited from the layout like every other page under `/progress`.
 
 ### Dashboard widget — inside `/{locale}/dashboard`
 
@@ -482,6 +501,7 @@ Two values are tracked: the **current** rank index derived from the current poin
 - the album is twenty-eight medals across six series, all of them shipped and evaluable (catalogue v2, approved 2026-08-26; it opened at twenty-four catalogued rows of which twelve were awardable)
 - medals grant no points and are never revoked
 - the `Progreso` section has exactly three tabs, and the medal detail is a subview of `"Medallas"`, not a fourth tab
+- the rules explainer is a subview of `"Resumen"` reached from a quiet inline link, never a fourth tab, and it publishes the rules and the reason for each one but no figure of the point table (approved 2026-08-26, `FR-12-48`, `BR-12-22`)
 - the dashboard carries a `"Tu rango"` widget with a compact strip of recent medals
 - the toast and the rank celebration are global surfaces
 - the store gate is approval plus visibility, never authorship: an `APPROVED`, public store the collector registered themselves credits normally (amended 2026-08-23, `BR-12-07`)

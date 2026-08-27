@@ -55,7 +55,8 @@
     "medalsTitle": "Medals",
     "medalTitle": "{name}",
     "title": "Progress",
-    "ranksTitle": "Ranks"
+    "ranksTitle": "Ranks",
+    "howItWorksTitle": "How progression works"
   },
   "album": {
     "title": "Medals",
@@ -282,7 +283,8 @@
     "staleNotice": "We are refreshing your points. What you see may be a few minutes old.",
     "headingSummary": "Progress · Summary",
     "headingMedals": "Progress · Medals",
-    "headingRanks": "Progress · Ranks"
+    "headingRanks": "Progress · Ranks",
+    "howItWorks": "How it works"
   },
   "summary": {
     "eyebrow": "Rank {index} of 10 · only you can see it",
@@ -311,7 +313,8 @@
     "ranksLink": "See the full ladder",
     "emptyTitle": "Start your record",
     "emptyBody": "You have no points yet. Register your first order and get started.",
-    "emptyCta": "Register an order"
+    "emptyCta": "Register an order",
+    "howItWorksLink": "How it works"
   },
   "creation": {
     "toast": {
@@ -341,6 +344,46 @@
     "missing": "{points} pts to go",
     "meritNote": "It also asks for {percent} % of the album.",
     "collapsedSummary": "{count} more ranks between the summit and you, with their thresholds"
+  },
+  "howItWorks": {
+    "eyebrow": "Progress",
+    "title": "How progression works",
+    "lead": "Progression rewards keeping your records up to date. Here is everything that counts, and why it works this way.",
+    "back": "Back to the summary",
+    "blocks": {
+      "earn": {
+        "title": "What earns points",
+        "body": "Registering an order, logging a payment, confirming an arrival, closing an order once it is paid and received, reviewing a store you already received from, a first order at a new store, and a first product of a new type.",
+        "why": "They are the signs that your records are current. Opening the app, filtering lists or editing an order that already counted earn nothing."
+      },
+      "mature": {
+        "title": "An order matures with its first payment",
+        "body": "Registering the order adds something right away. The rest waits until that order has a payment assigned to it, and its arrival and its closing wait for the same thing.",
+        "why": "It is not a bug and not a delay: an order with no payment logged is still an intention. The first payment is what makes it real."
+      },
+      "caps": {
+        "title": "There are caps, and repeats are worth less",
+        "body": "Every rule adds up to a monthly cap. And several orders in a row at the same store within the same month are each worth a little less, though never zero.",
+        "why": "That way over-registering is never the shortcut. Record at your own pace and you will rarely meet a cap. The exact figures stay unpublished, precisely so they cannot be gamed."
+      },
+      "recompute": {
+        "title": "What stops existing stops counting",
+        "body": "Your balance is recalculated over what still exists. Delete an order and its points go with it. Cancel it and almost all of them go: only the points for registering it stay.",
+        "why": "Cancelling is a real outcome, and recording it is still keeping your records. It is also why you never see negative points: nothing is subtracted, everything is recalculated."
+      },
+      "stores": {
+        "title": "A store counts once it is public and approved",
+        "body": "You can register the store you buy from and its orders count like any other, but first it has to pass approval and be public. A private store never counts.",
+        "why": "Approval is the one step you cannot take on your own. Without it, inventing a store and buying from yourself would be free points."
+      },
+      "permanence": {
+        "title": "Your rank never drops and medals are not points",
+        "body": "The rank you reach is yours for good: if your total falls, the bar moves back, never the name. Medals add no points and are never taken away.",
+        "why": "Points measure your recordkeeping, not your spending: no amount of money ever adds points. And medals are status, not currency."
+      }
+    },
+    "closingTitle": "Nobody is compared to anybody",
+    "closingBody": "Your rank, your points and your medals are yours to see and nobody else's. There is no table and no ranking between collectors today. If there ever is one, it will be optional."
   },
   "widget": {
     "eyebrow": "Your rank",

@@ -17,6 +17,7 @@ import { getMedalShowcase } from "@/lib/data/progression/medalQueries";
 import { getProgressSummary } from "@/lib/data/progression/progressionQueries";
 import { recomputeUserProgress } from "@/lib/data/progression/recompute";
 import MedalGrid from "./medals/_components/MedalGrid";
+import HowItWorksLink from "./_components/HowItWorksLink";
 import ProgressMiniLadder from "./_components/ProgressMiniLadder";
 import ProgressRankHero from "./_components/ProgressRankHero";
 
@@ -157,10 +158,14 @@ export default async function ProgressSummaryPage({ params }: ProgressPageProps)
           )}
 
           {/* The honesty line belongs to the figures it qualifies (`FR-12-41`). Standing on its own
-              between two cards it read as a stray caption belonging to neither. */}
-          <p className="text-text-muted border-border m-0 border-t pt-[var(--space-3)] [font-size:var(--text-caption)]">
-            {t("summary.honesty")}
-          </p>
+              between two cards it read as a stray caption belonging to neither.
+
+              The way into the rules explainer rides with it: the line is the one-sentence version of
+              the same rules, so the reader who pauses on it is the one who wants the rest. */}
+          <div className="border-border flex flex-wrap items-baseline justify-between gap-x-[var(--space-4)] gap-y-[var(--space-1)] border-t pt-[var(--space-3)]">
+            <p className="text-text-muted m-0 [font-size:var(--text-caption)]">{t("summary.honesty")}</p>
+            <HowItWorksLink locale={locale} label={t("summary.howItWorksLink")} />
+          </div>
         </Card>
 
         {summary.meritLock && (
