@@ -12,6 +12,10 @@ Sentry.init({
     process.env.NEXT_PUBLIC_SENTRY_DSN ??
     "https://7807ffe2c7570780a1ccdf48bfb2db23@o4510888167866368.ingest.us.sentry.io/4510888169177088",
 
+  // See the note in `sentry.server.config.ts`. Only NEXT_PUBLIC_* variables are readable in the
+  // browser, so this reads Vercel's public deployment variable rather than VERCEL_ENV.
+  environment: process.env.NEXT_PUBLIC_VERCEL_ENV ?? process.env.NODE_ENV ?? "development",
+
   // Add optional integrations for additional features
   integrations: [Sentry.replayIntegration()],
 

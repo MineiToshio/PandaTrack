@@ -1,5 +1,6 @@
 "use client";
 
+import * as Sentry from "@sentry/nextjs";
 import { AlertTriangle, Share2 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -431,7 +432,15 @@ export default function ImageIntakeScreen({
             fits: prepared.fits,
           });
         }
-      } catch {
+      } catch (error) {
+        // Reported because this failure happens entirely in the browser: the request never leaves,
+        // so no server instrumentation and no error boundary will ever see it. Without this the
+        // only trace of a broken canvas/encoder pipeline is a PostHog counter moving, and the
+        // exception that explains WHY is discarded.
+        Sentry.captureException(error, {
+          tags: { feature: "imageIntake", action: "prepareSubmission" },
+          extra: { photoCount: files.length },
+        });
         // The attachments are deliberately left in place: an error surface that also wipes the work
         // makes the user redo the whole submission to retry it.
         setError({ messageKey: clientErrorMessageKey("compression-failed") });
@@ -549,7 +558,24 @@ export default function ImageIntakeScreen({
         setDraft(result.draft);
         setSpentPhotoCount(segments.length);
         setPhase("review");
-      } catch {
+      } catch (error) {
+        // This catch is the ONLY witness to a submission that never came back with a typed result:
+        // the request was killed by the platform, refused before the action ran, or lost on the
+        // network. None of those raise a server-side exception, so `onRequestError` sees nothing and
+        // the whole failure would otherwise exist only as the word "server-error" on the collector's
+        // screen. A failure the action itself reported is already captured server-side with its own
+        // feature tags, so this is tagged distinctly rather than duplicating it: what makes an event
+        // here worth reading is precisely that no server event accompanies it.
+        Sentry.captureException(error, {
+          tags: { feature: "imageIntake", action: "extractRequestFailed" },
+          extra: {
+            photoCount: files.length,
+            segmentCount: segments.length,
+            // The submission size is the first thing to check when a request never came back: it
+            // separates a payload the platform refused from a read that simply ran too long.
+            totalBytes: segments.reduce((sum, segment) => sum + segment.blob.size, 0),
+          },
+        });
         setError({ messageKey: "serverError", reference: extractErrorReference("server-error") ?? undefined });
         setPhase("upload");
       } finally {
