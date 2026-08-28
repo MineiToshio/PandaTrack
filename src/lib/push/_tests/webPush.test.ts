@@ -1,10 +1,13 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { sendPushMessage, type PushMessagePayload, type PushSubscriptionTarget } from "../webPush";
 
-const { setVapidDetailsMock, sendNotificationMock } = vi.hoisted(() => ({
+const { setVapidDetailsMock, sendNotificationMock, captureExceptionMock } = vi.hoisted(() => ({
   setVapidDetailsMock: vi.fn(),
   sendNotificationMock: vi.fn(),
+  captureExceptionMock: vi.fn(),
 }));
+
+vi.mock("@sentry/nextjs", () => ({ captureException: captureExceptionMock }));
 
 vi.mock("web-push", () => ({
   default: {
@@ -86,5 +89,62 @@ describe("sendPushMessage", () => {
     sendNotificationMock.mockRejectedValueOnce(pushErrorWithStatus(429));
 
     await expect(sendPushMessage(subscription, payload)).resolves.toBe("TRANSIENT_FAILURE");
+  });
+
+  /**
+   * A push service that answers and refuses is one subscription having a bad minute, and a batch
+   * runs this once per subscriber: reporting each would turn a single provider outage into a flood
+   * of identical Sentry events.
+   */
+  it("does not report a refusal that carries a status code", async () => {
+    sendNotificationMock.mockRejectedValueOnce(pushErrorWithStatus(503));
+
+    await sendPushMessage(subscription, payload);
+
+    expect(captureExceptionMock).not.toHaveBeenCalled();
+  });
+
+  /**
+   * No status code means nothing answered in a way this code understands, which is the shape of a
+   * defect here rather than a bad minute upstream.
+   */
+  it("reports a failure that carries no status code, without the subscriber's endpoint", async () => {
+    const error = new Error("unexpected shape");
+    sendNotificationMock.mockRejectedValueOnce(error);
+
+    await sendPushMessage(subscription, payload);
+
+    expect(captureExceptionMock).toHaveBeenCalledExactlyOnceWith(error, {
+      tags: { feature: "push", action: "sendPushMessage" },
+    });
+    // The endpoint is the address of a user's device and must never travel with the report.
+    expect(JSON.stringify(captureExceptionMock.mock.calls[0])).not.toContain(subscription.endpoint);
+  });
+});
+
+/**
+ * Missing VAPID keys are the one failure that belongs to EVERY subscription at once. Swallowing it
+ * as `TRANSIENT_FAILURE` let push delivery stop product-wide while looking exactly like a push
+ * service having a bad minute: nothing in Sentry, and only a counter moving in the dispatch summary.
+ *
+ * Isolated in its own describe with `resetModules` because `ensureVapidConfigured` memoises success
+ * in a module-level flag, so a fresh module instance is the only way to observe the unconfigured
+ * path after another test has configured it.
+ */
+describe("sendPushMessage without VAPID configuration", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.resetModules();
+    delete process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+    delete process.env.VAPID_PRIVATE_KEY;
+    delete process.env.VAPID_SUBJECT;
+  });
+
+  it("throws instead of reporting a per-subscription transient failure", async () => {
+    const { sendPushMessage: freshSendPushMessage } = await import("../webPush");
+
+    await expect(freshSendPushMessage(subscription, payload)).rejects.toThrow(/VAPID/i);
+    // The send is never attempted: there is no key to sign it with.
+    expect(sendNotificationMock).not.toHaveBeenCalled();
   });
 });

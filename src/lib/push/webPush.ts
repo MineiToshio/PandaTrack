@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nextjs";
 import webpush from "web-push";
 
 /**
@@ -70,16 +71,24 @@ function readStatusCode(error: unknown): number | undefined {
 
 /**
  * Signs and sends one payload to one subscription and classifies the outcome.
- * Never throws: transport and configuration errors are mapped to the result
- * union so a single bad subscription can never abort a batch.
+ *
+ * Never throws for a failure that belongs to ONE subscription, so a single bad endpoint can never
+ * abort a batch. It deliberately DOES throw when the VAPID keys are missing or unreadable, because
+ * that failure belongs to every subscription at once: swallowing it returned `TRANSIENT_FAILURE`
+ * for each one, which is indistinguishable from a push service having a bad minute. Push delivery
+ * could stop product-wide and the only trace would be a counter moving in the dispatch summary,
+ * with nothing in Sentry and nothing that named the real cause. The caller
+ * (`api/notifications/dispatch`) captures the throw once and fails the run, which is the correct
+ * shape for a configuration error: loud, once, and naming itself.
  */
 export async function sendPushMessage(
   subscription: PushSubscriptionTarget,
   payload: PushMessagePayload,
 ): Promise<PushSendResult> {
-  try {
-    ensureVapidConfigured();
+  // Outside the try on purpose: see the note above.
+  ensureVapidConfigured();
 
+  try {
     await webpush.sendNotification(
       {
         endpoint: subscription.endpoint,
@@ -94,6 +103,16 @@ export async function sendPushMessage(
     if (statusCode === HTTP_GONE || statusCode === HTTP_NOT_FOUND) {
       return "EXPIRED";
     }
+
+    // A status code means a push service answered and refused: a real transient condition, one per
+    // subscription, and reporting each one would turn a single provider outage into a Sentry flood.
+    // No status code means nothing answered in a way this code understands, which is the shape of a
+    // defect here rather than a bad minute upstream, so that one is reported. The subscription
+    // endpoint is never attached: it is the address of a user's device.
+    if (statusCode === undefined) {
+      Sentry.captureException(error, { tags: { feature: "push", action: "sendPushMessage" } });
+    }
+
     return "TRANSIENT_FAILURE";
   }
 }
