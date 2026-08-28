@@ -1,6 +1,7 @@
 "use client";
 
 import "react-easy-crop/react-easy-crop.css";
+import * as Sentry from "@sentry/nextjs";
 
 import { Building2, Crop, Pencil, Upload, X } from "lucide-react";
 import Image from "next/image";
@@ -232,7 +233,11 @@ export default function StoreLogoField({
       }
 
       openEditorForFile(editableFile, { preserveViewport: true });
-    } catch {
+    } catch (error) {
+      // Canvas decode/encode runs entirely in the browser, so no server instrumentation and no
+      // error boundary can see this: without the capture, "the logo will not save" arrives as a
+      // user report with no evidence attached to it at all.
+      Sentry.captureException(error, { tags: { feature: "storeLogo", action: "reopenEditor" } });
       setEditorError("logoProcessingFailed");
     }
   };
@@ -273,7 +278,9 @@ export default function StoreLogoField({
       setConfirmedZoom(zoom);
       setSubmission({ action: "set", file: processedFile });
       resetEditorState();
-    } catch {
+    } catch (error) {
+      // Same blind spot as the reopen path above: the crop and re-encode never leave the browser.
+      Sentry.captureException(error, { tags: { feature: "storeLogo", action: "applyCrop" } });
       setEditorError("logoProcessingFailed");
     }
   };
