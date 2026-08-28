@@ -7,6 +7,7 @@ import {
   EXTRACTION_MAX_TRANSPORT_RETRIES,
   EXTRACTION_REQUEST_TIMEOUT_MS,
   EXTRACTION_RETRY_BACKOFF_MS,
+  EXTRACTION_TOTAL_BUDGET_MS,
   ProviderRequestError,
   ProviderTransportError,
   SpendGuardBlockedError,
@@ -225,11 +226,13 @@ describe("extract", () => {
   });
 
   it("records a failure with the provider-reported tokens when the provider throws after being billed", async () => {
-    const generateDraft = vi
-      .fn<ExtractionProvider["generateDraft"]>()
-      .mockRejectedValue(
-        new ProviderRequestError({ code: "GEMINI_RESPONSE_NOT_JSON", kind: "not-json", usage: { inputTokens: 1200, outputTokens: 30 } }),
-      );
+    const generateDraft = vi.fn<ExtractionProvider["generateDraft"]>().mockRejectedValue(
+      new ProviderRequestError({
+        code: "GEMINI_RESPONSE_NOT_JSON",
+        kind: "not-json",
+        usage: { inputTokens: 1200, outputTokens: 30 },
+      }),
+    );
     const spendGuard = buildSpendGuard();
 
     const outcome = await extract(buildImages(), buildContext(), { provider: { generateDraft }, spendGuard }, MODEL_ID);
@@ -297,9 +300,7 @@ describe("extract", () => {
     const provider: ExtractionProvider = { generateDraft };
     const spendGuard = buildSpendGuard();
 
-    const outcome = await settleWithRetries(
-      extract(buildImages(), buildContext(), { provider, spendGuard }, MODEL_ID),
-    );
+    const outcome = await settleWithRetries(extract(buildImages(), buildContext(), { provider, spendGuard }, MODEL_ID));
 
     expect(outcome.status).toBe("ok");
     // Stops the moment one attempt works: the retries are a budget, not a quota to spend.
@@ -338,9 +339,7 @@ describe("extract", () => {
     const provider: ExtractionProvider = { generateDraft };
     const spendGuard = buildSpendGuard();
 
-    const outcome = await settleWithRetries(
-      extract(buildImages(), buildContext(), { provider, spendGuard }, MODEL_ID),
-    );
+    const outcome = await settleWithRetries(extract(buildImages(), buildContext(), { provider, spendGuard }, MODEL_ID));
 
     expect(outcome.status).toBe("provider-error");
     expect(generateDraft).toHaveBeenCalledTimes(1 + EXTRACTION_MAX_TRANSPORT_RETRIES);
@@ -396,7 +395,21 @@ describe("extract", () => {
     expect(captureExceptionMock).toHaveBeenCalledTimes(1);
   });
 
-  it("aborts a provider call that never settles at the request timeout, retries once, then fails", async () => {
+  /**
+   * Hanging attempts are the case where the WALL CLOCK, not the retry count, is what stops the
+   * loop, and the distinction is the whole reason `EXTRACTION_TOTAL_BUDGET_MS` exists.
+   *
+   * Three full-length attempts would take 30s + 0.7s + 30s + 0.7s + 30s, which is over 90 seconds:
+   * far past the `maxDuration` the intake route is allowed to declare. Spending it would not buy a
+   * third attempt, it would get the function killed mid-call, with the ledger's reservation left
+   * open and counting against the collector's monthly bag for a read they never received. So the
+   * loop stops while it still has time to settle the ledger and answer, and the collector gets a
+   * reportable failure instead of a dead request.
+   *
+   * The retry count still applies when attempts fail fast (covered above): both bounds are live,
+   * and whichever is reached first ends the loop.
+   */
+  it("stops retrying a hanging provider when the time budget runs out, before the platform kills it", async () => {
     const neverResolves = () => new Promise<ProviderResponse>(() => {});
     const generateDraft = vi.fn<ExtractionProvider["generateDraft"]>().mockImplementation(neverResolves);
     const provider: ExtractionProvider = { generateDraft };
@@ -404,8 +417,8 @@ describe("extract", () => {
 
     const outcomePromise = extract(buildImages(), buildContext(), { provider, spendGuard }, MODEL_ID);
 
-    // Every attempt times out at 30s and is followed by the backoff before the next one starts,
-    // until the retries run out.
+    // Advance well past the whole budget, so the loop's own bound is what ends it, not the clock
+    // running out of ticks.
     for (let attempt = 0; attempt <= EXTRACTION_MAX_TRANSPORT_RETRIES; attempt += 1) {
       await vi.advanceTimersByTimeAsync(EXTRACTION_REQUEST_TIMEOUT_MS);
       await vi.advanceTimersByTimeAsync(EXTRACTION_RETRY_BACKOFF_MS);
@@ -413,9 +426,49 @@ describe("extract", () => {
 
     const outcome = await outcomePromise;
     expect(outcome.status).toBe("provider-error");
-    expect(generateDraft).toHaveBeenCalledTimes(1 + EXTRACTION_MAX_TRANSPORT_RETRIES);
-    // A timed-out request reports no tokens, so the guard settles on its own reservation estimate.
+
+    // Two attempts, not three. The first runs its full 30s timeout; after the backoff there are
+    // 24.3s left, which is enough to start a second (shortened to exactly what remains) but leaves
+    // nothing for a third. Asserted as a strict inequality against the retry count as well, so this
+    // still means something if the constants are retuned.
+    expect(generateDraft).toHaveBeenCalledTimes(2);
+    expect(generateDraft.mock.calls.length).toBeLessThan(1 + EXTRACTION_MAX_TRANSPORT_RETRIES);
+
+    // The whole point of stopping early: the loop still returns, so the reservation is settled
+    // exactly once instead of being orphaned as PENDING by a platform kill. A timed-out request
+    // reports no tokens, so the guard settles on its own reservation estimate.
     expect(spendGuard.recordFailure).toHaveBeenCalledExactlyOnceWith(null);
+  });
+
+  it("keeps the whole provider phase inside the route's server time budget", async () => {
+    const neverResolves = () => new Promise<ProviderResponse>(() => {});
+    const generateDraft = vi.fn<ExtractionProvider["generateDraft"]>().mockImplementation(neverResolves);
+    const spendGuard = buildSpendGuard();
+    const startedAt = Date.now();
+
+    // Stamped the moment the outcome settles, NOT after the advance loop: the test keeps ticking
+    // the clock past the budget on purpose, so reading the time afterwards would measure the test's
+    // own advancing rather than when the engine actually gave up.
+    let settledAt = 0;
+    const outcomePromise = extract(
+      buildImages(),
+      buildContext(),
+      { provider: { generateDraft }, spendGuard },
+      MODEL_ID,
+    ).then((outcome) => {
+      settledAt = Date.now();
+      return outcome;
+    });
+
+    for (let attempt = 0; attempt <= EXTRACTION_MAX_TRANSPORT_RETRIES; attempt += 1) {
+      await vi.advanceTimersByTimeAsync(EXTRACTION_REQUEST_TIMEOUT_MS);
+      await vi.advanceTimersByTimeAsync(EXTRACTION_RETRY_BACKOFF_MS);
+    }
+    await outcomePromise;
+
+    // Measured on the fake clock the loop itself reads, so this asserts the bound the engine
+    // enforces rather than how long the test took to run.
+    expect(settledAt - startedAt).toBeLessThanOrEqual(EXTRACTION_TOTAL_BUDGET_MS);
   });
 
   it("aborts the signal it handed the provider when the timeout fires", async () => {
@@ -447,7 +500,10 @@ describe("extract", () => {
       await vi.advanceTimersByTimeAsync(EXTRACTION_RETRY_BACKOFF_MS);
     }
     await outcomePromise;
-    expect(signals).toHaveLength(1 + EXTRACTION_MAX_TRANSPORT_RETRIES);
+    // Hanging attempts are bounded by the time budget rather than the retry count (see the budget
+    // test above), so what matters here is that EVERY signal handed out was aborted: no abandoned
+    // request is left running, and billing, after the loop gave up on it.
+    expect(signals.length).toBeGreaterThan(1);
     expect(signals.every((signal) => signal?.aborted)).toBe(true);
   });
 
@@ -527,12 +583,16 @@ describe("isProviderRequestRejected", () => {
   it("is true for a provider 4xx, the one failure that is our own and never clears on retry", async () => {
     const { isProviderRequestRejected } = await import("../extractionEngine");
 
-    expect(isProviderRequestRejected(new ProviderRequestError({ code: "GEMINI_REQUEST_REJECTED", kind: "rejected", status: 400 }))).toBe(
-      true,
-    );
-    expect(isProviderRequestRejected(new ProviderRequestError({ code: "GEMINI_REQUEST_REJECTED", kind: "rejected", status: 429 }))).toBe(
-      true,
-    );
+    expect(
+      isProviderRequestRejected(
+        new ProviderRequestError({ code: "GEMINI_REQUEST_REJECTED", kind: "rejected", status: 400 }),
+      ),
+    ).toBe(true);
+    expect(
+      isProviderRequestRejected(
+        new ProviderRequestError({ code: "GEMINI_REQUEST_REJECTED", kind: "rejected", status: 429 }),
+      ),
+    ).toBe(true);
   });
 
   it("is false for every failure a retry could genuinely clear, so the copy may still offer one", async () => {
@@ -543,7 +603,9 @@ describe("isProviderRequestRejected", () => {
     expect(isProviderRequestRejected(new ProviderTransportError({ reason: "network" }))).toBe(false);
     // A billable but unusable answer carries no HTTP status: the request itself was accepted, so it
     // is not the deterministic contract failure this predicate is about.
-    expect(isProviderRequestRejected(new ProviderRequestError({ code: "GEMINI_RESPONSE_NOT_JSON", kind: "not-json" }))).toBe(false);
+    expect(
+      isProviderRequestRejected(new ProviderRequestError({ code: "GEMINI_RESPONSE_NOT_JSON", kind: "not-json" })),
+    ).toBe(false);
     expect(isProviderRequestRejected(new Error("something else"))).toBe(false);
   });
 });

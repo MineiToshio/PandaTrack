@@ -20,6 +20,23 @@ import { getTranslations } from "next-intl/server";
 import ImageIntakeCurrencyGate from "./_components/ImageIntakeCurrencyGate";
 import ImageIntakeScreen from "./_components/ImageIntakeScreen";
 
+/**
+ * Server time budget for this route, and therefore for the extraction Server Action posted to it.
+ *
+ * Extraction is the one action in this product that is genuinely slow: the provider is asked to
+ * read a whole conversation out of several photos, which measures at 20 to 40 seconds against the
+ * live API, and a transport failure can burn 30 more before the retry that succeeds. The hosting
+ * default is 10 seconds, which is not "usually enough" for that work, it is never enough: the
+ * function is killed mid-call on every submission, the collector sees a generic failure, and the
+ * reservation the ledger wrote before the call is orphaned as `PENDING` and keeps counting against
+ * their monthly bag. Without this export the feature cannot succeed in production even once.
+ *
+ * 60 is the ceiling the current hosting plan allows, so the retry budget in `extractionEngine.ts`
+ * (`EXTRACTION_TOTAL_BUDGET_MS`) is sized to land inside it rather than the other way around; the
+ * two numbers are a pair and must move together.
+ */
+export const maxDuration = 60;
+
 type Props = {
   params: Promise<{ locale: string }>;
   searchParams: Promise<{ [SHARE_SOURCE_PARAM]?: string | string[] }>;

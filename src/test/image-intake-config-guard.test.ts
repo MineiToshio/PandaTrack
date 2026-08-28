@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import manifest from "@/app/manifest";
+import { EXTRACTION_REQUEST_TIMEOUT_MS, EXTRACTION_TOTAL_BUDGET_MS } from "@/lib/imageIntake/extractionEngine";
 
 /**
  * Order image intake config guard.
@@ -26,6 +27,13 @@ import manifest from "@/app/manifest";
 const REPO_ROOT = process.cwd();
 const NEXT_CONFIG_PATH = join(REPO_ROOT, "next.config.ts");
 const ENV_EXAMPLE_PATH = join(REPO_ROOT, ".env.example");
+const INTAKE_PAGE_PATH = join(REPO_ROOT, "src/app/[locale]/(app)/orders/new/image/page.tsx");
+
+/**
+ * Hosting ceiling for a single function invocation on the current plan. The route may declare any
+ * budget up to this; past it the platform refuses the deployment rather than honouring the number.
+ */
+const PLATFORM_MAX_DURATION_SECONDS = 60;
 
 const REQUIRED_ENV_EXAMPLE_KEYS = [
   "GEMINI_API_KEY",
@@ -68,6 +76,45 @@ describe("image intake config guard", () => {
       "No .env.example variable name may combine NEXT_PUBLIC_ with GEMINI: Next.js inlines " +
         `NEXT_PUBLIC_ variables into the client bundle. Found: ${nextPublicGeminiMatch?.[0]}`,
     ).toBeNull();
+  });
+
+  it("gives the intake route a server time budget the extraction can actually finish inside", () => {
+    const content = readFileSync(INTAKE_PAGE_PATH, "utf8");
+    const declared = content.match(/^export const maxDuration = (\d+)/m);
+
+    expect(
+      declared,
+      "The intake page must export `maxDuration`. Extraction measures at 20 to 40 seconds against " +
+        "the live provider, while the hosting default is 10: without this export the function is " +
+        "killed mid-call on every submission, so the feature cannot succeed in production even " +
+        "once, and each attempt orphans its ledger reservation as PENDING against the collector's " +
+        "monthly bag.",
+    ).not.toBeNull();
+
+    const maxDurationSeconds = Number(declared?.[1]);
+
+    expect(
+      maxDurationSeconds,
+      `The intake route's maxDuration (${maxDurationSeconds}s) exceeds the plan ceiling of ` +
+        `${PLATFORM_MAX_DURATION_SECONDS}s, which the platform refuses rather than honours.`,
+    ).toBeLessThanOrEqual(PLATFORM_MAX_DURATION_SECONDS);
+
+    // The engine's own retry budget has to land INSIDE the route's, with room to settle the ledger
+    // and answer. Reversed, a submission is killed by the platform exactly when it is retrying,
+    // which is the one moment the ledger has an open reservation to settle.
+    expect(
+      EXTRACTION_TOTAL_BUDGET_MS,
+      `EXTRACTION_TOTAL_BUDGET_MS (${EXTRACTION_TOTAL_BUDGET_MS}ms) must stay strictly under the ` +
+        `intake route's maxDuration (${maxDurationSeconds}s). These two numbers are a pair: the ` +
+        "engine may only spend time the route is allowed to stay alive for.",
+    ).toBeLessThan(maxDurationSeconds * 1000);
+
+    // A single attempt must fit too, or the very first call is killed before its own timeout fires.
+    expect(
+      EXTRACTION_REQUEST_TIMEOUT_MS,
+      `EXTRACTION_REQUEST_TIMEOUT_MS (${EXTRACTION_REQUEST_TIMEOUT_MS}ms) must fit inside ` +
+        `EXTRACTION_TOTAL_BUDGET_MS (${EXTRACTION_TOTAL_BUDGET_MS}ms).`,
+    ).toBeLessThanOrEqual(EXTRACTION_TOTAL_BUDGET_MS);
   });
 
   it("declares a share_target whose accept list never lists image/heic", () => {
