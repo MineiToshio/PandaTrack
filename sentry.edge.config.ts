@@ -14,6 +14,11 @@ Sentry.init({
     process.env.NEXT_PUBLIC_SENTRY_DSN ??
     "https://7807ffe2c7570780a1ccdf48bfb2db23@o4510888167866368.ingest.us.sentry.io/4510888169177088",
 
+  // See the note in `sentry.server.config.ts`: the shared fallback DSN puts production, preview and
+  // local development in one Sentry project, so the deployment has to be tagged or they cannot be
+  // told apart.
+  environment: process.env.VERCEL_ENV ?? process.env.NODE_ENV ?? "development",
+
   // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
   tracesSampleRate: 1,
 

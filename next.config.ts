@@ -58,11 +58,18 @@ export default withSentryConfig(withNextIntl(nextConfig), {
   // Upload a larger set of source maps for prettier stack traces (increases build time)
   widenClientFileUpload: true,
 
-  // Uncomment to route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
-  // This can increase your server load as well as your hosting bill.
-  // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
-  // side errors will fail.
-  // tunnelRoute: "/monitoring",
+  // Routes browser error reports through this app's own origin instead of letting them go straight
+  // to `*.ingest.sentry.io`, which EasyPrivacy, uBlock Origin, Brave Shields and AdGuard all block
+  // by default. Without it a client-side exception is dropped by the browser before it is ever
+  // sent: no console error, no retry, and nothing in Sentry to find afterwards, which reads exactly
+  // like "the error was never reported" rather than "the report was blocked". PostHog already
+  // reaches this app through the first-party `/ingest/` rewrite above for the same reason; Sentry
+  // was left un-tunnelled, so the two halves of the telemetry disagreed about what a user hit.
+  //
+  // The route must not collide with the proxy's matcher, which is `["/", "/(es|en)/:path*"]`
+  // (`src/proxy.ts`): `/monitoring` carries no locale segment, so it does not match and the tunnel
+  // reaches the Sentry rewrite intact. Keep that true if either the matcher or this path changes.
+  tunnelRoute: "/monitoring",
 
   webpack: {
     // Enables automatic instrumentation of Vercel Cron Monitors. (Does not yet work with App Router route handlers.)
