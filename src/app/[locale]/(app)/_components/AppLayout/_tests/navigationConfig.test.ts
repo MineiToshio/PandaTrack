@@ -3,6 +3,7 @@ import {
   getActiveAdminNavItemId,
   getActiveNavItem,
   getAdminNavItems,
+  getAllNavItems,
   getPrivateAppNavItems,
   getPrivateAppPathSegment,
 } from "../navigationConfig";
@@ -14,6 +15,7 @@ describe("getPrivateAppPathSegment", () => {
     expect(getPrivateAppPathSegment("/es/orders")).toBe("orders");
     expect(getPrivateAppPathSegment("/en/deliveries")).toBe("deliveries");
     expect(getPrivateAppPathSegment("/es/settings")).toBe("settings");
+    expect(getPrivateAppPathSegment("/es/progress")).toBe("progress");
   });
 
   it("returns undefined when pathname has no second segment", () => {
@@ -45,7 +47,18 @@ describe("getActiveNavItem", () => {
 describe("getPrivateAppNavItems", () => {
   it("returns the collector primary nav items in order without settings", () => {
     const items = getPrivateAppNavItems();
-    expect(items).toHaveLength(4);
+    expect(items).toHaveLength(5);
+    expect(items.map((i) => i.id)).toEqual(["dashboard", "stores", "orders", "deliveries", "progress"]);
+  });
+
+  it("appends progression last, so no existing entry is reordered or demoted", () => {
+    const items = getPrivateAppNavItems();
+    expect(items.at(-1)?.id).toBe("progress");
+    expect(items.at(-1)?.href("es")).toBe("/es/progress");
+  });
+
+  it("drops progression when the collector hid the layer, leaving the rest in place", () => {
+    const items = getPrivateAppNavItems({ showProgression: false });
     expect(items.map((i) => i.id)).toEqual(["dashboard", "stores", "orders", "deliveries"]);
   });
 
@@ -56,22 +69,48 @@ describe("getPrivateAppNavItems", () => {
   });
 });
 
+describe("getAllNavItems", () => {
+  it("includes settings after progression, and drops progression when the layer is hidden", () => {
+    expect(getAllNavItems().map((i) => i.id)).toEqual([
+      "dashboard",
+      "stores",
+      "orders",
+      "deliveries",
+      "progress",
+      "settings",
+    ]);
+    expect(getAllNavItems({ showProgression: false }).map((i) => i.id)).toEqual([
+      "dashboard",
+      "stores",
+      "orders",
+      "deliveries",
+      "settings",
+    ]);
+  });
+});
+
 describe("getAdminNavItems", () => {
   it("returns the grouped Administración section items in order", () => {
     const items = getAdminNavItems();
-    expect(items.map((i) => i.id)).toEqual(["moderation", "imageIntake", "audit"]);
+    expect(items.map((i) => i.id)).toEqual(["moderation", "imageIntake", "progression", "audit"]);
   });
 
   it("builds locale-prefixed hrefs for the admin landing and the nested routes", () => {
     const items = getAdminNavItems();
     expect(items[0].href("es")).toBe("/es/admin");
     expect(items[1].href("es")).toBe("/es/admin/image-intake");
-    expect(items[2].href("en")).toBe("/en/admin/audit");
+    expect(items[2].href("es")).toBe("/es/admin/progression");
+    expect(items[3].href("en")).toBe("/en/admin/audit");
   });
 
   it("resolves labels against the admin namespace", () => {
     const items = getAdminNavItems();
-    expect(items.map((i) => i.labelKey)).toEqual(["nav.moderation", "nav.imageIntake", "nav.audit"]);
+    expect(items.map((i) => i.labelKey)).toEqual([
+      "nav.moderation",
+      "nav.imageIntake",
+      "nav.progression",
+      "nav.audit",
+    ]);
   });
 });
 
@@ -84,6 +123,11 @@ describe("getActiveAdminNavItemId", () => {
   it("matches the audit entry for the nested audit route", () => {
     expect(getActiveAdminNavItemId("/es/admin/audit")).toBe("audit");
     expect(getActiveAdminNavItemId("/en/admin/audit")).toBe("audit");
+  });
+
+  it("matches the progression entry for the nested progression route", () => {
+    expect(getActiveAdminNavItemId("/es/admin/progression")).toBe("progression");
+    expect(getActiveAdminNavItemId("/en/admin/progression")).toBe("progression");
   });
 
   it("matches the photo-quota entry for the nested image-intake route", () => {

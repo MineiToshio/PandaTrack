@@ -395,6 +395,8 @@ Use tabs only when content groups are parallel (not parent-child), the user focu
 
 Do **not** use tabs for sequential/top-to-bottom reading, side-by-side comparison, content small enough that tabs add more chrome than value, or critical information users could miss. Prefer instead: one structured vertical layout (hierarchical), stacked sections or a responsive grid (comparison), accordions (progressive disclosure), or a wizard (step-by-step choice).
 
+**The `underline` recipe draws its rule with an inset box-shadow, and its items carry no negative margin.** The pair is one decision, not two. The bar keeps `overflow-x-auto` so a bar of many tabs can scroll on a phone, and that makes it a scroll container in **both** axes — CSS gives an element whose other axis is `visible` an implied `auto`. So the common `-mb-px` on the items, used to pull the active underline over the bar's own `border-b`, hangs one pixel past the scrollport, and the browser answers with a full vertical scrollbar down the side of a 44px tab bar (observed in `Progreso`, 2026-08-26). An inset shadow paints the same one-pixel rule **inside** the box, so nothing overhangs, and the active item's `border-b-2` still covers it because a parent's inset shadow paints beneath its descendants. The same reasoning applies to any horizontally scrollable strip: nothing inside it may extend past its box on the axis it does not scroll.
+
 ### List pagination (ADR 0018)
 
 Canonical for every collector-app list (orders, deliveries, stores) via `ListPagination` (`src/components/modules/ListPagination.tsx`), paired with `PerPageSelect` (`src/components/modules/PerPageSelect.tsx`) — see [components.md](components.md). One shared component, one URL contract; no module hand-rolls its own paginator.

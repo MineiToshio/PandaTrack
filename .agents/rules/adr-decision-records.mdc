@@ -22,9 +22,9 @@ Create an ADR when a change introduces a technical decision that affects future 
 
 ## Required workflow
 
-1. If the change is architectural, create or update an ADR under `docs/architecture/adr/`.
+1. If the change is architectural, create or update an ADR under `docs/design/decisions/`.
 2. Use `docs/templates/adr-template.md` as the base format.
-3. Name new files as `ADR-XXXX-short-kebab-title.md`.
+3. Name new files as `NNNN-short-kebab-title.md` (four digits, no ADR prefix).
 4. In the related GitHub Epic issue, add or update the ADR reference in its lightweight execution notes or linked-doc context.
 5. If no ADR is needed, do not invent placeholder ADR fields in the Epic issue.
 

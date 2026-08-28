@@ -12,6 +12,7 @@ interface CleanupRequest {
   storeNamePrefix?: string;
   deliveryIds?: readonly string[];
   pushEndpointPrefix?: string;
+  progressionSettingsUserEmail?: string;
 }
 
 /**
@@ -76,4 +77,16 @@ export async function deleteDeliveriesById(ids: readonly string[]): Promise<void
 export async function deletePushSubscriptionsByEndpointPrefix(prefix: string): Promise<void> {
   if (!prefix) return;
   await runCleanup({ pushEndpointPrefix: prefix });
+}
+
+/**
+ * Direct-DB backstop for the spec that flips `"Ocultar mi progresión"`: the toggle writes a
+ * `progression_settings` row that outlives the switch being flipped back, so restoring the switch is
+ * not enough to leave the account as it was found. Call from `test.afterAll` with the account the
+ * run signed in as. Removes the row only while it still carries both defaults, so a row holding real
+ * state (a layer left hidden, a rank already celebrated) is never destroyed.
+ */
+export async function deleteDefaultProgressionSettings(userEmail: string): Promise<void> {
+  if (!userEmail) return;
+  await runCleanup({ progressionSettingsUserEmail: userEmail });
 }

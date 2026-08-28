@@ -167,7 +167,14 @@ describe("createOrder transaction integrity", () => {
 
     const result = await createOrder("user-1", createInput);
 
-    expect(result).toEqual({ ok: true, orderId: "order-1", humanReadableId: "ORD-20260729-01" });
+    expect(result).toEqual({
+      ok: true,
+      orderId: "order-1",
+      humanReadableId: "ORD-20260729-01",
+      // The fake store carries no eligibility fields, so it reads as not credit-eligible and there
+      // is nothing to defer either (`FR-12-05`).
+      progression: { pointsDelta: 0, rankUp: null, medalsUnlocked: [], deferredOrderPoints: null },
+    });
     const validationCall = tx.storeProductType.findMany.mock.invocationCallOrder[0];
     const createCall = tx.order.create.mock.invocationCallOrder[0];
     expect(validationCall).toBeLessThan(createCall);

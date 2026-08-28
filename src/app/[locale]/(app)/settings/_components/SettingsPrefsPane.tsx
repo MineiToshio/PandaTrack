@@ -32,6 +32,7 @@ import {
 import PreferencesAutosaveIndicator, { type AutosaveStatus } from "./PreferencesAutosaveIndicator";
 import SegmentedToggle from "./SegmentedToggle";
 import SettingsNotificationsSection, { type NotificationPreferencesState } from "./SettingsNotificationsSection";
+import SettingsProgressionSection from "./SettingsProgressionSection";
 import SettingsRow from "./SettingsRow";
 
 const AUTOSAVE_DEBOUNCE_MS = 300;
@@ -420,6 +421,8 @@ export default function SettingsPrefsPane({
           fullWidthValue
         />
       </SectionCard>
+
+      <SettingsProgressionSection />
 
       <SettingsNotificationsSection locale={locale} initialPreferences={initialNotificationPreferences} />
 

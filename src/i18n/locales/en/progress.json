@@ -1,0 +1,429 @@
+{
+  "ranks": {
+    "kohai": {
+      "name": "Kohai",
+      "lore": "Your first piece, still asleep in the rock.",
+      "threshold": 0
+    },
+    "preorder-hunter": {
+      "name": "Relic Seeker",
+      "lore": "You rescue what everyone else gave up on.",
+      "threshold": 200
+    },
+    "volume-keeper": {
+      "name": "Grimoire Scribe",
+      "lore": "Your collection now has a book of its own.",
+      "threshold": 670
+    },
+    "guild-senpai": {
+      "name": "Guild Senpai",
+      "lore": "Others are starting to follow your light.",
+      "threshold": 1370
+    },
+    "first-print-hunter": {
+      "name": "Bladebearer",
+      "lore": "The broken steel comes back whole, and now it is yours.",
+      "threshold": 2260
+    },
+    "limited-run-curator": {
+      "name": "Warden of Hours",
+      "lore": "You know how to wait, and waiting well is half the craft.",
+      "threshold": 3340
+    },
+    "club-sensei": {
+      "name": "Crystal Summoner",
+      "lore": "The shard you found at the start now burns in your hands.",
+      "threshold": 4600
+    },
+    "rare-edition-archivist": {
+      "name": "Emerald Sentinel",
+      "lore": "You stand guard over what will never be reprinted.",
+      "threshold": 6020
+    },
+    "collection-shisho": {
+      "name": "Vault Grandmaster",
+      "lore": "Nothing enters or leaves the vault without your key.",
+      "threshold": 7610
+    },
+    "guild-legend": {
+      "name": "Living Legend, Rank S",
+      "lore": "The crystal no longer needs a display case: it has wings.",
+      "threshold": 9350
+    }
+  },
+  "meta": {
+    "medalsTitle": "Medals",
+    "medalTitle": "{name}",
+    "title": "Progress",
+    "ranksTitle": "Ranks",
+    "howItWorksTitle": "How progression works"
+  },
+  "album": {
+    "title": "Medals",
+    "countCaption": "of {total} medals",
+    "progressLabel": "{unlocked} of {total} medals unlocked",
+    "pagesNote": "{count} album pages",
+    "remainingNote": "{count} left to find",
+    "seriesCounter": "{unlocked} of {total}",
+    "seriesProgressLabel": "{unlocked} of {total} on this page",
+    "seriesUpcoming": "Coming soon",
+    "legendTitle": "The print run",
+    "legendCaption": "Rarity reads as a print run, not as a video-game rank.",
+    "lockedTitle": "Locked medal",
+    "hintLabel": "How to get it",
+    "noHint": "No hint yet",
+    "upcomingHint": "Lands in a future release of the album.",
+    "notCurrent": "No longer current",
+    "current": "Current",
+    "openDetail": "Open the detail of {name}",
+    "openLockedDetail": "Open the detail of a locked medal"
+  },
+  "detail": {
+    "back": "Back to the album",
+    "secretEyebrow": "Secret medal",
+    "artLabel": "{name}, {rarity}",
+    "lockedArtLabel": "Locked medal, {rarity}",
+    "howUnlocked": "How you got it",
+    "howToUnlock": "How to get it",
+    "date": "Date",
+    "page": "Album page",
+    "pageSecret": "{series} · no prior hint",
+    "rarity": "Print run",
+    "state": "State",
+    "points": "Points",
+    "pointsValue": "Medals grant no points and are never revoked.",
+    "notObtainable": "Not obtainable in this release yet.",
+    "soonTitle": "% of collectors who have it",
+    "soonCaption": "It switches on once there are more collectors.",
+    "nextTitle": "Next on this page",
+    "nextEmpty": "You already have every medal on this page."
+  },
+  "series": {
+    "first-steps": {
+      "name": "First steps",
+      "caption": "Everything that opens on day one."
+    },
+    "the-wait": {
+      "name": "The wait",
+      "caption": "Importing is paid for in months."
+    },
+    "the-display-case": {
+      "name": "The display case",
+      "caption": "What you see when you open the door."
+    },
+    "explorer": {
+      "name": "Explorer",
+      "caption": "New stores, new categories, new countries."
+    },
+    "chronicler": {
+      "name": "Chronicler",
+      "caption": "A clean record, and a contribution to the map."
+    },
+    "secrets": {
+      "name": "Secrets",
+      "caption": "No hint. They show up on their own."
+    }
+  },
+  "rarity": {
+    "normal": "Standard run",
+    "first-print": "First edition",
+    "limited": "Limited edition",
+    "holo": "Holographic",
+    "signed": "Signed"
+  },
+  "medals": {
+    "first-order": {
+      "name": "First order",
+      "hint": "Register your first order.",
+      "lore": "Every album starts with one record."
+    },
+    "first-payment": {
+      "name": "First payment",
+      "hint": "Log your first payment.",
+      "lore": "The money stops being a memory and becomes data."
+    },
+    "first-arrival": {
+      "name": "First arrival",
+      "hint": "Receive your first delivery.",
+      "lore": "The box arrived and it got written down."
+    },
+    "first-order-closed": {
+      "name": "Full circle",
+      "hint": "Close an order: fully paid and fully received.",
+      "lore": "Paid, arrived and nothing left hanging."
+    },
+    "first-review": {
+      "name": "First review",
+      "hint": "Review a store you have already received a product from.",
+      "lore": "Your experience helps the next collector."
+    },
+    "first-photo-order": {
+      "name": "From paper to record",
+      "hint": "Create an order from an image.",
+      "lore": "A photo from a chat became a record."
+    },
+    "first-store": {
+      "name": "A new door",
+      "hint": "Place an order at a second, different store.",
+      "lore": "One more store on your map."
+    },
+    "first-preorder": {
+      "name": "Pre-order logged",
+      "hint": "Register an order with an estimated delivery date.",
+      "lore": "Now you know when to expect it."
+    },
+    "patience-60": {
+      "name": "Two months of waiting",
+      "hint": "Receive an order 60 or more days after placing it.",
+      "lore": "Importing is measured in months, not days."
+    },
+    "patience-120": {
+      "name": "The long wait",
+      "hint": "Receive an order 120 or more days after placing it.",
+      "lore": "Four months staring at the same status."
+    },
+    "patience-200": {
+      "name": "The impossible wait",
+      "hint": "Receive an order 200 or more days after placing it.",
+      "lore": "Almost nobody expected it any more, and it arrived."
+    },
+    "split-arrival": {
+      "name": "Arrives in parts",
+      "hint": "Receive one order split across more than one delivery.",
+      "lore": "One order, several boxes."
+    },
+    "collection-10": {
+      "name": "Ten pieces",
+      "hint": "Receive 10 products.",
+      "lore": "The display case starts to fill up."
+    },
+    "collection-50": {
+      "name": "Half a hundred",
+      "hint": "Receive 50 products.",
+      "lore": "One shelf is no longer enough."
+    },
+    "collection-150": {
+      "name": "Full display case",
+      "hint": "Receive 150 products.",
+      "lore": "A collection counted by the row."
+    },
+    "arrivals-25": {
+      "name": "Familiar port",
+      "hint": "Receive 25 deliveries.",
+      "lore": "The courier already knows your name."
+    },
+    "variety-3": {
+      "name": "Broad taste",
+      "hint": "Receive products of 3 different types.",
+      "lore": "You do not collect just one thing."
+    },
+    "countries-3": {
+      "name": "Three borders",
+      "hint": "Receive products from stores in 3 different countries.",
+      "lore": "Your collection crossed three borders."
+    },
+    "variety-6": {
+      "name": "Mixed collection",
+      "hint": "Receive products of 6 different types.",
+      "lore": "Every shelf tells a different story."
+    },
+    "stores-10": {
+      "name": "Your own map",
+      "hint": "Receive products from 10 different stores.",
+      "lore": "Your own network of trusted stores."
+    },
+    "clean-record-1": {
+      "name": "Spotless record",
+      "hint": "Fill in every product detail of one order.",
+      "lore": "An order with no empty fields."
+    },
+    "store-charted-1": {
+      "name": "Store charted",
+      "hint": "Register a store and wait for it to be approved.",
+      "lore": "What you wrote down is on everybody's map now."
+    },
+    "reviews-5": {
+      "name": "Voice of trust",
+      "hint": "Review 5 stores you have already received a product from.",
+      "lore": "Five stores carrying your opinion."
+    },
+    "clean-record-10": {
+      "name": "Clean archive",
+      "hint": "Complete the record of 10 orders.",
+      "lore": "The record is worth as much as the display case."
+    },
+    "midnight-order": {
+      "name": "Night shift",
+      "hint": "Register an order between 00:00 and 04:00.",
+      "lore": "Nobody told you it existed."
+    },
+    "swift-arrival": {
+      "name": "It flew here",
+      "hint": "Receive a whole order in 7 days or less.",
+      "lore": "No time to get used to waiting."
+    },
+    "same-day-settle": {
+      "name": "Books in order",
+      "hint": "Settle and close an order on the day it arrived.",
+      "lore": "It arrived, it was paid and it was closed."
+    },
+    "year-streak": {
+      "name": "A year with you",
+      "hint": "Register at least one order for 12 months in a row.",
+      "lore": "Twelve months without dropping the record."
+    }
+  },
+  "section": {
+    "title": "Progress",
+    "tabsAriaLabel": "Progress sections",
+    "tabSummary": "Summary",
+    "tabMedals": "Medals",
+    "tabRanks": "Ranks",
+    "pointsChip": "{points} pts",
+    "staleNotice": "We are refreshing your points. What you see may be a few minutes old.",
+    "headingSummary": "Progress · Summary",
+    "headingMedals": "Progress · Medals",
+    "headingRanks": "Progress · Ranks",
+    "howItWorks": "How it works"
+  },
+  "summary": {
+    "eyebrow": "Rank {index} of 10 · only you can see it",
+    "pointsCaption": "points earned",
+    "monthChip": "+{points} this month",
+    "barLabel": "Progress toward {rank}",
+    "barValue": "{current} of {threshold} points toward {rank}",
+    "barNote": "{current} of {threshold} pts",
+    "toNextRank": "{points} pts to go for {rank}",
+    "atTop": "You reached the last rank of the ladder.",
+    "monthTitle": "Points this month",
+    "monthEmpty": "No points yet this month.",
+    "honesty": "Points measure your recordkeeping, not your spending.",
+    "meritTitle": "Merit lock",
+    "meritCopy": "{rank} asks for {percent} % of the album. You hold {unlocked} of {total}.",
+    "meritDone": "You already hold the album {rank} asks for.",
+    "meritBarLabel": "Album for {rank}",
+    "meritBarValue": "{unlocked} of {required} medals for {rank}",
+    "soonTitle": "Comparison between collectors",
+    "soonCaption": "Coming soon: compare with other collectors.",
+    "medalsTitle": "Medals",
+    "medalsCounter": "{unlocked} of {total}",
+    "medalsLink": "See the full album",
+    "medalsEmpty": "No medals unlocked yet. Each one shows up on its own when you earn it.",
+    "ranksTitle": "Ranks",
+    "ranksLink": "See the full ladder",
+    "emptyTitle": "Start your record",
+    "emptyBody": "You have no points yet. Register your first order and get started.",
+    "emptyCta": "Register an order",
+    "howItWorksLink": "How it works"
+  },
+  "creation": {
+    "toast": {
+      "withDeferred": "You earned {points} points. {deferred} more when you log the first payment or the first arrival.",
+      "immediateOnly": "You earned {points} points."
+    }
+  },
+  "groups": {
+    "orders": "Orders registered",
+    "payments": "Payments registered",
+    "arrivals": "Arrivals and closures",
+    "discovery": "Stores and discoveries"
+  },
+  "ranksTab": {
+    "intro": "Ten ranks, from the club door to the guild legend.",
+    "legendConquered": "Reached",
+    "legendCurrent": "You are here",
+    "legendLocked": "Locked, not reached yet",
+    "legendPermanence": "A rank once reached is permanent: the bar can go back, the title never does.",
+    "legendLabel": "How to read the ladder",
+    "ladderLabel": "Rank ladder",
+    "summit": "The summit",
+    "here": "You are here",
+    "conquered": "Reached",
+    "locked": "Locked",
+    "threshold": "{points} pts",
+    "missing": "{points} pts to go",
+    "meritNote": "It also asks for {percent} % of the album.",
+    "collapsedSummary": "{count} more ranks between the summit and you, with their thresholds"
+  },
+  "howItWorks": {
+    "eyebrow": "Progress",
+    "title": "How progression works",
+    "lead": "Progression rewards keeping your records up to date. Here is everything that counts, and why it works this way.",
+    "back": "Back to the summary",
+    "blocks": {
+      "earn": {
+        "title": "What earns points",
+        "body": "Registering an order, logging a payment, confirming an arrival, closing an order once it is paid and received, reviewing a store you already received from, a first order at a new store, and a first product of a new type.",
+        "why": "They are the signs that your records are current. Opening the app, filtering lists or editing an order that already counted earn nothing."
+      },
+      "mature": {
+        "title": "An order matures with its first payment",
+        "body": "Registering the order adds something right away. The rest waits until that order has a payment assigned to it, and its arrival and its closing wait for the same thing.",
+        "why": "It is not a bug and not a delay: an order with no payment logged is still an intention. The first payment is what makes it real."
+      },
+      "caps": {
+        "title": "There are caps, and repeats are worth less",
+        "body": "Every rule adds up to a monthly cap. And several orders in a row at the same store within the same month are each worth a little less, though never zero.",
+        "why": "That way over-registering is never the shortcut. Record at your own pace and you will rarely meet a cap. The exact figures stay unpublished, precisely so they cannot be gamed."
+      },
+      "recompute": {
+        "title": "What stops existing stops counting",
+        "body": "Your balance is recalculated over what still exists. Delete an order and its points go with it. Cancel it and almost all of them go: only the points for registering it stay.",
+        "why": "Cancelling is a real outcome, and recording it is still keeping your records. It is also why you never see negative points: nothing is subtracted, everything is recalculated."
+      },
+      "stores": {
+        "title": "A store counts once it is public and approved",
+        "body": "You can register the store you buy from and its orders count like any other, but first it has to pass approval and be public. A private store never counts.",
+        "why": "Approval is the one step you cannot take on your own. Without it, inventing a store and buying from yourself would be free points."
+      },
+      "permanence": {
+        "title": "Your rank never drops and medals are not points",
+        "body": "The rank you reach is yours for good: if your total falls, the bar moves back, never the name. Medals add no points and are never taken away.",
+        "why": "Points measure your recordkeeping, not your spending: no amount of money ever adds points. And medals are status, not currency."
+      }
+    },
+    "closingTitle": "Nobody is compared to anybody",
+    "closingBody": "Your rank, your points and your medals are yours to see and nobody else's. There is no table and no ranking between collectors today. If there ever is one, it will be optional."
+  },
+  "widget": {
+    "eyebrow": "Your rank",
+    "pointsCaption": "points",
+    "monthChip": "+{points} this month",
+    "recentTitle": "Latest medals",
+    "albumLink": "See the album {unlocked} of {total}",
+    "open": "See my progress",
+    "medalLabel": "Medal {name}, {rarity}",
+    "empty": "Register your first order and start earning points."
+  },
+  "rank": {
+    "position": "Rank {index} of 10",
+    "emblemLabel": "{rank} emblem"
+  },
+  "celebration": {
+    "dismiss": "Close",
+    "toast": {
+      "kicker": "Medal unlocked",
+      "meta": "{rarity} · {series} page"
+    },
+    "burst": {
+      "kicker": "Medals unlocked",
+      "title": "You unlocked {count} medals",
+      "meta": "See them all in your album"
+    },
+    "medal": {
+      "kicker": "{rarity} medal",
+      "cta": "See it in the album"
+    },
+    "rank": {
+      "kicker": "You moved up",
+      "permanence": "Rank {index} of 10, and this one is never lost.",
+      "cta": "Continue"
+    },
+    "welcome": {
+      "title": "Your history counts now",
+      "subtitle": "We added up everything you already had recorded.",
+      "medals": "{count} medals unlocked",
+      "cta": "See my progress"
+    }
+  }
+}

@@ -304,6 +304,24 @@
   --accent-cool: oklch(58% 0.1 215);
 
   --focus-ring: oklch(46% 0.2 290 / 0.55);
+
+  /* Medal rarity — ADR 0036, literal values from tokens-css.md § 12.
+     Two tokens per grade: the ring color the artwork consumes directly, and the
+     chip-text alias the label consumes over a 14% chip fill (≥3:1 ring, ≥4.5:1 text). */
+  --rarity-normal: oklch(48% 0.02 285);
+  --rarity-normal-chip-text: oklch(46% 0.02 285);
+
+  --rarity-first-print: oklch(50% 0.15 92);
+  --rarity-first-print-chip-text: oklch(46% 0.13 92);
+
+  --rarity-limited: oklch(46% 0.035 230);
+  --rarity-limited-chip-text: oklch(46% 0.035 230);
+
+  --rarity-holo: oklch(50% 0.17 265);
+  --rarity-holo-chip-text: oklch(47% 0.15 265);
+
+  --rarity-signed: oklch(48% 0.18 48);
+  --rarity-signed-chip-text: oklch(47% 0.16 48);
 }
 
 :root[data-theme="dark"] {
@@ -360,6 +378,72 @@
   --accent-cool: oklch(74% 0.11 215);
 
   --focus-ring: oklch(74% 0.19 290 / 0.65);
+
+  /* Medal rarity — ADR 0036, literal values from tokens-css.md § 12.
+     In dark the ring token is already light enough to serve as its own chip text. */
+  --rarity-normal: oklch(72% 0.02 265);
+  --rarity-normal-chip-text: var(--rarity-normal);
+
+  --rarity-first-print: oklch(78% 0.14 92);
+  --rarity-first-print-chip-text: var(--rarity-first-print);
+
+  --rarity-limited: oklch(74% 0.03 235);
+  --rarity-limited-chip-text: var(--rarity-limited);
+
+  --rarity-holo: oklch(76% 0.16 268);
+  --rarity-holo-chip-text: var(--rarity-holo);
+
+  --rarity-signed: oklch(76% 0.16 48);
+  --rarity-signed-chip-text: var(--rarity-signed);
+}
+
+/* ───────────────────────────────────────────────────────────
+   5b. Rank bands — literal values from tokens-css.md § 12.2
+   Pure aliases, declared once rather than per theme: every
+   aliased token is already theme-aware, so the ladder follows
+   light/dark through them without a second declaration.
+   ─────────────────────────────────────────────────────────── */
+:root {
+  --rank-band-conquered: var(--success);
+  --rank-band-conquered-text: var(--success-chip-text);
+
+  --rank-band-current: var(--accent);
+  --rank-band-current-text: var(--text-primary);
+
+  --rank-band-locked: var(--border);
+  --rank-band-locked-text: var(--text-muted);
+
+  --rank-band-top: var(--accent-warm);
+  --rank-band-top-text: var(--text-primary);
+}
+
+/* ───────────────────────────────────────────────────────────
+   5c. Locked artwork — the filter a rank emblem or a medal is
+   drawn with while the collector has not earned it.
+
+   A token rather than a utility class, for one reason: the
+   recipe has to differ per theme and it is a `filter`, which
+   no semantic colour variable can carry. The two values are
+   the SAME idea expressed against two grounds — the piece is
+   struck but not finished, so it reads as raw metal rather
+   than as colour: saturation gone, CONTRAST KEPT. Dropping
+   the contrast (or dimming with `opacity`) is what made the
+   previous recipe read as a dead, washed-out smudge instead
+   of as a different material (owner feedback, 2026-08-26).
+
+   Never the only carrier of the locked state: every surface
+   that draws one pairs it with the word "Bloqueado", a
+   padlock, or both (`ADR 0006`).
+   ─────────────────────────────────────────────────────────── */
+:root {
+  /* Light: pewter on a pale ground, so the piece keeps its highlights. */
+  --locked-art-filter: grayscale(1) contrast(1.18) brightness(0.92);
+}
+
+:root[data-theme="dark"] {
+  /* Dark: gunmetal. The same drain, pulled further down so a piece that is
+     lit from within on this ground stops competing with the earned ones. */
+  --locked-art-filter: grayscale(1) contrast(1.12) brightness(0.72);
 }
 
 /* ───────────────────────────────────────────────────────────
@@ -2036,5 +2120,72 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .intake-field {
     transition: none;
+  }
+}
+
+/* ───────────────────────────────────────────────────────────
+   Progression celebration — confetti, halo and the art's entrance.
+   Pure decoration: every fact the surface states is in its own text,
+   so reduced motion removes the pieces outright instead of slowing
+   them down (ADR 0036 §3, FDD-12 §5.5).
+   ─────────────────────────────────────────────────────────── */
+@keyframes celebration-confetti {
+  0% {
+    transform: translate3d(0, -120%, 0) rotate(0deg);
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(var(--confetti-drift, 0px), 320%, 0) rotate(var(--confetti-spin, 360deg));
+    opacity: 0;
+  }
+}
+
+.celebration-confetti-piece {
+  animation: celebration-confetti var(--confetti-duration, 2200ms) var(--ease-out-expressive) var(--confetti-delay, 0ms)
+    forwards;
+}
+
+@keyframes celebration-halo {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(0.94);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.06);
+  }
+}
+
+.celebration-halo {
+  animation: celebration-halo 2600ms var(--ease-emphasis) infinite;
+}
+
+@keyframes celebration-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 16px, 0) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.celebration-rise {
+  animation: celebration-rise var(--motion-slow) var(--ease-out-expressive) backwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .celebration-confetti {
+    display: none;
+  }
+
+  .celebration-halo,
+  .celebration-rise {
+    animation: none;
   }
 }

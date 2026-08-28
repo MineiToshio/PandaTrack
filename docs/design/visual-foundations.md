@@ -187,6 +187,78 @@ What it does NOT do is compute a ratio. It knows which token is the text one; it
 
 **A chip does not exempt itself by carrying its own wash.** A 12% fill of the same hue lifts nothing: the orders list ran raw labels on their own washes at 2.23:1 (`--warning`), 3.33:1 (`--info`) and 3.14:1 (`--success`), against 7.62 / 7.00 / 6.13 with the alias. Tone and label colour are separate decisions — `warning`-toned is a statement about the tone, never a licence for the raw token on the label.
 
+#### Medal rarity
+
+FRD-12's medals use the five-grade print-run vocabulary fixed by [ADR 0036](decisions/0036-medal-rarity-visual-system.md): **normal, primera edición (first-print), edición limitada (limited), holográfica (holo), firmada (signed)**, ascending in rarity. ADR 0036 froze the vocabulary and the "no strong motion on the dashboard" rule but left the token values open; this section closes that gap. `--rarity-*` is a **new token family**, not a reuse of `--accent`/`--accent-warm`/`--accent-cool` (those keep their existing, narrower contracts), because a rarity ring has to stay visually distinct from status and accent color at a glance, on a component that already carries its own accent usage nearby (the album card, the dashboard tile).
+
+Each grade owns two tokens: a **ring** (the medal artwork's border/graphic treatment; also the base for the chip fill and border via the same `color-mix` recipe status chips use) and a **chip-text** alias (the rarity label's text color). The ring is picked first, chosen for contrast against `--surface-elevated` (medal artwork sits on a card, per the [surface selection rules](#choosing-between---surface-and---surface-elevated) above); the chip-text alias is then solved for AA against the ring's own 14%-mixed chip background, exactly mirroring the `--{status}-chip-text` pattern already established for status. In dark mode the ring itself clears AA as chip text (same reason the dark status tokens need no alias, see "Status color as text" above), so **dark chip-text is the ring token itself**, no separate dark literal.
+
+| Grade                  | Ring, Velvet light     | Ring, Velvet dark     | Chip-text, Velvet light | Chip-text, Velvet dark |
+| ---------------------- | ---------------------- | --------------------- | ----------------------- | ---------------------- |
+| `--rarity-normal`      | `oklch(48% 0.02 285)`  | `oklch(72% 0.02 265)` | `oklch(46% 0.02 285)`   | alias of the dark ring |
+| `--rarity-first-print` | `oklch(50% 0.15 92)`   | `oklch(78% 0.14 92)`  | `oklch(46% 0.13 92)`    | alias of the dark ring |
+| `--rarity-limited`     | `oklch(46% 0.035 230)` | `oklch(74% 0.03 235)` | `oklch(46% 0.035 230)`  | alias of the dark ring |
+| `--rarity-holo`        | `oklch(50% 0.17 265)`  | `oklch(76% 0.16 268)` | `oklch(47% 0.15 265)`   | alias of the dark ring |
+| `--rarity-signed`      | `oklch(48% 0.18 48)`   | `oklch(76% 0.16 48)`  | `oklch(47% 0.16 48)`    | alias of the dark ring |
+
+Reasoning behind the five hues, low to high: **normal** stays a near-neutral echo of the base Velvet hue (matte, no seal, per ADR 0036 §2 — deliberately the least chromatic grade, close to `--text-secondary`'s hue without being a literal alias, since `--border-strong` in dark mode is a translucent `rgba()` and cannot serve as a solid OKLCH ring). **First-print** is a franker gold (h92) kept clear of `--warning` (h75); **limited**'s engraved-metal read comes from a low-chroma cool hue (h230) that stays legible as "silver" rather than a status color because its chroma (0.03-0.035) is a third of `--info`/`--accent-cool`'s. **Holo** sits at h265-268, between `--accent` (h290) and `--accent-cool` (h215), at high chroma for the iridescent read the ADR describes. **Signed**, the top grade, is a warm copper (h48) deliberately pushed clear of both `--destructive` (h25) and `--accent-warm` (h22) so a collector never reads "signed" as an error or decorative-accent color.
+
+**Chip recipe** (identical formula to the status chips above, parametrized by grade):
+
+```css
+background: color-mix(in oklch, var(--rarity-{grade}) 14%, var(--background));
+border: color-mix(in oklch, var(--rarity-{grade}) 28%, var(--background));
+color: var(--rarity-{grade}-chip-text); /* light: dedicated alias; dark: the ring token itself */
+```
+
+The ring/border on the medal artwork slot itself consumes `var(--rarity-{grade})` directly (e.g. `border-color` or a `box-shadow` ring), not the chip recipe.
+
+**Measured ratios** (WCAG 2.2, computed by converting each OKLCH pair to sRGB relative luminance; script and raw output kept for this change, not committed):
+
+| Grade       | Ring vs `--surface-elevated` (light) | Ring vs `--surface-elevated` (dark) | Chip-text vs 14%-chip-bg (light) | Chip-text vs 14%-chip-bg (dark) |
+| ----------- | ------------------------------------ | ----------------------------------- | -------------------------------- | ------------------------------- |
+| normal      | 5.66:1                               | 7.83:1                              | 4.77:1                           | 7.49:1                          |
+| first-print | 5.14:1                               | 9.70:1                              | 4.73:1                           | 9.10:1                          |
+| limited     | 6.08:1                               | 8.48:1                              | 4.66:1                           | 8.07:1                          |
+| holo        | 5.36:1                               | 8.57:1                              | 4.71:1                           | 8.14:1                          |
+| signed      | 6.03:1                               | 8.52:1                              | 4.79:1                           | 8.12:1                          |
+
+All ten pairs clear the thresholds this system holds itself to: **≥3:1** for the ring as a graphic element carrying information, **≥4.5:1** for the chip-text. The 14%/28% chip border itself is decorative framing exactly like the status chip border (documented "Decorative... never the sole functional separation" for `--border`), not the rarity signal on its own — **the rarity label's text is**, per the next paragraph.
+
+**Color is never the only rarity signal.** Per [ADR 0006](decisions/0006-color-blindness-icon-label-contract.md) (extended to medal rarity by [ADR 0036](decisions/0036-medal-rarity-visual-system.md) §3), every medal shows its grade as a text label next to the ring/chip, on every surface, with no exception — a five-grade gradient is at least as hard to tell apart by color alone as the two-hue case ADR 0006 was written for. The `oklch(...)` values above are declared here as the contract and are now applied verbatim in `src/app/globals.css`, shipped with the medal album (FRD-12, WO-05).
+
+#### Rank bands
+
+The rank ladder (conquered, current, locked, top/cima) needs a state ramp, but no new brand color: every state maps onto a role this system already defines, so `--rank-band-*` is a **pure alias family**, declared once (not per theme) because each aliased token is already theme-aware.
+
+| Token                        | Aliases                    | Why                                                                                                                                                                                     |
+| ---------------------------- | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--rank-band-conquered`      | `var(--success)`           | A reached rank is exactly the "achievement chip" use case `--success` already documents.                                                                                                |
+| `--rank-band-conquered-text` | `var(--success-chip-text)` | Reuses the existing status chip-text alias verbatim (light dedicated value, dark = base, already theme-aware).                                                                          |
+| `--rank-band-current`        | `var(--accent)`            | The "you are here" step is the same role `--accent` already plays for a progress bar; the node reuses the existing `.state-selected` recipe (`tokens-css.md` §6) rather than a new one. |
+| `--rank-band-current-text`   | `var(--text-primary)`      | Selected items keep body text color; selection reads from fill + border, not from a tinted label (matches `selected` in the state-layer table above).                                   |
+| `--rank-band-locked`         | `var(--border)`            | A future, unreached rank is exactly `.state-disabled`'s existing border role.                                                                                                           |
+| `--rank-band-locked-text`    | `var(--text-muted)`        | Same `.state-disabled` recipe's text role; never `opacity`.                                                                                                                             |
+| `--rank-band-top`            | `var(--accent-warm)`       | The ladder's ceiling is a decorative highlight, the same role `--accent-warm` already plays for the achievement halo. Ring/halo only, never text (see the accents table above).         |
+| `--rank-band-top-text`       | `var(--text-primary)`      | `--accent-warm` cannot carry text (documented above); the top rank's label stays `--text-primary` like every other rank name.                                                           |
+
+**Measured ratios** confirm every reused pairing still clears its threshold in this new context:
+
+| Pairing                                                  | Light   | Dark    | Threshold |
+| -------------------------------------------------------- | ------- | ------- | --------- |
+| `--rank-band-conquered` ring vs `--surface-elevated`     | 3.45:1  | 8.98:1  | ≥3:1      |
+| `--rank-band-conquered-text` vs its 14%-mixed chip bg    | 5.45:1  | 8.54:1  | ≥4.5:1    |
+| `--rank-band-current` ring vs `--surface-elevated`       | 6.77:1  | 7.62:1  | ≥3:1      |
+| `--rank-band-current-text` vs the `.state-selected` fill | 12.59:1 | 15.63:1 | ≥4.5:1    |
+| `--rank-band-locked-text` vs `--surface-elevated`        | 6.17:1  | 5.76:1  | ≥4.5:1    |
+| `--rank-band-top` ring vs `--surface-elevated`           | 3.20:1  | 9.15:1  | ≥3:1      |
+
+`--rank-band-locked`'s border itself is decorative framing (like `--border` everywhere else in this system), so it is not held to 3:1 on its own; the lock state is read from the muted label and (per ADR 0006's contract, extended by ADR 0036) an adjacent lock icon, not from the border alone.
+
+`--rank-band-*` is declared in `src/app/globals.css`, once rather than per theme, and shipped with the `Progreso` section's rank ladder. `RankLadder` consumes it for the rung's leading band strip and its state labels; `RankEmblem` keeps only the `*-text` half, for the numeral it falls back to off the ladder. The emblem itself stopped consuming the ring half on 2026-08-26, when the plate around the artwork was removed: the ladder's state now lives in the rung's own chrome and words, never as a ring on the art (see `components.md` -> `RankEmblem`).
+
+**`--locked-art-filter`** (§5c of `globals.css`) is the sibling token that recipe left behind: the `filter` a rank emblem or a medal is drawn with while it is not earned. It is a token and not a utility class for one reason — the recipe has to differ per theme, and a `filter` is a thing no colour variable can carry. Both values express the same idea against two grounds: saturation gone, **contrast kept**, so the piece reads as raw metal rather than as a washed-out smudge. Dropping the contrast, or dimming with `opacity`, is what made the previous `grayscale(1) opacity(.6)` look dead. It is never the only carrier of the state (`ADR 0006`): the word `"Bloqueado"`, a padlock chip, or both, always sit with it.
+
 #### Focus and state layers
 
 | Token / state  | Recipe                                                                                                                                                                                       |

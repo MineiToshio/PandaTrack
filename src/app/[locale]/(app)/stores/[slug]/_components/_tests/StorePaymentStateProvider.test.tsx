@@ -237,6 +237,7 @@ describe("StorePaymentStateProvider - registering a payment", () => {
     await act(async () => {
       pending.resolve({
         ok: true,
+        progression: null,
         paymentId: "payment-real-1",
         currencyCode: "PEN",
         affectedOrders: [],
@@ -263,6 +264,7 @@ describe("StorePaymentStateProvider - registering a payment", () => {
     await act(async () => {
       pending.resolve({
         ok: true,
+        progression: null,
         paymentId: "payment-real-1",
         currencyCode: "PEN",
         affectedOrders: [],
@@ -378,6 +380,7 @@ describe("StorePaymentStateProvider - registering a payment", () => {
       await act(async () => {
         pending.resolve({
           ok: true,
+          progression: null,
           paymentId: "payment-real-1",
           currencyCode: "PEN",
           affectedOrders: [],
@@ -756,6 +759,7 @@ describe("StorePaymentStateProvider - the optimistic patch tells the truth about
     await act(async () => {
       pending.resolve({
         ok: true,
+        progression: null,
         paymentId: "payment-real-1",
         currencyCode: "PEN",
         affectedOrders: [],

@@ -4,6 +4,7 @@ import { useCallback, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { ShellIdentityContext } from "@/contexts/ShellIdentityContext";
 import { ToastProvider } from "@/contexts/ToastContext";
+import { ProgressionFeedbackProvider } from "@/contexts/ProgressionFeedbackContext";
 import Sidebar from "@/components/modules/Sidebar";
 import Header from "@/components/modules/Header";
 import CreateOrderFab, { isFabEligibleRoute } from "@/components/modules/CreateOrderFab";
@@ -28,6 +29,10 @@ type AppLayoutProps = {
   isAdmin: boolean;
   /** Photo balance for the create-method selector the floating button opens. */
   photoCounter?: PhotoCounterSnapshot | null;
+  /** `false` while "Ocultar mi progresión" is on; the `Progreso` entry disappears (`FR-12-38`). */
+  showProgression: boolean;
+  /** A migrated history still owed its single aggregated welcome celebration (`FR-12-43`). */
+  welcomeCelebrationPending?: boolean;
   children: React.ReactNode;
 };
 
@@ -39,6 +44,8 @@ export default function AppLayout({
   storedTimezone,
   isAdmin,
   photoCounter = null,
+  showProgression,
+  welcomeCelebrationPending = false,
   children,
 }: AppLayoutProps) {
   const pathname = usePathname();
@@ -46,6 +53,10 @@ export default function AppLayout({
   const [drawerOpen, setDrawerOpen] = useState(false);
   const burgerButtonRef = useRef<HTMLButtonElement>(null);
   const [currentUser, setCurrentUser] = useState<AppShellUserIdentity>(initialUser);
+  // Held here rather than inside the feedback provider because the navigation entry that has to
+  // disappear with it is rendered by this component, which is that provider's own parent. The
+  // server value seeds it so a hidden layer never flashes in before the client catches up.
+  const [progressionVisible, setProgressionVisible] = useState(showProgression);
   // Dashboard + Orders list only, shared with the FAB itself so the toast inset and the list's
   // reserved bottom padding never drift from where the button actually renders.
   const fabEligible = isFabEligibleRoute(pathname ?? "", locale);
@@ -64,71 +75,80 @@ export default function AppLayout({
   return (
     <ShellIdentityContext.Provider value={{ user: currentUser, updateUser }}>
       <ToastProvider fabOffsetActive={fabEligible}>
-        <ServiceWorkerRegistration />
-        <TimezoneCapture storedTimezone={storedTimezone} />
-        {/* Shell root: carries --sidebar-current-w so all children can reference it */}
-        <div
-          className="flex min-h-screen flex-col"
-          style={{ "--sidebar-current-w": sidebarCurrentW } as React.CSSProperties}
+        <ProgressionFeedbackProvider
+          locale={locale}
+          progressionVisible={progressionVisible}
+          onProgressionVisibleChange={setProgressionVisible}
+          welcomeCelebrationPending={welcomeCelebrationPending}
         >
-          {/* Skip link */}
-          <a
-            href="#main-content"
-            className="focus:bg-surface sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[200] focus:rounded-lg focus:px-4 focus:py-2 focus:shadow-lg focus:outline-none"
+          <ServiceWorkerRegistration />
+          <TimezoneCapture storedTimezone={storedTimezone} />
+          {/* Shell root: carries --sidebar-current-w so all children can reference it */}
+          <div
+            className="flex min-h-screen flex-col"
+            style={{ "--sidebar-current-w": sidebarCurrentW } as React.CSSProperties}
           >
-            Saltar al contenido
-          </a>
+            {/* Skip link */}
+            <a
+              href="#main-content"
+              className="focus:bg-surface sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[200] focus:rounded-lg focus:px-4 focus:py-2 focus:shadow-lg focus:outline-none"
+            >
+              Saltar al contenido
+            </a>
 
-          {/* Desktop sidebar — PUSH: width drives content offset via --sidebar-current-w */}
-          <Sidebar
-            locale={locale}
-            currentUser={currentUser}
-            signOutLabel={signOutLabel}
-            expanded={expanded}
-            onToggle={toggle}
-            floatingOpen={floatingOpen}
-            onFloatingChange={setFloatingOpen}
-            storesHref={storesHref}
-            isAdmin={isAdmin}
-          />
+            {/* Desktop sidebar — PUSH: width drives content offset via --sidebar-current-w */}
+            <Sidebar
+              locale={locale}
+              currentUser={currentUser}
+              signOutLabel={signOutLabel}
+              expanded={expanded}
+              onToggle={toggle}
+              floatingOpen={floatingOpen}
+              onFloatingChange={setFloatingOpen}
+              storesHref={storesHref}
+              isAdmin={isAdmin}
+              showProgression={progressionVisible}
+            />
 
-          {/* Mobile nav drawer */}
-          <AppNavDrawer
-            locale={locale}
-            currentUser={currentUser}
-            signOutLabel={signOutLabel}
-            isOpen={drawerOpen}
-            onClose={handleCloseDrawer}
-            returnFocusRef={burgerButtonRef}
-            storesHref={storesHref}
-            isAdmin={isAdmin}
-          />
+            {/* Mobile nav drawer */}
+            <AppNavDrawer
+              locale={locale}
+              currentUser={currentUser}
+              signOutLabel={signOutLabel}
+              isOpen={drawerOpen}
+              onClose={handleCloseDrawer}
+              returnFocusRef={burgerButtonRef}
+              storesHref={storesHref}
+              isAdmin={isAdmin}
+              showProgression={progressionVisible}
+            />
 
-          {/* Content area: padded left on desktop to accommodate sidebar PUSH */}
-          <div className="flex min-w-0 flex-1 flex-col transition-[padding-left] duration-[var(--motion-base)] ease-[var(--ease-out-expressive)] motion-reduce:transition-none lg:pl-[var(--sidebar-current-w)]">
-            <HeaderTitleProvider>
-              <Header
-                locale={locale}
-                pathname={pathname ?? ""}
-                drawerOpen={drawerOpen}
-                onOpenDrawer={handleOpenDrawer}
-                burgerButtonRef={burgerButtonRef}
-              />
-              <main
-                id="main-content"
-                className={cn(
-                  APP_SHELL_MAIN_CLASSNAME,
-                  // Reserve the same inset the FAB raises the toast by, so the last list card
-                  // never ends up underneath it. Matches the FAB's own `lg:hidden`.
-                  fabEligible && "max-lg:pb-[calc(var(--fab-offset)+var(--fab-h)+var(--space-3))]",
-                )}
-              >
-                {children}
-              </main>
-            </HeaderTitleProvider>
+            {/* Content area: padded left on desktop to accommodate sidebar PUSH */}
+            <div className="flex min-w-0 flex-1 flex-col transition-[padding-left] duration-[var(--motion-base)] ease-[var(--ease-out-expressive)] motion-reduce:transition-none lg:pl-[var(--sidebar-current-w)]">
+              <HeaderTitleProvider>
+                <Header
+                  locale={locale}
+                  pathname={pathname ?? ""}
+                  drawerOpen={drawerOpen}
+                  onOpenDrawer={handleOpenDrawer}
+                  burgerButtonRef={burgerButtonRef}
+                />
+                <main
+                  id="main-content"
+                  className={cn(
+                    APP_SHELL_MAIN_CLASSNAME,
+                    // Reserve the same inset the FAB raises the toast by, so the last list card
+                    // never ends up underneath it. Matches the FAB's own `lg:hidden`.
+                    fabEligible && "max-lg:pb-[calc(var(--fab-offset)+var(--fab-h)+var(--space-3))]",
+                  )}
+                >
+                  {children}
+                </main>
+              </HeaderTitleProvider>
+            </div>
           </div>
-        </div>
-        <CreateOrderFab locale={locale} photoCounter={photoCounter} />
+          <CreateOrderFab locale={locale} photoCounter={photoCounter} />
+        </ProgressionFeedbackProvider>
       </ToastProvider>
     </ShellIdentityContext.Provider>
   );

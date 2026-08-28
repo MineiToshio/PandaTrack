@@ -6,11 +6,22 @@ import { getSession } from "@/lib/auth/auth-server";
 import { getPostHogClient } from "@/lib/analytics/posthog-server";
 import { POSTHOG_EVENTS } from "@/lib/constants";
 import { createOrder, editOrder } from "@/lib/data/orders/orderMutations";
+import type { ProgressionDelta } from "@/lib/data/progression/accrual";
 import { orderCreateSchema, orderEditSchema } from "@/lib/orders/orderValidation";
 import { parseDecimalToMinorUnits } from "@/lib/money/parseDecimalToMinorUnits";
 
 export type OrderActionResult =
-  { success: true; orderId: string } | { success: false; error: string; fieldErrors?: Record<string, string[]> };
+  | {
+      success: true;
+      orderId: string;
+      /**
+       * The progression this action produced. Three states, all meaningful: ABSENT when the action
+       * credits nothing by design (an edit is not a new fact), `null` when a credit was attempted
+       * and its own step failed, and a delta when the ledger actually moved.
+       */
+      progression?: ProgressionDelta | null;
+    }
+  | { success: false; error: string; fieldErrors?: Record<string, string[]> };
 
 function parseItemsJson(raw: FormDataEntryValue | null): unknown[] {
   if (typeof raw !== "string" || !raw) return [];
@@ -114,7 +125,7 @@ export async function createOrderAction(
     }
     await posthog.shutdown();
 
-    return { success: true, orderId: result.orderId };
+    return { success: true, orderId: result.orderId, progression: result.progression };
   } catch (error) {
     Sentry.captureException(error);
     return { success: false, error: "server_error" };

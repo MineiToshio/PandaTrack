@@ -50,6 +50,7 @@ const DELIVERY_QUERIES = "src/lib/data/deliveries/deliveryQueries.ts";
 const DELIVERY_DETAIL_PAGE = "src/app/[locale]/(app)/deliveries/[id]/page.tsx";
 const DELIVERY_DETAIL_HERO = "src/app/[locale]/(app)/deliveries/[id]/_components/DeliveryDetailHero.tsx";
 const STORE_ACCOUNT_ADJUSTMENT_MUTATIONS = "src/lib/data/orders/storeAccountAdjustmentMutations.ts";
+const PROGRESSION_QUERIES = "src/lib/data/progression/progressionQueries.ts";
 
 /** Comments are masked first so prose about the defect is never read as the defect. */
 function readSource(relativePath: string): string {
@@ -87,6 +88,11 @@ const RESOLVERS: Array<{ path: string; calls: number; anchors: string[]; needle?
     anchors: ["storeAccountAdjustment.create", "resolveTodayStart("],
     needle: "resolveTodayStart(",
   },
+  // A ledger entry's `occurredOn` is the collector's civil day, and the monthly point caps are
+  // grouped by it. A wall-clock instant here does not merely mislabel a row: at 21:00 in Lima on
+  // the last day of a month it files the credit under the NEXT month's cap, so one month pays out
+  // more than its ceiling and the next starts already spent.
+  { path: PROGRESSION_QUERIES, calls: 1, anchors: ["resolveProgressionOccurredOn", "timezone: true"] },
 ];
 
 /** Files handed the civil day as a prop, which must not build one of their own. */

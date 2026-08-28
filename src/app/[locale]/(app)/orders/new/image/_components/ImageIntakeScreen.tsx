@@ -40,6 +40,7 @@ import {
 } from "../../../_actions/imageIntakeContract";
 import { extractOrderFromImagesAction } from "../../../_actions/imageIntakeExtractAction";
 import type { IntakeBreakdownPayload } from "@/lib/imageIntake/intakeBreakdownContract";
+import { useProgressionFeedback } from "@/contexts/ProgressionFeedbackContext";
 import { saveOrderFromDraftAction } from "../../../_actions/imageIntakeSaveAction";
 import IntakeProcessingPanel, { type IntakeProcessingStep } from "./IntakeProcessingPanel";
 import IntakeQuotaExhausted from "./IntakeQuotaExhausted";
@@ -187,6 +188,7 @@ export default function ImageIntakeScreen({
   const locale = useLocale();
   const router = useRouter();
   const { addToast } = useToast();
+  const { announceProgression } = useProgressionFeedback();
   const searchParams = useSearchParams();
   const shareSource = searchParams.get(SHARE_SOURCE_PARAM);
   const shareStashStatus = searchParams.get(SHARE_STASH_PARAM);
@@ -683,6 +685,7 @@ export default function ImageIntakeScreen({
         // Not an optimistic navigation: creating an order is not a change this screen can undo
         // locally, so the user is only moved once the write is confirmed. The pending state on the
         // CTA is what carries the feedback in the meantime.
+        announceProgression(result.progression);
         router.push(`/${locale}${ROUTES.orders}/${result.orderId}`);
       } catch {
         setError({ messageKey: "serverError" });
@@ -690,7 +693,7 @@ export default function ImageIntakeScreen({
         setIsSaving(false);
       }
     },
-    [addToast, locale, router, t],
+    [addToast, announceProgression, locale, router, t],
   );
 
   /**

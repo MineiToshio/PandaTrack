@@ -365,6 +365,32 @@ export const EXTRACTION_MAX_TRANSPORT_RETRIES = 2;
 export const EXTRACTION_RETRY_BACKOFF_MS = 700;
 
 /**
+ * Wall-clock ceiling on the whole provider phase, retries and backoffs included.
+ *
+ * The per-attempt timeout and the retry count describe attempts, not elapsed time, and multiplied
+ * out they describe a request that may legitimately run for 92 seconds. Nothing in this module can
+ * grant that: the route this action is posted to declares `maxDuration = 60` (the hosting plan's
+ * ceiling), and past it the function is killed outright. A kill is strictly worse than a refusal,
+ * because it happens after the ledger has already reserved the submission and leaves that
+ * reservation `PENDING` forever, counting against the collector's monthly bag for a read they never
+ * received.
+ *
+ * So the retry budget is expressed in time rather than in attempts, and 55 seconds leaves the route
+ * five to settle the ledger and return an answer the collector can act on. The attempt count still
+ * caps retries; this caps how long they may take. Both bounds apply, whichever is reached first.
+ */
+export const EXTRACTION_TOTAL_BUDGET_MS = 55_000;
+
+/**
+ * Shortest attempt worth starting with the remaining budget.
+ *
+ * A retry fired with two seconds left cannot succeed (the fastest observed live read is several
+ * times that) but can still consume the remainder of the budget and turn a reportable failure into
+ * a platform kill. Below this the loop stops and reports the failure it already has.
+ */
+export const EXTRACTION_MIN_ATTEMPT_MS = 8_000;
+
+/**
  * USD per 1,000,000 tokens for `gemini-3.1-flash-lite` on the paid tier. Verified against
  * Google's published Gemini API rate card on 2026-07-28 (ADR 0020); revisit this pair if Google
  * changes the rate card, and update the ADR's cost assumptions in the same change.
@@ -428,23 +454,37 @@ function callProviderAttempt(
 
 type ProviderCallResult = { status: "ok"; response: ProviderResponse } | { status: "provider-error"; error: Error };
 
-/** At most one retry, and only for `ProviderTransportError` (network, 5xx, or a timeout). */
+/**
+ * Retries a `ProviderTransportError` (network, 5xx, 408/429, or a timeout) under two bounds at
+ * once: `EXTRACTION_MAX_TRANSPORT_RETRIES` attempts and `EXTRACTION_TOTAL_BUDGET_MS` of wall clock.
+ *
+ * The time bound is the one that keeps this function honest on the platform. Each attempt is given
+ * whatever is left of the budget, never more than `EXTRACTION_REQUEST_TIMEOUT_MS`, so the loop
+ * always returns a typed failure the caller can settle the ledger against instead of being killed
+ * mid-call with the reservation still open.
+ */
 async function callProviderWithRetry(
   provider: ExtractionProvider,
   images: ImagePart[],
   context: ExtractionContext,
+  now: () => number = Date.now,
 ): Promise<ProviderCallResult> {
+  const deadline = now() + EXTRACTION_TOTAL_BUDGET_MS;
   let attempt = 0;
 
   for (;;) {
     attempt += 1;
+    const attemptTimeoutMs = Math.min(EXTRACTION_REQUEST_TIMEOUT_MS, deadline - now());
     try {
-      const response = await callProviderAttempt(provider, images, context, EXTRACTION_REQUEST_TIMEOUT_MS);
+      const response = await callProviderAttempt(provider, images, context, attemptTimeoutMs);
       return { status: "ok", response };
     } catch (error) {
       const isTransportError = error instanceof ProviderTransportError;
       const hasRetryLeft = attempt <= EXTRACTION_MAX_TRANSPORT_RETRIES;
-      if (isTransportError && hasRetryLeft) {
+      // A retry must fit entirely inside what is left: the backoff, then an attempt long enough to
+      // plausibly succeed. Otherwise the budget is spent producing the same failure later.
+      const hasBudgetLeft = deadline - now() - EXTRACTION_RETRY_BACKOFF_MS >= EXTRACTION_MIN_ATTEMPT_MS;
+      if (isTransportError && hasRetryLeft && hasBudgetLeft) {
         await new Promise((resolve) => setTimeout(resolve, EXTRACTION_RETRY_BACKOFF_MS));
         continue;
       }

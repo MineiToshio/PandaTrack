@@ -10,6 +10,17 @@ import {
 } from "./orderPaymentAllocations";
 import { runSerializableTransaction } from "./serializableTransaction";
 import {
+  creditOrderPayment,
+  settleProgression,
+  type CreditOutcome,
+  type ProgressionDelta,
+} from "@/lib/data/progression/accrual";
+import {
+  isStoreCreditEligible,
+  STORE_CREDIT_ELIGIBILITY_SELECT,
+  type StoreEligibilityRow,
+} from "@/lib/data/progression/storeCreditEligibility";
+import {
   getStoreDebtMinor,
   getStorePaymentRemainders,
   isActiveOrderStatus,
@@ -126,17 +137,36 @@ export type AffectedOrderSnapshot = {
   payments: OrderPaymentRecord[];
 };
 
+type CreateStorePaymentSuccess = {
+  ok: true;
+  paymentId: string;
+  currencyCode: string;
+  affectedOrders: AffectedOrderSnapshot[];
+  /** The written payment in the exact shape the "Pagos a esta tienda" card lists it in, so a
+      caller can reconcile an optimistic row without a second query. */
+  payment: StorePaymentListRow;
+};
+
+type CreateStorePaymentFailure = {
+  ok: false;
+  error: CreateStorePaymentError;
+  orderId?: string;
+  orderItemId?: string;
+};
+
 export type CreateStorePaymentResult =
-  | {
-      ok: true;
-      paymentId: string;
-      currencyCode: string;
-      affectedOrders: AffectedOrderSnapshot[];
-      /** The written payment in the exact shape the "Pagos a esta tienda" card lists it in, so a
-          caller can reconcile an optimistic row without a second query. */
-      payment: StorePaymentListRow;
-    }
-  | { ok: false; error: CreateStorePaymentError; orderId?: string; orderItemId?: string };
+  (CreateStorePaymentSuccess & { progression: ProgressionDelta | null }) | CreateStorePaymentFailure;
+
+/**
+ * What the in-transaction writer returns: the raw credit count rather than a settled delta.
+ *
+ * The two are deliberately different types. Turning a count into a delta means re-deriving the
+ * progress cache, and that must happen only once the transaction has committed — a caller that runs
+ * this inside a larger money transaction (the settlement path) has no business writing a per-user
+ * cache row into it.
+ */
+export type CreateStorePaymentTxResult =
+  (CreateStorePaymentSuccess & { credited: CreditOutcome }) | CreateStorePaymentFailure;
 
 export type DeleteStorePaymentResult = { ok: true; affectedOrderIds: string[] } | { ok: false; error: "NOT_FOUND" };
 
@@ -410,8 +440,16 @@ export async function writeStorePaymentWithAllocations(
     allocations: NormalizedAllocation[];
     /** See `CreateStorePaymentInput.settledByDeliveryId`. Undefined for every non-settlement caller. */
     settledByDeliveryId?: string;
+    /**
+     * Whether this store may credit progression at all, resolved by the caller from the store row it
+     * already loaded. Threaded in as a boolean rather than re-queried here: this function receives a
+     * `storeId` and deliberately never touches the `Store` table, so a third round trip just to
+     * answer a question both callers already had the row for would be pure waste. Required, not
+     * defaulted, so a new caller cannot silently credit a store it never checked.
+     */
+    creditEligibleStore: boolean;
   },
-): Promise<{ paymentId: string; affectedOrderIds: string[] }> {
+): Promise<{ paymentId: string; affectedOrderIds: string[]; credited: CreditOutcome }> {
   const payment = await tx.storePayment.create({
     data: {
       storeId: params.storeId,
@@ -445,7 +483,20 @@ export async function writeStorePaymentWithAllocations(
   const affectedOrderIds = [...new Set(params.allocations.map((allocation) => allocation.orderId))];
   await recalculateOrderAllocationCache(tx, affectedOrderIds, params.userId);
 
-  return { paymentId: payment.id, affectedOrderIds };
+  // After the allocation cache, never before: `order-settled` asks the predicate adapter whether the
+  // order is fully covered, and the adapter reads the very figures the line above just refreshed.
+  //
+  // The credit lives inside this shared writer rather than at its two call sites so both the order's
+  // initial advance and a standalone store payment credit identically, and so the idempotency key
+  // (the order) still holds if the same order were somehow reached through both.
+  const credited = await creditOrderPayment(tx, {
+    userId: params.userId,
+    storeId: params.storeId,
+    orderIds: affectedOrderIds,
+    storeCreditEligible: params.creditEligibleStore,
+  });
+
+  return { paymentId: payment.id, affectedOrderIds, credited };
 }
 
 async function loadAffectedOrderSnapshots(
@@ -488,14 +539,19 @@ async function loadAffectedOrderSnapshots(
 export async function createStorePaymentInTx(
   tx: Prisma.TransactionClient,
   input: CreateStorePaymentInput,
-): Promise<CreateStorePaymentResult> {
+): Promise<CreateStorePaymentTxResult> {
   const { userId, storeId, amount, paymentDate, note = null, allocations = [], declarePaidItemIds = [] } = input;
 
   if (!Number.isInteger(amount) || amount <= 0 || amount > MAX_PAYMENT_AMOUNT) {
     return { ok: false, error: "AMOUNT_INVALID" };
   }
 
-  const store = await tx.store.findFirst({ where: { id: storeId }, select: { id: true } });
+  // Widened past `id` for the progression credit gate, read inside this same transaction so a store
+  // that lost its approval between page load and submission cannot mature a single point.
+  const store = await tx.store.findFirst({
+    where: { id: storeId },
+    select: { id: true, ...STORE_CREDIT_ELIGIBILITY_SELECT },
+  });
   if (!store) {
     return { ok: false, error: "STORE_NOT_FOUND" };
   }
@@ -574,6 +630,7 @@ export async function createStorePaymentInTx(
     exchangeRateBaseCode: isBaseCurrencyPayment ? null : input.exchangeRateBaseCode,
     allocations: validated.allocations,
     settledByDeliveryId: input.settledByDeliveryId,
+    creditEligibleStore: isStoreCreditEligible(store),
   });
 
   // Ownership was proven above, so this cannot refuse for any reason but a concurrent delete. If
@@ -591,6 +648,7 @@ export async function createStorePaymentInTx(
     ok: true,
     paymentId: written.paymentId,
     currencyCode,
+    credited: written.credited,
     affectedOrders,
     payment: {
       id: written.paymentId,
@@ -632,16 +690,26 @@ export async function createStorePaymentInTx(
  * standalone entry point for callers that do not already own a transaction.
  */
 export async function createStorePayment(input: CreateStorePaymentInput): Promise<CreateStorePaymentResult> {
-  return runSerializableTransaction<CreateStorePaymentResult>((tx) => createStorePaymentInTx(tx, input)).catch(
-    (error: unknown) => {
-      // Mapped back to a code the caller already handles, with no widened result type. Anything
-      // else is a genuine failure and must keep propagating.
-      if (error instanceof DeclaredItemsRollback) {
-        return { ok: false, error: "ITEM_ORDER_MISMATCH" } satisfies CreateStorePaymentResult;
-      }
-      throw error;
-    },
-  );
+  const outcome = await runSerializableTransaction<CreateStorePaymentTxResult>((tx) =>
+    createStorePaymentInTx(tx, input),
+  ).catch((error: unknown) => {
+    // Mapped back to a code the caller already handles, with no widened result type. Anything
+    // else is a genuine failure and must keep propagating.
+    if (error instanceof DeclaredItemsRollback) {
+      return { ok: false, error: "ITEM_ORDER_MISMATCH" } satisfies CreateStorePaymentTxResult;
+    }
+    throw error;
+  });
+
+  if (!outcome.ok) {
+    return outcome;
+  }
+
+  // The progress cache is re-derived only now, once the serializable money transaction has
+  // committed. Folding a per-user row into that transaction would add a write-write conflict
+  // surface the payment path does not have today, for a figure that is rebuildable by definition.
+  const { credited, ...success } = outcome;
+  return { ...success, progression: await settleProgression(input.userId, credited) };
 }
 
 /** The fields {@link consumeUnassignedStoreMoneyOnOrderClose} needs off the closing order. */
@@ -651,6 +719,7 @@ type OrderForConsumption = {
   currencyCode: string;
   totalCost: number;
   allocatedAmountMinor: number;
+  store: StoreEligibilityRow | null;
 };
 
 /**
@@ -691,7 +760,14 @@ export async function consumeUnassignedStoreMoneyOnOrderClose(
   // consume money into.
   const order: OrderForConsumption | null = await tx.order.findFirst({
     where: { id: orderId, userId },
-    select: { id: true, storeId: true, currencyCode: true, totalCost: true, allocatedAmountMinor: true },
+    select: {
+      id: true,
+      storeId: true,
+      currencyCode: true,
+      totalCost: true,
+      allocatedAmountMinor: true,
+      store: { select: STORE_CREDIT_ELIGIBILITY_SELECT },
+    },
   });
   if (!order) return 0;
 
@@ -745,6 +821,21 @@ export async function consumeUnassignedStoreMoneyOnOrderClose(
   });
 
   await recalculateOrderAllocationCache(tx, [order.id], userId);
+
+  // The second producer of `PaymentAllocation` rows, and therefore the second place an order can
+  // first acquire declared money. Crediting only in `writeStorePaymentWithAllocations` would leave
+  // an order funded entirely by money already sitting at the store permanently uncredited, since
+  // nothing would ever append the entry the recompute later re-derives eligibility for.
+  //
+  // The delta is deliberately not reported back: this runs inside the independent money transaction
+  // that follows an arrival, whose result shape belongs to the settlement flow. The entries exist
+  // from here on and the next recompute matures them.
+  await creditOrderPayment(tx, {
+    userId,
+    storeId: order.storeId,
+    orderIds: [order.id],
+    storeCreditEligible: isStoreCreditEligible(order.store),
+  });
 
   return contributions.reduce((sum, contribution) => sum + contribution.amountMinor, 0);
 }

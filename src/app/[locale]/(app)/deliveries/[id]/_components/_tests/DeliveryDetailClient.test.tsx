@@ -34,6 +34,7 @@ vi.mock("next-intl", () => ({
 vi.mock("@/contexts/ToastContext", () => ({
   useToast: () => ({ addToast: addToastMock }),
   NEUTRAL_UNDO_DURATION_MS: 5000,
+  DEFAULT_DURATION_MS: 4000,
 }));
 
 vi.mock("../../_actions/deliveryLifecycleActions", () => ({

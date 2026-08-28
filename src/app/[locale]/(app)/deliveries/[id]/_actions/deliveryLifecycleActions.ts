@@ -14,6 +14,7 @@ import {
   type SurvivingConsumedAllocationSnapshot,
 } from "@/lib/data/deliveries/deliveryMutations";
 import { runOrderCloseMoneyTransaction } from "@/lib/data/orders/storePaymentMutations";
+import type { ProgressionDelta } from "@/lib/data/progression/accrual";
 import {
   deliveryCancelSchema,
   deliveryDeleteSchema,
@@ -26,7 +27,13 @@ import { revalidateCollectionSurfaces } from "@/lib/cache/revalidateCollectionSu
 export type DeliveryLifecycleActionResult = { ok: true } | { ok: false; error: string };
 
 export type MarkDeliveredActionResult =
-  { ok: true; consumedUnassignedMinor: number; moneyTransactionPending: boolean } | { ok: false; error: string };
+  | {
+      ok: true;
+      consumedUnassignedMinor: number;
+      moneyTransactionPending: boolean;
+      progression: ProgressionDelta | null;
+    }
+  | { ok: false; error: string };
 
 export async function markDeliveredAction(deliveryId: string, receivedDate: Date): Promise<MarkDeliveredActionResult> {
   const session = await getSession();
@@ -89,7 +96,7 @@ export async function markDeliveredAction(deliveryId: string, receivedDate: Date
     });
     await posthog.shutdown();
 
-    return { ok: true, consumedUnassignedMinor, moneyTransactionPending };
+    return { ok: true, consumedUnassignedMinor, moneyTransactionPending, progression: result.progression };
   } catch (err) {
     Sentry.captureException(err);
     return { ok: false, error: "server_error" };

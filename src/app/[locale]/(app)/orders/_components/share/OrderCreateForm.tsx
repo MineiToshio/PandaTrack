@@ -25,6 +25,7 @@ import WizardAccordion, { type WizardAccordionHandle } from "@/components/module
 import WizardStep from "@/components/modules/WizardAccordion/WizardStep";
 import Stepper, { type StepperStep } from "@/components/core/Stepper";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { useProgressionFeedback } from "@/contexts/ProgressionFeedbackContext";
 import { useStoreProductTypeName } from "@/app/[locale]/(app)/_components/StoreProductTypeNamesProvider";
 import {
   ALLOWED_COLLECTOR_BASE_CURRENCY_CODES,
@@ -82,6 +83,7 @@ export default function OrderCreateForm({ stores, productTypeKeys, baseCurrencyC
   const router = useRouter();
   const searchParams = useSearchParams();
   const isMobile = useIsMobile();
+  const { announceProgression } = useProgressionFeedback();
 
   const initialStoreId = searchParams.get("store") ?? null;
 
@@ -141,8 +143,11 @@ export default function OrderCreateForm({ stores, productTypeKeys, baseCurrencyC
   useEffect(() => {
     if (state?.success) {
       router.push(`/${locale}${ROUTES.orders}/${state.orderId}`);
+      // Announced from the shell, which survives this navigation, so the unlock lands on the
+      // order the collector just created rather than on a form that is already unmounting.
+      announceProgression(state.progression);
     }
-  }, [state, locale, router]);
+  }, [announceProgression, state, locale, router]);
 
   // One-time hand-off from the intake review screen's "complete by hand" exit. A collector who
   // gets here that way already spent photos and a real extraction on this draft, so the form

@@ -15,7 +15,7 @@ vi.mock("next-intl", () => ({
   },
 }));
 
-vi.mock("@/contexts/ToastContext", () => ({ useToast: () => ({ addToast: vi.fn() }) }));
+vi.mock("@/contexts/ToastContext", () => ({ useToast: () => ({ addToast: vi.fn() }), DEFAULT_DURATION_MS: 4000 }));
 
 vi.mock("../../_actions/orderLifecycleActions", () => ({ reactivateOrderAction: vi.fn() }));
 

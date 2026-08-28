@@ -16,6 +16,7 @@ import {
   listAuthoredStoreProductTypeNamesCached,
 } from "@/lib/data/catalog/storeProductTypeQueries";
 import { buildAuthoredStoreProductTypeNameMap } from "@/lib/catalog/resolveStoreProductTypeName";
+import { getProgressionShellState } from "@/lib/data/progression/progressionQueries";
 import { getAppShellUserIdentity, getCollectorPreferencesSnapshot } from "@/lib/data/user-settings/userSettingsQueries";
 
 type PrivateAppLayoutProps = {
@@ -57,6 +58,7 @@ export default async function PrivateAppLayout({ children, params }: PrivateAppL
     // The shell owns this read because the create-method selector opens from the shell's own
     // floating button; `cache()` keeps a page that also renders the selector from reading twice.
     photoCounter,
+    progressionShell,
   ] = await Promise.all([
     getTranslations({ locale, namespace: "auth" }),
     getAppShellUserIdentity(session.user.id),
@@ -65,6 +67,8 @@ export default async function PrivateAppLayout({ children, params }: PrivateAppL
     listActiveStoreProductTypeKeysCached(),
     listAuthoredStoreProductTypeNamesCached(),
     getImageIntakeQuotaSnapshotCached(session.user.id, isAdmin),
+    // Read server-side so a hidden layer never flashes into the nav before the client catches up.
+    getProgressionShellState(session.user.id),
   ]);
 
   // Admin-authored types resolve through the DB name; seeded keys stay on the i18n namespace.
@@ -106,6 +110,8 @@ export default async function PrivateAppLayout({ children, params }: PrivateAppL
           storedTimezone={storedTimezone}
           isAdmin={isAdmin}
           photoCounter={photoCounter}
+          showProgression={!progressionShell.hideProgression}
+          welcomeCelebrationPending={progressionShell.welcomeCelebrationPending}
         >
           <StoreProductTypeNamesProvider authoredNames={authoredProductTypeNameMap}>
             {children}
@@ -142,6 +148,7 @@ export default async function PrivateAppLayout({ children, params }: PrivateAppL
         storedTimezone={storedTimezone}
         isAdmin={isAdmin}
         photoCounter={photoCounter}
+        showProgression={!progressionShell.hideProgression}
       >
         <StoreProductTypeNamesProvider authoredNames={authoredProductTypeNameMap}>
           {children}

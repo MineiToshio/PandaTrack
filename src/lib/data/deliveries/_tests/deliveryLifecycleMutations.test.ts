@@ -97,7 +97,7 @@ describe("markDeliveryDelivered", () => {
     // closedOrders is [] here: this fixture's orders never resolve (order.findMany → []), so
     // nothing derives to COMPLETED; the producer-snapshot behavior itself is covered in
     // deliveryMutations.test.ts.
-    expect(result).toEqual({ ok: true, productCount: 2, closedOrders: [] });
+    expect(result).toEqual({ ok: true, productCount: 2, closedOrders: [], progression: { pointsDelta: 0, rankUp: null, medalsUnlocked: [] } });
     expect(tx.delivery.update).toHaveBeenCalledWith({
       where: { id: "dlv-1" },
       data: { status: DeliveryStatus.DELIVERED, receivedDate },

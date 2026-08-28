@@ -199,6 +199,10 @@ model User {
   adminAuditLogs              AdminAuditLog[]              @relation("AdminAuditLogActor")
   imageIntakeUsages           ImageIntakeUsage[]
   imageIntakePeriods          ImageIntakePeriod[]
+  pointLedgerEntries          PointLedgerEntry[]
+  progress                    UserProgress?
+  medalUnlocks                MedalUnlock[]
+  progressionSettings         ProgressionSettings?
 
   @@index([preferredCountryCode])
   @@map("user")
@@ -916,4 +920,119 @@ model ImageIntakePeriod {
 
   @@unique([userId, periodKey])
   @@map("image_intake_period")
+}
+
+/// Provenance of a progression credit. `BACKFILL` marks a synthetic entry replayed from the
+/// migrated Notion history: it counts toward the private rank exactly like a `LIVE` entry, but is
+/// stored explicitly rather than inferred from a date so any future cross-user surface can exclude
+/// it without re-deriving what was real activity and what was a migration.
+enum PointLedgerSource {
+  LIVE
+  BACKFILL
+}
+
+/// Append-only progression ledger. One row per point-earning fact, idempotent on
+/// `(userId, ruleKey, entityId)`. A row is never edited to correct a balance and never carries a
+/// negative value: the balance the collector sees is DERIVED by recomputing which rows still refer
+/// to an entity that exists and still satisfies its rule's eligibility predicate.
+///
+/// `entityId` deliberately carries NO foreign key. A cascade from `Order`/`Delivery` would erase
+/// the very evidence the ledger exists to keep the moment the entity is hard-deleted, and would
+/// reopen the create-credit-delete-recreate farming loop. See ADR 0035.
+model PointLedgerEntry {
+  id             String            @id @default(cuid())
+  userId         String
+  /// One of the rule catalogue keys in `src/lib/data/progression/pointRules.ts`.
+  ruleKey        String
+  /// The kind of entity `entityId` names (`order`, `delivery`, `store`, `productType`, ...).
+  /// Read only to pick the batch eligibility resolver; it is not a validated reference.
+  entityType     String
+  /// Plain string, no foreign key, survives the referenced entity's own physical deletion.
+  entityId       String
+  /// Strictly positive. The ledger admits no negative entry.
+  points         Int
+  /// Civil day resolved on the server from the collector's timezone at the moment of crediting,
+  /// pinned to UTC midnight. Never the entity's own domain date, never a wall-clock instant, and
+  /// never re-bucketed by a later recompute.
+  occurredOn     DateTime
+  source         PointLedgerSource @default(LIVE)
+  /// Wall-clock write time, deliberately distinct from `occurredOn`. Breaks cap ties.
+  createdAt      DateTime          @default(now())
+  /// Set by an administrative void. The recompute excludes any row carrying it, so the reversal
+  /// needs neither a deletion nor a compensating negative row.
+  voidedAt       DateTime?
+  /// Administrator-supplied reason, always present when `voidedAt` is set.
+  voidedReason   String?
+  /// The acting administrator's id. Intentionally not a relation: the trail must survive that
+  /// account being removed.
+  voidedByUserId String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, ruleKey, entityId])
+  @@index([userId])
+  @@index([voidedAt])
+  @@map("point_ledger_entry")
+}
+
+/// Rebuildable cache of the derived progression figures, never a source of truth. Dropping every
+/// row here loses nothing: the next recompute rebuilds them from the ledger.
+model UserProgress {
+  userId           String   @id
+  /// Derived total after eligibility filtering and cap enforcement.
+  maturedPoints    Int      @default(0)
+  /// Rank derived from `maturedPoints` right now; may move down when entries stop counting.
+  rankIndex        Int      @default(1)
+  /// Running maximum. Never decreases: the title once reached is permanent.
+  highestRankIndex Int      @default(1)
+  /// Drives the staleness check that decides whether opening the section triggers a recompute.
+  lastRecomputedAt DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_progress")
+}
+
+/// One row per medal a collector has unlocked. Unlocks are permanent: there is no revocation path,
+/// and a medal whose condition stops holding is labelled rather than removed.
+model MedalUnlock {
+  id           String            @id @default(cuid())
+  userId       String
+  /// One of the catalogue keys in `src/lib/data/progression/medalCatalogue.ts`.
+  medalKey     String
+  /// A backfilled unlock carries the backfill date, never a fabricated original one.
+  unlockedAt   DateTime
+  /// Null until the celebration has been shown. Backfilled rows are written pre-seen so a migrated
+  /// history does not replay itself as dozens of toasts on first login.
+  seenAt       DateTime?
+  /// Denormalized from the catalogue for query-time grouping into album pages.
+  series       String
+  /// Denormalized print-run grade; the album groups and styles by it without loading the catalogue.
+  numbered     Boolean           @default(false)
+  rarity       String
+  /// Ordinal stamped at unlock time when `numbered` is true.
+  serialNumber Int?
+  source       PointLedgerSource @default(LIVE)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, medalKey])
+  @@index([userId])
+  @@map("medal_unlock")
+}
+
+/// Per-collector progression preferences. Kept separate from `UserProgress` because these are the
+/// collector's own choices, not a derived cache, and must survive a purge of the ledger.
+model ProgressionSettings {
+  userId                  String  @id
+  /// Hides the whole layer: navigation entry, dashboard widget, toasts and celebrations. Points
+  /// keep accruing so turning it back on does not restart from zero.
+  hideProgression         Boolean @default(false)
+  /// Highest rank already celebrated, so the once-per-rank celebration is never replayed by a
+  /// recompute that re-derives the same rank.
+  lastCelebratedRankIndex Int     @default(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("progression_settings")
 }

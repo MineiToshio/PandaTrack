@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { useToast } from "@/contexts/ToastContext";
+import { useProgressionFeedback } from "@/contexts/ProgressionFeedbackContext";
 import {
   createStorePaymentAction,
   deleteStorePaymentAction,
@@ -220,6 +221,7 @@ export default function StorePaymentStateProvider({
 }: StorePaymentStateProviderProps) {
   const tPayment = useTranslations("orders.detail.storePayment");
   const { addToast } = useToast();
+  const { announceProgression } = useProgressionFeedback();
   const [debts, setDebts] = useState<StoreDebtRow[]>(storeDebtByCurrency);
   const [payments, setPayments] = useState<StorePaymentListRow[]>(storePayments);
   const [paymentsTotalCount, setPaymentsTotalCount] = useState(storePaymentsTotalCount);
@@ -448,6 +450,7 @@ export default function StorePaymentStateProvider({
             ),
           );
           addToast(tPayment("toastSuccess"), { variant: "success" });
+          announceProgression(result.progression);
           return { ok: true };
         },
         (): StorePaymentSubmitOutcome => {
@@ -475,7 +478,7 @@ export default function StorePaymentStateProvider({
       if (input.allocations.length === 0) return { ok: true };
       return pending;
     },
-    [addToast, invalidateSheetOrders, patchDebtByCurrency, sheetOrders, storeId, tPayment],
+    [addToast, announceProgression, invalidateSheetOrders, patchDebtByCurrency, sheetOrders, storeId, tPayment],
   );
 
   const handleDeleteStorePayment = useCallback(

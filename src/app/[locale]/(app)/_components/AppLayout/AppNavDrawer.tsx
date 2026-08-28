@@ -1,6 +1,6 @@
 "use client";
 
-import { Image as ImageIcon, LayoutDashboard, Package, ScrollText, Shield, ShoppingBag, Store, X } from "lucide-react";
+import { Image as ImageIcon, LayoutDashboard, Package, ScrollText, Shield, ShoppingBag, Store, TrendingUp, Trophy, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -31,11 +31,16 @@ const NAV_ICON_MAP: Record<PrimaryNavItemId, React.ComponentType<{ className?: s
   stores: Store,
   orders: ShoppingBag,
   deliveries: Package,
+  // A trophy rather than a medal glyph: medal iconography belongs to the album's own rarity chips.
+  progress: Trophy,
 };
 
 const ADMIN_ICON_MAP: Record<AdminNavItemId, React.ComponentType<{ className?: string }>> = {
   moderation: Shield,
   imageIntake: ImageIcon,
+  // Not the trophy the collector's own "Progreso" entry uses: both can sit in this drawer at once,
+  // and two identical glyphs would read as the same destination.
+  progression: TrendingUp,
   audit: ScrollText,
 };
 
@@ -55,6 +60,8 @@ type AppNavDrawerProps = {
   returnFocusRef: React.RefObject<HTMLButtonElement | null>;
   storesHref?: string;
   isAdmin: boolean;
+  /** `false` hides the `Progreso` entry entirely, with no placeholder left behind (`FR-12-38`). */
+  showProgression: boolean;
 };
 
 export default function AppNavDrawer({
@@ -66,12 +73,13 @@ export default function AppNavDrawer({
   returnFocusRef,
   storesHref,
   isAdmin,
+  showProgression,
 }: AppNavDrawerProps) {
   const pathname = usePathname();
   const t = useTranslations("appLayout");
   const tAdmin = useTranslations("admin");
   const drawerRootRef = useRef<HTMLDivElement>(null);
-  const navItems = getPrivateAppNavItems();
+  const navItems = getPrivateAppNavItems({ showProgression });
   const activeItem = getActiveNavItem(pathname ?? "");
   const activeAdminId = getActiveAdminNavItemId(pathname ?? "");
   const appShellMainNavigationLabel = t("accessibility.mainNavigation");

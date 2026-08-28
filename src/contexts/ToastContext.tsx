@@ -3,12 +3,30 @@
 import { createContext, useCallback, useContext, useRef, useState } from "react";
 import ToastContainer from "@/components/core/Toast/ToastContainer";
 
-export type ToastVariant = "success" | "error" | "info" | "warning" | "neutral";
+export type ToastVariant = "success" | "error" | "info" | "warning" | "neutral" | "achievement";
 
 /** Inline CTA rendered next to the message (e.g. "Deshacer" — ADR 0001 D4 neutral-undo). */
 export type ToastAction = {
   label: string;
   onClick: () => void;
+};
+
+/** The achievement variant's payload: the art slot and the two support lines around the name. */
+export type ToastAchievement = {
+  /**
+   * Rendered where the variant icon sits. Decorative: the three text lines carry every fact.
+   *
+   * The slot has no intrinsic width of its own, so size the node before passing it: `MedalStage`
+   * carries a `max-width: 100%` ceiling for the narrow grid cell, and a slot that never states a
+   * width leaves that ceiling resolving against nothing.
+   */
+  media: React.ReactNode;
+  /** Mono uppercase line above the name. */
+  kicker: string;
+  /** Muted line under the name. */
+  meta: string;
+  /** Rarity ring token (e.g. `var(--rarity-holo)`) tinting the halo and the countdown bar. */
+  ringVar: string;
 };
 
 export type ToastItem = {
@@ -18,6 +36,7 @@ export type ToastItem = {
   /** Duration in milliseconds before the toast auto-dismisses. */
   duration: number;
   action?: ToastAction;
+  achievement?: ToastAchievement;
 };
 
 type AddToastOptions = {
@@ -25,6 +44,7 @@ type AddToastOptions = {
   /** Duration in milliseconds. Defaults to 5000 for the neutral (undo) variant, 4000 otherwise. */
   duration?: number;
   action?: ToastAction;
+  achievement?: ToastAchievement;
 };
 
 type ToastContextValue = {
@@ -71,7 +91,14 @@ export function ToastProvider({ children, fabOffsetActive = false }: ToastProvid
     // Neutral-undo toasts default to the 5s read window (not 4s) so a callsite that forgets
     // `duration` still gives the reader time to hit "Deshacer" / `Z` before it auto-dismisses.
     const duration = options?.duration ?? (variant === "neutral" ? NEUTRAL_UNDO_DURATION_MS : DEFAULT_DURATION_MS);
-    const toast: ToastItem = { id, message, variant, duration, action: options?.action };
+    const toast: ToastItem = {
+      id,
+      message,
+      variant,
+      duration,
+      action: options?.action,
+      achievement: options?.achievement,
+    };
     setToasts((prev) => [...prev, toast]);
   }, []);
 

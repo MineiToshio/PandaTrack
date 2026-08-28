@@ -1,0 +1,429 @@
+{
+  "ranks": {
+    "kohai": {
+      "name": "Kōhai",
+      "lore": "Tu primera pieza, todavía dormida en la roca.",
+      "threshold": 0
+    },
+    "preorder-hunter": {
+      "name": "Buscador de reliquias",
+      "lore": "Rescatas lo que otros dieron por perdido.",
+      "threshold": 200
+    },
+    "volume-keeper": {
+      "name": "Escriba del grimorio",
+      "lore": "Tu colección ya tiene su propio libro.",
+      "threshold": 670
+    },
+    "guild-senpai": {
+      "name": "Senpai del gremio",
+      "lore": "Otros empiezan a seguir tu luz.",
+      "threshold": 1370
+    },
+    "first-print-hunter": {
+      "name": "Portador del filo",
+      "lore": "El acero roto vuelve entero, y esta vez es tuyo.",
+      "threshold": 2260
+    },
+    "limited-run-curator": {
+      "name": "Guardián de las horas",
+      "lore": "Sabes esperar, y esperar bien es medio oficio.",
+      "threshold": 3340
+    },
+    "club-sensei": {
+      "name": "Invocador del cristal",
+      "lore": "La esquirla que hallaste al principio ya arde en tus manos.",
+      "threshold": 4600
+    },
+    "rare-edition-archivist": {
+      "name": "Centinela de esmeralda",
+      "lore": "Custodias lo que ya no se reimprime.",
+      "threshold": 6020
+    },
+    "collection-shisho": {
+      "name": "Gran maestro de la bóveda",
+      "lore": "Nada entra ni sale de la bóveda sin tu llave.",
+      "threshold": 7610
+    },
+    "guild-legend": {
+      "name": "Leyenda viva, Rango S",
+      "lore": "El cristal ya no necesita vitrina: tiene alas.",
+      "threshold": 9350
+    }
+  },
+  "meta": {
+    "medalsTitle": "Medallas",
+    "medalTitle": "{name}",
+    "title": "Progreso",
+    "ranksTitle": "Rangos",
+    "howItWorksTitle": "Cómo funciona la progresión"
+  },
+  "album": {
+    "title": "Medallas",
+    "countCaption": "de {total} medallas",
+    "progressLabel": "{unlocked} de {total} medallas desbloqueadas",
+    "pagesNote": "{count} páginas del álbum",
+    "remainingNote": "{count} por descubrir",
+    "seriesCounter": "{unlocked} de {total}",
+    "seriesProgressLabel": "{unlocked} de {total} en esta página",
+    "seriesUpcoming": "Próximamente",
+    "legendTitle": "La tirada",
+    "legendCaption": "La rareza se lee como una tirada de impresión, no como un rango de videojuego.",
+    "lockedTitle": "Medalla bloqueada",
+    "hintLabel": "Cómo conseguirla",
+    "noHint": "Sin pista todavía",
+    "upcomingHint": "Llega en una próxima entrega del álbum.",
+    "notCurrent": "Ya no vigente",
+    "current": "Vigente",
+    "openDetail": "Ver el detalle de {name}",
+    "openLockedDetail": "Ver el detalle de una medalla bloqueada"
+  },
+  "detail": {
+    "back": "Volver al álbum",
+    "secretEyebrow": "Medalla secreta",
+    "artLabel": "{name}, {rarity}",
+    "lockedArtLabel": "Medalla bloqueada, {rarity}",
+    "howUnlocked": "Cómo la conseguiste",
+    "howToUnlock": "Cómo conseguirla",
+    "date": "Fecha",
+    "page": "Página del álbum",
+    "pageSecret": "{series} · sin pista previa",
+    "rarity": "Tirada",
+    "state": "Estado",
+    "points": "Puntos",
+    "pointsValue": "Las medallas no dan puntos y no se revocan.",
+    "notObtainable": "Todavía no se puede conseguir en esta versión.",
+    "soonTitle": "% de coleccionistas que la tienen",
+    "soonCaption": "Se enciende cuando haya más coleccionistas.",
+    "nextTitle": "Siguiente de la página",
+    "nextEmpty": "Ya tienes todas las medallas de esta página."
+  },
+  "series": {
+    "first-steps": {
+      "name": "Primeros pasos",
+      "caption": "Todo lo que se abre el primer día."
+    },
+    "the-wait": {
+      "name": "La espera",
+      "caption": "El precio de importar se mide en meses."
+    },
+    "the-display-case": {
+      "name": "La vitrina",
+      "caption": "Lo que se ve cuando abres la puerta."
+    },
+    "explorer": {
+      "name": "Explorador",
+      "caption": "Tiendas, categorías y países nuevos."
+    },
+    "chronicler": {
+      "name": "Cronista",
+      "caption": "Registro limpio y aporte al mapa."
+    },
+    "secrets": {
+      "name": "Secretas",
+      "caption": "Sin pista. Aparecen solas."
+    }
+  },
+  "rarity": {
+    "normal": "Tirada normal",
+    "first-print": "Primera edición",
+    "limited": "Edición limitada",
+    "holo": "Holográfica",
+    "signed": "Firmada"
+  },
+  "medals": {
+    "first-order": {
+      "name": "Primer pedido",
+      "hint": "Registra tu primer pedido.",
+      "lore": "Todo álbum empieza por una ficha."
+    },
+    "first-payment": {
+      "name": "Primer pago",
+      "hint": "Registra tu primer pago.",
+      "lore": "El dinero deja de ser un recuerdo y pasa a ser un dato."
+    },
+    "first-arrival": {
+      "name": "Primera llegada",
+      "hint": "Recibe tu primera entrega.",
+      "lore": "La caja llegó y quedó anotada."
+    },
+    "first-order-closed": {
+      "name": "Círculo cerrado",
+      "hint": "Cierra un pedido: pagado por completo y con todo recibido.",
+      "lore": "Pagado, llegado y sin cabos sueltos."
+    },
+    "first-review": {
+      "name": "Primera reseña",
+      "hint": "Reseña una tienda de la que ya recibiste un producto.",
+      "lore": "Tu experiencia le sirve al siguiente."
+    },
+    "first-photo-order": {
+      "name": "Del papel a la ficha",
+      "hint": "Crea un pedido a partir de una imagen.",
+      "lore": "La foto del chat se convirtió en registro."
+    },
+    "first-store": {
+      "name": "Puerta nueva",
+      "hint": "Haz un pedido en una segunda tienda distinta.",
+      "lore": "Una tienda más en tu mapa."
+    },
+    "first-preorder": {
+      "name": "Pre-reserva anotada",
+      "hint": "Registra un pedido con fecha de entrega estimada.",
+      "lore": "Ya sabes cuándo esperarlo."
+    },
+    "patience-60": {
+      "name": "Dos meses de espera",
+      "hint": "Recibe un pedido 60 días o más después de haberlo hecho.",
+      "lore": "Importar se mide en meses, no en días."
+    },
+    "patience-120": {
+      "name": "La espera larga",
+      "hint": "Recibe un pedido 120 días o más después de haberlo hecho.",
+      "lore": "Cuatro meses mirando el mismo estado."
+    },
+    "patience-200": {
+      "name": "La espera imposible",
+      "hint": "Recibe un pedido 200 días o más después de haberlo hecho.",
+      "lore": "Ya casi nadie lo esperaba, y llegó."
+    },
+    "split-arrival": {
+      "name": "Llega por partes",
+      "hint": "Recibe un pedido repartido en más de una entrega.",
+      "lore": "Un pedido, varias cajas."
+    },
+    "collection-10": {
+      "name": "Diez piezas",
+      "hint": "Recibe 10 productos.",
+      "lore": "La vitrina empieza a llenarse."
+    },
+    "collection-50": {
+      "name": "Media centena",
+      "hint": "Recibe 50 productos.",
+      "lore": "Ya no entra todo en un estante."
+    },
+    "collection-150": {
+      "name": "Vitrina llena",
+      "hint": "Recibe 150 productos.",
+      "lore": "Una colección que se cuenta por filas."
+    },
+    "arrivals-25": {
+      "name": "Puerto conocido",
+      "hint": "Recibe 25 entregas.",
+      "lore": "El repartidor ya sabe tu nombre."
+    },
+    "variety-3": {
+      "name": "Gustos amplios",
+      "hint": "Recibe productos de 3 tipos distintos.",
+      "lore": "No coleccionas una sola cosa."
+    },
+    "countries-3": {
+      "name": "Tres fronteras",
+      "hint": "Recibe productos de tiendas de 3 países distintos.",
+      "lore": "Tu colección cruzó tres fronteras."
+    },
+    "variety-6": {
+      "name": "Colección mixta",
+      "hint": "Recibe productos de 6 tipos distintos.",
+      "lore": "Cada estante cuenta otra historia."
+    },
+    "stores-10": {
+      "name": "Mapa propio",
+      "hint": "Recibe productos de 10 tiendas distintas.",
+      "lore": "Tu propia red de tiendas de confianza."
+    },
+    "clean-record-1": {
+      "name": "Ficha impecable",
+      "hint": "Completa todos los datos de los productos de un pedido.",
+      "lore": "Un pedido sin campos vacíos."
+    },
+    "store-charted-1": {
+      "name": "Tienda cartografiada",
+      "hint": "Registra una tienda y espera a que sea aprobada.",
+      "lore": "Lo que anotaste ya está en el mapa de todos."
+    },
+    "reviews-5": {
+      "name": "Voz de confianza",
+      "hint": "Reseña 5 tiendas de las que ya recibiste un producto.",
+      "lore": "Cinco tiendas con tu opinión encima."
+    },
+    "clean-record-10": {
+      "name": "Archivo limpio",
+      "hint": "Completa el registro de 10 pedidos.",
+      "lore": "El registro vale tanto como la vitrina."
+    },
+    "midnight-order": {
+      "name": "Turno de madrugada",
+      "hint": "Registra un pedido entre las 00:00 y las 04:00.",
+      "lore": "Nadie te dijo que existía."
+    },
+    "swift-arrival": {
+      "name": "Llegó volando",
+      "hint": "Recibe un pedido completo en 7 días o menos.",
+      "lore": "Ni tiempo de acostumbrarte a esperar."
+    },
+    "same-day-settle": {
+      "name": "Cuentas al día",
+      "hint": "Salda y cierra un pedido el mismo día en que llegó.",
+      "lore": "Llegó, se pagó y se cerró."
+    },
+    "year-streak": {
+      "name": "Un año contigo",
+      "hint": "Registra al menos un pedido durante 12 meses seguidos.",
+      "lore": "Doce meses sin soltar el registro."
+    }
+  },
+  "section": {
+    "title": "Progreso",
+    "tabsAriaLabel": "Secciones de Progreso",
+    "tabSummary": "Resumen",
+    "tabMedals": "Medallas",
+    "tabRanks": "Rangos",
+    "pointsChip": "{points} pts",
+    "staleNotice": "Estamos actualizando tus puntos. Lo que ves puede tener unos minutos.",
+    "headingSummary": "Progreso · Resumen",
+    "headingMedals": "Progreso · Medallas",
+    "headingRanks": "Progreso · Rangos",
+    "howItWorks": "Cómo funciona"
+  },
+  "summary": {
+    "eyebrow": "Rango {index} de 10 · solo tú lo ves",
+    "pointsCaption": "puntos acumulados",
+    "monthChip": "+{points} este mes",
+    "barLabel": "Progreso hacia {rank}",
+    "barValue": "{current} de {threshold} puntos hacia {rank}",
+    "barNote": "{current} de {threshold} pts",
+    "toNextRank": "Te faltan {points} pts para {rank}",
+    "atTop": "Llegaste al último rango de la escalera.",
+    "monthTitle": "Puntos de este mes",
+    "monthEmpty": "Este mes todavía no sumaste puntos.",
+    "honesty": "Los puntos miden tu registro, no tu gasto.",
+    "meritTitle": "Candado de mérito",
+    "meritCopy": "{rank} pide el {percent} % del álbum. Llevas {unlocked} de {total}.",
+    "meritDone": "Ya tienes el álbum que pide {rank}.",
+    "meritBarLabel": "Álbum para {rank}",
+    "meritBarValue": "{unlocked} de {required} medallas para {rank}",
+    "soonTitle": "Comparación entre coleccionistas",
+    "soonCaption": "Próximamente: compara con otros coleccionistas.",
+    "medalsTitle": "Medallas",
+    "medalsCounter": "{unlocked} de {total}",
+    "medalsLink": "Ver el álbum completo",
+    "medalsEmpty": "Todavía no desbloqueaste ninguna medalla. Cada una aparece sola cuando la consigues.",
+    "ranksTitle": "Rangos",
+    "ranksLink": "Ver la escalera completa",
+    "emptyTitle": "Empieza tu registro",
+    "emptyBody": "Todavía no tienes puntos. Registra tu primer pedido y empieza.",
+    "emptyCta": "Registrar un pedido",
+    "howItWorksLink": "Cómo funciona"
+  },
+  "creation": {
+    "toast": {
+      "withDeferred": "Sumaste {points} puntos. Se suman {deferred} más cuando registres el primer pago o la primera llegada.",
+      "immediateOnly": "Sumaste {points} puntos."
+    }
+  },
+  "groups": {
+    "orders": "Pedidos registrados",
+    "payments": "Pagos registrados",
+    "arrivals": "Llegadas y cierres",
+    "discovery": "Tiendas y descubrimientos"
+  },
+  "ranksTab": {
+    "intro": "Diez rangos, de la puerta del club a la leyenda del gremio.",
+    "legendConquered": "Conquistado",
+    "legendCurrent": "Estás aquí",
+    "legendLocked": "Bloqueado, todavía no lo alcanzas",
+    "legendPermanence": "El rango alcanzado es permanente: retrocede la barra, nunca el nombre.",
+    "legendLabel": "Cómo leer la escalera",
+    "ladderLabel": "Escalera de rangos",
+    "summit": "La cima",
+    "here": "Estás aquí",
+    "conquered": "Conquistado",
+    "locked": "Bloqueado",
+    "threshold": "{points} pts",
+    "missing": "Te faltan {points} pts",
+    "meritNote": "También pide el {percent} % del álbum.",
+    "collapsedSummary": "{count} rangos más entre la cima y tú, con sus umbrales"
+  },
+  "howItWorks": {
+    "eyebrow": "Progreso",
+    "title": "Cómo funciona la progresión",
+    "lead": "La progresión premia que lleves tu registro al día. Esto es todo lo que suma, y por qué está hecho así.",
+    "back": "Volver al resumen",
+    "blocks": {
+      "earn": {
+        "title": "Qué suma puntos",
+        "body": "Registrar un pedido, anotar un pago, confirmar una llegada, cerrar el pedido cuando ya está pagado y recibido, reseñar una tienda de la que ya recibiste algo, estrenar tienda y estrenar tipo de producto.",
+        "why": "Son las señales de que llevas tu registro al día. Abrir la app, filtrar listas o volver a editar un pedido que ya sumó no dan puntos."
+      },
+      "mature": {
+        "title": "Un pedido madura con su primer pago",
+        "body": "Al registrar el pedido sumas algo de inmediato. El resto espera a que ese pedido tenga un pago asignado, y su llegada y su cierre esperan lo mismo.",
+        "why": "No es un error ni un retraso: un pedido sin ningún pago anotado todavía es una intención. El primer pago es lo que lo vuelve real."
+      },
+      "caps": {
+        "title": "Hay topes, y repetir vale menos",
+        "body": "Cada regla suma hasta un tope al mes. Y varios pedidos seguidos en la misma tienda dentro del mismo mes valen cada vez un poco menos, aunque nunca llegan a cero.",
+        "why": "Así registrar de más nunca es el atajo. Si anotas a tu ritmo, rara vez vas a topar con un tope. Los números exactos no se publican, justamente para que no se puedan optimizar."
+      },
+      "recompute": {
+        "title": "Lo que deja de existir deja de contar",
+        "body": "Tu saldo se recalcula sobre lo que sigue existiendo. Si borras un pedido, sus puntos se van con él. Si lo cancelas, se van casi todos: se quedan solo los de haberlo registrado.",
+        "why": "Cancelar es un desenlace real, y anotarlo también es llevar el registro. Por eso nunca vas a ver puntos en negativo: nada se resta, todo se vuelve a calcular."
+      },
+      "stores": {
+        "title": "Una tienda suma cuando es pública y está aprobada",
+        "body": "Puedes registrar la tienda donde compras y sus pedidos suman igual que los de cualquier otra, pero antes tiene que pasar por aprobación y ser pública. Una tienda privada no suma.",
+        "why": "La aprobación es el único paso que no puedes dar solo. Sin ella, inventar una tienda y comprarte a ti mismo sería puntos gratis."
+      },
+      "permanence": {
+        "title": "El rango no baja y las medallas no dan puntos",
+        "body": "El rango que alcanzas es tuyo para siempre: si tu total baja, retrocede la barra, nunca el nombre. Las medallas no suman puntos y tampoco se quitan.",
+        "why": "Los puntos miden tu registro, no tu gasto: ningún monto de dinero suma nunca. Y las medallas son estatus, no moneda."
+      }
+    },
+    "closingTitle": "Nadie te compara con nadie",
+    "closingBody": "Tu rango, tus puntos y tus medallas los ves solo tú. Hoy no hay tabla ni ranking entre coleccionistas. Si algún día lo hay, será opcional."
+  },
+  "widget": {
+    "eyebrow": "Tu rango",
+    "pointsCaption": "puntos",
+    "monthChip": "+{points} este mes",
+    "recentTitle": "Últimas medallas",
+    "albumLink": "Ver el álbum {unlocked} de {total}",
+    "open": "Ver mi progreso",
+    "medalLabel": "Medalla {name}, {rarity}",
+    "empty": "Registra tu primer pedido y empieza a sumar puntos."
+  },
+  "rank": {
+    "position": "Rango {index} de 10",
+    "emblemLabel": "Emblema de {rank}"
+  },
+  "celebration": {
+    "dismiss": "Cerrar",
+    "toast": {
+      "kicker": "Medalla desbloqueada",
+      "meta": "{rarity} · página {series}"
+    },
+    "burst": {
+      "kicker": "Medallas desbloqueadas",
+      "title": "Desbloqueaste {count} medallas",
+      "meta": "Míralas todas en tu álbum"
+    },
+    "medal": {
+      "kicker": "Medalla {rarity}",
+      "cta": "Verla en el álbum"
+    },
+    "rank": {
+      "kicker": "Subiste de rango",
+      "permanence": "Rango {index} de 10, y este no se pierde nunca.",
+      "cta": "Seguir"
+    },
+    "welcome": {
+      "title": "Tu historial ya cuenta",
+      "subtitle": "Sumamos todo lo que ya tenías registrado.",
+      "medals": "{count} medallas desbloqueadas",
+      "cta": "Ver mi progreso"
+    }
+  }
+}

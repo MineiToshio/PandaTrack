@@ -7,6 +7,18 @@ import { resolveFxPair } from "@/lib/fx/reconciliation";
 import { prisma } from "@/lib/prisma";
 import type { DeliveryCreateInput, DeliveryEditInput } from "@/lib/deliveries/deliveryValidation";
 import { recalculateOrderAllocationCache } from "@/lib/data/orders/orderPaymentAllocations";
+import {
+  combineCredits,
+  creditDeliveryReceived,
+  creditOrdersCompleted,
+  settleProgression,
+  type CreditOutcome,
+  type ProgressionDelta,
+} from "@/lib/data/progression/accrual";
+import {
+  STORE_CREDIT_ELIGIBILITY_SELECT,
+  type StoreEligibilityRow,
+} from "@/lib/data/progression/storeCreditEligibility";
 
 /**
  * One order this delivery transaction just closed to COMPLETED, snapshotted for the money
@@ -29,7 +41,14 @@ export type ClosedOrderSnapshot = {
 };
 
 export type CreateDeliveryResult =
-  | { ok: true; deliveryId: string; productCount: number; orderCount: number; closedOrders: ClosedOrderSnapshot[] }
+  | {
+      ok: true;
+      deliveryId: string;
+      productCount: number;
+      orderCount: number;
+      closedOrders: ClosedOrderSnapshot[];
+      progression: ProgressionDelta | null;
+    }
   | {
       ok: false;
       error:
@@ -41,6 +60,15 @@ export type CreateDeliveryResult =
       /** OrderItem ids that were no longer eligible — drives the client retry copy. */
       ineligibleProductIds?: string[];
     };
+
+/**
+ * The delivery transaction's own shape. It carries the raw credit count, never a settled delta: the
+ * progress cache is re-derived after the transaction commits, so an arrival is never held up by a
+ * secondary write and the money transaction that follows never shares a per-user row with it.
+ */
+type CreateDeliveryTxOutcome =
+  | (Omit<Extract<CreateDeliveryResult, { ok: true }>, "progression"> & { credited: CreditOutcome })
+  | Extract<CreateDeliveryResult, { ok: false }>;
 
 /**
  * Re-derives and persists the OrderStatus for every affected order within the
@@ -59,19 +87,24 @@ export type CreateDeliveryResult =
  */
 export async function persistDerivedOrderStatuses(
   tx: Prisma.TransactionClient,
+  userId: string,
   orderIds: string[],
-): Promise<{ closedOrderIds: string[] }> {
-  if (orderIds.length === 0) return { closedOrderIds: [] };
+): Promise<{ closedOrderIds: string[]; credited: CreditOutcome }> {
+  if (orderIds.length === 0) return { closedOrderIds: [], credited: 0 };
 
   const unique = [...new Set(orderIds)];
 
   // Single batched read instead of one findFirst per order — avoids an N+1 inside the transaction.
+  // Scoped by `userId`: every caller reaches this through products it already proved belong to the
+  // collector, so the scope changes no behaviour, and it removes the one place in the delivery
+  // lifecycle where an order was re-derived by id alone.
   const orders = await tx.order.findMany({
-    where: { id: { in: unique } },
+    where: { id: { in: unique }, userId },
     select: {
       id: true,
       status: true,
       items: { select: { id: true, deliveryState: true } },
+      store: { select: STORE_CREDIT_ELIGIBILITY_SELECT },
     },
   });
 
@@ -79,7 +112,9 @@ export async function persistDerivedOrderStatuses(
   // distinct status with a single updateMany. This keeps the write count bounded by the number of
   // OrderStatus values rather than the number of affected orders.
   const idsByTargetStatus = new Map<OrderStatus, string[]>();
+  const storeByOrderId = new Map<string, StoreEligibilityRow | null>();
   for (const order of orders) {
+    storeByOrderId.set(order.id, order.store);
     if (order.status === OrderStatus.CANCELLED) continue;
 
     const derived = deriveOrderStatus(
@@ -97,7 +132,18 @@ export async function persistDerivedOrderStatuses(
     await tx.order.updateMany({ where: { id: { in: ids } }, data: { status } });
   }
 
-  return { closedOrderIds: idsByTargetStatus.get(OrderStatus.COMPLETED) ?? [] };
+  const closedOrderIds = idsByTargetStatus.get(OrderStatus.COMPLETED) ?? [];
+
+  // `order-completed` is credited exactly where the status it depends on is written, rather than in
+  // each of the delivery mutations that can trigger it. `COMPLETED` is never typed by anybody: it
+  // falls out of every product having arrived, and the two would drift apart the first time a new
+  // caller re-derived a status without knowing it also had to credit.
+  const credited = await creditOrdersCompleted(tx, {
+    userId,
+    orders: closedOrderIds.map((orderId) => ({ orderId, store: storeByOrderId.get(orderId) ?? null })),
+  });
+
+  return { closedOrderIds, credited };
 }
 
 /**
@@ -172,11 +218,13 @@ export async function createDelivery(userId: string, input: DeliveryCreateInput)
     return { ok: false, error: "NO_PRODUCTS_SELECTED" };
   }
 
-  return prisma
-    .$transaction<CreateDeliveryResult>(async (tx) => {
+  const outcome = await prisma
+    .$transaction<CreateDeliveryTxOutcome>(async (tx) => {
+      // Widened past `id` for the progression credit gate, read inside the delivery transaction so
+      // the answer is the store's state at the moment of the arrival, not at page load.
       const store = await tx.store.findFirst({
         where: { id: input.storeId },
-        select: { id: true },
+        select: { id: true, ...STORE_CREDIT_ELIGIBILITY_SELECT },
       });
 
       if (!store) {
@@ -284,8 +332,20 @@ export async function createDelivery(userId: string, input: DeliveryCreateInput)
       });
 
       const orderIds = selectedItems.map((item) => item.orderId);
-      const { closedOrderIds } = await persistDerivedOrderStatuses(tx, orderIds);
+      const { closedOrderIds, credited: completedCredited } = await persistDerivedOrderStatuses(tx, userId, orderIds);
       const closedOrders = await buildClosedOrderSnapshots(tx, closedOrderIds);
+
+      // Only the quick-arrival shape credits the arrival: a delivery born IN_TRANSIT has not
+      // arrived, and its 25 points are `markDeliveryDelivered`'s to award later. Inside this
+      // transaction, never the independent money transaction that settles what the arrival closed.
+      const receivedCredited = isBornDelivered
+        ? await creditDeliveryReceived(tx, {
+            userId,
+            deliveryId: delivery.id,
+            store,
+            deliveredItemIds: uniqueProductIds,
+          })
+        : 0;
 
       return {
         ok: true,
@@ -293,14 +353,22 @@ export async function createDelivery(userId: string, input: DeliveryCreateInput)
         productCount: uniqueProductIds.length,
         orderCount: new Set(orderIds).size,
         closedOrders,
+        credited: combineCredits(receivedCredited, completedCredited),
       };
     })
-    .catch((error: unknown) => {
+    .catch((error: unknown): CreateDeliveryTxOutcome => {
       if (error instanceof Error && error.message === "DELIVERY_PRODUCT_CONCURRENT_STATE_CHANGE") {
         return { ok: false, error: "PRODUCT_NOT_ELIGIBLE" };
       }
       throw error;
     });
+
+  if (!outcome.ok) {
+    return outcome;
+  }
+
+  const { credited, ...success } = outcome;
+  return { ...success, progression: await settleProgression(userId, credited) };
 }
 
 // ---------------------------------------------------------------------------
@@ -318,7 +386,11 @@ export type DeliveryLifecycleResult = { ok: true; productCount: number } | { ok:
  * replacement, so every existing caller that only reads `ok`/`error`/`productCount` keeps compiling.
  */
 export type MarkDeliveryDeliveredResult =
-  | { ok: true; productCount: number; closedOrders: ClosedOrderSnapshot[] }
+  | { ok: true; productCount: number; closedOrders: ClosedOrderSnapshot[]; progression: ProgressionDelta | null }
+  | { ok: false; error: DeliveryLifecycleError };
+
+type MarkDeliveryDeliveredTxOutcome =
+  | { ok: true; productCount: number; closedOrders: ClosedOrderSnapshot[]; credited: CreditOutcome }
   | { ok: false; error: DeliveryLifecycleError };
 
 /**
@@ -393,6 +465,7 @@ export type ReopenDeliveryResult =
 type DeliveryWithItems = {
   id: string;
   status: DeliveryStatus;
+  store: StoreEligibilityRow | null;
   orderItems: Array<{ orderItem: { id: string; orderId: string } }>;
 };
 
@@ -406,6 +479,8 @@ async function findDeliveryWithItems(
     select: {
       id: true,
       status: true,
+      // Carried for the progression credit gate; every other reader of this shape ignores it.
+      store: { select: STORE_CREDIT_ELIGIBILITY_SELECT },
       orderItems: { select: { orderItem: { select: { id: true, orderId: true } } } },
     },
   });
@@ -427,7 +502,7 @@ export async function markDeliveryDelivered(
   userId: string,
   receivedDate: Date,
 ): Promise<MarkDeliveryDeliveredResult> {
-  return prisma.$transaction(async (tx) => {
+  const outcome = await prisma.$transaction<MarkDeliveryDeliveredTxOutcome>(async (tx) => {
     const delivery = await findDeliveryWithItems(tx, deliveryId, userId);
     if (!delivery) return { ok: false, error: "DELIVERY_NOT_FOUND" };
     if (delivery.status !== DeliveryStatus.IN_TRANSIT) return { ok: false, error: "INVALID_STATUS" };
@@ -446,11 +521,30 @@ export async function markDeliveryDelivered(
       });
     }
 
-    const { closedOrderIds } = await persistDerivedOrderStatuses(tx, orderIds);
+    const { closedOrderIds, credited: completedCredited } = await persistDerivedOrderStatuses(tx, userId, orderIds);
     const closedOrders = await buildClosedOrderSnapshots(tx, closedOrderIds);
 
-    return { ok: true, productCount: itemIds.length, closedOrders };
+    const receivedCredited = await creditDeliveryReceived(tx, {
+      userId,
+      deliveryId,
+      store: delivery.store,
+      deliveredItemIds: itemIds,
+    });
+
+    return {
+      ok: true,
+      productCount: itemIds.length,
+      closedOrders,
+      credited: combineCredits(receivedCredited, completedCredited),
+    };
   });
+
+  if (!outcome.ok) {
+    return outcome;
+  }
+
+  const { credited, ...success } = outcome;
+  return { ...success, progression: await settleProgression(userId, credited) };
 }
 
 /**
@@ -569,7 +663,7 @@ export async function reopenDelivery(deliveryId: string, userId: string): Promis
       });
     }
 
-    await persistDerivedOrderStatuses(tx, orderIds);
+    await persistDerivedOrderStatuses(tx, userId, orderIds);
 
     return {
       ok: true,
@@ -608,7 +702,7 @@ export async function cancelDelivery(deliveryId: string, userId: string): Promis
       });
     }
 
-    await persistDerivedOrderStatuses(tx, orderIds);
+    await persistDerivedOrderStatuses(tx, userId, orderIds);
 
     return { ok: true, productCount: itemIds.length };
   });
@@ -638,7 +732,7 @@ export async function deleteDelivery(deliveryId: string, userId: string): Promis
     // Cascade removes the delivery_order_item links.
     await tx.delivery.delete({ where: { id: deliveryId } });
 
-    await persistDerivedOrderStatuses(tx, orderIds);
+    await persistDerivedOrderStatuses(tx, userId, orderIds);
 
     return { ok: true, productCount: itemIds.length };
   });
@@ -820,7 +914,7 @@ export async function editDelivery(
         ...delivery.orderItems.map((link) => link.orderItem.orderId),
         ...selectedItems.map((item) => item.orderId),
       ];
-      await persistDerivedOrderStatuses(tx, affectedOrderIds);
+      await persistDerivedOrderStatuses(tx, userId, affectedOrderIds);
 
       return {
         ok: true,

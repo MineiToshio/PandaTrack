@@ -24,7 +24,7 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), prefetch: vi.fn(), refresh: refreshMock }),
 }));
 
-vi.mock("@/contexts/ToastContext", () => ({ useToast: () => ({ addToast: addToastMock }) }));
+vi.mock("@/contexts/ToastContext", () => ({ useToast: () => ({ addToast: addToastMock }), DEFAULT_DURATION_MS: 4000 }));
 
 vi.mock("posthog-js", () => ({ default: { capture: captureMock } }));
 

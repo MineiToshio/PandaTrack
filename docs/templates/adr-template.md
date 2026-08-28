@@ -1,4 +1,12 @@
-# ADR-XXXX: [Decision Title]
+# Note on format
+
+ADRs in this repository live in `docs/design/decisions/` and use a four-digit number prefix without the `ADR-` prefix (e.g. `0034-store-account-reconciliation-adjustment.md`). ADRs also carry YAML frontmatter with: `title`, `date`, `status`, `session`, `owner`, `trigger`, `updates`, and `extends`.
+
+The template below is for the Markdown body section only.
+
+---
+
+# NNNN: [Decision Title]
 
 - Status: `Proposed | Accepted | Superseded`
 - Date: `YYYY-MM-DD`

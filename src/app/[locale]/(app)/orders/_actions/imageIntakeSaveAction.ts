@@ -9,6 +9,7 @@ import { findOrderIdByNoteMarker, listOrderItemPositions } from "@/lib/data/orde
 import { createOrder } from "@/lib/data/orders/orderMutations";
 import { addOrderPayment } from "@/lib/data/orders/orderPaymentMutations";
 import { parseImageIntakeDraft, type ImageIntakeDraft } from "@/lib/imageIntake/draftSchema";
+import { IMAGE_INTAKE_MARKER_NAMESPACE } from "@/lib/imageIntake/imageIntakeMarker";
 import { intakeBreakdownSchema, type IntakeBreakdownPayload } from "@/lib/imageIntake/intakeBreakdownContract";
 import {
   mapDraftToOrderCreateInput,
@@ -17,8 +18,6 @@ import {
 import { exchangeRateSchema, orderCreateSchema, orderPaymentCreateSchema } from "@/lib/orders/orderValidation";
 import { IMAGE_INTAKE_SAVE_TOKEN_PATTERN, type ImageIntakeSaveResult } from "./imageIntakeContract";
 
-/** Marker namespace, matching the `[import:<source>:<digest>]` shape already used by the chat importer. */
-const IMAGE_INTAKE_MARKER_NAMESPACE = "image-intake";
 const MARKER_DIGEST_LENGTH = 16;
 
 /**
@@ -227,6 +226,7 @@ export async function saveOrderFromDraftAction(
       paymentsSkipped: skipped,
       skippedBreakdownIndexes,
       breakdownDropped,
+      progression: created.progression,
     };
   } catch (error) {
     Sentry.captureException(error, { tags: { feature: "imageIntake", action: "saveOrderFromDraft" } });

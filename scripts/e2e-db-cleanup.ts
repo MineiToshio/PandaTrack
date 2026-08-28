@@ -19,6 +19,8 @@ interface CleanupRequest {
   storeNamePrefix?: string;
   deliveryIds?: string[];
   pushEndpointPrefix?: string;
+  /** Account whose still-default `progression_settings` row this run created and should drop. */
+  progressionSettingsUserEmail?: string;
 }
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL, allowExitOnIdle: true });
@@ -106,6 +108,27 @@ async function main(): Promise<void> {
   }
   if (request.pushEndpointPrefix) {
     await prisma.pushSubscription.deleteMany({ where: { endpoint: { startsWith: request.pushEndpointPrefix } } });
+  }
+  if (request.progressionSettingsUserEmail) {
+    // The progression switch is the only writer of this table, and one row survives the switch being
+    // flipped back: without this the visibility spec would leave a permanent trace on the collector's
+    // account. The delete is filtered by BOTH defaults, not only by the account, because the row is
+    // also where a hidden layer and an already-celebrated rank live: a run that legitimately left
+    // either of those behind (or a collector who set them outside the suite) must keep them. The
+    // filter matching nothing is the correct outcome then, not a failure.
+    //
+    // The baseline guard cannot cover this one: `progression_settings` is keyed by `userId` and has
+    // no `id` column for `scripts/e2e-db-baseline.ts` to freeze, and the row is the row the spec is
+    // supposed to write. The defaults filter is the protection instead.
+    const owner = await prisma.user.findUnique({
+      where: { email: request.progressionSettingsUserEmail },
+      select: { id: true },
+    });
+    if (owner) {
+      await prisma.progressionSettings.deleteMany({
+        where: { userId: owner.id, hideProgression: false, lastCelebratedRankIndex: 0 },
+      });
+    }
   }
 }
 

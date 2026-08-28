@@ -11,6 +11,7 @@ import { runOrderCloseMoneyTransaction, type ClosedOrderInput } from "@/lib/data
 import { getCollectorPreferencesSnapshot } from "@/lib/data/user-settings/userSettingsQueries";
 import { deliveryQuickArrivalSchema, type SettlementOrderIntent } from "@/lib/deliveries/deliveryValidation";
 import { revalidateCollectionSurfaces } from "@/lib/cache/revalidateCollectionSurfaces";
+import type { ProgressionDelta } from "@/lib/data/progression/accrual";
 import {
   attachCurrencyCodes,
   buildClosedOrderInputs,
@@ -36,7 +37,14 @@ export type QuickArrivalActionInput = {
 };
 
 export type QuickArrivalActionResult =
-  | { ok: true; deliveryId: string; productCount: number; moneyOutcomes: SettlementMoneyOutcome[] }
+  | {
+      ok: true;
+      deliveryId: string;
+      productCount: number;
+      moneyOutcomes: SettlementMoneyOutcome[];
+      /** `null` when the credit step itself failed; never a partial or guessed delta. */
+      progression: ProgressionDelta | null;
+    }
   | { ok: false; error: string };
 
 /**
@@ -176,7 +184,13 @@ export async function quickArrivalAction(input: QuickArrivalActionInput): Promis
     });
     await posthog.shutdown();
 
-    return { ok: true, deliveryId: result.deliveryId, productCount: result.productCount, moneyOutcomes };
+    return {
+      ok: true,
+      deliveryId: result.deliveryId,
+      productCount: result.productCount,
+      moneyOutcomes,
+      progression: result.progression,
+    };
   } catch (error) {
     Sentry.withScope((scope) => {
       scope.setTag("feature", "delivery_quick_arrival");

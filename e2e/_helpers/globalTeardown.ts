@@ -1,4 +1,4 @@
-import { verifyDataBaseline } from "./dataGuard";
+import { sweepProgressionState, verifyDataBaseline } from "./dataGuard";
 
 /**
  * Runs after the last spec and fails the whole run if the suite deleted or modified any row that
@@ -14,5 +14,11 @@ import { verifyDataBaseline } from "./dataGuard";
  * code, so a damaged database can never be reported as a green suite.
  */
 export default async function globalTeardown(): Promise<void> {
+  // Before the verify, not after: the sweep deletes rows the run created, which the baseline never
+  // froze, so the two never contend. Progression rows need their own pass because nothing owns them
+  // (`point_ledger_entry` carries no foreign key, `medal_unlock` is never revoked) and because
+  // merely opening `/progress` produces them. Without this the suite left ten irrevocable medal
+  // unlocks on the collector's real account per pass.
+  await sweepProgressionState();
   await verifyDataBaseline();
 }

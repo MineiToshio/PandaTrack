@@ -14,6 +14,7 @@ import {
   type AssignableOrder,
 } from "@/lib/data/orders/storePaymentAssignableOrdersQueries";
 import { getStorePaymentsForStore, type StorePaymentListRow } from "@/lib/data/orders/storePaymentQueries";
+import type { ProgressionDelta } from "@/lib/data/progression/accrual";
 import { storePaymentCreateSchema, storePaymentDeleteSchema } from "@/lib/orders/orderValidation";
 import { revalidateCollectionSurfaces } from "@/lib/cache/revalidateCollectionSurfaces";
 
@@ -83,6 +84,8 @@ export type CreateStorePaymentActionResult =
       /** Canonical row for the "Pagos a esta tienda" card, so a caller can reconcile an optimistic
           insert without a second query. */
       payment: StorePaymentListRow;
+      /** `null` when the credit step itself failed; never a partial or guessed delta. */
+      progression: ProgressionDelta | null;
     }
   | {
       ok: false;
@@ -151,6 +154,7 @@ export async function createStorePaymentAction(
         allocatedAmountMinor: order.allocatedAmountMinor,
       })),
       payment: result.payment,
+      progression: result.progression,
     };
   } catch (error) {
     Sentry.withScope((scope) => {

@@ -319,5 +319,32 @@
       "enableFailed": "We could not enable reminders. Please try again.",
       "toggleFailed": "We could not save your preference. Please try again."
     }
+  },
+  "progression": {
+    "eyebrow": "Progression",
+    "title": "Rank and medals",
+    "subtitle": "Your progress is private. Only you see it.",
+    "hideRow": {
+      "label": "Hide my progression",
+      "helper": "Removes the entry, the dashboard glance and the alerts. Your points keep adding up."
+    },
+    "purgeRow": {
+      "label": "Delete my points history",
+      "helper": "Erases your points and your medals for good.",
+      "action": "Delete history"
+    },
+    "purge": {
+      "title": "Delete your points history",
+      "subtitle": "This action is permanent.",
+      "body": "Your points, your medals and your rank are erased. It cannot be undone. Your orders, payments and deliveries do not change.",
+      "confirm": "Delete for good",
+      "cancel": "Cancel",
+      "success": "We deleted your points history.",
+      "close": "Close"
+    },
+    "errors": {
+      "toggleFailed": "We could not save the change. Try again.",
+      "purgeFailed": "We could not delete your history. Try again."
+    }
   }
 }

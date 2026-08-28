@@ -111,6 +111,7 @@ only catches anything missed.
 | Modal / Sheet                  | spring 280ms                | Cross-fade ~200ms                                           |
 | Drawer                         | rise/slide 280ms            | Direct appearance                                           |
 | Skeleton                       | shimmer                     | Static fill                                                 |
+| Progression celebration        | confetti, halo, art rise    | Confetti removed outright; halo and rise still, panel fades |
 
 **Binding rule:** any new expressive surface ships its explicit reduced-motion treatment. Verify
 each surface with the OS flag active — do not trust the global floor alone.
@@ -194,6 +195,16 @@ The canonical reversible-mutation pattern (see `.agents/rules/optimistic-client-
 Success is felt through **settling, not confetti**. The canonical pattern is the count rolling to
 its target and the state block appearing only when it lands (e.g. the amount counts to `$0`, then is
 replaced by a "paid in full" block). Replicable for "mark as arrived".
+
+**The one exception, and its boundary.** The progression celebration (`FRD-12`: a rank crossed, a
+medal at the two highest print-run tiers) does use confetti, a warm halo and an oversized art
+entrance. That is not a loosening of the rule above, it is its complement: settling is right for the
+outcomes that recur (a payment logged, a delivery received, an order closed), and a surface a
+collector meets a handful of times a year is the only place expressive celebration earns its cost.
+The boundary is frequency, not importance. A recurring confirmation never gets confetti, however
+significant it feels, and a celebration surface never appears without having been claimed exactly
+once. Under reduced motion the confetti is removed outright rather than slowed: it carries no fact,
+and every word the surface states is still on screen without it.
 
 ### 6.6 List → detail view transition
 

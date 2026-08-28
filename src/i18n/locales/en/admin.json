@@ -3,7 +3,8 @@
     "section": "Administration",
     "moderation": "Moderation",
     "audit": "Audit log",
-    "imageIntake": "AI photos"
+    "imageIntake": "AI photos",
+    "progression": "Progression"
   },
   "landing": {
     "title": "Moderation inbox",
@@ -188,7 +189,8 @@
       "changeRequest_reject": "Change request rejected",
       "productType_approve": "Product type approved",
       "productType_reject": "Product type rejected",
-      "imageIntake_quotaOverride": "AI photo quota changed"
+      "imageIntake_quotaOverride": "AI photo quota changed",
+      "progression_void": "Progression points voided"
     },
     "pagination": {
       "regionLabel": "Audit log pagination",
@@ -207,7 +209,8 @@
   "meta": {
     "landingTitle": "Moderation",
     "auditTitle": "Audit log",
-    "imageIntakeTitle": "AI photos"
+    "imageIntakeTitle": "AI photos",
+    "progressionTitle": "Progression"
   },
   "imageIntake": {
     "intro": "Adjust an account's monthly bag of AI photos. With no adjustment, every account gets {defaultQuota} photos per month.",
@@ -235,6 +238,91 @@
     },
     "toast": {
       "overrideSaved": "Quota updated."
+    }
+  },
+  "progression": {
+    "intro": "Look up an account to review its point history. This surface only reads and voids: nothing here grants, edits or reorders an entry.",
+    "searchLabel": "Find account",
+    "searchPlaceholder": "Username or email",
+    "searchSubmit": "Search",
+    "adminTag": "Admin",
+    "openLedger": "View ledger",
+    "backToSearch": "Back to search",
+    "idle": {
+      "title": "Find an account",
+      "subtitle": "Type a username or an email to see its point history. Nobody is listed by default."
+    },
+    "noResults": {
+      "title": "No results",
+      "subtitle": "No account matches that search. Check the username or the email."
+    },
+    "summary": {
+      "maturedPoints": "Live points",
+      "rank": "Rank",
+      "rankValue": "{rank} · {index} of 10",
+      "highestRank": "Highest rank",
+      "medals": "Medals",
+      "medalsValue": "{unlocked} of {total}",
+      "entries": "Entries",
+      "entriesValue": "{live} live · {voided} voided"
+    },
+    "ledger": {
+      "tableLabel": "Point history for the account",
+      "columns": {
+        "when": "When",
+        "rule": "Rule",
+        "entity": "Source record",
+        "points": "Points",
+        "source": "Origin",
+        "state": "State"
+      },
+      "live": "Live",
+      "voided": "Voided",
+      "empty": {
+        "title": "No points recorded",
+        "subtitle": "{username} has no entries in their history yet."
+      },
+      "pagination": {
+        "regionLabel": "Point history pagination",
+        "older": "Older",
+        "newer": "Newer"
+      }
+    },
+    "rules": {
+      "order_created": "Order registered",
+      "order_registered": "Order fully filled in",
+      "order_first_payment": "First payment on the order",
+      "delivery_received": "Delivery received",
+      "order_completed": "Order completed",
+      "order_settled": "Order settled",
+      "store_first_order": "First order at the store",
+      "product_type_discovered": "Category discovered",
+      "store_reviewed": "Store reviewed"
+    },
+    "entityTypes": {
+      "order": "Order",
+      "delivery": "Delivery",
+      "store": "Store",
+      "productType": "Category"
+    },
+    "sources": {
+      "LIVE": "Live",
+      "BACKFILL": "Backfill"
+    },
+    "void": {
+      "trigger": "Void points",
+      "title": "Void the points",
+      "subtitle": "{username} has {count, plural, one {# live entry} other {# live entries}}.",
+      "explainer": "Every live entry on this account will be voided, not a selection of them. Entries are not deleted: they stay, marked with who voided them and why, and the total is recomputed without them. A rank already reached is not taken back.",
+      "reasonLabel": "Reason",
+      "reasonPlaceholder": "Why these points are being voided",
+      "reasonHelp": "It is recorded in the admin log next to your username.",
+      "reasonRequired": "Write a reason to void the points.",
+      "confirm": "Void points",
+      "cancel": "Cancel",
+      "toast": {
+        "voided": "{count, plural, one {# entry voided} other {# entries voided}}."
+      }
     }
   }
 }
