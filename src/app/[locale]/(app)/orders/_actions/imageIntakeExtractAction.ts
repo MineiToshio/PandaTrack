@@ -202,48 +202,47 @@ function reportsMultipleOrders(draft: ImageIntakeDraft): boolean {
  * skippable by accident.
  */
 export async function extractOrderFromImagesAction(formData: FormData): Promise<ImageIntakeExtractResult> {
-  const session = await getSession();
-  if (!session?.user?.id) {
-    return { ok: false, code: "unauthorized" };
-  }
-  const userId = session.user.id;
-  // Resolved from the session's role, never from an environment allowlist: administrators are
-  // exempt from the photo bag but not from the global cut-off.
-  const isAdmin = getIsAdmin(session);
-
-  const preferences = await getCollectorPreferencesSnapshot(userId);
-  const baseCurrencyCode = preferences?.baseCurrencyCode ?? null;
-  if (!baseCurrencyCode) {
-    // The page renders the same gate, but a submission that reaches the server without a base
-    // currency must not spend a request: an assumed currency needs something to be assumed from.
-    return { ok: false, code: "missing-base-currency" };
-  }
-
-  const files = await readSubmittedFiles(formData);
-  const validated = await validateUploadedImages(files);
-  if (!validated.ok) {
-    // The position and the measurement travel with the code. Without them the screen can only say
-    // "one of the photos", which is not something a collector holding twenty screenshots can act on.
-    return {
-      ok: false,
-      code: validated.error.code,
-      ...(validated.error.index !== null ? { imageIndex: validated.error.index } : {}),
-      ...(validated.error.measured
-        ? { imageWidth: validated.error.measured.width, imageHeight: validated.error.measured.height }
-        : {}),
-    };
-  }
-
   const posthog = getPostHogClient();
-  const imageCount = validated.images.length;
-  const modelId = resolveImageIntakeModelId();
-  const extractionLocale = resolveExtractionLocale(formData.get(IMAGE_INTAKE_LOCALE_FIELD));
-  const entrySource =
-    formData.get(IMAGE_INTAKE_ENTRY_SOURCE_FIELD) === ImageIntakeEntrySource.SHARE
-      ? ImageIntakeEntrySource.SHARE
-      : ImageIntakeEntrySource.IN_APP;
-
   try {
+    const session = await getSession();
+    if (!session?.user?.id) {
+      return { ok: false, code: "unauthorized" };
+    }
+    const userId = session.user.id;
+    // Resolved from the session's role, never from an environment allowlist: administrators are
+    // exempt from the photo bag but not from the global cut-off.
+    const isAdmin = getIsAdmin(session);
+
+    const preferences = await getCollectorPreferencesSnapshot(userId);
+    const baseCurrencyCode = preferences?.baseCurrencyCode ?? null;
+    if (!baseCurrencyCode) {
+      // The page renders the same gate, but a submission that reaches the server without a base
+      // currency must not spend a request: an assumed currency needs something to be assumed from.
+      return { ok: false, code: "missing-base-currency" };
+    }
+
+    const files = await readSubmittedFiles(formData);
+    const validated = await validateUploadedImages(files);
+    if (!validated.ok) {
+      // The position and the measurement travel with the code. Without them the screen can only say
+      // "one of the photos", which is not something a collector holding twenty screenshots can act on.
+      return {
+        ok: false,
+        code: validated.error.code,
+        ...(validated.error.index !== null ? { imageIndex: validated.error.index } : {}),
+        ...(validated.error.measured
+          ? { imageWidth: validated.error.measured.width, imageHeight: validated.error.measured.height }
+          : {}),
+      };
+    }
+    const imageCount = validated.images.length;
+    const modelId = resolveImageIntakeModelId();
+    const extractionLocale = resolveExtractionLocale(formData.get(IMAGE_INTAKE_LOCALE_FIELD));
+    const entrySource =
+      formData.get(IMAGE_INTAKE_ENTRY_SOURCE_FIELD) === ImageIntakeEntrySource.SHARE
+        ? ImageIntakeEntrySource.SHARE
+        : ImageIntakeEntrySource.IN_APP;
+
     // Read before the reservation so the figure reported is the balance the collector was looking
     // at when they pressed the button, not the one left after this submission took its share.
     const quotaBefore = await getImageIntakeQuotaSnapshot({ userId, isAdmin, now: new Date() });
