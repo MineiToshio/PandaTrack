@@ -22,6 +22,10 @@ import { EXTRACTION_REQUEST_TIMEOUT_MS, EXTRACTION_TOTAL_BUDGET_MS } from "@/lib
  *    already rejects HEIC because the canvas compression step cannot decode it, and the Android
  *    share sheet must refuse the same files up front instead of accepting a share the flow can
  *    only fail afterwards.
+ * 4. `next.config.ts` forces `@img/sharp-libvips-linux-x64` into the deployed function trace via
+ *    `outputFileTracingIncludes`. sharp's native addon dlopens libvips at runtime, an edge Vercel's
+ *    output file tracing cannot see; without this the deployed function 500s with
+ *    `ERR_DLOPEN_FAILED` at module load, before this feature's extraction code ever runs.
  */
 
 const REPO_ROOT = process.cwd();
@@ -115,6 +119,19 @@ describe("image intake config guard", () => {
       `EXTRACTION_REQUEST_TIMEOUT_MS (${EXTRACTION_REQUEST_TIMEOUT_MS}ms) must fit inside ` +
         `EXTRACTION_TOTAL_BUDGET_MS (${EXTRACTION_TOTAL_BUDGET_MS}ms).`,
     ).toBeLessThanOrEqual(EXTRACTION_TOTAL_BUDGET_MS);
+  });
+
+  it("forces sharp-libvips-linux-x64 into the deployed function trace via outputFileTracingIncludes", () => {
+    const content = readFileSync(NEXT_CONFIG_PATH, "utf8");
+
+    expect(
+      /outputFileTracingIncludes\s*:\s*\{[^}]*@img\/sharp-libvips-linux-x64[^}]*\}/.test(content),
+      "next.config.ts must declare outputFileTracingIncludes covering " +
+        "@img/sharp-libvips-linux-x64. sharp's native addon dlopens libvips-cpp.so at runtime, an " +
+        "edge @vercel/nft cannot see from JS require/import edges alone, so a deployed function " +
+        "that imports sharp (order image intake, avatar processing, store logo processing) 500s " +
+        "with ERR_DLOPEN_FAILED at module load without this include.",
+    ).toBe(true);
   });
 
   it("declares a share_target whose accept list never lists image/heic", () => {

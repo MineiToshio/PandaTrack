@@ -12,6 +12,23 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "4mb",
     },
   },
+  // Forces libvips into every deployed function that can load sharp (image intake extraction,
+  // avatar processing, store logo processing). Vercel's output file tracing (@vercel/nft) only
+  // follows JS require/import edges; sharp's native addon (@img/sharp-linux-x64/lib/*.node) links
+  // to @img/sharp-libvips-linux-x64/lib/libvips-cpp.so via dlopen at runtime, an edge nft cannot
+  // see. Without this, the deployed function 500s with "ERR_DLOPEN_FAILED: libvips-cpp.so.*: cannot
+  // open shared object file" at module load, before any application code or try/catch runs, so no
+  // app-level error handling can catch it either. Found in production 2026-08-29 on
+  // /orders/new/image; the darwin-arm64 package this repo uses locally is unaffected since it isn't
+  // Vercel's linux-x64 builder, but keeping only the linux-x64 glob here is deliberate: nft
+  // tolerates a glob that matches nothing on this machine, so there is no cost to including a
+  // platform package that is absent locally, and no benefit to widening it past what the builder
+  // actually needs. A broad route key is used (rather than one key per sharp-consuming page) because
+  // Server Actions execute under the route of the page that submitted them, and sharp is imported
+  // from three separate route trees (order image intake, settings/avatar, stores create/edit).
+  outputFileTracingIncludes: {
+    "/**/*": ["./node_modules/@img/sharp-libvips-linux-x64/**/*"],
+  },
   images: {
     remotePatterns: [
       {
