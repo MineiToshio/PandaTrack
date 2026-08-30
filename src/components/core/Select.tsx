@@ -25,10 +25,8 @@ export type SelectControlledProps = {
   name?: string;
   value: string | null | undefined;
   onChange: (value: string) => void;
-  onClear?: () => void;
   options: SelectOption[] | SelectGroup[];
   placeholder?: string;
-  clearLabel?: string;
   helperText?: string;
   error?: string | boolean;
   disabled?: boolean;
@@ -46,7 +44,14 @@ export type SelectControlledProps = {
   "aria-label"?: string;
   children?: never;
   showChevron?: never;
-};
+} & (
+  | { onClear?: undefined; clearLabel?: string }
+  // `clearLabel` renders as the clear button's aria-label, so it is only meaningful (and required)
+  // once a caller opts into `onClear`. No production call site passes `onClear` today; this pairing
+  // keeps a future one from silently getting an unlabeled clear button instead of reviving a
+  // hardcoded English default.
+  | { onClear: () => void; clearLabel: string }
+);
 
 // Native (legacy API) — used when `children` prop is provided.
 export type SelectNativeProps = Omit<React.SelectHTMLAttributes<HTMLSelectElement>, "size"> & {
@@ -182,7 +187,7 @@ function ControlledSelect({
   onClear,
   options,
   placeholder,
-  clearLabel = "Clear",
+  clearLabel,
   helperText,
   error,
   disabled,

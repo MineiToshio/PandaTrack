@@ -28,8 +28,8 @@ type ComboboxCommon = {
   id?: string;
   name?: string;
   options: ComboboxOption[];
-  placeholder?: string;
-  searchPlaceholder?: string;
+  placeholder: string;
+  searchPlaceholder: string;
   helperText?: string;
   error?: string | boolean;
   disabled?: boolean;
@@ -47,8 +47,8 @@ export default function Combobox(props: ComboboxProps) {
     id,
     name,
     options,
-    placeholder = "Select…",
-    searchPlaceholder = "Search…",
+    placeholder,
+    searchPlaceholder,
     helperText,
     error,
     disabled,

@@ -144,8 +144,8 @@ export type FilterDrawerProps = {
   /** Optional live preview count of matching results. */
   resultsCount?: number;
   /** Localized labels for footer CTAs. */
-  applyLabel?: string;
-  clearLabel?: string;
+  applyLabel: string;
+  clearLabel: string;
   closeLabel?: string;
   applyCountLabel?: (count: number) => string;
 };
@@ -166,8 +166,8 @@ export default function FilterDrawer({
   onApply,
   onClear,
   resultsCount,
-  applyLabel = "Apply",
-  clearLabel = "Clear",
+  applyLabel,
+  clearLabel,
   closeLabel = "Close",
   applyCountLabel,
 }: FilterDrawerProps) {

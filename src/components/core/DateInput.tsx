@@ -15,7 +15,7 @@ export type DateInputProps = {
   value: ISODateString | null;
   onChange: (value: ISODateString | null) => void;
   onBlur?: () => void;
-  placeholder?: string;
+  placeholder: string;
   helperText?: string;
   error?: string | boolean;
   disabled?: boolean;
@@ -59,7 +59,7 @@ export default function DateInput({
   value,
   onChange,
   onBlur,
-  placeholder = "Select date",
+  placeholder,
   helperText,
   error,
   disabled,
