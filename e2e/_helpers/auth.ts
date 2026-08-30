@@ -98,6 +98,39 @@ export function skipUnlessAdminEnv() {
   );
 }
 
+/**
+ * True when the dedicated progression E2E account is not configured. The progression unlock
+ * surfaces spec skips then: it needs a throwaway account whose progression state (medal unlocks,
+ * the rank watermark) it resets on every run, which the shared `E2E_USER_EMAIL` account can never
+ * be, since that one carries the collector's own real, permanent history.
+ */
+export function shouldSkipProgressionE2E() {
+  return !process.env.E2E_PROGRESSION_USER_EMAIL || !process.env.E2E_PROGRESSION_USER_PASSWORD;
+}
+
+/**
+ * Skips the current test unless the progression E2E account is configured and the port is
+ * trusted, and hard-guards that account against ever resolving to a real one. The progression spec
+ * resets this account's whole progression state on every run (`resetProgressionAccountState`), so a
+ * misconfiguration that pointed it at `E2E_USER_EMAIL` or `E2E_ADMIN_EMAIL` would wipe a real
+ * collector's medals and rank the moment the suite started, not just fail an assertion.
+ */
+export function skipUnlessProgressionEnv() {
+  test.skip(shouldSkipProgressionE2E(), "E2E_PROGRESSION_USER_EMAIL and E2E_PROGRESSION_USER_PASSWORD must be set");
+  test.skip(
+    !isAuthenticatedPortTrusted(),
+    "Authenticated E2E requires PLAYWRIGHT_PORT to be Better Auth's default (3000) or listed in BETTER_AUTH_EXTRA_ORIGINS",
+  );
+  const progressionEmail = process.env.E2E_PROGRESSION_USER_EMAIL;
+  const realAccountEmails = [process.env.E2E_USER_EMAIL, process.env.E2E_ADMIN_EMAIL].filter(Boolean);
+  if (progressionEmail && realAccountEmails.includes(progressionEmail)) {
+    throw new Error(
+      `E2E_PROGRESSION_USER_EMAIL (${progressionEmail}) matches a real E2E account. It must name a ` +
+        "dedicated, throwaway account: this suite resets that account's whole progression state on every run.",
+    );
+  }
+}
+
 async function signInWithCredentialsAndLandOnDashboard(page: Page, email: string, password: string) {
   await page.context().clearCookies();
   await page.goto(SIGN_IN_RETURN_TO_DASHBOARD);
@@ -147,4 +180,13 @@ export async function signInAndLandOnDashboard(page: Page) {
 /** Signs in as the dedicated administrator account (durable admin role) and lands on the dashboard. */
 export async function signInAsAdmin(page: Page) {
   await signInWithCredentialsAndLandOnDashboard(page, process.env.E2E_ADMIN_EMAIL!, process.env.E2E_ADMIN_PASSWORD!);
+}
+
+/** Signs in as the dedicated progression E2E account and lands on the dashboard. */
+export async function signInAsProgressionUser(page: Page) {
+  await signInWithCredentialsAndLandOnDashboard(
+    page,
+    process.env.E2E_PROGRESSION_USER_EMAIL!,
+    process.env.E2E_PROGRESSION_USER_PASSWORD!,
+  );
 }

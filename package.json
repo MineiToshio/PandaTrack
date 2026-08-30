@@ -21,6 +21,7 @@
     "db-backfill-store-search-name": "npx tsx scripts/backfill-store-search-name.ts",
     "db-backfill-progression": "npx tsx scripts/backfill-collector-progression.ts",
     "db-bootstrap-admin": "npx tsx scripts/bootstrap-admin.ts",
+    "e2e-progression-bootstrap": "npx tsx scripts/e2e-progression-account-bootstrap.ts",
     "smoke-image-intake": "npx tsx scripts/local/smoke-image-intake.ts",
     "prettier": "prettier --config .prettierrc.json --write \"**/*.*\"",
     "type-check": "tsc --pretty --noEmit",
