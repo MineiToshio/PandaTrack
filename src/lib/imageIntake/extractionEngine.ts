@@ -224,6 +224,18 @@ export function readProviderErrorUsage(error: unknown): ProviderUsage | null {
 }
 
 /**
+ * HTTP status attached to a failed provider call, when the provider actually answered with one.
+ * `null` for a failure that never got an HTTP response (a network failure, an empty or malformed
+ * body, an unexpected SDK error), exactly like the classes' own `status` field.
+ */
+export function readProviderErrorStatus(error: unknown): number | null {
+  if (error instanceof ProviderTransportError || error instanceof ProviderRequestError) {
+    return error.status;
+  }
+  return null;
+}
+
+/**
  * Every reason a spend guard may refuse a submission.
  *
  * `budget-blocked` is reserved for one situation only: the guard read the period total and that

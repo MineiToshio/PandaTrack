@@ -256,6 +256,36 @@ describe("extractOrderFromImagesAction", () => {
     expect(failureEvent?.properties.failure_code).toBe("provider-rejected");
   });
 
+  it("carries the provider's HTTP status into the single diagnostic line, since geminiProvider no longer reports it on its own", async () => {
+    const { ProviderRequestError } = await import("@/lib/imageIntake/extractionEngine");
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    extractMock.mockResolvedValue({
+      status: "provider-error",
+      error: new ProviderRequestError({ code: "GEMINI_REQUEST_REJECTED", kind: "rejected", status: 400 }),
+    });
+
+    await extractOrderFromImagesAction(buildFormData());
+
+    const line = warn.mock.calls.map((call) => String(call[0])).find((text) => text.includes("[image-intake]"));
+    expect(line).toContain("httpStatus=400");
+    warn.mockRestore();
+  });
+
+  it("reports no httpStatus for a failure that never got an HTTP response", async () => {
+    const { ProviderRequestError } = await import("@/lib/imageIntake/extractionEngine");
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    extractMock.mockResolvedValue({
+      status: "provider-error",
+      error: new ProviderRequestError({ code: "GEMINI_EMPTY_RESPONSE", kind: "empty" }),
+    });
+
+    await extractOrderFromImagesAction(buildFormData());
+
+    const line = warn.mock.calls.map((call) => String(call[0])).find((text) => text.includes("[image-intake]"));
+    expect(line).not.toContain("httpStatus");
+    warn.mockRestore();
+  });
+
   it("reports a truncated answer as response-too-long, not as a failure worth retrying", async () => {
     const { ProviderRequestError } = await import("@/lib/imageIntake/extractionEngine");
     // The regression. A response cut off at the output ceiling carries no HTTP status, and

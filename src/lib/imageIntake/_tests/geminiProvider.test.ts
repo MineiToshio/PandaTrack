@@ -359,7 +359,7 @@ describe("GeminiExtractionProvider.generateDraft: failure classification", () =>
     await expect(call).rejects.toMatchObject({ status: 400 });
   });
 
-  it("reports a 4xx rejection to Sentry, sanitized, because it is our defect and it repeats", async () => {
+  it("classifies a 4xx as rejected but reports nothing itself, so the caller's single event stays the only one", async () => {
     const { ApiError } = await import("@google/genai");
     const { GeminiExtractionProvider } = await importProvider();
     generateContentMock.mockRejectedValue(
@@ -368,17 +368,15 @@ describe("GeminiExtractionProvider.generateDraft: failure classification", () =>
 
     await expect(new GeminiExtractionProvider().generateDraft(buildImages(), buildContext())).rejects.toMatchObject({
       code: "GEMINI_REQUEST_REJECTED",
+      status: 400,
     });
 
     // A 4xx means the API refused what we build, so it fails identically on every request until
-    // someone changes the code. Nobody finds that from the collector-facing message alone.
-    expect(captureExceptionMock).toHaveBeenCalledTimes(1);
-    const [reported, options] = captureExceptionMock.mock.calls[0];
-    expect(options.tags).toMatchObject({ feature: "imageIntake", providerStatus: "400" });
-    // What reaches Sentry is the sanitized error, never the SDK's own ApiError: its message
-    // serializes the provider's response body, which can echo text the model read out of an image.
-    expect((reported as Error).message).toBe("GEMINI_REQUEST_REJECTED:400");
-    expect((reported as Error).message).not.toContain("from a source image");
+    // someone changes the code, and it must still be visible in Sentry. But reporting it HERE, on
+    // top of the caller's own report of the same failure once it is fully diagnosed
+    // (`extractOrderFromImagesAction` → `reportImageIntakeFailure`), doubled the event for every
+    // 4xx: this module classifies and throws, and leaves the single report to the caller.
+    expect(captureExceptionMock).not.toHaveBeenCalled();
   });
 
   it("does not report a 5xx to Sentry: it is the provider's outage, and the engine retries it", async () => {
@@ -472,7 +470,7 @@ describe("GeminiExtractionProvider.generateDraft: failure classification", () =>
     expect(response.raw).toMatchObject({ store: { matchedStoreId: null } });
   });
 
-  it("reports an unexpected SDK error to Sentry and returns a non-retryable error", async () => {
+  it("classifies an unexpected SDK error as non-retryable, without reporting it itself", async () => {
     const { GeminiExtractionProvider } = await importProvider();
     const { ProviderRequestError } = await import("../extractionEngine");
     generateContentMock.mockRejectedValue(new Error("something unexpected"));
@@ -480,6 +478,7 @@ describe("GeminiExtractionProvider.generateDraft: failure classification", () =>
     await expect(new GeminiExtractionProvider().generateDraft(buildImages(), buildContext())).rejects.toBeInstanceOf(
       ProviderRequestError,
     );
-    expect(captureExceptionMock).toHaveBeenCalledTimes(1);
+    // Same single-report contract as the 4xx case above: the caller reports it once, fully diagnosed.
+    expect(captureExceptionMock).not.toHaveBeenCalled();
   });
 });
