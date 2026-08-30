@@ -1,12 +1,11 @@
 "use client";
 
 import { UserPen } from "lucide-react";
-import { useEffect, useId, useState, useTransition } from "react";
+import { useEffect, useId, useState } from "react";
 import { useTranslations } from "next-intl";
 import Input from "@/components/core/Input";
 import Label from "@/components/core/Label";
 import Modal from "@/components/modules/Modal/Modal";
-import { saveDisplayNameAction } from "@/app/[locale]/(app)/settings/_actions/profileActions";
 
 const MAX_DISPLAY_NAME = 50;
 
@@ -14,41 +13,37 @@ export type DisplayNameModalProps = {
   isOpen: boolean;
   onClose: () => void;
   initialName: string;
-  onSaved: (name: string) => void;
+  /**
+   * Fires synchronously on submit, before the modal closes. The parent coordinator owns the
+   * optimistic patch, the Server Action dispatch, and the rollback + toast on failure
+   * (`optimistic-client-updates.mdc`) — this modal never awaits the server.
+   */
+  onSubmit: (trimmedName: string) => void;
 };
 
-export default function DisplayNameModal({ isOpen, onClose, initialName, onSaved }: DisplayNameModalProps) {
+export default function DisplayNameModal({ isOpen, onClose, initialName, onSubmit }: DisplayNameModalProps) {
   const t = useTranslations("settings");
   const fieldId = useId();
   const [value, setValue] = useState(initialName);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     if (!isOpen) return;
     // Intentional state reset on modal re-open.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setValue(initialName);
-    setErrorMessage(null);
   }, [initialName, isOpen]);
 
   const trimmed = value.trim();
   const dirty = trimmed !== initialName.trim();
   const lengthOk = trimmed.length >= 1 && trimmed.length <= MAX_DISPLAY_NAME;
-  const canSave = dirty && lengthOk && !isPending;
+  const canSave = dirty && lengthOk;
 
   const handleSubmit = () => {
     if (!canSave) return;
-    setErrorMessage(null);
-    startTransition(async () => {
-      const result = await saveDisplayNameAction(trimmed);
-      if (!result.ok) {
-        setErrorMessage(t(`profile.errors.${result.error}` as never));
-        return;
-      }
-      onSaved(result.name);
-      onClose();
-    });
+    // Optimistic Confirmation: close synchronously and let the parent apply the change locally
+    // in parallel with the Server Action.
+    onSubmit(trimmed);
+    onClose();
   };
 
   return (
@@ -59,17 +54,14 @@ export default function DisplayNameModal({ isOpen, onClose, initialName, onSaved
       subtitle={t("profile.displayName.modal.subtitle")}
       icon={<UserPen size={20} aria-hidden="true" />}
       tone="default"
-      dismissible={!isPending}
       primaryAction={{
-        label: isPending ? t("profile.displayName.modal.pending") : t("profile.displayName.modal.save"),
+        label: t("profile.displayName.modal.save"),
         onClick: handleSubmit,
         disabled: !canSave,
-        loading: isPending,
       }}
       secondaryAction={{
         label: t("profile.displayName.modal.cancel"),
         onClick: onClose,
-        disabled: isPending,
       }}
     >
       <div className="space-y-2">
@@ -82,7 +74,6 @@ export default function DisplayNameModal({ isOpen, onClose, initialName, onSaved
           maxLength={MAX_DISPLAY_NAME}
           autoComplete="name"
           autoFocus
-          error={errorMessage ?? undefined}
           aria-describedby={`${fieldId}-counter`}
         />
         <p id={`${fieldId}-counter`} className="text-right text-[12px] [color:var(--text-muted)]">

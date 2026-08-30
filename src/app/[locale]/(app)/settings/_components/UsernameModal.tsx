@@ -1,15 +1,12 @@
 "use client";
 
 import { AtSign } from "lucide-react";
-import { useEffect, useId, useMemo, useRef, useState, useTransition } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import Input from "@/components/core/Input";
 import Label from "@/components/core/Label";
 import Modal from "@/components/modules/Modal/Modal";
-import {
-  checkUsernameAvailabilityAction,
-  saveUsernameAction,
-} from "@/app/[locale]/(app)/settings/_actions/profileActions";
+import { checkUsernameAvailabilityAction } from "@/app/[locale]/(app)/settings/_actions/profileActions";
 import CooldownChip from "./CooldownChip";
 
 const COOLDOWN_DAYS = 7;
@@ -21,15 +18,17 @@ export type UsernameModalProps = {
   onClose: () => void;
   initialUsername: string;
   usernameChangedAt: Date | null;
-  onSaved: (username: string) => void;
+  /**
+   * Fires synchronously on submit, before the modal closes. The parent coordinator owns the
+   * optimistic patch (username AND the cooldown-driving `usernameChangedAt`), the Server Action
+   * dispatch, and the rollback + toast on failure (`optimistic-client-updates.mdc`) — this modal
+   * never awaits the server.
+   */
+  onSubmit: (username: string) => void;
 };
 
 type AvailabilityState =
-  | { kind: "idle" }
-  | { kind: "checking" }
-  | { kind: "available" }
-  | { kind: "taken" }
-  | { kind: "sameAsCurrent" };
+  { kind: "idle" } | { kind: "checking" } | { kind: "available" } | { kind: "taken" } | { kind: "sameAsCurrent" };
 
 function computeCooldownDays(usernameChangedAt: Date | null, now: Date): number {
   if (!usernameChangedAt) return 0;
@@ -49,14 +48,12 @@ export default function UsernameModal({
   onClose,
   initialUsername,
   usernameChangedAt,
-  onSaved,
+  onSubmit,
 }: UsernameModalProps) {
   const t = useTranslations("settings");
   const fieldId = useId();
   const [value, setValue] = useState(initialUsername);
   const [availability, setAvailability] = useState<AvailabilityState>({ kind: "idle" });
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
   const checkTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const cooldownDays = useMemo(() => computeCooldownDays(usernameChangedAt, new Date()), [usernameChangedAt]);
@@ -69,7 +66,6 @@ export default function UsernameModal({
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setValue(initialUsername);
     setAvailability({ kind: "idle" });
-    setErrorMessage(null);
   }, [initialUsername, isOpen]);
 
   const trimmed = value.trim().toLowerCase();
@@ -99,7 +95,6 @@ export default function UsernameModal({
   const effectiveAvailability: AvailabilityState = !isOpen || !dirty || !formatValid ? { kind: "idle" } : availability;
 
   const canSave =
-    !isPending &&
     !cooldownActive &&
     dirty &&
     formatValid &&
@@ -107,21 +102,10 @@ export default function UsernameModal({
 
   const handleSubmit = () => {
     if (!canSave) return;
-    setErrorMessage(null);
-    startTransition(async () => {
-      const result = await saveUsernameAction(trimmed);
-      if (!result.ok) {
-        if (result.error === "rateLimited" && result.retryAfterIso) {
-          const date = new Date(result.retryAfterIso).toLocaleDateString();
-          setErrorMessage(t("profile.errors.rateLimited", { date }));
-        } else {
-          setErrorMessage(t(`profile.errors.${result.error}` as never));
-        }
-        return;
-      }
-      onSaved(result.username);
-      onClose();
-    });
+    // Optimistic Confirmation: close synchronously and let the parent apply the username (and the
+    // cooldown it starts) locally in parallel with the Server Action.
+    onSubmit(trimmed);
+    onClose();
   };
 
   const subtitle = cooldownActive
@@ -136,7 +120,6 @@ export default function UsernameModal({
     : t("profile.username.modal.subtitle");
 
   const hintMessage = (() => {
-    if (errorMessage) return errorMessage;
     if (!dirty) return t("profile.username.modal.hint");
     if (!formatValid) return t("profile.username.validation.format");
     if (effectiveAvailability.kind === "checking") return t("profile.username.modal.checking");
@@ -153,17 +136,14 @@ export default function UsernameModal({
       subtitle={subtitle}
       icon={<AtSign size={20} aria-hidden="true" />}
       tone="default"
-      dismissible={!isPending}
       primaryAction={{
-        label: isPending ? t("profile.username.modal.pending") : t("profile.username.modal.save"),
+        label: t("profile.username.modal.save"),
         onClick: handleSubmit,
         disabled: !canSave,
-        loading: isPending,
       }}
       secondaryAction={{
         label: t("profile.username.modal.cancel"),
         onClick: onClose,
-        disabled: isPending,
       }}
     >
       <div className="space-y-4">
@@ -178,8 +158,8 @@ export default function UsernameModal({
             autoComplete="off"
             autoCapitalize="off"
             spellCheck={false}
-            disabled={cooldownActive || isPending}
-            error={Boolean(errorMessage) || effectiveAvailability.kind === "taken"}
+            disabled={cooldownActive}
+            error={effectiveAvailability.kind === "taken"}
             helperText={hintMessage}
             autoFocus
           />
