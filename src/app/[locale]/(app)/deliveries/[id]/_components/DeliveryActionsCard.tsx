@@ -105,10 +105,11 @@ export default function DeliveryActionsCard({
               fullWidth
               onClick={onReopen}
               disabled={isReopening}
+              loading={isReopening}
               leadingIcon={<RotateCcw size={16} aria-hidden />}
               className="justify-start"
             >
-              {isReopening ? "…" : t("detail.actions.reopen")}
+              {t("detail.actions.reopen")}
             </Button>
             {isDelivered && (
               <Button
