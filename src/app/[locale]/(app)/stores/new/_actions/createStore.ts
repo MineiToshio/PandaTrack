@@ -8,7 +8,7 @@ import { createStore as createStoreQuery, deleteStoreById, updateStoreLogoUrl } 
 import { listExistingCountryCodes } from "@/lib/data/catalog/countryQueries";
 import { listExistingStoreProductTypeKeys } from "@/lib/data/catalog/storeProductTypeQueries";
 import { getStoreLogoObjectKey, processStoreLogoFile, StoreLogoError } from "@/lib/store/logo";
-import { uploadStoreLogoBuffer } from "@/lib/store/logoStorage";
+import { deleteStoreLogoObject, uploadStoreLogoBuffer } from "@/lib/store/logoStorage";
 import { normalizeContactChannelsForCountry } from "@/lib/store/contactChannelValue";
 import { createStoreSchema, type CreateStoreInput } from "../_schemas/createStoreSchema";
 import type { StoreStatus } from "../../../../../../../generated/prisma/client";
@@ -187,6 +187,11 @@ export async function createStore(prev: CreateStoreResult | null, formData: Form
   let lastError: Error | null = null;
   for (let attempt = 0; attempt < SLUG_COLLISION_MAX_ATTEMPTS; attempt++) {
     let createdStore: { id: string; slug: string } | null = null;
+    // Tracks whether the R2 object actually exists, distinct from `processedLogoBuffer` (which
+    // only says a logo was PREPARED). Set the instant the upload call resolves, so the compensation
+    // path below knows whether there is an object to clean up or the failure happened before one
+    // was ever written.
+    let logoUploaded = false;
     try {
       createdStore = await createStoreQuery({
         name: input.name,
@@ -220,6 +225,7 @@ export async function createStore(prev: CreateStoreResult | null, formData: Form
         });
 
         const logoUrl = await uploadStoreLogoBuffer(getStoreLogoObjectKey(createdStore.id), processedLogoBuffer);
+        logoUploaded = true;
 
         await updateStoreLogoUrl(createdStore.id, logoUrl);
 
@@ -257,7 +263,29 @@ export async function createStore(prev: CreateStoreResult | null, formData: Form
         typeof (e as { code?: string })?.code === "string" && (e as { code: string }).code === "P2002";
 
       if (createdStore && processedLogoBuffer && !isSlugConflict) {
-        await deleteStoreById(createdStore.id).catch(() => null);
+        const storeId = createdStore.id;
+
+        if (logoUploaded) {
+          await deleteStoreLogoObject(getStoreLogoObjectKey(storeId)).catch((cleanupError) => {
+            Sentry.withScope((scope) => {
+              scope.setTag("feature", "store_logo");
+              scope.setTag("action", "create_store_compensation");
+              scope.setTag("severity", "high");
+              scope.setContext("storeLogo", { flow: "create", storeId, sellerType: input.sellerType });
+              Sentry.captureException(cleanupError);
+            });
+          });
+        }
+
+        await deleteStoreById(storeId).catch((cleanupError) => {
+          Sentry.withScope((scope) => {
+            scope.setTag("feature", "store_logo");
+            scope.setTag("action", "create_store_compensation");
+            scope.setTag("severity", "high");
+            scope.setContext("storeLogo", { flow: "create", storeId, sellerType: input.sellerType });
+            Sentry.captureException(cleanupError);
+          });
+        });
       }
 
       if (processedLogoBuffer && !isSlugConflict) {
