@@ -50,7 +50,7 @@ export type DetailSidebarProps = {
     governance?: SlotAccent;
   };
   /** Localized aria-label for the wrapping `<aside>`. */
-  ariaLabel?: string;
+  ariaLabel: string;
   className?: string;
 };
 
@@ -102,7 +102,7 @@ export default function DetailSidebar({
   governance,
   labels,
   accents,
-  ariaLabel = "Resource information",
+  ariaLabel,
   className,
 }: DetailSidebarProps) {
   const merged = { ...DEFAULT_LABELS, ...(labels ?? {}) };

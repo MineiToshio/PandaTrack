@@ -9,7 +9,11 @@ const { prismaMock } = vi.hoisted(() => ({
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 
 import { ImageIntakeEntrySource, ImageIntakeUsageStatus } from "../../../../../generated/prisma/client";
-import { reserveImageIntakeUsage, settleImageIntakeUsage } from "../imageIntakeMutations";
+import {
+  reserveImageIntakeUsage,
+  settleImageIntakeUsage,
+  STALE_PENDING_RESERVATION_THRESHOLD_MS,
+} from "../imageIntakeMutations";
 
 const NOW = new Date("2026-07-28T12:00:00Z");
 
@@ -20,6 +24,7 @@ type LedgerRow = {
   imageCount: number;
   costMicroUsd: number;
   status: ImageIntakeUsageStatus;
+  createdAt: Date;
 };
 
 type PeriodRow = { userId: string; periodKey: string; usedPhotos: number; costMicroUsd: number };
@@ -40,6 +45,7 @@ function withRowDefaults(row: Partial<LedgerRow>, index: number): LedgerRow {
     imageCount: row.imageCount ?? 0,
     costMicroUsd: row.costMicroUsd ?? 0,
     status: row.status ?? ImageIntakeUsageStatus.SUCCEEDED,
+    createdAt: row.createdAt ?? NOW,
   };
 }
 
@@ -106,18 +112,40 @@ function makeTx(options: MakeTxOptions = {}) {
       ),
       // Two shapes reach this mock: the global cost total for a period, and the daily photo total
       // for one user and day. They are told apart by the `dayKey` filter, exactly as the SQL is.
-      aggregate: vi.fn(async ({ where }: { where: { dayKey?: string; userId?: string } }) => {
-        if (where.dayKey) {
-          const sameDay = rows.filter(
-            (row) =>
-              row.userId === where.userId &&
-              row.dayKey === where.dayKey &&
-              row.status !== ImageIntakeUsageStatus.FAILED,
-          );
-          return { _sum: { imageCount: sameDay.reduce((total, row) => total + row.imageCount, 0) } };
-        }
-        return { _sum: { costMicroUsd: rows.reduce((total, row) => total + row.costMicroUsd, 0) } };
-      }),
+      aggregate: vi.fn(
+        async ({
+          where,
+        }: {
+          where: {
+            dayKey?: string;
+            userId?: string;
+            OR?: Array<{ status?: { not?: ImageIntakeUsageStatus }; createdAt?: { gte?: Date } }>;
+          };
+        }) => {
+          if (where.dayKey) {
+            const sameDay = rows.filter(
+              (row) =>
+                row.userId === where.userId &&
+                row.dayKey === where.dayKey &&
+                row.status !== ImageIntakeUsageStatus.FAILED,
+            );
+            return { _sum: { imageCount: sameDay.reduce((total, row) => total + row.imageCount, 0) } };
+          }
+          // Honors the global aggregate's own `OR` filter (settled rows always count; a PENDING row
+          // counts only when it is fresh enough), so the reserve tests below exercise the real
+          // stale-PENDING exclusion instead of asserting on an unfiltered sum.
+          const matches = where.OR
+            ? rows.filter((row) =>
+                where.OR!.some((clause) => {
+                  if (clause.status?.not !== undefined) return row.status !== clause.status.not;
+                  if (clause.createdAt?.gte !== undefined) return row.createdAt >= clause.createdAt.gte;
+                  return false;
+                }),
+              )
+            : rows;
+          return { _sum: { costMicroUsd: matches.reduce((total, row) => total + row.costMicroUsd, 0) } };
+        },
+      ),
       create: vi.fn(
         async ({
           data,
@@ -501,6 +529,83 @@ describe("reserveImageIntakeUsage", () => {
     expect(first.status).toBe("reserved");
     expect(second).toEqual({ status: "budget-blocked" });
     expect(tx.imageIntakeUsage.create).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("reserveImageIntakeUsage: stale PENDING reservations and the global hard stop", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("excludes a PENDING reservation older than the extraction budget from the global cost total", async () => {
+    // The real incident: a process killed mid-extraction (a redeploy, an OOM) leaves its
+    // reservation PENDING forever. Before the fix this row counted at its worst-case estimate
+    // against the global hard stop for the rest of the period, with $0 of real spend behind it.
+    const staleCreatedAt = new Date(NOW.getTime() - STALE_PENDING_RESERVATION_THRESHOLD_MS - 1_000);
+    const { tx } = makeTx({
+      rows: [
+        {
+          id: "orphaned-pending",
+          costMicroUsd: 5_000_000,
+          status: ImageIntakeUsageStatus.PENDING,
+          createdAt: staleCreatedAt,
+        },
+      ],
+    });
+
+    const result = await reserveImageIntakeUsage(reserveInput);
+
+    expect(result.status).toBe("reserved");
+    expect(tx.imageIntakeUsage.create).toHaveBeenCalled();
+  });
+
+  it("still counts a fresh PENDING reservation toward the global hard stop", async () => {
+    const { tx } = makeTx({
+      rows: [{ id: "fresh-pending", costMicroUsd: 5_000_000, status: ImageIntakeUsageStatus.PENDING, createdAt: NOW }],
+    });
+
+    const result = await reserveImageIntakeUsage(reserveInput);
+
+    expect(result).toEqual({ status: "budget-blocked" });
+    expect(tx.imageIntakeUsage.create).not.toHaveBeenCalled();
+  });
+
+  it("still counts an old but settled (SUCCEEDED) row toward the global hard stop, whatever its age", async () => {
+    const staleCreatedAt = new Date(NOW.getTime() - STALE_PENDING_RESERVATION_THRESHOLD_MS - 1_000);
+    const { tx } = makeTx({
+      rows: [
+        {
+          id: "old-succeeded",
+          costMicroUsd: 5_000_000,
+          status: ImageIntakeUsageStatus.SUCCEEDED,
+          createdAt: staleCreatedAt,
+        },
+      ],
+    });
+
+    const result = await reserveImageIntakeUsage(reserveInput);
+
+    expect(result).toEqual({ status: "budget-blocked" });
+    expect(tx.imageIntakeUsage.create).not.toHaveBeenCalled();
+  });
+
+  it("still counts an old but settled (FAILED) row toward the global hard stop, whatever its age", async () => {
+    const staleCreatedAt = new Date(NOW.getTime() - STALE_PENDING_RESERVATION_THRESHOLD_MS - 1_000);
+    const { tx } = makeTx({
+      rows: [
+        {
+          id: "old-failed",
+          costMicroUsd: 5_000_000,
+          status: ImageIntakeUsageStatus.FAILED,
+          createdAt: staleCreatedAt,
+        },
+      ],
+    });
+
+    const result = await reserveImageIntakeUsage(reserveInput);
+
+    expect(result).toEqual({ status: "budget-blocked" });
+    expect(tx.imageIntakeUsage.create).not.toHaveBeenCalled();
   });
 });
 

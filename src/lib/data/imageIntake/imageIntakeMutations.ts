@@ -1,6 +1,23 @@
 import { prisma } from "@/lib/prisma";
+import { EXTRACTION_TOTAL_BUDGET_MS } from "@/lib/imageIntake/constants";
 import { resolveEffectiveMonthlyLimit } from "@/lib/imageIntake/quota";
 import { ImageIntakeUsageStatus, type ImageIntakeEntrySource, type Prisma } from "../../../../generated/prisma/client";
+
+/**
+ * Safety margin added on top of the extraction phase's own wall-clock budget
+ * (`EXTRACTION_TOTAL_BUDGET_MS`, see `constants.ts`) before a PENDING reservation is treated
+ * as abandoned rather than merely slow. Ten minutes is comfortably longer than any request this
+ * feature can legitimately still be running, including every retry and backoff that budget already
+ * bounds, so a reservation still PENDING past this point can only be a leak (a process killed
+ * mid-extraction, never settled), never a slow-but-alive one.
+ */
+const STALE_PENDING_RESERVATION_MARGIN_MS = 10 * 60 * 1000;
+
+/**
+ * Exported so the guard test can assert the exact cutoff the global aggregate applies, rather than
+ * re-deriving it from the two constants above.
+ */
+export const STALE_PENDING_RESERVATION_THRESHOLD_MS = EXTRACTION_TOTAL_BUDGET_MS + STALE_PENDING_RESERVATION_MARGIN_MS;
 
 /**
  * Every ledger read and write in this module runs inside one transaction that first takes
@@ -101,8 +118,19 @@ export async function reserveImageIntakeUsage(
       return { status: "rate-limited" };
     }
 
+    // Every SUCCEEDED/FAILED row counts, whatever its age: it is a settled, real cost. A PENDING
+    // row counts too, UNLESS it is older than `STALE_PENDING_RESERVATION_THRESHOLD_MS`: a
+    // reservation that has outlived any request this feature could still legitimately be running
+    // is not "in flight", it is a row a process killed mid-extraction never got to settle. Counting
+    // it forever at its worst-case estimate would let enough orphans alone disable photo intake for
+    // every user with $0 of real spend behind the block; excluding it here is the one place that
+    // matters, since `settleImageIntakeUsage` clears it the moment (if ever) it does resolve.
+    const staleBefore = new Date(input.now.getTime() - STALE_PENDING_RESERVATION_THRESHOLD_MS);
     const totals = await tx.imageIntakeUsage.aggregate({
-      where: { periodKey: input.periodKey },
+      where: {
+        periodKey: input.periodKey,
+        OR: [{ status: { not: ImageIntakeUsageStatus.PENDING } }, { createdAt: { gte: staleBefore } }],
+      },
       _sum: { costMicroUsd: true },
     });
     const periodTotalMicroUsdBeforeReservation = totals._sum.costMicroUsd ?? 0;

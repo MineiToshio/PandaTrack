@@ -8,32 +8,36 @@ const OPTIONS = [
   { value: "c", label: "Gamma", disabled: true },
 ];
 
+/** `placeholder`/`searchPlaceholder` are required props; tests that don't assert on their text
+ *  still need a value to pass. */
+const REQUIRED_LABELS = { placeholder: "Choose one", searchPlaceholder: "Search…" };
+
 describe("Combobox — trigger rendering", () => {
   it("shows placeholder when no value is selected", () => {
-    render(<Combobox options={OPTIONS} value={null} onChange={vi.fn()} placeholder="Pick one" />);
+    render(<Combobox {...REQUIRED_LABELS} options={OPTIONS} value={null} onChange={vi.fn()} placeholder="Pick one" />);
     expect(screen.getByText("Pick one")).toBeTruthy();
   });
 
   it("shows selected option label (single mode)", () => {
-    render(<Combobox options={OPTIONS} value="a" onChange={vi.fn()} />);
+    render(<Combobox {...REQUIRED_LABELS} options={OPTIONS} value="a" onChange={vi.fn()} />);
     expect(screen.getByText("Alpha")).toBeTruthy();
   });
 
   it("has role=combobox on the trigger button", () => {
-    render(<Combobox options={OPTIONS} value={null} onChange={vi.fn()} />);
+    render(<Combobox {...REQUIRED_LABELS} options={OPTIONS} value={null} onChange={vi.fn()} />);
     expect(screen.getByRole("combobox")).toBeTruthy();
   });
 });
 
 describe("Combobox — popover open/close", () => {
   it("opens popover on trigger click", () => {
-    render(<Combobox options={OPTIONS} value={null} onChange={vi.fn()} />);
+    render(<Combobox {...REQUIRED_LABELS} options={OPTIONS} value={null} onChange={vi.fn()} />);
     fireEvent.click(screen.getByRole("combobox"));
     expect(screen.getByRole("listbox")).toBeTruthy();
   });
 
   it("shows all non-disabled options in popover", () => {
-    render(<Combobox options={OPTIONS} value={null} onChange={vi.fn()} />);
+    render(<Combobox {...REQUIRED_LABELS} options={OPTIONS} value={null} onChange={vi.fn()} />);
     fireEvent.click(screen.getByRole("combobox"));
     expect(screen.getByText("Alpha")).toBeTruthy();
     expect(screen.getByText("Beta")).toBeTruthy();
@@ -43,7 +47,7 @@ describe("Combobox — popover open/close", () => {
 
 describe("Combobox — search filtering", () => {
   it("filters options based on search input", () => {
-    render(<Combobox options={OPTIONS} value={null} onChange={vi.fn()} />);
+    render(<Combobox {...REQUIRED_LABELS} options={OPTIONS} value={null} onChange={vi.fn()} />);
     fireEvent.click(screen.getByRole("combobox"));
     const search = screen.getByRole("textbox");
     fireEvent.change(search, { target: { value: "al" } });
@@ -52,7 +56,7 @@ describe("Combobox — search filtering", () => {
   });
 
   it("shows no results message when filter finds nothing", () => {
-    render(<Combobox options={OPTIONS} value={null} onChange={vi.fn()} />);
+    render(<Combobox {...REQUIRED_LABELS} options={OPTIONS} value={null} onChange={vi.fn()} />);
     fireEvent.click(screen.getByRole("combobox"));
     const search = screen.getByRole("textbox");
     fireEvent.change(search, { target: { value: "zzz" } });
@@ -63,7 +67,7 @@ describe("Combobox — search filtering", () => {
 describe("Combobox — single mode selection", () => {
   it("calls onChange with selected value", () => {
     const onChange = vi.fn();
-    render(<Combobox options={OPTIONS} value={null} onChange={onChange} />);
+    render(<Combobox {...REQUIRED_LABELS} options={OPTIONS} value={null} onChange={onChange} />);
     fireEvent.click(screen.getByRole("combobox"));
     const option = screen.getByRole("option", { name: "Alpha" });
     fireEvent.click(option);
@@ -73,14 +77,14 @@ describe("Combobox — single mode selection", () => {
 
 describe("Combobox — multi mode", () => {
   it("renders chips for selected values", () => {
-    render(<Combobox mode="multi" options={OPTIONS} value={["a", "b"]} onChange={vi.fn()} />);
+    render(<Combobox {...REQUIRED_LABELS} mode="multi" options={OPTIONS} value={["a", "b"]} onChange={vi.fn()} />);
     expect(screen.getByText("Alpha")).toBeTruthy();
     expect(screen.getByText("Beta")).toBeTruthy();
   });
 
   it("removes chip on x button click", () => {
     const onChange = vi.fn();
-    render(<Combobox mode="multi" options={OPTIONS} value={["a", "b"]} onChange={onChange} />);
+    render(<Combobox {...REQUIRED_LABELS} mode="multi" options={OPTIONS} value={["a", "b"]} onChange={onChange} />);
     const removeAlpha = screen.getByRole("button", { name: "Remove Alpha" });
     fireEvent.click(removeAlpha);
     expect(onChange).toHaveBeenCalledWith(["b"]);
@@ -88,7 +92,7 @@ describe("Combobox — multi mode", () => {
 
   it("adds value when option selected in multi mode", () => {
     const onChange = vi.fn();
-    render(<Combobox mode="multi" options={OPTIONS} value={["a"]} onChange={onChange} />);
+    render(<Combobox {...REQUIRED_LABELS} mode="multi" options={OPTIONS} value={["a"]} onChange={onChange} />);
     fireEvent.click(screen.getByRole("combobox"));
     const option = screen.getByRole("option", { name: "Beta" });
     fireEvent.click(option);
@@ -101,6 +105,7 @@ describe("Combobox — inlineAction", () => {
     const onClick = vi.fn();
     render(
       <Combobox
+        {...REQUIRED_LABELS}
         options={OPTIONS}
         value={null}
         onChange={vi.fn()}
@@ -115,6 +120,7 @@ describe("Combobox — inlineAction", () => {
     const onClick = vi.fn();
     render(
       <Combobox
+        {...REQUIRED_LABELS}
         options={OPTIONS}
         value={null}
         onChange={vi.fn()}
@@ -129,7 +135,7 @@ describe("Combobox — inlineAction", () => {
 
 describe("Combobox — disabled state", () => {
   it("does not open popover when disabled", () => {
-    render(<Combobox options={OPTIONS} value={null} onChange={vi.fn()} disabled />);
+    render(<Combobox {...REQUIRED_LABELS} options={OPTIONS} value={null} onChange={vi.fn()} disabled />);
     fireEvent.click(screen.getByRole("combobox"));
     expect(screen.queryByRole("listbox")).toBeNull();
   });
@@ -137,13 +143,15 @@ describe("Combobox — disabled state", () => {
 
 describe("Combobox — error/helper", () => {
   it("renders error message", () => {
-    render(<Combobox options={OPTIONS} value={null} onChange={vi.fn()} error="Required field." />);
+    render(<Combobox {...REQUIRED_LABELS} options={OPTIONS} value={null} onChange={vi.fn()} error="Required field." />);
     expect(screen.getByRole("alert")).toBeTruthy();
     expect(screen.getByText("Required field.")).toBeTruthy();
   });
 
   it("renders helper text when no error", () => {
-    render(<Combobox options={OPTIONS} value={null} onChange={vi.fn()} helperText="Pick up to 3." />);
+    render(
+      <Combobox {...REQUIRED_LABELS} options={OPTIONS} value={null} onChange={vi.fn()} helperText="Pick up to 3." />,
+    );
     expect(screen.getByText("Pick up to 3.")).toBeTruthy();
   });
 });

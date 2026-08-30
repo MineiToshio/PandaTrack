@@ -6,6 +6,13 @@ vi.mock("@/hooks/useIsMobile", () => ({
   useIsMobile: vi.fn(),
 }));
 
+// ModalHeader resolves the close button's accessible name via useTranslations("common") when
+// callers do not pass an explicit closeButtonLabel; these tests only care about the desktop/mobile
+// variant choice, so the stub returns the key unchanged.
+vi.mock("next-intl", () => ({
+  useTranslations: () => (key: string) => key,
+}));
+
 import { useIsMobile } from "@/hooks/useIsMobile";
 
 const mockedUseIsMobile = vi.mocked(useIsMobile);

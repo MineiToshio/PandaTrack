@@ -555,6 +555,7 @@ export default function StoreListingFilters({
         onClear={handleClear}
         applyLabel={tStores("redesign.filter.apply")}
         clearLabel={tStores("redesign.filter.clear")}
+        closeLabel={tStores("redesign.filter.closeDialog")}
         applyCountLabel={(count) => tStores("redesign.filter.applyWithCount", { count })}
       />
     </section>

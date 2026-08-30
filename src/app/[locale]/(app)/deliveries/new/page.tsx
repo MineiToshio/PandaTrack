@@ -9,7 +9,7 @@ import {
   getStoresWithEligibleProducts,
   type EligibleProductsResult,
 } from "@/lib/data/deliveries/deliveryQueries";
-import { prisma } from "@/lib/prisma";
+import { getUserCurrencyContext } from "@/lib/data/user-settings/userSettingsQueries";
 import SetHeaderTitle from "@/app/[locale]/(app)/_components/AppLayout/SetHeaderTitle";
 import DeliveryForm from "../_components/share/DeliveryForm";
 import { createDeliveryAction } from "./_actions/createDeliveryAction";
@@ -43,7 +43,7 @@ export default async function DeliveriesNewPage({ params, searchParams }: Delive
   const sourceOrderId = Array.isArray(rawSourceOrderId) ? rawSourceOrderId[0] : rawSourceOrderId;
 
   const [user, sourceOrder, stores] = await Promise.all([
-    prisma.user.findUnique({ where: { id: userId }, select: { baseCurrencyCode: true } }),
+    getUserCurrencyContext(userId),
     sourceOrderId ? getDeliverySourceOrder(sourceOrderId, userId) : Promise.resolve(null),
     getStoresWithEligibleProducts(userId),
   ]);

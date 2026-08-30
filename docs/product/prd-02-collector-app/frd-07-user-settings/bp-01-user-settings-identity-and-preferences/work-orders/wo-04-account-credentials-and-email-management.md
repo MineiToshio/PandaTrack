@@ -160,7 +160,7 @@ When the user clicks the link sent to the new email, the standard verification h
 
 ### Password change server action
 
-Call `authClient.changePassword({ currentPassword, newPassword, revokeOtherSessions: false })` from the client, or the equivalent `auth.api.changePassword` from a server action. The active session must not be revoked.
+Call `authClient.changePassword({ currentPassword, newPassword, revokeOtherSessions: true })` from the client, or the equivalent `auth.api.changePassword` from a server action. This revokes every other session tied to the account, closing off a session an attacker may be holding after the password changes. Better Auth issues a fresh session and sets its cookie for the caller as part of the same call, so the collector who just changed the password is never signed out.
 
 ### Password setup server action (Google-only)
 

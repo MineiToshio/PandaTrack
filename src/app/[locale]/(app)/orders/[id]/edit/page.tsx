@@ -7,7 +7,7 @@ import { getOrderById } from "@/lib/data/orders/orderQueries";
 import { getOrderableStores } from "@/lib/data/stores/storeQueries";
 import { listActiveStoreProductTypeKeysCached } from "@/lib/data/catalog/storeProductTypeQueries";
 import { ROUTES } from "@/lib/constants";
-import { prisma } from "@/lib/prisma";
+import { getUserCurrencyContext } from "@/lib/data/user-settings/userSettingsQueries";
 import { editOrderAction } from "../../_actions/orderActions";
 import OrderForm from "../../_components/share/OrderForm";
 
@@ -37,7 +37,7 @@ export default async function OrdersEditPage({ params }: Props) {
     getOrderById(id, userId),
     getOrderableStores(userId),
     listActiveStoreProductTypeKeysCached(),
-    prisma.user.findUnique({ where: { id: userId }, select: { baseCurrencyCode: true } }),
+    getUserCurrencyContext(userId),
   ]);
 
   if (!order) notFound();

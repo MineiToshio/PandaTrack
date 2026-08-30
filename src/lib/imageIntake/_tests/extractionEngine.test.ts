@@ -3,11 +3,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const { captureExceptionMock } = vi.hoisted(() => ({ captureExceptionMock: vi.fn() }));
 vi.mock("@sentry/nextjs", () => ({ captureException: captureExceptionMock }));
 
+import { EXTRACTION_TOTAL_BUDGET_MS } from "../constants";
 import {
   EXTRACTION_MAX_TRANSPORT_RETRIES,
   EXTRACTION_REQUEST_TIMEOUT_MS,
   EXTRACTION_RETRY_BACKOFF_MS,
-  EXTRACTION_TOTAL_BUDGET_MS,
   ProviderRequestError,
   ProviderTransportError,
   SpendGuardBlockedError,

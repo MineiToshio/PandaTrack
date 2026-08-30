@@ -60,7 +60,11 @@ export default function UserAvatarHero({ displayName, imageUrl, size = "s56", cl
         SIZE_CLASSES[size],
         className,
       )}
-      aria-hidden={hasImage ? undefined : "true"}
+      // Decorative by default (matches an unset `alt`, which already renders as `alt=""`):
+      // exposed to assistive tech only when a caller both has an image AND supplies a real
+      // `alt`. A caller that omits `alt` is expected to identify the avatar with adjacent
+      // visible text instead (see SettingsProfilePane's SettingsRow label).
+      aria-hidden={hasImage && alt ? undefined : "true"}
     >
       {hasImage ? (
         <Image

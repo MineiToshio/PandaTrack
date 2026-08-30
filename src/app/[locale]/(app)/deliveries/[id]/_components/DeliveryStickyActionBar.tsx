@@ -92,12 +92,13 @@ export default function DeliveryStickyActionBar({
           type="button"
           onClick={onReopen}
           disabled={isReopening}
+          aria-busy={isReopening}
           className={cn(primaryBtnClass)}
           data-ph-event={POSTHOG_EVENTS.DELIVERY.STICKY_BAR_PRIMARY_CLICKED}
           data-ph-props={JSON.stringify({ deliveryId, action: "reopen" })}
         >
           <RotateCcw className="size-4 shrink-0" aria-hidden />
-          {isReopening ? "…" : t("detail.stickyBar.reopen")}
+          {isReopening ? t("detail.stickyBar.reopening") : t("detail.stickyBar.reopen")}
         </button>
       </>
     );
@@ -107,12 +108,13 @@ export default function DeliveryStickyActionBar({
         type="button"
         onClick={onReopen}
         disabled={isReopening}
+        aria-busy={isReopening}
         className={cn(primaryBtnClass, "w-full")}
         data-ph-event={POSTHOG_EVENTS.DELIVERY.STICKY_BAR_PRIMARY_CLICKED}
         data-ph-props={JSON.stringify({ deliveryId, action: "reopen" })}
       >
         <RotateCcw className="size-4 shrink-0" aria-hidden />
-        {isReopening ? "…" : t("detail.stickyBar.reopen")}
+        {isReopening ? t("detail.stickyBar.reopening") : t("detail.stickyBar.reopen")}
       </button>
     );
   }

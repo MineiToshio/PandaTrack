@@ -3,6 +3,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import posthog from "posthog-js";
+import * as Sentry from "@sentry/nextjs";
 import AuthFormLayout from "./AuthFormLayout";
 import EmailPasswordForm from "./EmailPasswordForm";
 import { authClient } from "@/lib/auth/auth-client";
@@ -38,27 +39,36 @@ export default function SignInForm({ callbackURL, signUpHref, forgotPasswordHref
     setIsPending(true);
     posthog.capture(POSTHOG_EVENTS.AUTH.SIGNIN_SUBMITTED, { locale });
 
-    const { data, error: signInError } = await authClient.signIn.email({
-      email: emailTrimmed,
-      password: passwordTrimmed,
-      callbackURL,
-    });
+    try {
+      const { data, error: signInError } = await authClient.signIn.email({
+        email: emailTrimmed,
+        password: passwordTrimmed,
+        callbackURL,
+      });
 
-    setIsPending(false);
+      if (signInError) {
+        posthog.capture(POSTHOG_EVENTS.AUTH.SIGNIN_FAILED, {
+          locale,
+          error_code: signInError.code ?? "unknown",
+        });
+        const message = signInError.message ?? tErrors("invalidCredentials");
+        setError(message);
+        return;
+      }
 
-    if (signInError) {
+      if (data) {
+        posthog.capture(POSTHOG_EVENTS.AUTH.SIGNIN_SUCCESS, { locale });
+        router.push(callbackURL);
+      }
+    } catch (requestError) {
+      Sentry.captureException(requestError);
       posthog.capture(POSTHOG_EVENTS.AUTH.SIGNIN_FAILED, {
         locale,
-        error_code: signInError.code ?? "unknown",
+        error_code: "network_error",
       });
-      const message = signInError.message ?? tErrors("invalidCredentials");
-      setError(message);
-      return;
-    }
-
-    if (data) {
-      posthog.capture(POSTHOG_EVENTS.AUTH.SIGNIN_SUCCESS, { locale });
-      router.push(callbackURL);
+      setError(tErrors("generic"));
+    } finally {
+      setIsPending(false);
     }
   };
 

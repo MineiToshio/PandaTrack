@@ -175,29 +175,64 @@ export function buildTransactionalEmailTemplate({
 </html>`;
 }
 
-export async function sendEmailWithResend({ to, subject, text, html, from }: SendEmailInput): Promise<void> {
-  const apiKey = getResendApiKey();
-  const resolvedFrom = from ?? getDefaultFromEmail();
-  const recipients = Array.isArray(to) ? to : [to];
+/** Ceiling on one request to Resend; without it a hung connection blocks the caller indefinitely. */
+const RESEND_REQUEST_TIMEOUT_MS = 8_000;
 
-  const response = await fetch(`${RESEND_API_BASE}/emails`, {
+/** One retry on top of the initial attempt, for a transient network failure or a 5xx only. */
+const RESEND_RETRY_ATTEMPTS = 1;
+
+type ResendRequestPayload = {
+  from: string;
+  to: string[];
+  subject: string;
+  text?: string;
+  html?: string;
+};
+
+function postToResend(payload: ResendRequestPayload, apiKey: string): Promise<Response> {
+  return fetch(`${RESEND_API_BASE}/emails`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${apiKey}`,
     },
-    body: JSON.stringify({
-      from: resolvedFrom,
-      to: recipients,
-      subject,
-      text,
-      html,
-    }),
+    body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(RESEND_REQUEST_TIMEOUT_MS),
   });
+}
 
-  if (!response.ok) {
-    const body = await response.json().catch(() => ({}));
-    const message = typeof body?.message === "string" ? body.message : response.statusText;
-    throw new Error(`Resend email send failed: ${message}`);
+async function buildResendFailureError(response: Response): Promise<Error> {
+  const body = await response.json().catch(() => ({}));
+  const message = typeof body?.message === "string" ? body.message : response.statusText;
+  return new Error(`Resend email send failed: ${message}`);
+}
+
+export async function sendEmailWithResend({ to, subject, text, html, from }: SendEmailInput): Promise<void> {
+  const apiKey = getResendApiKey();
+  const resolvedFrom = from ?? getDefaultFromEmail();
+  const recipients = Array.isArray(to) ? to : [to];
+  const payload: ResendRequestPayload = { from: resolvedFrom, to: recipients, subject, text, html };
+
+  for (let attempt = 0; attempt <= RESEND_RETRY_ATTEMPTS; attempt++) {
+    const isLastAttempt = attempt === RESEND_RETRY_ATTEMPTS;
+
+    let response: Response;
+    try {
+      response = await postToResend(payload, apiKey);
+    } catch (error) {
+      // A network failure or a client-side timeout (`AbortError`) never reached Resend at all, so
+      // it is always safe to retry once.
+      if (isLastAttempt) throw error instanceof Error ? error : new Error(String(error));
+      continue;
+    }
+
+    if (response.ok) return;
+
+    // A 4xx means Resend refused what we sent (bad payload, bad key) and will refuse it
+    // identically on a retry, so it fails once. A 5xx is Resend's own outage and may clear on the
+    // very next attempt.
+    if (response.status < 500 || isLastAttempt) {
+      throw await buildResendFailureError(response);
+    }
   }
 }

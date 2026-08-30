@@ -370,6 +370,21 @@ export async function getDeliveriesList(
   return { deliveries, totalCount, totalPages, page, pageSize };
 }
 
+export type DeliveryHeadingCounts = {
+  inTransitCount: number;
+  deliveredCount: number;
+};
+
+/** Global IN_TRANSIT/DELIVERED counts for the deliveries list heading meta. */
+export async function getDeliveryHeadingCounts(userId: string): Promise<DeliveryHeadingCounts> {
+  const [inTransitCount, deliveredCount] = await Promise.all([
+    prisma.delivery.count({ where: { userId, status: "IN_TRANSIT" } }),
+    prisma.delivery.count({ where: { userId, status: "DELIVERED" } }),
+  ]);
+
+  return { inTransitCount, deliveredCount };
+}
+
 /** Distinct stores the user has deliveries with — feeds the list filter drawer. */
 export async function getDeliveryStoreOptions(userId: string): Promise<EligibleStore[]> {
   const rows = await prisma.delivery.findMany({

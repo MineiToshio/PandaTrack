@@ -26,6 +26,7 @@ import {
   isProviderRequestRejected,
   isProviderResponseTruncated,
   readProviderErrorShape,
+  readProviderErrorStatus,
   readProviderErrorUsage,
   type ExtractionLocale,
   type ExtractionProductCategory,
@@ -305,6 +306,7 @@ export async function extractOrderFromImagesAction(formData: FormData): Promise<
       const providerError = outcome.status === "provider-error" ? (outcome.error ?? null) : null;
       const providerUsage = readProviderErrorUsage(providerError);
       const providerShape = readProviderErrorShape(providerError);
+      const providerHttpStatus = readProviderErrorStatus(providerError);
 
       const failureCode: ImageIntakeExtractErrorCode =
         providerError === null
@@ -325,6 +327,7 @@ export async function extractOrderFromImagesAction(formData: FormData): Promise<
           model: modelId,
           imageCount,
           imageBytes: validated.images.reduce((sum, image) => sum + image.byteSize, 0),
+          httpStatus: providerHttpStatus,
           promptTokens: providerUsage?.inputTokens ?? null,
           outputTokens: providerUsage?.outputTokens ?? null,
           thoughtsTokens: providerUsage?.thoughtsTokens ?? null,

@@ -39,6 +39,20 @@ function getStrengthLabel(level: PasswordStrengthLevel, labels: Record<string, s
   }
 }
 
+/**
+ * Password change/set, awaited-then-close. A documented exception to the repository's default
+ * Optimistic Confirmation pattern (`optimistic-client-updates.mdc`), for the same two reasons
+ * `VoidPointsControl` records for the point void:
+ *
+ * - Credential-gated mutation with server-side rules the client cannot fully pre-verify: the
+ *   server re-checks the current password (on change) and its own strength/format rules, so a
+ *   "saved" state painted before that check would be an honest guess, not a fact.
+ * - Rare and high-stakes enough that a brief wait is the better UX: a wrong optimistic confirmation
+ *   here would read as "your password changed" when it did not, on the one credential that gates
+ *   every other account action.
+ *
+ * The modal therefore stays open with a pending primary action until the server answers.
+ */
 export default function PasswordModal({ isOpen, onClose, locale, isChange, onSaved }: PasswordModalProps) {
   const t = useTranslations("settings");
   const currentId = useId();

@@ -7,7 +7,6 @@ import {
   type GenerateContentConfig,
   type Schema,
 } from "@google/genai";
-import * as Sentry from "@sentry/nextjs";
 import { IMAGE_INTAKE_MAX_OUTPUT_TOKENS } from "./constants";
 import { countPartialResponseShape } from "./diagnostics";
 import { buildSystemPrompt } from "./prompt";
@@ -327,6 +326,12 @@ function isNetworkFailure(error: unknown): boolean {
  * Maps anything the SDK throws onto one of the engine's two sanitized error classes. Retryability
  * is decided by class and HTTP status only: a 4xx is never a transport failure, so a rejected or
  * malformed request fails once instead of being retried at full price.
+ *
+ * Deliberately reports nothing to Sentry itself: the module's own invariant is one event per
+ * failure (see `diagnostics.ts`), and the caller (`extractOrderFromImagesAction`) already sends
+ * the single rich event once it has assembled the full diagnostic, `httpStatus` included. Reporting
+ * here as well produced two events for the same failure, one of them missing the token counts and
+ * partial-response shape only the caller has.
  */
 function classifyProviderError(error: unknown, usage: ProviderUsage | null): Error {
   if (error instanceof ProviderTransportError || error instanceof ProviderRequestError) {
@@ -346,30 +351,25 @@ function classifyProviderError(error: unknown, usage: ProviderUsage | null): Err
       return new ProviderTransportError({ reason: "overloaded", status: error.status, usage });
     }
 
-    // Any other 4xx means the API refused what we sent, so it is a defect of ours that will repeat on every
-    // request until someone changes the code: it has to be visible without waiting for a user to
-    // report that the feature is dead. The sanitized error is what gets reported, never the SDK's
-    // own `ApiError`, whose message serializes the provider's response body and can echo text the
-    // model read out of a source image.
-    const rejection = new ProviderRequestError({
+    // Any other 4xx means the API refused what we sent, so it is a defect of ours that will repeat
+    // on every request until someone changes the code. The sanitized error is what the caller
+    // reports, never the SDK's own `ApiError`, whose message serializes the provider's response
+    // body and can echo text the model read out of a source image.
+    return new ProviderRequestError({
       code: "GEMINI_REQUEST_REJECTED",
       kind: "rejected",
       status: error.status,
       usage,
     });
-    Sentry.captureException(rejection, {
-      tags: { feature: "imageIntake", action: "generateDraft", providerStatus: String(error.status) },
-    });
-    return rejection;
   }
 
   if (isNetworkFailure(error)) {
     return new ProviderTransportError({ reason: "network", usage });
   }
 
-  // Anything left is unexpected (an SDK bug, a programming error here): report it, then hand the
-  // engine a non-retryable error with no provider-supplied text in its message.
-  Sentry.captureException(error, { tags: { feature: "imageIntake", action: "generateDraft" } });
+  // Anything left is unexpected (an SDK bug, a programming error here). Still not reported here:
+  // the caller's single event covers this kind exactly like every other, `httpStatus: null` since
+  // none was ever received.
   return new ProviderRequestError({ code: "GEMINI_UNEXPECTED_ERROR", kind: "unexpected", usage });
 }
 

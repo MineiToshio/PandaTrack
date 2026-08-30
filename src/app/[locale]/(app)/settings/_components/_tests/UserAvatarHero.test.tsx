@@ -30,4 +30,18 @@ describe("UserAvatarHero", () => {
     expect(screen.getByText("V")).toBeTruthy();
     expect(screen.queryByRole("img")).toBeNull();
   });
+
+  it("hides the image from assistive tech when no alt is supplied, relying on adjacent text", () => {
+    const { container } = render(<UserAvatarHero displayName="Vinyl Hunter" imageUrl="/test.png" />);
+    const wrapper = container.querySelector("span");
+    expect(wrapper).toHaveAttribute("aria-hidden", "true");
+  });
+
+  it("exposes the image to assistive tech when a real alt is supplied", () => {
+    const { container } = render(
+      <UserAvatarHero displayName="Vinyl Hunter" imageUrl="/test.png" alt="Vinyl Hunter's profile photo" />,
+    );
+    const wrapper = container.querySelector("span");
+    expect(wrapper).not.toHaveAttribute("aria-hidden");
+  });
 });

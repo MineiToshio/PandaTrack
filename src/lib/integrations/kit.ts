@@ -7,6 +7,9 @@ import * as Sentry from "@sentry/nextjs";
 
 const KIT_API_BASE = "https://api.kit.com";
 
+/** Ceiling on one request to Kit; without it a hung connection blocks the caller indefinitely. */
+const KIT_REQUEST_TIMEOUT_MS = 8_000;
+
 function parseTagId(raw: string | undefined): number | undefined {
   if (raw === undefined || raw === "") return undefined;
   const id = Number.parseInt(raw, 10);
@@ -56,6 +59,7 @@ export async function createSubscriber(input: CreateSubscriberInput): Promise<Ki
       first_name: input.firstName ?? undefined,
       state: "active",
     }),
+    signal: AbortSignal.timeout(KIT_REQUEST_TIMEOUT_MS),
   });
 
   if (!response.ok) {
@@ -101,6 +105,7 @@ export async function tagSubscriberByEmail(tagId: number, email: string): Promis
       "X-Kit-Api-Key": apiKey,
     },
     body: JSON.stringify({ email_address: email }),
+    signal: AbortSignal.timeout(KIT_REQUEST_TIMEOUT_MS),
   });
 
   if (!response.ok) {

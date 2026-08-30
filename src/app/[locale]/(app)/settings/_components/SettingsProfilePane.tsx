@@ -6,8 +6,15 @@ import { useTranslations } from "next-intl";
 import Button from "@/components/core/Button/Button";
 import Eyebrow from "@/components/core/Eyebrow";
 import SectionCard from "@/components/core/SectionCard";
+import { useToast } from "@/contexts/ToastContext";
 import { normalizeProfileImageUrl } from "@/lib/user/avatarShared";
-import AvatarModal from "./AvatarModal";
+import {
+  removeAvatarAction,
+  saveAvatarAction,
+  saveDisplayNameAction,
+  saveUsernameAction,
+} from "@/app/[locale]/(app)/settings/_actions/profileActions";
+import AvatarModal, { type AvatarModalSubmitPayload } from "./AvatarModal";
 import AvatarRemoveModal from "./AvatarRemoveModal";
 import CooldownChip from "./CooldownChip";
 import DisplayNameModal from "./DisplayNameModal";
@@ -21,7 +28,7 @@ export type SettingsProfilePaneProps = {
   initialUsername: string;
   initialDisplayName: string;
   initialImageUrl: string | null;
-  usernameChangedAt: Date | null;
+  initialUsernameChangedAt: Date | null;
 };
 
 function computeCooldownDays(usernameChangedAt: Date | null, now: Date): number {
@@ -36,10 +43,12 @@ export default function SettingsProfilePane({
   initialUsername,
   initialDisplayName,
   initialImageUrl,
-  usernameChangedAt,
+  initialUsernameChangedAt,
 }: SettingsProfilePaneProps) {
   const t = useTranslations("settings");
+  const { addToast } = useToast();
   const [username, setUsername] = useState(initialUsername);
+  const [usernameChangedAt, setUsernameChangedAt] = useState(initialUsernameChangedAt);
   const [displayName, setDisplayName] = useState(initialDisplayName);
   const [imageUrl, setImageUrl] = useState<string | null>(normalizeProfileImageUrl(initialImageUrl));
   const [openModal, setOpenModal] = useState<"username" | "displayName" | "avatar" | "avatarRemove" | null>(null);
@@ -47,6 +56,89 @@ export default function SettingsProfilePane({
   const cooldownDays = useMemo(() => computeCooldownDays(usernameChangedAt, new Date()), [usernameChangedAt]);
   const cooldownActive = cooldownDays > 0;
   const hasImage = imageUrl != null && imageUrl.trim() !== "";
+
+  function translateProfileError(errorKey: string): string {
+    return t(`profile.errors.${errorKey}` as never);
+  }
+
+  // Optimistic Confirmation coordinators (`optimistic-client-updates.mdc`): each handler applies
+  // the local patch in the same tick the modal closes, dispatches the Server Action in parallel,
+  // and reverts to the pre-patch snapshot with an error toast on either an `ok: false` result or
+  // a rejected promise.
+
+  const handleDisplayNameSubmit = (trimmedName: string) => {
+    const previousDisplayName = displayName;
+    setDisplayName(trimmedName);
+    saveDisplayNameAction(trimmedName)
+      .then((result) => {
+        if (result.ok) return;
+        setDisplayName(previousDisplayName);
+        addToast(translateProfileError(result.error), { variant: "error" });
+      })
+      .catch(() => {
+        setDisplayName(previousDisplayName);
+        addToast(translateProfileError("generic"), { variant: "error" });
+      });
+  };
+
+  const handleUsernameSubmit = (nextUsername: string) => {
+    const previousUsername = username;
+    const previousUsernameChangedAt = usernameChangedAt;
+    setUsername(nextUsername);
+    setUsernameChangedAt(new Date());
+    saveUsernameAction(nextUsername)
+      .then((result) => {
+        if (result.ok) return;
+        setUsername(previousUsername);
+        setUsernameChangedAt(previousUsernameChangedAt);
+        if (result.error === "rateLimited" && result.retryAfterIso) {
+          const date = new Date(result.retryAfterIso).toLocaleDateString();
+          addToast(t("profile.errors.rateLimited", { date }), { variant: "error" });
+        } else {
+          addToast(translateProfileError(result.error), { variant: "error" });
+        }
+      })
+      .catch(() => {
+        setUsername(previousUsername);
+        setUsernameChangedAt(previousUsernameChangedAt);
+        addToast(translateProfileError("generic"), { variant: "error" });
+      });
+  };
+
+  const handleAvatarSubmit = ({ formData, previewUrl }: AvatarModalSubmitPayload) => {
+    const previousImageUrl = imageUrl;
+    if (previewUrl) setImageUrl(previewUrl);
+    saveAvatarAction(formData)
+      .then((result) => {
+        if (previewUrl) URL.revokeObjectURL(previewUrl);
+        if (!result.ok) {
+          setImageUrl(previousImageUrl);
+          addToast(translateProfileError(result.error), { variant: "error" });
+          return;
+        }
+        setImageUrl(normalizeProfileImageUrl(result.imageUrl) ?? result.imageUrl);
+      })
+      .catch(() => {
+        if (previewUrl) URL.revokeObjectURL(previewUrl);
+        setImageUrl(previousImageUrl);
+        addToast(translateProfileError("generic"), { variant: "error" });
+      });
+  };
+
+  const handleAvatarRemoveConfirm = () => {
+    const previousImageUrl = imageUrl;
+    setImageUrl(null);
+    removeAvatarAction()
+      .then((result) => {
+        if (result.ok) return;
+        setImageUrl(previousImageUrl);
+        addToast(translateProfileError(result.error), { variant: "error" });
+      })
+      .catch(() => {
+        setImageUrl(previousImageUrl);
+        addToast(translateProfileError("generic"), { variant: "error" });
+      });
+  };
 
   return (
     <>
@@ -142,24 +234,20 @@ export default function SettingsProfilePane({
         onClose={() => setOpenModal(null)}
         initialUsername={username}
         usernameChangedAt={usernameChangedAt}
-        onSaved={(next) => setUsername(next)}
+        onSubmit={handleUsernameSubmit}
       />
       <DisplayNameModal
         isOpen={openModal === "displayName"}
         onClose={() => setOpenModal(null)}
         initialName={displayName}
-        onSaved={(next) => setDisplayName(next)}
+        onSubmit={handleDisplayNameSubmit}
       />
-      <AvatarModal
-        isOpen={openModal === "avatar"}
-        onClose={() => setOpenModal(null)}
-        onUploaded={(next) => setImageUrl(normalizeProfileImageUrl(next) ?? next)}
-      />
+      <AvatarModal isOpen={openModal === "avatar"} onClose={() => setOpenModal(null)} onSubmit={handleAvatarSubmit} />
       <AvatarRemoveModal
         isOpen={openModal === "avatarRemove"}
         onClose={() => setOpenModal(null)}
         displayName={displayName}
-        onRemoved={() => setImageUrl(null)}
+        onConfirm={handleAvatarRemoveConfirm}
       />
     </>
   );

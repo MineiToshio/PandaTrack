@@ -65,7 +65,7 @@ Human-readable identifiers follow the format `ORD-YYYYMMDD-NN`:
 - Overflow beyond two digits is permitted (`ORD-20260418-100` is valid)
 - Two orders from different users on the same day may share the same `NN` without conflict
 - Generation: within a single database transaction, query the current MAX sequence for `(userId, date)` and increment by one. This approach is safe for MVP serverless volumes.
-- `humanReadableId` carries a `@unique` constraint enforced at the database level as a last-resort integrity guard
+- `humanReadableId` carries a `@@unique([userId, humanReadableId])` constraint enforced at the database level as a last-resort integrity guard. Uniqueness is scoped per user, matching the per-user sequence above: a global unique would reject the same-`NN`-across-users case this contract explicitly allows.
 
 ## Schema Contracts
 
@@ -95,22 +95,22 @@ Migration **`20260423000000_simplify_order_history_event_types`** narrowed the e
 
 ### `Order` model fields
 
-| Field                  | Type                          | Notes                                                             |
-| ---------------------- | ----------------------------- | ----------------------------------------------------------------- |
-| `id`                   | `String @id @default(cuid())` |                                                                   |
-| `storeId`              | `String`                      | FK to `Store`                                                     |
-| `userId`               | `String`                      | FK to `User`                                                      |
-| `humanReadableId`      | `String @unique`              | `ORD-YYYYMMDD-NN`, generated server-side                          |
-| `orderDate`            | `DateTime`                    | Set by the user; distinct from `createdAt`                        |
-| `expectedDeliveryFrom` | `DateTime?`                   | Start of expected delivery range                                  |
-| `expectedDeliveryTo`   | `DateTime?`                   | End of expected delivery range                                    |
-| `currencyCode`         | `String`                      | Validated against `ALLOWED_COLLECTOR_BASE_CURRENCY_CODES`         |
-| `exchangeRate`         | `Decimal?`                    | Required only when `currencyCode` differs from `baseCurrencyCode` |
-| `totalCost`            | `Int`                         | Minor units (cents × 100). Example: $25.50 → 2550                 |
-| `note`                 | `String?`                     | User-authored private note; inline-editable                       |
-| `status`               | `OrderStatus`                 | Default `OPEN`; system-derived                                    |
-| `createdAt`            | `DateTime @default(now())`    |                                                                   |
-| `updatedAt`            | `DateTime @updatedAt`         |                                                                   |
+| Field                  | Type                           | Notes                                                             |
+| ---------------------- | ------------------------------ | ----------------------------------------------------------------- |
+| `id`                   | `String @id @default(cuid())`  |                                                                   |
+| `storeId`              | `String`                       | FK to `Store`                                                     |
+| `userId`               | `String`                       | FK to `User`                                                      |
+| `humanReadableId`      | `String` (unique per `userId`) | `ORD-YYYYMMDD-NN`, generated server-side                          |
+| `orderDate`            | `DateTime`                     | Set by the user; distinct from `createdAt`                        |
+| `expectedDeliveryFrom` | `DateTime?`                    | Start of expected delivery range                                  |
+| `expectedDeliveryTo`   | `DateTime?`                    | End of expected delivery range                                    |
+| `currencyCode`         | `String`                       | Validated against `ALLOWED_COLLECTOR_BASE_CURRENCY_CODES`         |
+| `exchangeRate`         | `Decimal?`                     | Required only when `currencyCode` differs from `baseCurrencyCode` |
+| `totalCost`            | `Int`                          | Minor units (cents × 100). Example: $25.50 → 2550                 |
+| `note`                 | `String?`                      | User-authored private note; inline-editable                       |
+| `status`               | `OrderStatus`                  | Default `OPEN`; system-derived                                    |
+| `createdAt`            | `DateTime @default(now())`     |                                                                   |
+| `updatedAt`            | `DateTime @updatedAt`          |                                                                   |
 
 Indexes: `storeId`, `userId`, `status`.
 

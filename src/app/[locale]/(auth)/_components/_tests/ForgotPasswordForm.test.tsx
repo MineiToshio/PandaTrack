@@ -117,9 +117,14 @@ describe("ForgotPasswordForm", () => {
   });
 
   it("tracks auth API failures and shows the retry-later message", async () => {
+    // `PASSWORD_RESET_EMAIL_DELIVERY_FAILED` can never reach this branch: better-auth swallows
+    // any throw from `sendResetPassword` and always resolves the request successfully, so a
+    // delivery failure never surfaces as a client-side `error`. This branch stays reachable for
+    // genuine better-auth-level failures instead, such as the server's stricter email schema
+    // rejecting an address that only passed this form's lightweight client-side check.
     requestPasswordResetMock.mockResolvedValue({
       error: {
-        code: "PASSWORD_RESET_EMAIL_DELIVERY_FAILED",
+        code: "VALIDATION_ERROR",
       },
     });
 
@@ -134,7 +139,7 @@ describe("ForgotPasswordForm", () => {
     });
     expect(posthog.capture).toHaveBeenNthCalledWith(2, POSTHOG_EVENTS.AUTH.FORGOT_PASSWORD_FAILED, {
       locale: "en",
-      error_code: "PASSWORD_RESET_EMAIL_DELIVERY_FAILED",
+      error_code: "VALIDATION_ERROR",
     });
   });
 

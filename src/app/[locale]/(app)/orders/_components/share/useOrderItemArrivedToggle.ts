@@ -70,8 +70,16 @@ export function useOrderItemArrivedToggle({
     const previous = state;
     applyState(target);
     startTransition(async () => {
-      const result = await setOrderItemArrivedAction(orderId, itemId, target === "arrived_at_store");
-      if (!result.ok) applyState(previous);
+      try {
+        const result = await setOrderItemArrivedAction(orderId, itemId, target === "arrived_at_store");
+        if (!result.ok) applyState(previous);
+      } catch {
+        // A rejected Server Action call (a transport failure) is not a refusal the server described,
+        // it is no answer at all. Inside a transition an uncaught rejection re-throws during render
+        // and replaces the whole page with the (app)/error.tsx boundary, so it gets the exact same
+        // silent-revert treatment as `result.ok === false` above instead of escaping the transition.
+        applyState(previous);
+      }
     });
   };
 

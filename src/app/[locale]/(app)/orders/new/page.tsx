@@ -5,7 +5,7 @@ import { getSession } from "@/lib/auth/auth-server";
 import { redirect } from "next/navigation";
 import { getOrderableStores } from "@/lib/data/stores/storeQueries";
 import { listActiveStoreProductTypeKeysCached } from "@/lib/data/catalog/storeProductTypeQueries";
-import { prisma } from "@/lib/prisma";
+import { getUserCurrencyContext } from "@/lib/data/user-settings/userSettingsQueries";
 import { createOrderAction } from "../_actions/orderActions";
 import OrderCreateEmptyStores from "../_components/share/OrderCreateEmptyStores";
 import OrderForm from "../_components/share/OrderForm";
@@ -35,7 +35,7 @@ export default async function OrdersNewPage({ params }: Props) {
   const [stores, productTypeRows, user] = await Promise.all([
     getOrderableStores(userId),
     listActiveStoreProductTypeKeysCached(),
-    prisma.user.findUnique({ where: { id: userId }, select: { baseCurrencyCode: true } }),
+    getUserCurrencyContext(userId),
   ]);
 
   const productTypeKeys = productTypeRows.map((r) => r.key);

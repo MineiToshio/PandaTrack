@@ -78,7 +78,6 @@ const expectedRawStatusHits: Record<string, number> = {
   "src/app/[locale]/(app)/orders/new/image/_components/IntakeReviewScreen.tsx": 3,
   "src/app/[locale]/(app)/orders/new/image/_components/StoreResolutionSection.tsx": 3,
   "src/app/[locale]/(app)/settings/_components/AvatarModal.tsx": 1,
-  "src/app/[locale]/(app)/settings/_components/AvatarRemoveModal.tsx": 1,
   "src/app/[locale]/(app)/settings/_components/CooldownChip.tsx": 1,
   "src/app/[locale]/(app)/settings/_components/EmailModal.tsx": 1,
   "src/app/[locale]/(app)/settings/_components/PasswordModal.tsx": 1,

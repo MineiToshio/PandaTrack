@@ -45,6 +45,7 @@ export default async function VerifyEmailRequiredPage({ params, searchParams }: 
         pendingLabel={t("resendPending")}
         successMessage={t("resendSuccess")}
         errorMessage={t("resendError")}
+        cooldownMessage={t.raw("resendCooldown")}
         shownEvent={POSTHOG_EVENTS.AUTH.PRIVATE_ACCESS_BLOCKED_UNVERIFIED}
       />
     </AuthStatusCard>

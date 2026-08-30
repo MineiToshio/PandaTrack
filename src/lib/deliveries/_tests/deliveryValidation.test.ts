@@ -323,4 +323,31 @@ describe("undoReopenSchema", () => {
     });
     expect(result.success).toBe(true);
   });
+
+  it("rejects a snapshot larger than the batch settlement ceiling (MAX_SETTLEMENT_ORDERS = 200)", () => {
+    // Sibling arrays on this same file's settlement payloads (`settlementIntents`,
+    // `settlementContextRequestSchema.orders`) are all bounded by the same ceiling; `snapshot` had
+    // no bound at all, so a crafted payload could flood the restore mutation with an unbounded
+    // number of writes.
+    const oversizedSnapshot = Array.from({ length: 201 }, () => ({
+      storeId: VALID_CUID,
+      amount: 5000,
+      paymentDate: addUtcDays(utcMidnightToday(), -1),
+      currencyCode: "USD",
+      note: null,
+      exchangeRate: null,
+      exchangeRateBaseCode: null,
+      settledByDeliveryId: VALID_CUID,
+      allocations: [{ orderId: VALID_CUID, orderItemId: null, amountMinor: 5000 }],
+    }));
+
+    const result = undoReopenSchema.safeParse({
+      deliveryId: VALID_CUID,
+      previousStatus: "DELIVERED",
+      receivedDate: utcMidnightToday(),
+      snapshot: oversizedSnapshot,
+    });
+
+    expect(result.success).toBe(false);
+  });
 });

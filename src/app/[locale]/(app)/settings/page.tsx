@@ -76,7 +76,7 @@ export default async function SettingsPage({ params, searchParams }: SettingsPag
             initialUsername={userSnapshot.username}
             initialDisplayName={userSnapshot.name}
             initialImageUrl={userSnapshot.image}
-            usernameChangedAt={userSnapshot.usernameChangedAt}
+            initialUsernameChangedAt={userSnapshot.usernameChangedAt}
           />
         }
         accountPane={

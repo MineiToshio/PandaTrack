@@ -1,6 +1,7 @@
 import "server-only";
 
 import { DeleteObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { createR2RequestHandler } from "@/lib/r2RequestHandler";
 import { STORE_LOGO_OUTPUT_CONTENT_TYPE } from "@/lib/store/logoShared";
 import { appendVersionTokenToAssetUrl, getStoreLogoVersionToken } from "@/lib/store/logoVersion";
 
@@ -55,6 +56,7 @@ function getStoreLogoStorageClient(): { client: S3Client; config: StoreLogoStora
         accessKeyId: config.accessKeyId,
         secretAccessKey: config.secretAccessKey,
       },
+      requestHandler: createR2RequestHandler(),
     });
   }
 

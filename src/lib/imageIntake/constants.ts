@@ -134,6 +134,31 @@ export const MAX_PROMPT_CATEGORY_LABEL_LENGTH = 80;
 export const IMAGE_INTAKE_MAX_OUTPUT_TOKENS = 32_000;
 
 /**
+ * Wall-clock ceiling on the whole provider phase, retries and backoffs included.
+ *
+ * Lives here rather than in `extractionEngine.ts`, where the rest of the retry/timeout constants
+ * are, because the global spend ledger's stale-reservation cutoff
+ * (`STALE_PENDING_RESERVATION_THRESHOLD_MS` in `src/lib/data/imageIntake/imageIntakeMutations.ts`,
+ * the data layer's persistence side) needs the same figure, and
+ * `src/test/image-intake-no-persistence-guard.test.ts` refuses any file that reaches both the
+ * extraction side (`extractionEngine.ts` and friends) and the persistence side. This module has
+ * neither problem: it holds fixed numbers, nothing that reads a photo or writes a row.
+ *
+ * The per-attempt timeout and the retry count describe attempts, not elapsed time, and multiplied
+ * out they describe a request that may legitimately run for 92 seconds. Nothing in `extractionEngine.ts`
+ * can grant that: the route this action is posted to declares `maxDuration = 60` (the hosting plan's
+ * ceiling), and past it the function is killed outright. A kill is strictly worse than a refusal,
+ * because it happens after the ledger has already reserved the submission and leaves that
+ * reservation `PENDING` forever, counting against the collector's monthly bag for a read they never
+ * received.
+ *
+ * So the retry budget is expressed in time rather than in attempts, and 55 seconds leaves the route
+ * five to settle the ledger and return an answer the collector can act on. The attempt count still
+ * caps retries; this caps how long they may take. Both bounds apply, whichever is reached first.
+ */
+export const EXTRACTION_TOTAL_BUDGET_MS = 55_000;
+
+/**
  * Billable attempts one collector may start in a calendar day (UTC), counting every ledger row of
  * the day whatever its outcome.
  *

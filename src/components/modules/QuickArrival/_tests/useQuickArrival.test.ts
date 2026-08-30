@@ -229,4 +229,26 @@ describe("useQuickArrival", () => {
       );
     });
   });
+
+  // Twin of the retry-rejection case above: `submit`'s own `.then` had no rejection handler, so a
+  // rejected `quickArrivalAction` call silently did nothing at all (no toast, no refresh) instead of
+  // telling the collector the arrival was never recorded.
+  describe("submit rejection", () => {
+    it("shows an error toast instead of doing nothing when the submit call rejects", async () => {
+      quickArrivalActionMock.mockRejectedValue(new Error("boom"));
+      const { result } = renderHook(() =>
+        useQuickArrival({ orderId: "order-1", locale: "en", source: "actions_card" }),
+      );
+
+      act(() => result.current.submit(buildSubmitInput()));
+
+      await waitFor(() =>
+        expect(addToastMock).toHaveBeenCalledWith(
+          "orders.detail.quickArrival.error.server_error",
+          expect.objectContaining({ variant: "error" }),
+        ),
+      );
+      expect(refreshMock).not.toHaveBeenCalled();
+    });
+  });
 });

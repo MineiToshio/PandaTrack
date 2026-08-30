@@ -158,7 +158,13 @@ describe("authPasswordRecovery", () => {
     expect(buildAuthPasswordResetEmailMock).toHaveBeenLastCalledWith("es", "https://pandatrack.app/reset-password");
   });
 
-  it("captures delivery failures, emits the failure event, and throws the stable auth error", async () => {
+  it("captures delivery failures in Sentry, deletes the burned token, and resolves without throwing", async () => {
+    // Real contract (better-auth swallows any throw from `sendResetPassword` via
+    // `runInBackgroundOrAwait` and always returns `{ status: true }` to the caller), so the only
+    // way this failure becomes visible at all is through Sentry. Before the fix, this same
+    // scenario threw `PASSWORD_RESET_EMAIL_DELIVERY_FAILED` here (red: `.rejects.toThrow(...)`
+    // passed against the old code, proving the promise never resolved) - that error was dead
+    // code because better-auth discards it either way.
     const deliveryError = new Error("Resend unavailable");
     sendEmailWithResendMock.mockRejectedValueOnce(deliveryError);
 
@@ -175,13 +181,13 @@ describe("authPasswordRecovery", () => {
         }),
         url: "https://pandatrack.app/en/reset-password",
       }),
-    ).rejects.toThrow("PASSWORD_RESET_EMAIL_DELIVERY_FAILED");
+    ).resolves.toBeUndefined();
 
     expect(captureExceptionMock).toHaveBeenCalledWith(
       deliveryError,
       expect.objectContaining({
         tags: {
-          auth_flow: "password_recovery",
+          auth_flow: "password_recovery_delivery",
         },
         extra: {
           locale: "en",
@@ -196,7 +202,45 @@ describe("authPasswordRecovery", () => {
         reason: "Resend unavailable",
       },
     });
+    // The token was never delivered, so invalidating it here does not take anything away from
+    // the requester; it only prevents a dead token from lingering.
     expect(deletePasswordResetVerificationTokenMock).toHaveBeenCalledWith("unused-token");
+    expect(upsertPasswordRecoveryThrottleMarkerMock).not.toHaveBeenCalled();
+  });
+
+  it("does not burn the token when only post-send bookkeeping fails after a real delivery", async () => {
+    // Regression guard for the ordering bug: bookkeeping (the "email sent" event and the
+    // throttle-marker upsert) used to run inside the same try/catch as the send itself, so a
+    // failure in either call after a successful send was mistaken for a delivery failure and
+    // deleted a token that had already reached the requester's inbox.
+    const bookkeepingError = new Error("throttle store unavailable");
+    upsertPasswordRecoveryThrottleMarkerMock.mockRejectedValueOnce(bookkeepingError);
+
+    await expect(
+      handlePasswordRecoveryRequest({
+        email: "collector@example.com",
+        token: "unused-token",
+        request: new Request("https://pandatrack.app/api/auth/request-password-reset", {
+          headers: {
+            "x-forwarded-for": "127.0.0.1",
+            "user-agent": "test-agent",
+            "accept-language": "en-US,en;q=0.9",
+          },
+        }),
+        url: "https://pandatrack.app/en/reset-password",
+      }),
+    ).resolves.toBeUndefined();
+
+    expect(sendEmailWithResendMock).toHaveBeenCalled();
+    expect(captureExceptionMock).toHaveBeenCalledWith(
+      bookkeepingError,
+      expect.objectContaining({
+        tags: {
+          auth_flow: "password_recovery_bookkeeping",
+        },
+      }),
+    );
+    expect(deletePasswordResetVerificationTokenMock).not.toHaveBeenCalled();
   });
 
   it("suppresses repeated recovery requests during the cooldown window and escalates the wait time", async () => {

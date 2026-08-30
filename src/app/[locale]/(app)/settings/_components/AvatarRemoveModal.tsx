@@ -1,16 +1,19 @@
 "use client";
 
 import { ImageOff } from "lucide-react";
-import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import Modal from "@/components/modules/Modal/Modal";
-import { removeAvatarAction } from "@/app/[locale]/(app)/settings/_actions/profileActions";
 
 export type AvatarRemoveModalProps = {
   isOpen: boolean;
   onClose: () => void;
   displayName: string;
-  onRemoved: () => void;
+  /**
+   * Fires synchronously on confirm, before the modal closes. The parent coordinator owns the
+   * optimistic patch, the Server Action dispatch, and the rollback + toast on failure
+   * (`optimistic-client-updates.mdc`) — this modal never awaits the server.
+   */
+  onConfirm: () => void;
 };
 
 function getInitial(displayName: string): string {
@@ -18,22 +21,14 @@ function getInitial(displayName: string): string {
   return trimmed ? trimmed.charAt(0).toLocaleUpperCase() : "?";
 }
 
-export default function AvatarRemoveModal({ isOpen, onClose, displayName, onRemoved }: AvatarRemoveModalProps) {
+export default function AvatarRemoveModal({ isOpen, onClose, displayName, onConfirm }: AvatarRemoveModalProps) {
   const t = useTranslations("settings");
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
 
   const handleConfirm = () => {
-    setErrorMessage(null);
-    startTransition(async () => {
-      const result = await removeAvatarAction();
-      if (!result.ok) {
-        setErrorMessage(t(`profile.errors.${result.error}` as never));
-        return;
-      }
-      onRemoved();
-      onClose();
-    });
+    // Optimistic Confirmation: close synchronously and let the parent apply the removal locally
+    // in parallel with the Server Action.
+    onConfirm();
+    onClose();
   };
 
   return (
@@ -45,18 +40,14 @@ export default function AvatarRemoveModal({ isOpen, onClose, displayName, onRemo
       icon={<ImageOff size={20} aria-hidden="true" />}
       tone="destructive"
       role="alertdialog"
-      dismissible={!isPending}
       primaryAction={{
-        label: isPending ? t("profile.avatar.removeModal.pending") : t("profile.avatar.removeModal.confirm"),
+        label: t("profile.avatar.removeModal.confirm"),
         onClick: handleConfirm,
         variant: "destructive",
-        loading: isPending,
-        disabled: isPending,
       }}
       secondaryAction={{
         label: t("profile.avatar.removeModal.cancel"),
         onClick: onClose,
-        disabled: isPending,
       }}
     >
       <div className="space-y-3">
@@ -66,11 +57,6 @@ export default function AvatarRemoveModal({ isOpen, onClose, displayName, onRemo
             {getInitial(displayName)}
           </span>
         </p>
-        {errorMessage ? (
-          <p role="alert" className="text-[12px] [color:var(--destructive)]">
-            {errorMessage}
-          </p>
-        ) : null}
       </div>
     </Modal>
   );

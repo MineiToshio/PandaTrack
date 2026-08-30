@@ -225,9 +225,7 @@ describe("submitEmailChangeAction", () => {
     expect(result).toEqual({ ok: true });
     expect(applyEmailChangeTransactionMock).toHaveBeenCalledWith("user-1", "new@example.com", expect.any(Date));
     expect(recordSuccessfulEmailChangeMock).toHaveBeenCalledWith("user-1", expect.any(Date));
-    expect(sendEmailWithResendMock).toHaveBeenCalledWith(
-      expect.objectContaining({ to: "current@example.com" }),
-    );
+    expect(sendEmailWithResendMock).toHaveBeenCalledWith(expect.objectContaining({ to: "current@example.com" }));
     expect(sendVerificationEmailMock).toHaveBeenCalled();
     expect(revalidatePathMock).toHaveBeenCalled();
   });
@@ -314,7 +312,7 @@ describe("submitChangePasswordAction", () => {
     expect(result).toEqual({ ok: true });
     expect(changePasswordMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        body: { currentPassword: "old-secret", newPassword: "new-secret1", revokeOtherSessions: false },
+        body: { currentPassword: "old-secret", newPassword: "new-secret1", revokeOtherSessions: true },
       }),
     );
     expect(revalidatePathMock).toHaveBeenCalled();
@@ -389,9 +387,7 @@ describe("submitSetPasswordAction", () => {
     const result = await submitSetPasswordAction({ locale: "en", newPassword: "new-secret1" });
 
     expect(result).toEqual({ ok: true });
-    expect(setPasswordMock).toHaveBeenCalledWith(
-      expect.objectContaining({ body: { newPassword: "new-secret1" } }),
-    );
+    expect(setPasswordMock).toHaveBeenCalledWith(expect.objectContaining({ body: { newPassword: "new-secret1" } }));
     expect(revalidatePathMock).toHaveBeenCalled();
   });
 });

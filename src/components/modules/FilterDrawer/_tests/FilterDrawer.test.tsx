@@ -46,6 +46,8 @@ const BASE_PROPS = {
   onChange: vi.fn(),
   onApply: vi.fn(),
   onClear: vi.fn(),
+  applyLabel: "Aplicar",
+  clearLabel: "Limpiar",
 };
 
 describe("FilterDrawer — open/closed state", () => {

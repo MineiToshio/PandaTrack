@@ -13,6 +13,7 @@ interface CleanupRequest {
   deliveryIds?: readonly string[];
   pushEndpointPrefix?: string;
   progressionSettingsUserEmail?: string;
+  resetProgressionAccountEmail?: string;
 }
 
 /**
@@ -89,4 +90,19 @@ export async function deletePushSubscriptionsByEndpointPrefix(prefix: string): P
 export async function deleteDefaultProgressionSettings(userEmail: string): Promise<void> {
   if (!userEmail) return;
   await runCleanup({ progressionSettingsUserEmail: userEmail });
+}
+
+/**
+ * Full reset of the DEDICATED progression E2E account: every order, delivery, store payment and
+ * progression row (ledger, medal unlocks, the rank watermark, the hide toggle) it owns. Call from
+ * `test.beforeAll` so each run starts as repeatable as a virgin sign-up, and again from
+ * `test.afterAll` so the account carries nothing into the NEXT run's data-baseline capture either.
+ *
+ * Refuses (see `scripts/e2e-db-cleanup.ts`) if `userEmail` resolves to `E2E_USER_EMAIL` or
+ * `E2E_ADMIN_EMAIL`: this channel deletes everything an account owns, which is only ever safe for
+ * the throwaway progression account it exists for.
+ */
+export async function resetProgressionAccountState(userEmail: string): Promise<void> {
+  if (!userEmail) return;
+  await runCleanup({ resetProgressionAccountEmail: userEmail });
 }

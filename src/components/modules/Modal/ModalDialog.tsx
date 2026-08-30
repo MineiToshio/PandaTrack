@@ -42,7 +42,7 @@ export default function ModalDialog({
   bodyClassName,
   titleId: titleIdProp,
   descriptionId: descriptionIdProp,
-  closeButtonLabel = "Close",
+  closeButtonLabel,
 }: ModalProps) {
   const generatedTitleId = useId();
   const generatedDescriptionId = useId();

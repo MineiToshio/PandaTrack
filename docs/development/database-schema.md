@@ -250,7 +250,7 @@ Reference for what each table and attribute is for, where it is used, and why it
 
 - **storeId** – Store that ships this delivery.
 - **userId** – Owner id for direct authorization checks.
-- **humanReadableId** – Collector-facing identifier generated as `DLV-YYYYMMDD-NN`.
+- **humanReadableId** – Collector-facing identifier generated as `DLV-YYYYMMDD-NN`; unique per user (`[userId, humanReadableId]`), since the daily sequence is per user and two collectors may share the same code.
 - **status** – Delivery lifecycle state: IN_TRANSIT, DELIVERED, or CANCELLED.
 - **deliveryDate** – Required shipping date; create flow defaults to today and allows past or current dates.
 - **expectedArrivalFrom / expectedArrivalTo** – Optional expected arrival window.

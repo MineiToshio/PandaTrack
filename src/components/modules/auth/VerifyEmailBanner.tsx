@@ -14,6 +14,7 @@ type VerifyEmailBannerProps = {
   resendPendingLabel: string;
   resendSuccess: string;
   resendError: string;
+  resendCooldown: string;
 };
 
 export default function VerifyEmailBanner({
@@ -25,6 +26,7 @@ export default function VerifyEmailBanner({
   resendPendingLabel,
   resendSuccess,
   resendError,
+  resendCooldown,
 }: VerifyEmailBannerProps) {
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const resetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -37,20 +39,17 @@ export default function VerifyEmailBanner({
   }, []);
 
   const handleResendResult = useCallback(
-    (result: "success" | "error") => {
+    (result: "success" | "error", message: string) => {
       clearResetTimeout();
+      setStatusMessage(message);
 
       if (result === "success") {
-        setStatusMessage(resendSuccess);
         resetTimeoutRef.current = setTimeout(() => {
           setStatusMessage(null);
         }, 5000);
-        return;
       }
-
-      setStatusMessage(resendError);
     },
-    [clearResetTimeout, resendError, resendSuccess],
+    [clearResetTimeout],
   );
 
   useEffect(() => {
@@ -80,6 +79,7 @@ export default function VerifyEmailBanner({
           pendingLabel={resendPendingLabel}
           successMessage={resendSuccess}
           errorMessage={resendError}
+          cooldownMessage={resendCooldown}
           shownEvent={POSTHOG_EVENTS.AUTH.VERIFY_BANNER_SHOWN}
           onResult={handleResendResult}
         />

@@ -1,16 +1,23 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { storeContactChannelFindManyMock, storeContactChannelCreateMock, createStoreMock, findIntakeStoreRelationMock } =
-  vi.hoisted(() => ({
-    storeContactChannelFindManyMock: vi.fn(),
-    storeContactChannelCreateMock: vi.fn(),
-    createStoreMock: vi.fn(),
-    findIntakeStoreRelationMock: vi.fn(),
-  }));
+const {
+  storeContactChannelFindManyMock,
+  storeContactChannelCreateMock,
+  createStoreMock,
+  findIntakeStoreRelationMock,
+  transactionMock,
+} = vi.hoisted(() => ({
+  storeContactChannelFindManyMock: vi.fn(),
+  storeContactChannelCreateMock: vi.fn(),
+  createStoreMock: vi.fn(),
+  findIntakeStoreRelationMock: vi.fn(),
+  transactionMock: vi.fn(),
+}));
 
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     storeContactChannel: { findMany: storeContactChannelFindManyMock, create: storeContactChannelCreateMock },
+    $transaction: transactionMock,
   },
 }));
 
@@ -23,6 +30,7 @@ vi.mock("../storeMatchingQueries", async (importOriginal) => ({
   findIntakeStoreRelation: findIntakeStoreRelationMock,
 }));
 
+import { Prisma } from "../../../../../generated/prisma/client";
 import {
   createStoreFromIntake,
   MAX_LEARNED_PHONE_CHANNELS_PER_STORE,
@@ -123,6 +131,15 @@ describe("recordConfirmedStoreMatch", () => {
     vi.clearAllMocks();
     findIntakeStoreRelationMock.mockResolvedValue("creator");
     storeContactChannelFindManyMock.mockResolvedValue([]);
+    // The mutation now runs its whole read-decide-write sequence inside a Serializable transaction
+    // (`runSerializableTransaction`, `src/lib/data/serializableTransaction.ts`). The fake `tx` just
+    // routes to the same mocks the tests already assert on, so every existing case keeps working
+    // unchanged; only the call shape underneath it is different.
+    transactionMock.mockImplementation((work: (tx: unknown) => unknown) =>
+      work({
+        storeContactChannel: { findMany: storeContactChannelFindManyMock, create: storeContactChannelCreateMock },
+      }),
+    );
   });
 
   it("does nothing when the phone does not normalize to a trustworthy number", async () => {
@@ -142,7 +159,7 @@ describe("recordConfirmedStoreMatch", () => {
       recordConfirmedStoreMatch({ userId: "attacker", storeId: "someone-elses-store", phone: "+51 987 654 321" }),
     ).resolves.toBe("not-related");
 
-    expect(findIntakeStoreRelationMock).toHaveBeenCalledWith("attacker", "someone-elses-store");
+    expect(findIntakeStoreRelationMock).toHaveBeenCalledWith("attacker", "someone-elses-store", expect.anything());
     expect(storeContactChannelFindManyMock).not.toHaveBeenCalled();
     expect(storeContactChannelCreateMock).not.toHaveBeenCalled();
   });
@@ -228,5 +245,43 @@ describe("recordConfirmedStoreMatch", () => {
       expect.objectContaining({ where: expect.objectContaining({ storeId: "store-2" }) }),
     );
     expect(storeContactChannelCreateMock.mock.calls[0]![0].data.storeId).toBe("store-2");
+  });
+
+  it("maps a P2002 from the @@unique([storeId, type, value]) backstop to the same outcome as the app-level dedupe check", async () => {
+    // The dedupe check above reads existing channels before the write and should already make this
+    // unreachable under Serializable isolation, but the DB-level unique constraint is the backstop
+    // for whatever the fuzzy `alreadyRemembered` check does not catch. A caller must see the same
+    // benign "already-known" result either way, never a raw failure.
+    storeContactChannelCreateMock.mockRejectedValueOnce(
+      new Prisma.PrismaClientKnownRequestError("Unique constraint failed", {
+        code: "P2002",
+        clientVersion: "test",
+      }),
+    );
+
+    await expect(
+      recordConfirmedStoreMatch({ userId: "user-1", storeId: "store-1", phone: "+51 987 654 321" }),
+    ).resolves.toBe("already-known");
+  });
+
+  it("lets an unrelated error from the create propagate instead of swallowing it as already-known", async () => {
+    storeContactChannelCreateMock.mockRejectedValueOnce(new Error("connection reset"));
+
+    await expect(
+      recordConfirmedStoreMatch({ userId: "user-1", storeId: "store-1", phone: "+51 987 654 321" }),
+    ).rejects.toThrow("connection reset");
+  });
+
+  it("serializes the read-decide-write sequence in a Serializable transaction, closing the TOCTOU race on the dedupe check, the anti-abuse cap, and the primary election", async () => {
+    // Before this fix the relationship read, the dedupe check, the cap check, and the `isPrimary`
+    // election all ran on one unguarded read before an unguarded `create`: two concurrent
+    // confirmations could each read the same pre-write channel list, both pass the cap, and both
+    // write, or elect two primary channels for the same store.
+    await recordConfirmedStoreMatch({ userId: "user-1", storeId: "store-1", phone: "+51 987 654 321" });
+
+    expect(transactionMock).toHaveBeenCalledWith(
+      expect.any(Function),
+      expect.objectContaining({ isolationLevel: Prisma.TransactionIsolationLevel.Serializable }),
+    );
   });
 });

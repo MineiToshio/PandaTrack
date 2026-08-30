@@ -16,6 +16,21 @@ export type EmailModalProps = {
   onChanged: (newEmail: string) => void;
 };
 
+/**
+ * Email change, awaited-then-close. A documented exception to the repository's default
+ * Optimistic Confirmation pattern (`optimistic-client-updates.mdc`), for the same two reasons
+ * `VoidPointsControl` records for the point void:
+ *
+ * - Unpredictable side effect the client cannot fake: changing the email restarts verification and
+ *   sends a new confirmation mail (`account.email.modal.cooldownBlock`). There is no honest local
+ *   guess for "verification restarted" to paint before the server has actually restarted it.
+ * - Credential-gated, rate-limited mutation: the server checks the current password and a cooldown
+ *   before it will act; closing the modal on submit would show a change that has not necessarily
+ *   been accepted, on a flow the user should not casually undo.
+ *
+ * The modal therefore stays open with a pending primary action until the server answers, and the
+ * new email only replaces the row once the response confirms it.
+ */
 export default function EmailModal({ isOpen, onClose, locale, onChanged }: EmailModalProps) {
   const t = useTranslations("settings");
   const emailId = useId();

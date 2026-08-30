@@ -8,7 +8,7 @@ import { getOrderDetail } from "@/lib/data/orders/orderQueries";
 import { getOpenBalanceMinorByOrderIds, getStoreDebtByCurrency } from "@/lib/data/orders/storePaymentQueries";
 import { ROUTES } from "@/lib/constants";
 import { safeRelativeReturnTo } from "@/lib/navigation/safeRelativeReturnTo";
-import { prisma } from "@/lib/prisma";
+import { getUserCurrencyContext } from "@/lib/data/user-settings/userSettingsQueries";
 import OrderDetailContent from "./_components/OrderDetailContent";
 
 type Props = {
@@ -44,7 +44,7 @@ export default async function OrdersDetailPage({ params, searchParams }: Props) 
     getOrderDetail(id, userId),
     // `timezone` rides along with the currency the page already reads: the overdue banner compares
     // against midnight-UTC domain dates, so it needs the collector's civil day, not a wall clock.
-    prisma.user.findUnique({ where: { id: userId }, select: { baseCurrencyCode: true, timezone: true } }),
+    getUserCurrencyContext(userId),
   ]);
 
   if (!order) notFound();

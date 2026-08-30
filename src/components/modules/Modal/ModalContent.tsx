@@ -1,6 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { ReactElement, ReactNode } from "react";
 import Button from "@/components/core/Button/Button";
 import IconButton from "@/components/core/IconButton";
@@ -34,8 +35,10 @@ export function ModalHeader({
   onClose,
   titleId,
   descriptionId,
-  closeButtonLabel = "Close",
+  closeButtonLabel,
 }: ModalHeaderProps) {
+  const t = useTranslations("common");
+  const resolvedCloseButtonLabel = closeButtonLabel ?? t("close");
   const hasSubtitle = subtitle != null && subtitle !== "";
 
   return (
@@ -70,7 +73,7 @@ export function ModalHeader({
       </div>
       {dismissible && (
         <IconButton
-          aria-label={closeButtonLabel}
+          aria-label={resolvedCloseButtonLabel}
           size="sm"
           variant="ghost"
           icon={<X size={18} aria-hidden="true" />}

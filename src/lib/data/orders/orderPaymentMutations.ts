@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { calculatePaymentSummary, type PaymentSummary } from "@/lib/orders/paymentSummary";
 import { listOrderPaymentRecords, recalculateOrderAllocationCache } from "./orderPaymentAllocations";
 import type { OrderPaymentRecord } from "./orderPaymentAllocations";
-import { runSerializableTransaction } from "./serializableTransaction";
+import { runSerializableTransaction } from "../serializableTransaction";
 import {
   createStorePayment,
   type CreateStorePaymentError,

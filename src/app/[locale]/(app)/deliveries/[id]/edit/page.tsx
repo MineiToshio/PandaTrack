@@ -4,7 +4,7 @@ import { buildPageMetadata } from "@/lib/seo";
 import { getSession } from "@/lib/auth/auth-server";
 import { getDeliveryDetail, getEligibleProductsForStore } from "@/lib/data/deliveries/deliveryQueries";
 import { ROUTES } from "@/lib/constants";
-import { prisma } from "@/lib/prisma";
+import { getUserCurrencyContext } from "@/lib/data/user-settings/userSettingsQueries";
 import SetHeaderTitle from "@/app/[locale]/(app)/_components/AppLayout/SetHeaderTitle";
 import DeliveryForm from "../../_components/share/DeliveryForm";
 import { editDeliveryAction } from "./_actions/editDeliveryAction";
@@ -29,10 +29,7 @@ export default async function DeliveryEditPage({ params }: DeliveryEditPageProps
   if (!session?.user?.id) redirect(`/${locale}/sign-in`);
   const userId = session.user.id;
 
-  const [delivery, user] = await Promise.all([
-    getDeliveryDetail(id, userId),
-    prisma.user.findUnique({ where: { id: userId }, select: { baseCurrencyCode: true } }),
-  ]);
+  const [delivery, user] = await Promise.all([getDeliveryDetail(id, userId), getUserCurrencyContext(userId)]);
 
   if (!delivery) notFound();
 

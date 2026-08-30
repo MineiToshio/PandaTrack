@@ -248,6 +248,7 @@
       "edit": "Edit",
       "markDelivered": "Mark delivered",
       "reopen": "Reopen delivery",
+      "reopening": "Reopening delivery...",
       "moreActions": "More actions"
     },
     "note": {

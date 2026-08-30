@@ -1,23 +1,37 @@
 "use client";
 
 import { Image as ImageIcon, Upload } from "lucide-react";
-import { type ChangeEvent, type DragEvent, useEffect, useId, useRef, useState, useTransition } from "react";
+import { type ChangeEvent, type DragEvent, useEffect, useId, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import Modal from "@/components/modules/Modal/Modal";
 import { CropperBody, useImageCropperState } from "@/components/modules/ImageCropper";
 import { AVATAR_ACCEPTED_MIME_TYPES, AVATAR_MAX_SOURCE_SIZE_BYTES } from "@/lib/user/avatarShared";
-import { saveAvatarAction } from "@/app/[locale]/(app)/settings/_actions/profileActions";
 import { cn } from "@/lib/styles";
+import { createCroppedPreviewUrl } from "../_utils/cropImagePreview";
 
 const ACCEPTED_FILE_TYPES = AVATAR_ACCEPTED_MIME_TYPES.join(",");
+
+export type AvatarModalSubmitPayload = {
+  formData: FormData;
+  /**
+   * Object URL for the optimistic preview, or `null` when the source image had not finished
+   * decoding yet. Ownership transfers to the caller, which must revoke it once it stops using it.
+   */
+  previewUrl: string | null;
+};
 
 export type AvatarModalProps = {
   isOpen: boolean;
   onClose: () => void;
-  onUploaded: (imageUrl: string) => void;
+  /**
+   * Fires synchronously on confirm, before the modal closes. The parent coordinator owns the
+   * optimistic patch, the Server Action dispatch, and the rollback + toast on failure
+   * (`optimistic-client-updates.mdc`) — this modal never awaits the server.
+   */
+  onSubmit: (payload: AvatarModalSubmitPayload) => void;
 };
 
-export default function AvatarModal({ isOpen, onClose, onUploaded }: AvatarModalProps) {
+export default function AvatarModal({ isOpen, onClose, onSubmit }: AvatarModalProps) {
   const t = useTranslations("settings");
   const inputRef = useRef<HTMLInputElement | null>(null);
   const cropperId = useId();
@@ -25,7 +39,9 @@ export default function AvatarModal({ isOpen, onClose, onUploaded }: AvatarModal
   const [editorImageUrl, setEditorImageUrl] = useState<string | null>(null);
   const [editorFile, setEditorFile] = useState<File | null>(null);
   const [editorError, setEditorError] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
+  // Preloaded in parallel with `editorImageUrl` so the confirm step can crop it into an
+  // optimistic preview synchronously, without awaiting an image decode at submit time.
+  const loadedImageRef = useRef<HTMLImageElement | null>(null);
 
   useEffect(() => {
     if (isOpen) return;
@@ -35,6 +51,7 @@ export default function AvatarModal({ isOpen, onClose, onUploaded }: AvatarModal
     setEditorImageUrl(null);
     setEditorFile(null);
     setEditorError(null);
+    loadedImageRef.current = null;
     cropper.reset();
     // Cropper is a stable ref-like object; the cleanup should not refire when its identity drifts.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -52,8 +69,16 @@ export default function AvatarModal({ isOpen, onClose, onUploaded }: AvatarModal
     if (editorImageUrl?.startsWith("blob:")) URL.revokeObjectURL(editorImageUrl);
     setEditorError(null);
     setEditorFile(file);
-    setEditorImageUrl(URL.createObjectURL(file));
+    const url = URL.createObjectURL(file);
+    setEditorImageUrl(url);
     cropper.reset();
+
+    loadedImageRef.current = null;
+    const preloadImage = new Image();
+    preloadImage.onload = () => {
+      loadedImageRef.current = preloadImage;
+    };
+    preloadImage.src = url;
   };
 
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -74,22 +99,27 @@ export default function AvatarModal({ isOpen, onClose, onUploaded }: AvatarModal
       return;
     }
     const { x, y, width, height } = cropper.croppedAreaPixels;
+    const cropArea = {
+      x: Math.round(x),
+      y: Math.round(y),
+      width: Math.round(width),
+      height: Math.round(height),
+    };
     const formData = new FormData();
     formData.set("file", editorFile);
-    formData.set("cropX", String(Math.round(x)));
-    formData.set("cropY", String(Math.round(y)));
-    formData.set("cropWidth", String(Math.round(width)));
-    formData.set("cropHeight", String(Math.round(height)));
+    formData.set("cropX", String(cropArea.x));
+    formData.set("cropY", String(cropArea.y));
+    formData.set("cropWidth", String(cropArea.width));
+    formData.set("cropHeight", String(cropArea.height));
 
-    startTransition(async () => {
-      const result = await saveAvatarAction(formData);
-      if (!result.ok) {
-        setEditorError(t(`profile.errors.${result.error}` as never));
-        return;
-      }
-      onUploaded(result.imageUrl);
-      onClose();
-    });
+    // The preload may not have finished decoding yet; the preview is a best-effort optimistic
+    // aid, so submit proceeds either way and the parent reconciles with the server's own image.
+    const previewUrl = loadedImageRef.current ? createCroppedPreviewUrl(loadedImageRef.current, cropArea) : null;
+
+    // Optimistic Confirmation: close synchronously and let the parent apply the cropped preview
+    // locally in parallel with the Server Action.
+    onSubmit({ formData, previewUrl });
+    onClose();
   };
 
   const showCropper = editorImageUrl != null;
@@ -103,17 +133,14 @@ export default function AvatarModal({ isOpen, onClose, onUploaded }: AvatarModal
       icon={<ImageIcon size={20} aria-hidden="true" />}
       tone="default"
       size="md"
-      dismissible={!isPending}
       primaryAction={{
-        label: isPending ? t("profile.avatar.modal.pending") : t("profile.avatar.modal.confirm"),
+        label: t("profile.avatar.modal.confirm"),
         onClick: handleConfirm,
-        disabled: !showCropper || isPending || !cropper.croppedAreaPixels,
-        loading: isPending,
+        disabled: !showCropper || !cropper.croppedAreaPixels,
       }}
       secondaryAction={{
         label: t("profile.avatar.modal.cancel"),
         onClick: onClose,
-        disabled: isPending,
       }}
     >
       <div className="space-y-4">
@@ -138,7 +165,6 @@ export default function AvatarModal({ isOpen, onClose, onUploaded }: AvatarModal
             onZoomChange={cropper.setZoom}
             onCropComplete={cropper.handleCropComplete}
             zoomLabel={t("profile.avatar.modal.zoomLabel")}
-            disabled={isPending}
           />
         ) : (
           <button

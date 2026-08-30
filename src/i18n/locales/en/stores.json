@@ -418,7 +418,8 @@
       "importCountrySearchPlaceholder": "Country of origin…",
       "clear": "Clear",
       "apply": "Apply",
-      "applyWithCount": "Apply ({count} results)"
+      "applyWithCount": "Apply ({count} results)",
+      "closeDialog": "Close filters"
     },
     "detail": {
       "reviewsTitle": "Reviews",
