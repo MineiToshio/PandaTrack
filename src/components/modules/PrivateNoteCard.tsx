@@ -93,13 +93,21 @@ export default function PrivateNoteCard({
     setSaveState({ kind: "saving" });
     const noteToSave = trimmed.length > 0 ? trimmed : null;
     startTransition(async () => {
-      const result = await onSave(noteToSave);
-      if (!result.ok) {
+      try {
+        const result = await onSave(noteToSave);
+        if (!result.ok) {
+          setSaveState({ kind: "error", message: labels.errorGeneric });
+          return;
+        }
+        lastPersistedRef.current = trimmed;
+        setSaveState({ kind: "saved", at: result.updatedAt });
+      } catch {
+        // A rejected `onSave` call (a transport failure) is not a refusal the server described, it
+        // is no answer at all. Inside a transition an uncaught rejection re-throws during render and
+        // replaces the whole page with the (app)/error.tsx boundary, so it gets the same error state
+        // as `result.ok === false` above, keeping the collector's draft on screen instead of losing it.
         setSaveState({ kind: "error", message: labels.errorGeneric });
-        return;
       }
-      lastPersistedRef.current = trimmed;
-      setSaveState({ kind: "saved", at: result.updatedAt });
     });
   };
 
