@@ -28,6 +28,10 @@ const eslintConfig = defineConfig([
     // They are throwaway tooling, not part of the shipped codebase, so they are
     // excluded from linting just as they are from version control.
     "scripts/local/**",
+    // Generated Playwright artifacts (see .gitignore): trace-viewer bundles and
+    // run output from local/CI e2e runs, not source the project owns or ships.
+    "playwright-report/**",
+    "test-results/**",
   ]),
 ]);
 
