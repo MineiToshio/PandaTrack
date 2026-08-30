@@ -57,7 +57,7 @@ const WRITE_CALL =
 const REFUSAL_RETURN = /\breturn\s*\{\s*ok\s*:\s*false/g;
 
 /**
- * `runSerializableTransaction` (src/lib/data/orders/serializableTransaction.ts) is a thin wrapper
+ * `runSerializableTransaction` (src/lib/data/serializableTransaction.ts) is a thin wrapper
  * around `prisma.$transaction` with a retry, so the callback it takes is a transaction callback in
  * every sense that matters here. It is matched by name for that reason: without it, moving a
  * mutation onto the wrapper would silently take that mutation out of this scan.

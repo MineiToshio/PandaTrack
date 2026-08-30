@@ -3,7 +3,7 @@ import { isAllowedCollectorBaseCurrency } from "@/lib/catalog/collectorCountries
 import { resolveTodayStart } from "@/lib/notifications/reminderWindows";
 import { MAX_PAYMENT_AMOUNT } from "@/lib/orders/orderValidation";
 import { openBalanceMinorByOrderId, type OrderOpenBalanceInput } from "./orderOpenBalance";
-import { runSerializableTransaction } from "./serializableTransaction";
+import { runSerializableTransaction } from "../serializableTransaction";
 import { getUnassignedStoreMoneyMinor } from "./storePaymentQueries";
 
 /**

@@ -1,3 +1,4 @@
+import type { Prisma } from "../../../../generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { normalizeStoreName } from "@/lib/store/duplicateMatch";
 import { PUBLIC_VISIBLE_STORE_STATUSES, storeVisibleToViewerFilter } from "./storeQueries";
@@ -144,11 +145,20 @@ export type IntakeStoreRelation = "creator" | "buyer" | "none";
  *
  * Returns `none` for a store that does not exist, so a caller cannot use a made-up id to reach a
  * write path at all.
+ *
+ * Accepts an optional `tx` so `recordConfirmedStoreMatch` can run this read inside the same
+ * Serializable transaction as the write it gates, closing the race between reading the relation and
+ * writing the learned channel.
  */
-export async function findIntakeStoreRelation(userId: string, storeId: string): Promise<IntakeStoreRelation> {
+export async function findIntakeStoreRelation(
+  userId: string,
+  storeId: string,
+  tx?: Prisma.TransactionClient,
+): Promise<IntakeStoreRelation> {
+  const client = tx ?? prisma;
   const [store, priorOrder] = await Promise.all([
-    prisma.store.findUnique({ where: { id: storeId }, select: { createdByUserId: true } }),
-    prisma.order.findFirst({ where: { userId, storeId }, select: { id: true } }),
+    client.store.findUnique({ where: { id: storeId }, select: { createdByUserId: true } }),
+    client.order.findFirst({ where: { userId, storeId }, select: { id: true } }),
   ]);
 
   if (!store) return "none";

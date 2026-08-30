@@ -8,7 +8,7 @@ import {
   recalculateOrderAllocationCache,
   type OrderPaymentRecord,
 } from "./orderPaymentAllocations";
-import { runSerializableTransaction } from "./serializableTransaction";
+import { runSerializableTransaction } from "../serializableTransaction";
 import {
   creditOrderPayment,
   settleProgression,
