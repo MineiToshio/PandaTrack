@@ -2,7 +2,8 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import manifest from "@/app/manifest";
-import { EXTRACTION_REQUEST_TIMEOUT_MS, EXTRACTION_TOTAL_BUDGET_MS } from "@/lib/imageIntake/extractionEngine";
+import { EXTRACTION_REQUEST_TIMEOUT_MS } from "@/lib/imageIntake/extractionEngine";
+import { EXTRACTION_TOTAL_BUDGET_MS } from "@/lib/imageIntake/constants";
 
 /**
  * Order image intake config guard.

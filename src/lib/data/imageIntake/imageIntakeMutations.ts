@@ -1,11 +1,11 @@
 import { prisma } from "@/lib/prisma";
-import { EXTRACTION_TOTAL_BUDGET_MS } from "@/lib/imageIntake/extractionEngine";
+import { EXTRACTION_TOTAL_BUDGET_MS } from "@/lib/imageIntake/constants";
 import { resolveEffectiveMonthlyLimit } from "@/lib/imageIntake/quota";
 import { ImageIntakeUsageStatus, type ImageIntakeEntrySource, type Prisma } from "../../../../generated/prisma/client";
 
 /**
  * Safety margin added on top of the extraction phase's own wall-clock budget
- * (`EXTRACTION_TOTAL_BUDGET_MS`, see `extractionEngine.ts`) before a PENDING reservation is treated
+ * (`EXTRACTION_TOTAL_BUDGET_MS`, see `constants.ts`) before a PENDING reservation is treated
  * as abandoned rather than merely slow. Ten minutes is comfortably longer than any request this
  * feature can legitimately still be running, including every retry and backoff that budget already
  * bounds, so a reservation still PENDING past this point can only be a leak (a process killed

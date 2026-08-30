@@ -1,4 +1,5 @@
 import * as Sentry from "@sentry/nextjs";
+import { EXTRACTION_TOTAL_BUDGET_MS } from "./constants";
 import {
   parseImageIntakeModelResponse,
   type ImageIntakeDraft,
@@ -376,22 +377,10 @@ export const EXTRACTION_MAX_TRANSPORT_RETRIES = 2;
  */
 export const EXTRACTION_RETRY_BACKOFF_MS = 700;
 
-/**
- * Wall-clock ceiling on the whole provider phase, retries and backoffs included.
- *
- * The per-attempt timeout and the retry count describe attempts, not elapsed time, and multiplied
- * out they describe a request that may legitimately run for 92 seconds. Nothing in this module can
- * grant that: the route this action is posted to declares `maxDuration = 60` (the hosting plan's
- * ceiling), and past it the function is killed outright. A kill is strictly worse than a refusal,
- * because it happens after the ledger has already reserved the submission and leaves that
- * reservation `PENDING` forever, counting against the collector's monthly bag for a read they never
- * received.
- *
- * So the retry budget is expressed in time rather than in attempts, and 55 seconds leaves the route
- * five to settle the ledger and return an answer the collector can act on. The attempt count still
- * caps retries; this caps how long they may take. Both bounds apply, whichever is reached first.
- */
-export const EXTRACTION_TOTAL_BUDGET_MS = 55_000;
+// `EXTRACTION_TOTAL_BUDGET_MS` lives in `constants.ts`, not here: `imageIntakeMutations.ts` (the
+// data layer, persistence side of this feature) needs it to size the global spend ledger's
+// stale-reservation cutoff, and `src/test/image-intake-no-persistence-guard.test.ts` refuses any
+// file that reaches both this module (the extraction side) and the persistence side.
 
 /**
  * Shortest attempt worth starting with the remaining budget.
