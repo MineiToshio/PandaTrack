@@ -151,10 +151,6 @@ function resolvePasswordRecoveryLocale(resetUrl: string, request: Request | unde
   );
 }
 
-function createPasswordRecoveryDeliveryError(): Error {
-  return new Error("PASSWORD_RESET_EMAIL_DELIVERY_FAILED");
-}
-
 export async function handlePasswordRecoveryRequest({
   email,
   request,
@@ -187,23 +183,17 @@ export async function handlePasswordRecoveryRequest({
       text: emailContent.text,
       html: emailContent.html,
     });
-
-    posthog.capture({
-      distinctId: email,
-      event: POSTHOG_EVENTS.AUTH.FORGOT_PASSWORD_EMAIL_SENT,
-      properties: {
-        locale,
-      },
-    });
-    await upsertPasswordRecoveryThrottleMarker(
-      throttleResult.scopeId,
-      getPasswordRecoveryNextThrottleState(null, new Date()),
-    );
   } catch (error) {
+    // better-auth runs `sendResetPassword` through `runInBackgroundOrAwait`, which only calls
+    // `logger.error` on a caught exception and never surfaces it to the caller (the endpoint
+    // still returns `{ status: true }`), so this capture is the only way a delivery failure
+    // becomes observable. Rethrowing here would be swallowed the same way, so we don't.
+    // Nobody ever received this token (the email never arrived), so deleting it here does not
+    // take anything away from the requester; it only prevents a dead token from lingering.
     await deletePasswordResetVerificationToken(token);
     Sentry.captureException(error, {
       tags: {
-        auth_flow: "password_recovery",
+        auth_flow: "password_recovery_delivery",
       },
       extra: {
         locale,
@@ -219,6 +209,34 @@ export async function handlePasswordRecoveryRequest({
       },
     });
 
-    throw createPasswordRecoveryDeliveryError();
+    return;
+  }
+
+  // Reaching here means the email was actually delivered, so this bookkeeping runs only after a
+  // confirmed send. Keeping it out of the try above matters: it used to run inside the same
+  // try/catch as the send itself, so a failure in either of these two calls (unrelated to
+  // delivery) was mistaken for a delivery failure and burned a token that had already reached
+  // the requester's inbox.
+  try {
+    posthog.capture({
+      distinctId: email,
+      event: POSTHOG_EVENTS.AUTH.FORGOT_PASSWORD_EMAIL_SENT,
+      properties: {
+        locale,
+      },
+    });
+    await upsertPasswordRecoveryThrottleMarker(
+      throttleResult.scopeId,
+      getPasswordRecoveryNextThrottleState(null, new Date()),
+    );
+  } catch (error) {
+    Sentry.captureException(error, {
+      tags: {
+        auth_flow: "password_recovery_bookkeeping",
+      },
+      extra: {
+        locale,
+      },
+    });
   }
 }
