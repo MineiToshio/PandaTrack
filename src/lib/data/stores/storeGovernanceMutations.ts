@@ -369,6 +369,11 @@ export async function supersedeStaleChangeRequests(
   return supersededCount;
 }
 
+/**
+ * Applies a direct edit to a store's editable fields. Assumes the caller has already verified the
+ * viewer is allowed to edit this store directly (`canDirectlyEditStore` in `saveStoreEdit.ts`):
+ * this function performs no ownership or governance check of its own.
+ */
 export async function updateStoreEditableFields(
   store: EditableStore,
   input: EditableStoreInput,
