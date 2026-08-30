@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import posthog from "posthog-js";
+import * as Sentry from "@sentry/nextjs";
 import AuthFormLayout from "./AuthFormLayout";
 import EmailPasswordForm from "./EmailPasswordForm";
 import { authClient } from "@/lib/auth/auth-client";
@@ -42,31 +43,40 @@ export default function SignUpForm({ callbackURL, signInHref }: SignUpFormProps)
     setIsPending(true);
     posthog.capture(POSTHOG_EVENTS.AUTH.SIGNUP_SUBMITTED, { locale });
 
-    const { data, error: signUpError } = await authClient.signUp.email({
-      email: emailTrimmed,
-      password: passwordTrimmed,
-      name: "",
-      callbackURL,
-    });
+    try {
+      const { data, error: signUpError } = await authClient.signUp.email({
+        email: emailTrimmed,
+        password: passwordTrimmed,
+        name: "",
+        callbackURL,
+      });
 
-    setIsPending(false);
+      if (signUpError) {
+        posthog.capture(POSTHOG_EVENTS.AUTH.SIGNUP_FAILED, {
+          locale,
+          error_code: signUpError.code ?? "unknown",
+        });
+        const message =
+          signUpError.code === "USER_ALREADY_EXISTS"
+            ? tErrors("userAlreadyExists")
+            : (signUpError.message ?? tErrors("generic"));
+        setError(message);
+        return;
+      }
 
-    if (signUpError) {
+      if (data) {
+        posthog.capture(POSTHOG_EVENTS.AUTH.SIGNUP_SUCCESS, { locale });
+        router.push(callbackURL);
+      }
+    } catch (requestError) {
+      Sentry.captureException(requestError);
       posthog.capture(POSTHOG_EVENTS.AUTH.SIGNUP_FAILED, {
         locale,
-        error_code: signUpError.code ?? "unknown",
+        error_code: "network_error",
       });
-      const message =
-        signUpError.code === "USER_ALREADY_EXISTS"
-          ? tErrors("userAlreadyExists")
-          : (signUpError.message ?? tErrors("generic"));
-      setError(message);
-      return;
-    }
-
-    if (data) {
-      posthog.capture(POSTHOG_EVENTS.AUTH.SIGNUP_SUCCESS, { locale });
-      router.push(callbackURL);
+      setError(tErrors("generic"));
+    } finally {
+      setIsPending(false);
     }
   };
 
