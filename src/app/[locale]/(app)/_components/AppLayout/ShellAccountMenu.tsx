@@ -148,9 +148,9 @@ export default function ShellAccountMenu({
     void signOutClient({
       onSuccess: () => {
         router.push(`/${locale}${ROUTES.signIn}`);
+        router.refresh();
       },
     });
-    router.refresh();
   };
 
   return (
