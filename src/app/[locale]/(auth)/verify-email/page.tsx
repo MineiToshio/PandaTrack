@@ -77,6 +77,7 @@ export default async function VerifyEmailStatusPage({ params, searchParams }: Ve
           pendingLabel={t("resendPending")}
           successMessage={t("resendSuccess")}
           errorMessage={t("resendError")}
+          cooldownMessage={t.raw("resendCooldown")}
         />
       ) : (
         <div className="space-y-4">

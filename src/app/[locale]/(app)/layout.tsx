@@ -138,6 +138,7 @@ export default async function PrivateAppLayout({ children, params }: PrivateAppL
           resendPendingLabel={tVerification("resendPending")}
           resendSuccess={tVerification("resendSuccess")}
           resendError={tVerification("resendError")}
+          resendCooldown={tVerification.raw("resendCooldown")}
         />
       </div>
       <AppLayout

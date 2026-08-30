@@ -10,12 +10,16 @@ const {
   getVerificationSnapshotMock,
   sendVerificationEmailMock,
   resolveAuthCallbackURLMock,
+  findVerificationMarkerByIdMock,
+  upsertVerificationMarkerMock,
 } = vi.hoisted(() => ({
   headersMock: vi.fn(),
   getSessionMock: vi.fn(),
   getVerificationSnapshotMock: vi.fn(),
   sendVerificationEmailMock: vi.fn(),
   resolveAuthCallbackURLMock: vi.fn(),
+  findVerificationMarkerByIdMock: vi.fn(),
+  upsertVerificationMarkerMock: vi.fn(),
 }));
 
 vi.mock("next/headers", () => ({
@@ -35,11 +39,31 @@ vi.mock("@/lib/auth/authVerification", () => ({
   sendVerificationEmail: sendVerificationEmailMock,
 }));
 
+// The cooldown module (src/lib/auth/resendVerificationCooldown.ts) is exercised for real here; only
+// the underlying data-layer calls it delegates to are mocked, in the style of
+// emailChangeRateLimit.test.ts, so no real DB is touched. `verificationStore` simulates the single
+// row Prisma would hold, keyed by the cooldown scope id, across the two calls a test makes.
+vi.mock("@/lib/data/auth/verificationQueries", () => ({
+  findVerificationMarkerById: findVerificationMarkerByIdMock,
+}));
+
+vi.mock("@/lib/data/auth/verificationMutations", () => ({
+  upsertVerificationMarker: upsertVerificationMarkerMock,
+}));
+
 describe("resendVerificationEmail", () => {
+  let verificationStore: { value: string; expiresAt: Date } | null;
+
   beforeEach(() => {
     vi.clearAllMocks();
     headersMock.mockResolvedValue(new Headers({ "x-test": "true" }));
     resolveAuthCallbackURLMock.mockReturnValue("/en/dashboard");
+
+    verificationStore = null;
+    findVerificationMarkerByIdMock.mockImplementation(async () => verificationStore);
+    upsertVerificationMarkerMock.mockImplementation(async (input: { value: string; expiresAt: Date }) => {
+      verificationStore = { value: input.value, expiresAt: input.expiresAt };
+    });
   });
 
   it("returns unauthenticated when no session is available", async () => {
@@ -103,5 +127,22 @@ describe("resendVerificationEmail", () => {
 
     expect(resolveAuthCallbackURLMock).toHaveBeenCalledWith("en", "/deliveries");
     expect(sendVerificationEmailMock).toHaveBeenCalledWith("blocked@example.com", "/en/dashboard", requestHeaders);
+  });
+
+  it("enforces a cooldown so an immediate second resend does not send another email", async () => {
+    getSessionMock.mockResolvedValue({ user: { id: "user-cooldown" } });
+    getVerificationSnapshotMock.mockResolvedValue({ state: "grace", email: "cooldown@example.com" });
+    sendVerificationEmailMock.mockResolvedValue({ ok: true });
+
+    const first = await resendVerificationEmail({ locale: "en" });
+    const second = await resendVerificationEmail({ locale: "en" });
+
+    expect(first).toEqual({ success: true });
+    expect(second).toEqual({
+      success: false,
+      reason: "cooldown",
+      retryAfterSeconds: expect.any(Number),
+    });
+    expect(sendVerificationEmailMock).toHaveBeenCalledTimes(1);
   });
 });

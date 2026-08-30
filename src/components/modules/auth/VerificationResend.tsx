@@ -17,9 +17,19 @@ type VerificationResendProps = {
   pendingLabel: string;
   successMessage: string;
   errorMessage: string;
+  /**
+   * Anti-spam cooldown refusal copy. A template containing a literal `{seconds}` placeholder,
+   * replaced with the seconds the server reported remaining. Passed as a plain string (not a
+   * function) because this component's callers are Server Components, and only serializable
+   * values can cross that boundary as props.
+   */
+  cooldownMessage: string;
   shownEvent?: string;
-  onResult?: (result: "success" | "error") => void;
+  /** `message` is the exact feedback text this component would have shown itself. */
+  onResult?: (result: "success" | "error", message: string) => void;
 };
+
+type VerificationResendFeedback = { tone: "success" | "error"; message: string };
 
 export default function VerificationResend({
   locale,
@@ -30,11 +40,12 @@ export default function VerificationResend({
   pendingLabel,
   successMessage,
   errorMessage,
+  cooldownMessage,
   shownEvent,
   onResult,
 }: VerificationResendProps) {
   const [isPending, setIsPending] = useState(false);
-  const [feedback, setFeedback] = useState<"success" | "error" | null>(null);
+  const [feedback, setFeedback] = useState<VerificationResendFeedback | null>(null);
 
   useEffect(() => {
     if (!shownEvent) {
@@ -52,33 +63,37 @@ export default function VerificationResend({
       const response = await resendVerificationEmail({ locale, returnTo });
 
       if (!response.success) {
-        setFeedback("error");
-        onResult?.("error");
+        const message =
+          response.reason === "cooldown"
+            ? cooldownMessage.replace("{seconds}", String(response.retryAfterSeconds))
+            : errorMessage;
+        setFeedback({ tone: "error", message });
+        onResult?.("error", message);
         posthog.capture(POSTHOG_EVENTS.AUTH.VERIFY_EMAIL_FAILED, { locale, reason: response.reason });
         return;
       }
 
-      setFeedback("success");
-      onResult?.("success");
+      setFeedback({ tone: "success", message: successMessage });
+      onResult?.("success", successMessage);
       posthog.capture(POSTHOG_EVENTS.AUTH.VERIFY_EMAIL_SENT, { locale, source: "manual_resend" });
     } catch (error) {
-      setFeedback("error");
-      onResult?.("error");
+      setFeedback({ tone: "error", message: errorMessage });
+      onResult?.("error", errorMessage);
       Sentry.captureException(error);
       posthog.capture(POSTHOG_EVENTS.AUTH.VERIFY_EMAIL_FAILED, { locale, reason: "network_error" });
     } finally {
       setIsPending(false);
     }
-  }, [locale, onResult, returnTo]);
+  }, [cooldownMessage, errorMessage, locale, onResult, returnTo, successMessage]);
 
   const feedbackNode =
-    feedback === "success" ? (
+    feedback?.tone === "success" ? (
       <Typography size="xs" className="text-text-body" role="status" aria-live="polite">
-        {successMessage}
+        {feedback.message}
       </Typography>
-    ) : feedback === "error" ? (
+    ) : feedback?.tone === "error" ? (
       <Typography size="xs" className="text-destructive" role="alert">
-        {errorMessage}
+        {feedback.message}
       </Typography>
     ) : null;
 
