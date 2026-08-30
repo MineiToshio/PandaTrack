@@ -50,16 +50,25 @@ export function useOrderItemPaidDeclaration({
     const target = !previous;
     setDeclared(target);
     startTransition(async () => {
-      const result = await setOrderItemPaidDeclaredAction(orderId, itemId, target);
-      if (result.ok) {
-        // Not a refetch to update this control: the chip already flipped locally. It is what keeps
-        // the server-rendered siblings that COUNT marks honest, above all the order detail's
-        // "marcados: N de M" line and the warning that hangs off it, which live in another tree.
-        router.refresh();
-        return;
+      try {
+        const result = await setOrderItemPaidDeclaredAction(orderId, itemId, target);
+        if (result.ok) {
+          // Not a refetch to update this control: the chip already flipped locally. It is what keeps
+          // the server-rendered siblings that COUNT marks honest, above all the order detail's
+          // "marcados: N de M" line and the warning that hangs off it, which live in another tree.
+          router.refresh();
+          return;
+        }
+        setDeclared(previous);
+        onError(result.error === "ITEM_NOT_FOUND" ? "ITEM_NOT_FOUND" : "other");
+      } catch {
+        // A rejected Server Action call (a transport failure) is not a refusal the server described,
+        // it is no answer at all. Inside a transition an uncaught rejection re-throws during render
+        // and replaces the whole page with the (app)/error.tsx boundary, so it gets the exact same
+        // treatment as `result.ok === false` above instead of escaping the transition.
+        setDeclared(previous);
+        onError("other");
       }
-      setDeclared(previous);
-      onError(result.error === "ITEM_NOT_FOUND" ? "ITEM_NOT_FOUND" : "other");
     });
   };
 
