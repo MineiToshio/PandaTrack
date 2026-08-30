@@ -1,11 +1,11 @@
 import { POSTHOG_EVENTS } from "@/lib/constants";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { getSessionMock, createDeliveryMock, posthogCaptureMock, userFindUniqueMock } = vi.hoisted(() => ({
+const { getSessionMock, createDeliveryMock, posthogCaptureMock, getUserCurrencyContextMock } = vi.hoisted(() => ({
   getSessionMock: vi.fn(),
   createDeliveryMock: vi.fn(),
   posthogCaptureMock: vi.fn(),
-  userFindUniqueMock: vi.fn(),
+  getUserCurrencyContextMock: vi.fn(),
 }));
 
 // Cache revalidation is a Next request-scoped API; the unit under test only needs it to be
@@ -20,8 +20,8 @@ vi.mock("@/lib/data/deliveries/deliveryMutations", () => ({
   createDelivery: createDeliveryMock,
 }));
 
-vi.mock("@/lib/prisma", () => ({
-  prisma: { user: { findUnique: userFindUniqueMock } },
+vi.mock("@/lib/data/user-settings/userSettingsQueries", () => ({
+  getUserCurrencyContext: getUserCurrencyContextMock,
 }));
 
 vi.mock("@/lib/analytics/posthog-server", () => ({
@@ -29,8 +29,7 @@ vi.mock("@/lib/analytics/posthog-server", () => ({
 }));
 
 vi.mock("@sentry/nextjs", () => ({
-  withScope: (callback: (scope: unknown) => void) =>
-    callback({ setTag: vi.fn(), setContext: vi.fn() }),
+  withScope: (callback: (scope: unknown) => void) => callback({ setTag: vi.fn(), setContext: vi.fn() }),
   captureException: vi.fn(),
 }));
 
@@ -56,7 +55,7 @@ function buildFormData(overrides: Record<string, string> = {}): FormData {
 describe("createDeliveryAction", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    userFindUniqueMock.mockResolvedValue({ baseCurrencyCode: "USD" });
+    getUserCurrencyContextMock.mockResolvedValue({ baseCurrencyCode: "USD" });
   });
 
   it("rejects when there is no session", async () => {
@@ -94,7 +93,7 @@ describe("createDeliveryAction", () => {
 
   it("requires an exchange rate when the currency differs from the user's base currency", async () => {
     getSessionMock.mockResolvedValue(AUTHENTICATED_SESSION);
-    userFindUniqueMock.mockResolvedValue({ baseCurrencyCode: "USD" });
+    getUserCurrencyContextMock.mockResolvedValue({ baseCurrencyCode: "USD" });
 
     const result = await createDeliveryAction(null, buildFormData({ currencyCode: "EUR" }));
 

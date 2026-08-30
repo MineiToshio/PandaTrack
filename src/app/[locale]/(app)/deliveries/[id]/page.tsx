@@ -5,7 +5,7 @@ import { getSession } from "@/lib/auth/auth-server";
 import { getDeliveryDetail } from "@/lib/data/deliveries/deliveryQueries";
 import { getTodayStart } from "@/lib/data/dashboard/dashboardPeriods";
 import { safeRelativeReturnTo } from "@/lib/navigation/safeRelativeReturnTo";
-import { prisma } from "@/lib/prisma";
+import { getUserCurrencyContext } from "@/lib/data/user-settings/userSettingsQueries";
 import DeliveryDetailContent from "./_components/DeliveryDetailContent";
 
 type DeliveryDetailPageProps = {
@@ -37,7 +37,7 @@ export default async function DeliveryDetailPage({ params, searchParams }: Deliv
     // `timezone` rides along with the currency the page already reads: the hero's lateness and
     // window countdown compare against midnight-UTC domain dates, so they need the collector's
     // civil day rather than a wall-clock instant.
-    prisma.user.findUnique({ where: { id: userId }, select: { baseCurrencyCode: true, timezone: true } }),
+    getUserCurrencyContext(userId),
   ]);
 
   if (!delivery) notFound();

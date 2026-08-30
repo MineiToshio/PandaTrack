@@ -4,8 +4,11 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { buildPageMetadata } from "@/lib/seo";
 import { getSession } from "@/lib/auth/auth-server";
-import { prisma } from "@/lib/prisma";
-import { getDeliveriesList, getDeliveryStoreOptions } from "@/lib/data/deliveries/deliveryQueries";
+import {
+  getDeliveriesList,
+  getDeliveryHeadingCounts,
+  getDeliveryStoreOptions,
+} from "@/lib/data/deliveries/deliveryQueries";
 import { getCollectorPreferencesSnapshot } from "@/lib/data/user-settings/userSettingsQueries";
 import { getTodayStart } from "@/lib/data/dashboard/dashboardPeriods";
 import { domainDateToIsoString } from "@/lib/domainDate";
@@ -230,14 +233,13 @@ export default async function DeliveriesPage({ params, searchParams }: Deliverie
 
 /** Global delivery counts for the heading meta. Suspended (Sergio: the counter is a skeleton). */
 async function DeliveriesHeadingCount({ locale, userId }: { locale: string; userId: string }) {
-  const [t, inTransitCount, deliveredCount] = await Promise.all([
+  const [t, counts] = await Promise.all([
     getTranslations({ locale, namespace: "deliveries" }),
-    prisma.delivery.count({ where: { userId, status: "IN_TRANSIT" } }),
-    prisma.delivery.count({ where: { userId, status: "DELIVERED" } }),
+    getDeliveryHeadingCounts(userId),
   ]);
   return (
     <span className="[font-size:var(--text-caption)] [color:var(--text-muted)] tabular-nums">
-      {t("list.heading.meta", { inTransit: inTransitCount, delivered: deliveredCount })}
+      {t("list.heading.meta", { inTransit: counts.inTransitCount, delivered: counts.deliveredCount })}
     </span>
   );
 }

@@ -8,7 +8,7 @@ import { POSTHOG_EVENTS } from "@/lib/constants";
 import { editDelivery } from "@/lib/data/deliveries/deliveryMutations";
 import { deliveryEditSchema } from "@/lib/deliveries/deliveryValidation";
 import { parseDecimalToMinorUnits } from "@/lib/money/parseDecimalToMinorUnits";
-import { prisma } from "@/lib/prisma";
+import { getUserCurrencyContext } from "@/lib/data/user-settings/userSettingsQueries";
 import type { DeliveryCreateActionResult } from "../../../new/_actions/createDeliveryAction";
 import { revalidateCollectionSurfaces } from "@/lib/cache/revalidateCollectionSurfaces";
 
@@ -37,7 +37,7 @@ export async function editDeliveryAction(
   const exchangeRateRaw = formData.get("exchangeRate");
   const currencyCodeRaw = formData.get("currencyCode");
   const currencyCode = typeof currencyCodeRaw === "string" ? currencyCodeRaw : undefined;
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: { baseCurrencyCode: true } });
+  const user = await getUserCurrencyContext(userId);
   const exchangeRate =
     typeof exchangeRateRaw === "string" && exchangeRateRaw.trim() !== "" ? parseFloat(exchangeRateRaw) : null;
 

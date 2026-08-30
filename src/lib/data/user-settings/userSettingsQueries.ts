@@ -16,6 +16,11 @@ export type AppShellUserIdentitySnapshot = {
   image: string | null;
 };
 
+export type UserCurrencyContext = {
+  baseCurrencyCode: string | null;
+  timezone: string | null;
+};
+
 export type SettingsPageSnapshot = {
   email: string;
   emailVerified: boolean;
@@ -54,6 +59,29 @@ export async function getAppShellUserIdentity(userId: string): Promise<AppShellU
     username: row.username,
     name: row.name,
     image: row.image,
+  };
+}
+
+/**
+ * Loads the currency + timezone pair pages need to render money and civil-day comparisons
+ * (order/delivery create, detail, and edit pages, plus the delivery create/edit Server Actions).
+ * Kept as one query so callers that only need `baseCurrencyCode` and callers that also need
+ * `timezone` share a single data-layer function instead of nine inline `prisma.user.findUnique`
+ * calls with slightly different selects.
+ */
+export async function getUserCurrencyContext(userId: string): Promise<UserCurrencyContext | null> {
+  const row = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { baseCurrencyCode: true, timezone: true },
+  });
+
+  if (!row) {
+    return null;
+  }
+
+  return {
+    baseCurrencyCode: row.baseCurrencyCode,
+    timezone: row.timezone,
   };
 }
 
