@@ -6,7 +6,7 @@
     "dev": "next dev -p 7100",
     "dev:lan": "next dev -H 0.0.0.0 -p 7100",
     "build": "prisma generate && prisma migrate deploy && next build",
-    "validate-build": "prisma generate && next build --webpack",
+    "validate-build": "prisma generate && rm -rf .next && next build --webpack",
     "start": "next start",
     "test": "vitest run",
     "test:watch": "vitest",
