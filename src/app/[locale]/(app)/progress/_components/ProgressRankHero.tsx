@@ -45,37 +45,42 @@ export default function ProgressRankHero({ summary, rankName, rankLore, copy }: 
         band="current"
         size="lg"
         label={copy.emblemLabel}
-        className="order-1 sm:[--rank-emblem-size:148px]"
+        className="sm:[--rank-emblem-size:148px]"
       />
 
-      <div className="order-3 flex min-w-0 flex-1 flex-col gap-[var(--space-2)] sm:order-2">
-        <Eyebrow as="p">{copy.eyebrow}</Eyebrow>
-        <h2 className="text-text-title m-0 [font-family:var(--font-display)] [font-size:var(--text-title)] [line-height:var(--text-title--line-height)] [font-weight:var(--font-weight-title)] [letter-spacing:var(--text-title--letter-spacing)]">
-          {rankName}
-        </h2>
-        <p className="text-text-secondary m-0 [font-size:var(--text-body)]">{rankLore}</p>
+      <div className="flex min-w-0 flex-1 flex-col items-center gap-[var(--space-4)] sm:items-stretch">
+        <div className="flex flex-col items-center gap-[var(--space-4)] sm:flex-row sm:items-center sm:justify-between sm:gap-[var(--space-6)]">
+          <div className="order-2 flex min-w-0 flex-col gap-[var(--space-2)] sm:order-1">
+            <Eyebrow as="p">{copy.eyebrow}</Eyebrow>
+            <h2 className="text-text-title m-0 [font-family:var(--font-display)] [font-size:var(--text-title)] [line-height:var(--text-title--line-height)] [font-weight:var(--font-weight-title)] [letter-spacing:var(--text-title--letter-spacing)]">
+              {rankName}
+            </h2>
+            <p className="text-text-secondary m-0 [font-size:var(--text-body)]">{rankLore}</p>
+          </div>
 
-        <div className="mt-[var(--space-2)] flex flex-col gap-[var(--space-2)]">
+          {/* First on the phone, beside the title on the wider viewport. Stacked, the points figure
+              is what the collector came for, and leaving it in source order buried it under the
+              lore. It sits above the bar, not beside it, so the bar keeps the hero's full width. */}
+          <div className="order-1 flex shrink-0 flex-col items-center gap-[var(--space-2)] sm:order-2 sm:items-end">
+            <p className="m-0 flex flex-col items-center sm:items-end">
+              <span className="text-text-title [font-family:var(--font-mono)] [font-size:var(--text-display)] [line-height:1] [font-weight:var(--font-weight-display)]">
+                {/* Grouped with `"en"` like the dashboard's own figure, so the same total reads the
+                    same way on both surfaces. */}
+                {summary.totalPoints.toLocaleString("en")}
+              </span>
+              <span className="text-text-muted [font-size:var(--text-caption)]">{copy.pointsCaption}</span>
+            </p>
+            {summary.pointsThisMonth > 0 && <Chip variant="success">{copy.monthChip}</Chip>}
+          </div>
+        </div>
+
+        <div className="flex w-full flex-col gap-[var(--space-2)]">
           <ProgressBar value={summary.nextRankProgressPercent} label={copy.barLabel} valueText={copy.barValue} />
           <p className="text-text-muted m-0 flex flex-wrap justify-center gap-x-[var(--space-3)] gap-y-[var(--space-1)] [font-size:var(--text-caption)] sm:justify-between">
             <span className="[font-family:var(--font-mono)]">{copy.barNote}</span>
             <span>{summary.nextRank ? copy.toNextRank : copy.atTop}</span>
           </p>
         </div>
-      </div>
-
-      {/* Second on the phone, last on the wider viewport. Stacked, the points figure is what the
-          collector came for, and leaving it in source order buried it under the lore and the bar. */}
-      <div className="order-2 flex shrink-0 flex-col items-center gap-[var(--space-2)] sm:order-3 sm:items-end">
-        <p className="m-0 flex flex-col items-center sm:items-end">
-          <span className="text-text-title [font-family:var(--font-mono)] [font-size:var(--text-display)] [line-height:1] [font-weight:var(--font-weight-display)]">
-            {/* Grouped with `"en"` like the dashboard's own figure, so the same total reads the
-                same way on both surfaces. */}
-            {summary.totalPoints.toLocaleString("en")}
-          </span>
-          <span className="text-text-muted [font-size:var(--text-caption)]">{copy.pointsCaption}</span>
-        </p>
-        {summary.pointsThisMonth > 0 && <Chip variant="success">{copy.monthChip}</Chip>}
       </div>
     </Card>
   );

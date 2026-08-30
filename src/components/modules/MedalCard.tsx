@@ -98,8 +98,9 @@ export default function MedalCard({
       </p>
 
       {/* `mt-auto` so the foot sits on the floor of the card. In a grid row whose cards differ by a
-          line or two of hint, an unanchored foot leaves every chip at a different height. */}
-      <div className="mt-auto flex flex-wrap items-center justify-center gap-[var(--space-2)] pt-[var(--space-3)]">
+          line or two of hint, an unanchored foot leaves every chip at a different height. Chip and
+          date stack in a column so every card foots the same way regardless of chip width. */}
+      <div className="mt-auto flex flex-col items-center gap-[var(--space-2)] pt-[var(--space-3)]">
         <RarityChip grade={grade} label={rarityLabel} />
         {unlockedOn && (
           <span className="text-text-muted [font-family:var(--font-mono)] [font-size:var(--text-mono)]">
