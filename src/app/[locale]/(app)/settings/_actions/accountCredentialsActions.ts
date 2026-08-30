@@ -172,11 +172,15 @@ export async function submitChangePasswordAction(input: ChangePasswordFormInput)
   const requestHeaders = await headers();
 
   try {
+    // `revokeOtherSessions: true` signs out every session but the caller's: better-auth
+    // deletes all sessions for the user, then immediately creates a fresh session and sets
+    // its cookie for this request, so the collector who just changed the password stays
+    // signed in while a session an attacker may be holding is invalidated.
     await auth.api.changePassword({
       body: {
         currentPassword: parsed.data.currentPassword,
         newPassword: parsed.data.newPassword,
-        revokeOtherSessions: false,
+        revokeOtherSessions: true,
       },
       headers: requestHeaders,
     });

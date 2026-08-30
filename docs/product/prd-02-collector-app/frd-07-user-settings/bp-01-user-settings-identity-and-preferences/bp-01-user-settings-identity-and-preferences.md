@@ -94,7 +94,7 @@ Describe the technical layer that powers profile editing, account-management con
   - output: allowed action set and any verification lifecycle restart
   - email change requires: manual current-password validation in server action before persisting the new email; rate-limit check (1 per 7 days per user); transactional update of `User.email`, `emailVerified: false`, `unverifiedGraceStartsAt` (restart 7-day grace), and credential `Account.accountId`; informational Resend notification to old address; verification link to new address via `auth.api.sendVerificationEmail`
   - password setup for Google-only users uses `auth.api.setPassword` (server-only); creates a new `Account` row with `providerId: "credential"` without requiring a current password
-  - password change for credential-bearing users uses `auth.api.changePassword` with `revokeOtherSessions: false`
+  - password change for credential-bearing users uses `auth.api.changePassword` with `revokeOtherSessions: true`; this revokes every other session for the account while the caller keeps a fresh session, since Better Auth issues a new session and sets its cookie atomically as part of the same call
   - settings password UIs reuse the shared password input (show/hide toggle) and perform client-side empty-field validation before server actions; field layout and confirm-field policy are specified in [`WO-04`](work-orders/wo-04-account-credentials-and-email-management.md)
   - active session is not revoked after an email change; `User.email` updates immediately and `emailVerified` is false until the user clicks the verification link; the app shell banner uses the same credential grace flow as other unverified email/password accounts
 - Account-capability contract:
