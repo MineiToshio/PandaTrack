@@ -147,76 +147,85 @@ export function useQuickArrival({ orderId, locale, source, sourceList }: UseQuic
 
   const submit = useCallback(
     (input: QuickArrivalSubmitInput) => {
-      void quickArrivalAction({ orderId, ...input }).then((result) => {
-        if (!result.ok) {
-          const key = `detail.quickArrival.error.${result.error}` as const;
-          addToast(t.has(key as never) ? t(key as never) : t("detail.quickArrival.error.server_error"), {
-            variant: "error",
-          });
-          return;
-        }
+      void quickArrivalAction({ orderId, ...input }).then(
+        (result) => {
+          if (!result.ok) {
+            const key = `detail.quickArrival.error.${result.error}` as const;
+            addToast(t.has(key as never) ? t(key as never) : t("detail.quickArrival.error.server_error"), {
+              variant: "error",
+            });
+            return;
+          }
 
-        // MAJOR F7, 2026-08-20 review: "refused" is a genuine business refusal (never transient),
-        // so it gets a dismissable notice instead of a persisted Retry entry. Only "pending" (the
-        // money transaction threw, a genuinely transient failure) still gets the Retry banner.
-        const refusedOutcome = result.moneyOutcomes.find((outcome) => outcome.status === "refused");
-        const needsRetry = result.moneyOutcomes.some((outcome) => outcome.status === "pending");
+          // MAJOR F7, 2026-08-20 review: "refused" is a genuine business refusal (never transient),
+          // so it gets a dismissable notice instead of a persisted Retry entry. Only "pending" (the
+          // money transaction threw, a genuinely transient failure) still gets the Retry banner.
+          const refusedOutcome = result.moneyOutcomes.find((outcome) => outcome.status === "refused");
+          const needsRetry = result.moneyOutcomes.some((outcome) => outcome.status === "pending");
 
-        // The arrival itself is committed on every branch below, refusals of the MONEY step
-        // included, so each of them announces what it credited after raising its own toast. Only
-        // one branch ever runs, so the collector sees the announcement exactly once.
-        if (refusedOutcome) {
-          const key = `error.${refusedOutcome.error}` as const;
-          addToast(tPayment.has(key as never) ? tPayment(key as never) : tPayment("error.server_error"), {
-            variant: "error",
-          });
+          // The arrival itself is committed on every branch below, refusals of the MONEY step
+          // included, so each of them announces what it credited after raising its own toast. Only
+          // one branch ever runs, so the collector sees the announcement exactly once.
+          if (refusedOutcome) {
+            const key = `error.${refusedOutcome.error}` as const;
+            addToast(tPayment.has(key as never) ? tPayment(key as never) : tPayment("error.server_error"), {
+              variant: "error",
+            });
+            announceProgression(result.progression);
+            router.refresh();
+            return;
+          }
+
+          if (needsRetry && input.settleRemainder) {
+            const entry: PendingSettlementEntry = {
+              deliveryId: result.deliveryId,
+              settleRemainder: input.settleRemainder,
+              // MAJOR F5, 2026-08-20 review: `input.settlementDate`/`input.receivedDate` are already
+              // domain dates (UTC midnight, `toDomainDate`-normalized by `QuickArrivalModal` before
+              // they ever reach this handler). `domainDateToIsoString` reads that UTC calendar day
+              // directly; the old `toLocalIsoDateString` used local getters, which shifts the day
+              // backward for a collector whose timezone sits west of UTC (e.g. `America/Lima`).
+              settlementDate: domainDateToIsoString(input.settlementDate ?? input.receivedDate) ?? "",
+              settlementIntents: input.settlementIntents ?? [],
+              createdAt: new Date().toISOString(),
+            };
+            writePendingSettlement(entry);
+            addToast(t("detail.quickArrival.toast.success", { count: input.productIds.length }), {
+              variant: "success",
+              action: {
+                label: t("detail.quickArrival.settlement.retry"),
+                onClick: () => retryPending(result.deliveryId, entry),
+              },
+            });
+            announceProgression(result.progression);
+            router.refresh();
+            return;
+          }
+
+          const settledLabel = formatSettledTotals(result.moneyOutcomes, locale);
+          addToast(
+            settledLabel
+              ? t("detail.quickArrival.settlement.confirmation", { amount: settledLabel })
+              : t("detail.quickArrival.toast.success", { count: input.productIds.length }),
+            {
+              variant: "success",
+              action: {
+                label: t("detail.quickArrival.toast.viewDelivery"),
+                onClick: () => router.push(`/${locale}${ROUTES.deliveries}/${result.deliveryId}`),
+              },
+            },
+          );
           announceProgression(result.progression);
           router.refresh();
-          return;
-        }
-
-        if (needsRetry && input.settleRemainder) {
-          const entry: PendingSettlementEntry = {
-            deliveryId: result.deliveryId,
-            settleRemainder: input.settleRemainder,
-            // MAJOR F5, 2026-08-20 review: `input.settlementDate`/`input.receivedDate` are already
-            // domain dates (UTC midnight, `toDomainDate`-normalized by `QuickArrivalModal` before
-            // they ever reach this handler). `domainDateToIsoString` reads that UTC calendar day
-            // directly; the old `toLocalIsoDateString` used local getters, which shifts the day
-            // backward for a collector whose timezone sits west of UTC (e.g. `America/Lima`).
-            settlementDate: domainDateToIsoString(input.settlementDate ?? input.receivedDate) ?? "",
-            settlementIntents: input.settlementIntents ?? [],
-            createdAt: new Date().toISOString(),
-          };
-          writePendingSettlement(entry);
-          addToast(t("detail.quickArrival.toast.success", { count: input.productIds.length }), {
-            variant: "success",
-            action: {
-              label: t("detail.quickArrival.settlement.retry"),
-              onClick: () => retryPending(result.deliveryId, entry),
-            },
-          });
-          announceProgression(result.progression);
-          router.refresh();
-          return;
-        }
-
-        const settledLabel = formatSettledTotals(result.moneyOutcomes, locale);
-        addToast(
-          settledLabel
-            ? t("detail.quickArrival.settlement.confirmation", { amount: settledLabel })
-            : t("detail.quickArrival.toast.success", { count: input.productIds.length }),
-          {
-            variant: "success",
-            action: {
-              label: t("detail.quickArrival.toast.viewDelivery"),
-              onClick: () => router.push(`/${locale}${ROUTES.deliveries}/${result.deliveryId}`),
-            },
-          },
-        );
-        announceProgression(result.progression);
-        router.refresh();
-      });
+        },
+        () => {
+          // Same treatment as `retryPending` above (MAJOR, 2026-08-21 review): a REJECTED promise here
+          // is not a refusal the server described, it is no answer at all. Deliberately the SECOND
+          // argument of `then`, never a chained `.catch`, which would also swallow whatever the success
+          // handler above throws.
+          addToast(t("detail.quickArrival.error.server_error"), { variant: "error" });
+        },
+      );
     },
     [addToast, announceProgression, locale, orderId, retryPending, router, t, tPayment],
   );
