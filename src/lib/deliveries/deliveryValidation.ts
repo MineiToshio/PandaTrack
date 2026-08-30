@@ -332,7 +332,7 @@ export const undoReopenSchema = z
     deliveryId: z.string().cuid({ message: "INVALID_DELIVERY_ID" }),
     previousStatus: z.enum(["DELIVERED", "CANCELLED"]),
     receivedDate: domainDateSchema.refine((d) => d <= new Date(), { message: "RECEIVED_DATE_IN_FUTURE" }).nullable(),
-    snapshot: z.array(restoreSettlementPaymentSchema),
+    snapshot: z.array(restoreSettlementPaymentSchema).max(MAX_SETTLEMENT_ORDERS),
   })
   .superRefine((data, ctx) => {
     if (data.previousStatus === "DELIVERED" && data.receivedDate === null) {
