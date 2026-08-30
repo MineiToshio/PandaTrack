@@ -2,6 +2,7 @@ import "server-only";
 
 import { DeleteObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { CLOUDFLARE_ASSET_ROUTES } from "@/lib/constants";
+import { createR2RequestHandler } from "@/lib/r2RequestHandler";
 import { AVATAR_OUTPUT_CONTENT_TYPE } from "@/lib/user/avatarShared";
 
 type AssetStorageConfig = {
@@ -47,6 +48,7 @@ function getAssetStorageClient(): { client: S3Client; config: AssetStorageConfig
         accessKeyId: config.accessKeyId,
         secretAccessKey: config.secretAccessKey,
       },
+      requestHandler: createR2RequestHandler(),
     });
   }
 
