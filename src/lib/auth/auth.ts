@@ -125,26 +125,39 @@ export const auth = betterAuth({
       }
     },
     sendVerificationEmail: async ({ user, token, url }, request) => {
-      const rawVerificationUrl = new URL(url);
-      const originalCallbackURL = rawVerificationUrl.searchParams.get("callbackURL");
-      const callbackPathname = originalCallbackURL
-        ? new URL(originalCallbackURL, "https://pandatrack.local").pathname
-        : null;
-      const locale = callbackPathname ? (getLocaleSegment(callbackPathname) ?? "es") : "es";
-      const verificationPath = buildVerificationConfirmHref(locale, token, originalCallbackURL);
-      const verificationUrl = new URL(verificationPath, getAppBaseUrl()).toString();
+      try {
+        const rawVerificationUrl = new URL(url);
+        const originalCallbackURL = rawVerificationUrl.searchParams.get("callbackURL");
+        const callbackPathname = originalCallbackURL
+          ? new URL(originalCallbackURL, "https://pandatrack.local").pathname
+          : null;
+        const locale = callbackPathname ? (getLocaleSegment(callbackPathname) ?? "es") : "es";
+        const verificationPath = buildVerificationConfirmHref(locale, token, originalCallbackURL);
+        const verificationUrl = new URL(verificationPath, getAppBaseUrl()).toString();
 
-      const emailContent = await buildAuthVerificationEmail({
-        verificationUrl,
-        request,
-      });
+        const emailContent = await buildAuthVerificationEmail({
+          verificationUrl,
+          request,
+        });
 
-      await sendEmailWithResend({
-        to: user.email,
-        subject: emailContent.subject,
-        text: emailContent.text,
-        html: emailContent.html,
-      });
+        await sendEmailWithResend({
+          to: user.email,
+          subject: emailContent.subject,
+          text: emailContent.text,
+          html: emailContent.html,
+        });
+      } catch (error) {
+        // better-auth runs this callback through `runInBackgroundOrAwait`, which only logs a
+        // caught exception (`logger.error`) and swallows it otherwise, so a Resend outage on
+        // signup would never reach Sentry without this. Never rethrown: a collector who cannot
+        // receive the verification email can still resend it later, and an unhandled rejection
+        // here must not turn a delivery failure into a broken sign-up.
+        Sentry.withScope((scope) => {
+          scope.setTag("feature", "auth");
+          scope.setTag("auth_flow", "signup_verification");
+          Sentry.captureException(error);
+        });
+      }
     },
   },
   socialProviders: {
