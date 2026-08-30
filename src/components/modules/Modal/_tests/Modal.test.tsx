@@ -3,6 +3,13 @@ import { describe, expect, it, vi } from "vitest";
 import { AlertTriangle } from "lucide-react";
 import Modal from "@/components/modules/Modal/Modal";
 
+// ModalHeader resolves the close button's accessible name via useTranslations("common") when
+// callers do not pass an explicit closeButtonLabel; these tests exercise other Modal behavior, so
+// the stub returns the key unchanged.
+vi.mock("next-intl", () => ({
+  useTranslations: () => (key: string) => key,
+}));
+
 describe("Modal — open state", () => {
   it("renders title when open", () => {
     render(

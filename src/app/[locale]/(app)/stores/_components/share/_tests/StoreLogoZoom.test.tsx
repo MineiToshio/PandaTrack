@@ -11,6 +11,13 @@ vi.mock("posthog-js", () => ({ default: { capture: captureMock } }));
 // assertions on one branch. Both branches share the same public contract.
 vi.mock("@/hooks/useIsMobile", () => ({ useIsMobile: () => false }));
 
+// ModalHeader resolves the close button's accessible name via useTranslations("common") when the
+// caller does not pass an explicit closeButtonLabel; this test exercises the zoom trigger/dialog
+// contract, so the stub returns the key unchanged.
+vi.mock("next-intl", () => ({
+  useTranslations: () => (key: string) => key,
+}));
+
 const OPEN_LABEL = "Ver el logo de Akabane más grande";
 
 function renderZoom() {

@@ -40,7 +40,7 @@ export default function ModalSheet({
   bodyClassName,
   titleId: titleIdProp,
   descriptionId: descriptionIdProp,
-  closeButtonLabel = "Close",
+  closeButtonLabel,
 }: ModalProps) {
   const generatedTitleId = useId();
   const generatedDescriptionId = useId();
