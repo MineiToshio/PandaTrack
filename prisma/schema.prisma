@@ -531,7 +531,10 @@ model Order {
   id                          String                       @id @default(cuid())
   storeId                     String
   userId                      String
-  humanReadableId             String                       @unique
+  /// Per-collector display code (`ORD-YYYYMMDD-NN`). The sequence is generated per user
+  /// (`generateOrderHumanReadableId`), so uniqueness is scoped by `userId`: two collectors may
+  /// both own `ORD-20260830-01`, and a global unique here would make one of them fail to create.
+  humanReadableId             String
   orderDate                   DateTime
   expectedDeliveryFrom        DateTime?
   expectedDeliveryTo          DateTime?
@@ -570,6 +573,7 @@ model Order {
   storeAccountAdjustmentLines StoreAccountAdjustmentLine[]
   history                     OrderHistory[]
 
+  @@unique([userId, humanReadableId])
   @@index([storeId])
   @@index([userId])
   @@index([status])
@@ -776,7 +780,9 @@ model OrderHistory {
 
 model Delivery {
   id                   String              @id @default(cuid())
-  humanReadableId      String              @unique
+  /// Per-collector display code (`DLV-YYYYMMDD-NN`), generated per user like `Order.humanReadableId`;
+  /// uniqueness is scoped by `userId` for the same reason.
+  humanReadableId      String
   storeId              String
   userId               String
   status               DeliveryStatus      @default(IN_TRANSIT)
@@ -801,6 +807,7 @@ model Delivery {
   /// removed (`onDelete: SetNull` on the child field) — that money stays applied to its order.
   consumedAllocations  PaymentAllocation[]
 
+  @@unique([userId, humanReadableId])
   @@index([storeId])
   @@index([userId])
   @@index([status])
