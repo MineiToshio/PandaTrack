@@ -112,19 +112,22 @@ export default function StoreProductTypeRequestModal({
       return;
     }
 
+    // Optimistic Confirmation: close the modal synchronously on submit. Client-side validation
+    // already ran above, so a server rejection past this point is toast material, not an inline
+    // field error the user would never see behind a closed modal.
+    setIsOpen(false);
+    setSuggestedName("");
+    setReason("");
+    setFieldErrors({});
     setIsPending(true);
     const formData = new FormData(event.currentTarget);
     const result = await saveStoreProductTypeRequest(null, formData);
     setIsPending(false);
 
     if (result.success) {
-      setSuggestedName("");
-      setReason("");
-      setFieldErrors({});
       addToast(t("governance.productTypeRequest.success"), { variant: "success" });
-      setIsOpen(false);
     } else {
-      setFieldErrors(result.fieldErrors ?? {});
+      addToast(translateError(t, result.error), { variant: "error" });
     }
   };
 
