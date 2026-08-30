@@ -247,6 +247,31 @@ describe("recordConfirmedStoreMatch", () => {
     expect(storeContactChannelCreateMock.mock.calls[0]![0].data.storeId).toBe("store-2");
   });
 
+  it("maps a P2002 from the @@unique([storeId, type, value]) backstop to the same outcome as the app-level dedupe check", async () => {
+    // The dedupe check above reads existing channels before the write and should already make this
+    // unreachable under Serializable isolation, but the DB-level unique constraint is the backstop
+    // for whatever the fuzzy `alreadyRemembered` check does not catch. A caller must see the same
+    // benign "already-known" result either way, never a raw failure.
+    storeContactChannelCreateMock.mockRejectedValueOnce(
+      new Prisma.PrismaClientKnownRequestError("Unique constraint failed", {
+        code: "P2002",
+        clientVersion: "test",
+      }),
+    );
+
+    await expect(
+      recordConfirmedStoreMatch({ userId: "user-1", storeId: "store-1", phone: "+51 987 654 321" }),
+    ).resolves.toBe("already-known");
+  });
+
+  it("lets an unrelated error from the create propagate instead of swallowing it as already-known", async () => {
+    storeContactChannelCreateMock.mockRejectedValueOnce(new Error("connection reset"));
+
+    await expect(
+      recordConfirmedStoreMatch({ userId: "user-1", storeId: "store-1", phone: "+51 987 654 321" }),
+    ).rejects.toThrow("connection reset");
+  });
+
   it("serializes the read-decide-write sequence in a Serializable transaction, closing the TOCTOU race on the dedupe check, the anti-abuse cap, and the primary election", async () => {
     // Before this fix the relationship read, the dedupe check, the cap check, and the `isPrimary`
     // election all ran on one unguarded read before an unguarded `create`: two concurrent

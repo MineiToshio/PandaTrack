@@ -362,6 +362,7 @@ model StoreContactChannel {
   updatedAt       DateTime                @updatedAt
   store           Store                   @relation(fields: [storeId], references: [id], onDelete: Cascade)
 
+  @@unique([storeId, type, value])
   @@index([storeId])
   @@index([type])
   @@map("store_contact_channel")

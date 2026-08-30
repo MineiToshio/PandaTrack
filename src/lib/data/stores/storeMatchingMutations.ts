@@ -1,4 +1,4 @@
-import type { StoreStatus } from "../../../../generated/prisma/client";
+import { Prisma, type StoreStatus } from "../../../../generated/prisma/client";
 import { runSerializableTransaction } from "../serializableTransaction";
 import {
   findIntakeStoreRelation,
@@ -130,15 +130,32 @@ export async function recordConfirmedStoreMatch(input: {
     const learnedChannelCount = existingChannels.filter((channel) => !channel.isPublic).length;
     if (learnedChannelCount >= MAX_LEARNED_PHONE_CHANNELS_PER_STORE) return "limit-reached";
 
-    await tx.storeContactChannel.create({
-      data: {
-        storeId: input.storeId,
-        type: "PHONE",
-        value: digits,
-        isPrimary: relation === "creator" && existingChannels.length === 0,
-        isPublic: false,
-      },
-    });
-    return "recorded";
+    try {
+      await tx.storeContactChannel.create({
+        data: {
+          storeId: input.storeId,
+          type: "PHONE",
+          value: digits,
+          isPrimary: relation === "creator" && existingChannels.length === 0,
+          isPublic: false,
+        },
+      });
+      return "recorded";
+    } catch (error) {
+      // The `@@unique([storeId, type, value])` DB backstop is the last line of defense against a
+      // duplicate learned channel; the dedupe check above should already make it unreachable under
+      // Serializable isolation, but if it ever fires, the create wrote nothing (Postgres rejected
+      // the statement), so mapping straight to the outcome the dedupe check itself would have
+      // produced is safe: no write to roll back, and the caller sees the same benign "already-known"
+      // result instead of a raw failure.
+      if (isUniqueConstraintViolation(error)) return "already-known";
+      throw error;
+    }
   });
+}
+
+const UNIQUE_CONSTRAINT_ERROR_CODE = "P2002";
+
+function isUniqueConstraintViolation(error: unknown): boolean {
+  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === UNIQUE_CONSTRAINT_ERROR_CODE;
 }
