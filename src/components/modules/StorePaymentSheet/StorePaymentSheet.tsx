@@ -622,7 +622,9 @@ export default function StorePaymentSheet({
       size="lg"
       dismissible={!isSubmitting}
       initialFocusRef={amountRef}
-      bodyClassName={activePanel === "allocation" ? "flex min-h-0 flex-col overflow-y-hidden" : undefined}
+      // The allocation list is the one dense task this sheet hosts, so on a phone it takes nearly the
+      // whole screen instead of the default 78%: at 78% the list kept barely two rows in view.
+      className={activePanel === "allocation" ? "max-md:max-h-[92dvh]" : undefined}
       primaryAction={{
         label: isSubmitting ? t("allocations.submitPending") : t("submit"),
         onClick: () => void handleConfirm(),
@@ -638,11 +640,6 @@ export default function StorePaymentSheet({
           hasDroppedDraftLines,
       }}
       secondaryAction={{ label: t("cancel"), onClick: handleClose, disabled: isSubmitting }}
-      tertiaryAction={
-        activePanel === "allocation"
-          ? { label: t("allocations.back"), onClick: handleBackToPayment, disabled: isSubmitting }
-          : undefined
-      }
     >
       {submitErrorMessage && (
         <p
@@ -736,6 +733,7 @@ export default function StorePaymentSheet({
             onParkRemainder={handleParkRemainder}
             onUnpark={handleUnpark}
             onEditPayment={handleBackToPayment}
+            isSubmitting={isSubmitting}
             onEditDate={handleEditDate}
             revealRequest={revealRequest}
             onRevealHandled={handleRevealHandled}

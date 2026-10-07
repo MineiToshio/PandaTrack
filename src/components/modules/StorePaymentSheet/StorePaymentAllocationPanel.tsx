@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { PackageOpen } from "lucide-react";
+import { ArrowLeft, PackageOpen } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Button from "@/components/core/Button/Button";
 import SearchInput from "@/components/core/SearchInput";
@@ -58,8 +58,11 @@ export type StorePaymentAllocationPanelProps = {
   onParkRemainder: () => void;
   /** Undoes a park choice, so the collector can name the money after all. */
   onUnpark: () => void;
+  /** Back to the payment panel (amount, date, note). The panel's own "back" control. */
   onEditPayment: () => void;
   onEditDate: () => void;
+  /** A submission is in flight: navigating back would leave the request without its screen. */
+  isSubmitting?: boolean;
   /** Bumped token asking the panel to clear its filter and scroll one line into view. */
   revealRequest: AllocationRevealRequest | null;
   /** Reported once the request has been attempted against a `ready` list, so the parent retires it. */
@@ -112,6 +115,7 @@ export default function StorePaymentAllocationPanel({
   onUnpark,
   onEditPayment,
   onEditDate,
+  isSubmitting = false,
   revealRequest,
   onRevealHandled,
 }: StorePaymentAllocationPanelProps) {
@@ -337,13 +341,10 @@ export default function StorePaymentAllocationPanel({
           {Array.from({ length: 6 }, (_, index) => (
             <div
               key={index}
-              className="grid min-h-[52px] grid-cols-[1fr_96px] items-center gap-3 px-3 py-1.5 md:grid-cols-[1fr_120px_140px]"
+              className="grid min-h-14 grid-cols-[minmax(0,1fr)_96px] items-center gap-x-2 px-3 py-1.5 md:min-h-[52px] md:grid-cols-[minmax(0,1fr)_auto_140px] md:gap-x-3"
             >
-              <span className="flex flex-col gap-1.5">
-                <Skeleton variant="text" width="60%" height={12} />
-                <Skeleton variant="text" width="30%" height={10} />
-              </span>
-              <Skeleton className="hidden md:block" variant="text" height={12} />
+              <Skeleton variant="text" width="60%" height={12} />
+              <Skeleton className="hidden md:block" variant="text" width={48} height={12} />
               <Skeleton variant="rect" height={36} />
             </div>
           ))}
@@ -452,129 +453,143 @@ export default function StorePaymentAllocationPanel({
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      {/* Recap of what Panel A holds, so the collector never loses sight of the payment being split. */}
-      {/* `shrink-0` is load-bearing, not decoration. An explicit `min-h` on a flex item replaces the
-          automatic `min-height: auto` that would otherwise stop the item at its own content, so this
-          strip stays clamped at 36px once it WRAPS, which it does at 375px (its content needs ~339px
-          of the ~327px available). Measured in Chromium: `offsetHeight` 36 against a `scrollHeight`
-          of 55. The wrapped line then paints outside the box and the "Editar monto o fecha" button
-          covers the first line of the notice below it. `shrink-0` hands the strip its content height
-          back. At ≥768px it never wraps, so the 36px floor governs with or without this. */}
-      <div className="mb-3 flex min-h-[36px] shrink-0 flex-wrap items-center justify-between gap-2">
-        <p className="[font-size:12.5px] font-medium [color:var(--text-primary)] tabular-nums">
+    <div className="flex flex-col">
+      {/* The panel's own way back, at the top where a sub-view puts it, with the payment it is
+          splitting beside it. It used to be a footer action next to "Cancelar" and the CTA, which
+          on a phone squeezed three buttons into one row; and the recap carried a second button to
+          the same place, labelled as if it edited the allocation itself. */}
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onEditPayment}
+          disabled={isSubmitting}
+          leadingIcon={<ArrowLeft size={14} aria-hidden />}
+        >
+          {t("allocations.back")}
+        </Button>
+        <p className="[font-size:12.5px] [color:var(--text-secondary)] tabular-nums">
           {formatAmountWithSymbol(paymentAmountMinor, currencyCode || "USD", locale)}
           {paymentDate ? ` · ${formatDomainDate(paymentDate, locale)}` : ""}
         </p>
-        <Button variant="ghost" size="sm" onClick={onEditPayment}>
-          {t("allocations.recapEdit")}
-        </Button>
       </div>
 
       {status === "ready" && lines.length > 0 && paymentAmountMinor <= 0 && (
-        <p className="mb-2 [font-size:11.5px] leading-relaxed [color:var(--text-secondary)]">
+        <p className="mb-2 [font-size:12px] leading-relaxed [color:var(--text-secondary)]">
           {t("allocations.noAmountNotice")}
         </p>
       )}
 
-      {/* The payment-level twin of the notice above, and the visible half of what every fill button
-          of the list is saying at this moment. Without it, a fully assigned payment left the whole
-          list inert with the reason reachable only through each control's accessible description:
-          the collector sees dimmed buttons and no words. `unallocatedMinor` floors at 0, so this
-          covers landing exactly on the payment; going over is the destructive bar's business. */}
-      {status === "ready" &&
-        lines.length > 0 &&
-        paymentAmountMinor > 0 &&
-        !validation.allocationExceedsAmount &&
-        validation.unallocatedMinor === 0 && (
-          <p className="mb-2 [font-size:11.5px] leading-relaxed [color:var(--text-secondary)]">
-            {t("allocations.fillDisabledPayment")}
-          </p>
-        )}
-
       {validation.sumAllocatedMinor === 0 && status === "ready" && lines.length > 0 && paymentAmountMinor > 0 && (
-        <p className="mb-2 [font-size:11.5px] leading-relaxed [color:var(--text-muted)]">{t("allocations.hint")}</p>
+        <p className="mb-2 [font-size:12px] leading-relaxed [color:var(--text-muted)]">{t("allocations.hint")}</p>
       )}
 
-      {/* The announcement is a separate, debounced, text-only live region (below): this bar changes
-          on every keystroke and carries buttons, so making it live re-read the whole thing — labels
-          included — on each character typed. */}
-      {/* `shrink-0` for the same reason as the recap strip above, and this one clamps harder: at
-          375px its text plus "Ver" / "Limpiar" wrap to ~70px inside a 28px box. The 28px floor is
-          also below the 32px of a `size="sm"` button, so with a button present the bar sits at 32px
-          at every width now instead of letting it hang 2px out of each end. */}
-      <div className="mb-2 flex min-h-[28px] shrink-0 flex-wrap items-center justify-between gap-2 [font-size:12px]">
-        {validation.allocationExceedsAmount ? (
-          <span className="flex flex-wrap items-center gap-2 [color:var(--destructive)]">
-            <span className="tabular-nums">
-              {t("allocations.totalsOver", {
-                amount: formatAmountWithSymbol(overMinor, currencyCode || "USD", locale),
-              })}
-            </span>
-            {culpritKey && (
-              <span>{t("allocations.overCulprit", { name: labelByKey.get(culpritKey) ?? restLabel })}</span>
+      {/*
+        Everything the collector needs while typing deep into the list stays pinned: where the money
+        stands, the actions on the remainder, the filter, and the column labels. The rest of the
+        body (the recap and the hint above) scrolls away. The modal body is the scroll container, so
+        this bleeds over its 24px side padding to paint a solid band the rows pass under, and pins
+        16px above the body's content edge: sticky offsets are measured inside the scroller's
+        padding, so `top-0` left the body's own `pt-4` as a strip the rows showed through.
+      */}
+      <div className="sticky -top-4 z-[var(--z-sticky)] -mx-6 flex flex-col gap-2 px-6 pt-3 pb-2 [background:var(--surface-elevated)] [border-bottom:1px_solid_var(--border)]">
+        {/* The announcement is a separate, debounced, text-only live region (below): this bar
+            changes on every keystroke and carries buttons, so making it live re-read the whole
+            thing, labels included, on each character typed. */}
+        <div className="flex min-h-8 flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
+          {validation.allocationExceedsAmount ? (
+            <p className="flex min-w-[11rem] flex-1 flex-wrap items-center gap-x-2 [font-size:12.5px] [color:var(--destructive)]">
+              <span className="font-medium tabular-nums">
+                {t("allocations.totalsOver", {
+                  amount: formatAmountWithSymbol(overMinor, currencyCode || "USD", locale),
+                })}
+              </span>
+              {culpritKey && (
+                <span>{t("allocations.overCulprit", { name: labelByKey.get(culpritKey) ?? restLabel })}</span>
+              )}
+            </p>
+          ) : dateBlockedOrder ? (
+            <p className="min-w-[11rem] flex-1 [font-size:12.5px] [color:var(--destructive)]">
+              {t("allocations.dateBeforeOrderLine", { order: dateBlockedOrder.humanReadableId })}
+            </p>
+          ) : (
+            // The remainder leads because it is the figure the collector is working down; what is
+            // already assigned, out of how much, is its context.
+            <p className="flex min-w-[11rem] flex-1 flex-col tabular-nums">
+              <span className="[font-size:13px] font-medium [color:var(--text-primary)]">
+                {hasParkedMoney
+                  ? t("allocations.totalsParked", {
+                      amount: formatAmountWithSymbol(validation.parkedAmountMinor, currencyCode || "USD", locale),
+                    })
+                  : t("allocations.totalsUnassigned", {
+                      amount: formatAmountWithSymbol(validation.unallocatedMinor, currencyCode || "USD", locale),
+                    })}
+              </span>
+              <span className="[font-size:11.5px] [color:var(--text-muted)]">
+                {t("allocations.totalsAssigned", {
+                  assigned: formatAmountWithSymbol(validation.sumAllocatedMinor, currencyCode || "USD", locale),
+                  payment: formatAmountWithSymbol(paymentAmountMinor, currencyCode || "USD", locale),
+                })}
+              </span>
+            </p>
+          )}
+          {/* `ml-auto` keeps the actions right-aligned once the bar wraps them onto their own line,
+              which it does on a phone as soon as there are two of them: squeezing them beside the
+              figures broke "S/ 619.00" across lines instead. */}
+          <span className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-1">
+            {validation.allocationExceedsAmount && culpritKey && (
+              <Button variant="ghost" size="sm" onClick={() => revealLine(culpritKey)}>
+                {t("allocations.viewLine")}
+              </Button>
             )}
-          </span>
-        ) : dateBlockedOrder ? (
-          <span className="flex flex-wrap items-center gap-2 [color:var(--destructive)]">
-            <span>{t("allocations.dateBeforeOrderLine", { order: dateBlockedOrder.humanReadableId })}</span>
-            <Button variant="ghost" size="sm" onClick={onEditDate}>
-              {t("allocations.goToDate")}
-            </Button>
-          </span>
-        ) : (
-          <span className="[color:var(--text-secondary)] tabular-nums">
-            {t("allocations.totalsAssigned", {
-              assigned: formatAmountWithSymbol(validation.sumAllocatedMinor, currencyCode || "USD", locale),
-              payment: formatAmountWithSymbol(paymentAmountMinor, currencyCode || "USD", locale),
-            })}
-            {" · "}
-            {hasParkedMoney
-              ? t("allocations.totalsParked", {
-                  amount: formatAmountWithSymbol(validation.parkedAmountMinor, currencyCode || "USD", locale),
-                })
-              : t("allocations.totalsUnassigned", {
+            {dateBlockedOrder && !validation.allocationExceedsAmount && (
+              <Button variant="ghost" size="sm" onClick={onEditDate}>
+                {t("allocations.goToDate")}
+              </Button>
+            )}
+            {/* The explicit "no sé todavía" affordance (WO-09, `FR-05-58`/`FR-05-60`): choosing it
+                parks exactly the current remainder, on purpose, never a default. Lives next to the
+                remaining-amount figure it resolves, and flips to an undo once chosen so the
+                collector can still name the money after all. */}
+            {canParkRemainder && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onParkRemainder}
+                aria-label={t("allocations.parkRemainderAria", {
                   amount: formatAmountWithSymbol(validation.unallocatedMinor, currencyCode || "USD", locale),
                 })}
+              >
+                {t("allocations.parkRemainder")}
+              </Button>
+            )}
+            {hasParkedMoney && !validation.allocationExceedsAmount && !dateBlockedOrder && (
+              <Button variant="ghost" size="sm" onClick={onUnpark} aria-label={t("allocations.unparkAria")}>
+                {t("allocations.unpark")}
+              </Button>
+            )}
+            {validation.sumAllocatedMinor > 0 && (
+              <Button variant="ghost" size="sm" onClick={onClear} aria-label={t("allocations.clearAria")}>
+                {t("allocations.clear")}
+              </Button>
+            )}
           </span>
-        )}
-        <span className="flex shrink-0 items-center gap-1">
-          {validation.allocationExceedsAmount && culpritKey && (
-            <Button variant="ghost" size="sm" onClick={() => revealLine(culpritKey)}>
-              {t("allocations.viewLine")}
-            </Button>
-          )}
-          {/* The explicit "no sé todavía" affordance (WO-09, `FR-05-58`/`FR-05-60`): choosing it
-              parks exactly the current remainder, on purpose, never a default. Lives next to the
-              remaining-amount figure it resolves, and flips to an undo once chosen so the collector
-              can still name the money after all. */}
-          {canParkRemainder && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onParkRemainder}
-              aria-label={t("allocations.parkRemainderAria", {
-                amount: formatAmountWithSymbol(validation.unallocatedMinor, currencyCode || "USD", locale),
-              })}
-            >
-              {t("allocations.parkRemainder")}
-            </Button>
-          )}
-          {hasParkedMoney && !validation.allocationExceedsAmount && !dateBlockedOrder && (
-            <Button variant="ghost" size="sm" onClick={onUnpark} aria-label={t("allocations.unparkAria")}>
-              {t("allocations.unpark")}
-            </Button>
-          )}
-          {validation.sumAllocatedMinor > 0 && (
-            <Button variant="ghost" size="sm" onClick={onClear} aria-label={t("allocations.clearAria")}>
-              {t("allocations.clear")}
-            </Button>
-          )}
-        </span>
-      </div>
+        </div>
 
-      {showSearch && (
-        <div className="mb-2">
+        {/* The payment-level twin of the no-amount notice, and the visible half of what every fill
+            button of the list is saying at this moment. Without it, a fully assigned payment left
+            the whole list inert with the reason reachable only through each control's accessible
+            description. `unallocatedMinor` floors at 0, so this covers landing exactly on the
+            payment; going over is the destructive line's business. */}
+        {status === "ready" &&
+          lines.length > 0 &&
+          paymentAmountMinor > 0 &&
+          !validation.allocationExceedsAmount &&
+          validation.unallocatedMinor === 0 && (
+            <p className="[font-size:11.5px] [color:var(--text-secondary)]">{t("allocations.fillDisabledPayment")}</p>
+          )}
+
+        {showSearch && (
           <SearchInput
             size="sm"
             value={query}
@@ -583,28 +598,32 @@ export default function StorePaymentAllocationPanel({
             placeholder={t("allocations.searchPlaceholder")}
             searchLabel={t("allocations.searchLabel")}
           />
-        </div>
-      )}
+        )}
 
-      {status === "ready" && lines.length > 0 && (
-        <div className="hidden grid-cols-[1fr_120px_140px] gap-3 px-3 pb-1 [font-family:var(--font-mono)] [font-size:11px] [letter-spacing:0.06em] [color:var(--text-muted)] uppercase md:grid">
-          <span>
-            {t("allocations.colProduct")}
-            <span className="ml-2 [font-family:var(--font-sans)] [letter-spacing:normal] normal-case">
-              {t("allocations.sortCaption")}
+        {/* Same grid as the rows, inside the same 12px inset, so each label sits over its column. The
+            shortcut column has no label: its buttons already say "Máx." on every row. */}
+        {status === "ready" && lines.length > 0 && (
+          <div className="-mx-3 hidden grid-cols-[minmax(0,1fr)_auto_140px] gap-x-3 px-3 [font-family:var(--font-mono)] [font-size:11px] [letter-spacing:0.06em] [color:var(--text-muted)] uppercase md:grid">
+            <span>
+              {t("allocations.colProduct")}
+              <span className="ml-2 [font-family:var(--font-sans)] [letter-spacing:normal] normal-case">
+                {t("allocations.sortCaption")}
+              </span>
             </span>
-          </span>
-          <span className="text-right">{t("allocations.colFill")}</span>
-          <span className="text-right">{t("allocations.colAmount")}</span>
-        </div>
-      )}
+            <span aria-hidden />
+            <span className="text-right">{t("allocations.colAmount")}</span>
+          </div>
+        )}
+      </div>
 
       <span role="status" aria-live="polite" className="sr-only">
         {announcement}
       </span>
 
-      {/* Full-bleed against the modal body's 24px padding: the name column is the scarce resource. */}
-      <div ref={listRef} className="-mx-6 min-h-0 flex-1 overflow-y-auto overscroll-contain">
+      {/* The rows carry a 12px inset so their invalid marker can sit in the gutter; pulling the list
+          out by the same 12px lands every name, button and field on the modal's own content edges,
+          the ones the search, the recap and the footer already use. */}
+      <div ref={listRef} className="-mx-3 pt-1">
         {renderList()}
       </div>
     </div>
