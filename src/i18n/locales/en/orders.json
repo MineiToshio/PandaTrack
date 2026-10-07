@@ -369,7 +369,7 @@
       "cancel": "Cancel",
       "toastSuccess": "Payment registered.",
       "allocations": {
-        "hint": "Mark what you're sure of. Each amount is checked against what's left on its order or product, and the total against what you owe the store.",
+        "hint": "Assign only what you know for sure. Leave the rest under \"I don't know yet\".",
         "loading": "Loading orders…",
         "empty": "No open orders with an outstanding balance in this currency.",
         "amountAria": "Amount for {name}",
@@ -399,7 +399,6 @@
         "overCulprit": "Check {name}.",
         "parkRemainder": "I don't know yet",
         "parkRemainderAria": "Mark {amount} as parked money, without assigning it to any order",
-        "recapEdit": "Edit the assignment",
         "orderBalance": "{amount} left",
         "restAmountAria": "Amount for the rest of order {order}",
         "restLine": "Rest of the order",

@@ -369,7 +369,7 @@
       "cancel": "Cancelar",
       "toastSuccess": "Pago registrado.",
       "allocations": {
-        "hint": "Marca lo que sabes con certeza. Cada monto se valida contra lo que falta de su pedido o producto, y el total contra la deuda de la tienda.",
+        "hint": "Asigna solo lo que sabes con certeza. El resto, déjalo en \"No sé todavía\".",
         "loading": "Cargando pedidos…",
         "empty": "No tienes pedidos abiertos con saldo pendiente en esta moneda.",
         "amountAria": "Monto para {name}",
@@ -399,7 +399,6 @@
         "overCulprit": "Revisa {name}.",
         "parkRemainder": "No sé todavía",
         "parkRemainderAria": "Marcar {amount} como dinero aparcado, sin asignarlo a ningún pedido",
-        "recapEdit": "Editar la asignación",
         "orderBalance": "Falta {amount}",
         "restAmountAria": "Monto para el resto del pedido {order}",
         "restLine": "Resto del pedido",

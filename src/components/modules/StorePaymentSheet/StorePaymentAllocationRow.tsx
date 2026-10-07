@@ -32,8 +32,8 @@ export function lineMessageId(lineKey: string): string {
 
 /** Id of the node that says why one line's fill button cannot write. Its own node, because the
     reason is a property of the CONTROL and outlives whatever message the row is showing. */
-function fillReasonId(lineKey: string, placement: "mobile" | "desktop"): string {
-  return `store-payment-line-${lineKey}-fill-reason-${placement}`;
+function fillReasonId(lineKey: string): string {
+  return `store-payment-line-${lineKey}-fill-reason`;
 }
 
 export type StorePaymentAllocationRowProps = {
@@ -99,11 +99,14 @@ function Highlighted({ text, query }: { text: string; query: string }) {
 
 /**
  * One payable line of the allocation panel: a product of an order, or that order's "Resto del
- * pedido". Every row is self-describing — its own name on line 1 and its order's reference on line
- * 2, or in the block header above it on the row that opens a block — so the flat list needs no
- * per-order container and a filter match on a reference is visible rather than unexplained. The
- * reference is printed once per row either way: in the header when the row has one, in the metadata
- * line when it does not.
+ * pedido". The order's reference is printed once, in the header that opens its block, and never
+ * again on the rows under it: the filter selects whole orders, so a block is never shown without its
+ * header and a match on a reference is always visible there. Repeating it on every row made each
+ * product two lines tall to say the same string over and over.
+ *
+ * Layout: one line at every width (name, shortcut, amount), every cell vertically centred. On a
+ * phone the amount field narrows to 96px and the name may run to three lines, which keeps a typical
+ * product name whole while a single-product order still costs one row instead of three.
  *
  * The shortcut cell is a control, not a label: on an assignable line it is a fill button that writes
  * the largest legal amount into the field beside it (the same quick-pick gesture
@@ -119,17 +122,13 @@ function Highlighted({ text, query }: { text: string; query: string }) {
  * The one money figure a row prints is `orderBalanceMinor`, on a line of its OWN above the first row
  * of each order block: a per-order fact, stated once, so the M figures an M-order list prints add up
  * to what those M orders can still take rather than replicating one order's room per product. It
- * gets its own line because sharing the product's metadata line put it beside the shortcut cell,
- * which on mobile folds onto that same line: "ORD-… · Falta S/ 410,00 · [Máx.]" reads as two
- * statements about the same control while they describe an order and a product.
+ * gets its own line because it describes the order, not the product beside whose controls it would
+ * otherwise sit.
  *
  * A settled line's amount FIELD is read-only only while it is empty. Settling is derived from data
  * the server owns, so a row can turn settled with money already typed into it; the field has to
  * stay editable for exactly as long as it takes to empty it, or the fill button's undo ("clear the
  * field") is a promise the row cannot keep.
- *
- * The mobile and desktop placements of that cell are two nodes, one of which is `display: none` at
- * any given width, so exactly one is ever focusable.
  */
 export default function StorePaymentAllocationRow({
   line,
@@ -167,97 +166,89 @@ export default function StorePaymentAllocationRow({
   /** This row opens its order's block, so it carries the block's own header line. */
   const hasBlockHeader = orderBalanceMinor !== null;
 
-  // The cell is rendered TWICE (a mobile placement folded onto the metadata line and a desktop
-  // column), one of which is `display: none` at any width. Anything inside it that carries an `id`
-  // therefore needs the placement in that id, or the row ships two nodes with the same one and
-  // `aria-describedby` resolves to whichever came first — possibly the hidden copy.
-  const renderShortcut = (placement: "mobile" | "desktop") =>
-    isSettled ? (
-      <span className="inline-flex items-center rounded-full px-2 py-0.5 [font-size:var(--text-caption)] [color:var(--success-chip-text)] [background:color-mix(in_oklch,var(--success)_10%,transparent)] [border:1px_solid_color-mix(in_oklch,var(--success)_22%,transparent)]">
-        {t("allocations.settledLabel")}
-      </span>
-    ) : isUnpriced ? (
-      // No price on record, so there is no number to offer. Declaring it covered is the best answer
-      // available here, and it is the ONLY line where the sheet offers the mark: wherever the amount
-      // IS known, using the number is strictly more informative than a claim.
-      <button
-        type="button"
-        aria-pressed={isDeclared}
-        aria-label={t("allocations.markPaidAria", { name: label })}
-        onClick={() => onToggleDeclared(line)}
-        className={cn(
-          "inline-flex items-center gap-1 rounded-full px-2 py-0.5 [font-size:var(--text-caption)]",
-          "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:[outline-color:var(--focus-ring)]",
-          // A 44px tap target under `md`, where this cell folds onto the reference line and the
-          // amount input sits less than 2N away: the BOX is resized rather than expanded with a
-          // pseudo-element, which would overlap that input (PLAYBOOK §4).
-          "min-h-11 md:min-h-0",
-          isDeclared
-            ? "[color:var(--success-chip-text)] [background:color-mix(in_oklch,var(--success)_10%,transparent)] [border:1px_solid_color-mix(in_oklch,var(--success)_22%,transparent)]"
-            : "[color:var(--text-secondary)] [border:1px_solid_var(--border)] hover:[color:var(--accent)] hover:[background:color-mix(in_oklch,var(--accent)_10%,transparent)]",
-        )}
-      >
-        {isDeclared ? t("allocations.declaredMarker") : t("allocations.markPaid")}
-      </button>
-    ) : (
-      // `aria-disabled`, never `disabled`. The reason this control cannot write is the only thing the
-      // collector needs here, and `disabled` is what made every one of those reasons unreachable: it
-      // drops the button out of the tab order (no keyboard route, its name is never read), and the
-      // `pointer-events-none` that came with it killed the `title` tooltip on desktop too — on touch
-      // there was never a hover to begin with. Inert-but-focusable keeps the control announceable,
-      // and the reason travels with it in `aria-describedby` rather than in an attribute nothing
-      // surfaces. The visible half of the same answer is the panel's business: it states the
-      // payment-level reason once above the list and the order-level one once per block.
-      <button
-        type="button"
-        onClick={isFillDisabled ? undefined : () => onFill(line)}
-        aria-disabled={isFillDisabled || undefined}
-        aria-describedby={isFillDisabled ? fillReasonId(line.key, placement) : undefined}
-        aria-label={t("allocations.fillAria", {
-          amount: formatAmountWithSymbol(fillableMinor, currencyCode, locale),
-          name: label,
-        })}
-        className={cn(
-          "inline-flex items-center justify-center gap-1 rounded-md px-2 py-1",
-          "[font-size:var(--text-caption)]",
-          // Same 44px floor, and the same reason, as the paid-mark toggle above: under `md` this cell
-          // folds onto the reference line, and the label is now a word instead of an amount, so the
-          // box has to carry the tap target that the longer text used to give it for free.
-          "min-h-11 md:min-h-0",
-          "[border:1px_solid_var(--border)]",
-          "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:[outline-color:var(--focus-ring)]",
-          isFillDisabled
-            ? "cursor-default [color:var(--text-muted)]"
-            : "[color:var(--text-secondary)] hover:[color:var(--accent)] hover:[background:color-mix(in_oklch,var(--accent)_10%,transparent)]",
-        )}
-      >
-        {t("allocations.fillMax")}
-        {isFillDisabled && (
-          <span id={fillReasonId(line.key, placement)} className="sr-only">
-            {t(FILL_DISABLED_KEY[fillDisabledReason] as never)}
-          </span>
-        )}
-      </button>
-    );
+  const shortcut = isSettled ? (
+    <span className="inline-flex items-center rounded-full px-2 py-0.5 [font-size:var(--text-caption)] [color:var(--success-chip-text)] [background:color-mix(in_oklch,var(--success)_10%,transparent)] [border:1px_solid_color-mix(in_oklch,var(--success)_22%,transparent)]">
+      {t("allocations.settledLabel")}
+    </span>
+  ) : isUnpriced ? (
+    // No price on record, so there is no number to offer. Declaring it covered is the best answer
+    // available here, and it is the ONLY line where the sheet offers the mark: wherever the amount
+    // IS known, using the number is strictly more informative than a claim.
+    <button
+      type="button"
+      aria-pressed={isDeclared}
+      aria-label={t("allocations.markPaidAria", { name: label })}
+      onClick={() => onToggleDeclared(line)}
+      className={cn(
+        "inline-flex items-center gap-1 rounded-full px-2 py-0.5 [font-size:var(--text-caption)]",
+        "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:[outline-color:var(--focus-ring)]",
+        // A 44px tap target under `md`, where the amount input sits right beside it: the BOX is
+        // resized rather than expanded with a pseudo-element, which would overlap that input
+        // (PLAYBOOK §4).
+        "min-h-11 md:min-h-8",
+        isDeclared
+          ? "[color:var(--success-chip-text)] [background:color-mix(in_oklch,var(--success)_10%,transparent)] [border:1px_solid_color-mix(in_oklch,var(--success)_22%,transparent)]"
+          : "[color:var(--text-secondary)] [border:1px_solid_var(--border)] hover:[color:var(--accent)] hover:[background:color-mix(in_oklch,var(--accent)_10%,transparent)]",
+      )}
+    >
+      {isDeclared ? t("allocations.declaredMarker") : t("allocations.markPaid")}
+    </button>
+  ) : (
+    // `aria-disabled`, never `disabled`. The reason this control cannot write is the only thing the
+    // collector needs here, and `disabled` is what made every one of those reasons unreachable: it
+    // drops the button out of the tab order (no keyboard route, its name is never read), and the
+    // `pointer-events-none` that came with it killed the `title` tooltip on desktop too — on touch
+    // there was never a hover to begin with. Inert-but-focusable keeps the control announceable,
+    // and the reason travels with it in `aria-describedby` rather than in an attribute nothing
+    // surfaces. The visible half of the same answer is the panel's business: it states the
+    // payment-level reason once above the list and the order-level one once per block.
+    <button
+      type="button"
+      onClick={isFillDisabled ? undefined : () => onFill(line)}
+      aria-disabled={isFillDisabled || undefined}
+      aria-describedby={isFillDisabled ? fillReasonId(line.key) : undefined}
+      aria-label={t("allocations.fillAria", {
+        amount: formatAmountWithSymbol(fillableMinor, currencyCode, locale),
+        name: label,
+      })}
+      className={cn(
+        "inline-flex items-center justify-center gap-1 rounded-md px-2.5",
+        "[font-size:var(--text-caption)]",
+        // Same 44px floor, and the same reason, as the paid-mark toggle above. The label is a word
+        // instead of an amount, so the box carries the tap target the text no longer gives it.
+        "min-h-11 min-w-11 md:min-h-8",
+        "[border:1px_solid_var(--border)]",
+        "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:[outline-color:var(--focus-ring)]",
+        isFillDisabled
+          ? "cursor-default [color:var(--text-muted)]"
+          : "[color:var(--text-secondary)] hover:[color:var(--accent)] hover:[background:color-mix(in_oklch,var(--accent)_10%,transparent)]",
+      )}
+    >
+      {t("allocations.fillMax")}
+      {isFillDisabled && (
+        <span id={fillReasonId(line.key)} className="sr-only">
+          {t(FILL_DISABLED_KEY[fillDisabledReason] as never)}
+        </span>
+      )}
+    </button>
+  );
 
   return (
     <li
       data-line-key={line.key}
       className={cn(
-        "border-l-2 px-3 py-1.5",
+        "group/row border-l-2 pr-3 pl-2.5",
         isInvalid ? "[border-left-color:var(--destructive)]" : "[border-left-color:transparent]",
       )}
     >
       {/* The order's own balance, on a line of its own that opens the block, with the reference it
           belongs to. This is the figure the collector was missing: without it the panel showed
           per-product numbers that summed far above what the order could take, and nothing said so.
-          It is a statement about the ORDER, so it may not share a line with a statement about a
-          product: while it sat in the metadata line below, the mobile shortcut cell folded onto that
-          same line and the row read "ORD-… · Falta S/ 410,00 · [Máx.]", where "Máx." writes a
-          different number entirely. */}
+          The rule above it is what tells one order from the next in a flat list; the very first
+          block has nothing above it to be told apart from. */}
       {hasBlockHeader && (
-        <p className="flex items-center gap-1 pb-0.5 [font-size:11px] [line-height:16px] [color:var(--text-secondary)] tabular-nums">
-          <span className="truncate">
+        <p className="mt-2 flex items-center gap-1 pt-3 [font-size:11.5px] [line-height:16px] [color:var(--text-secondary)] tabular-nums [border-top:1px_solid_var(--border)] group-first/row:mt-0 group-first/row:pt-1 group-first/row:[border-top:0]">
+          <span className="truncate [font-family:var(--font-mono)] font-medium">
             <Highlighted text={line.humanReadableId} query={query} />
           </span>
           <span className="shrink-0">
@@ -269,49 +260,27 @@ export default function StorePaymentAllocationRow({
         </p>
       )}
 
-      <div className="grid min-h-[64px] grid-cols-[1fr_96px] items-center gap-3 md:min-h-[52px] md:grid-cols-[1fr_120px_140px]">
+      <div className="grid min-h-14 grid-cols-[minmax(0,1fr)_auto_96px] items-center gap-x-2 py-1.5 md:min-h-[52px] md:grid-cols-[minmax(0,1fr)_auto_140px] md:gap-x-3">
         <div className="min-w-0">
           <p
             title={label}
             className={cn(
-              "line-clamp-2 [font-size:13px] [line-height:18px] md:truncate",
+              "line-clamp-3 [font-size:13px] [line-height:18px] md:line-clamp-2",
               isSettled ? "[color:var(--text-muted)]" : "[color:var(--text-primary)]",
             )}
           >
             <Highlighted text={label} query={query} />
           </p>
-          {/* `min-h-4` holds the line's box open on the block's first row, where the reference has
-              moved up into the header and the desktop placement leaves this line with nothing to
-              render: without it that one row's text block is 16px shorter than its neighbours'. */}
-          <p className="flex min-h-4 items-center gap-1 [font-size:11px] [line-height:16px] [color:var(--text-muted)] tabular-nums">
-            {/* The reference, on every row that is not the one the header already names. Repeating
-                it there would print the same string twice, 16px apart. */}
-            {!hasBlockHeader && (
-              <span className="truncate">
-                <Highlighted text={line.humanReadableId} query={query} />
-              </span>
-            )}
-            {/* The mark as a consultable STATE, on the line the collector is reading while they
-                pay. Real text, not a colour, so it survives into the row's accessible name. */}
-            {isDeclared && !isUnpriced && (
-              <span className="shrink-0 [color:var(--success-chip-text)]">
-                {!hasBlockHeader && "· "}
-                {t("allocations.declaredMarker")}
-              </span>
-            )}
-            {/* Mobile: the shortcut cell folds onto this line. The separator is only printed when
-                something precedes it. */}
-            {(!hasBlockHeader || (isDeclared && !isUnpriced)) && (
-              <span aria-hidden className="md:hidden">
-                ·
-              </span>
-            )}
-            <span className="md:hidden">{renderShortcut("mobile")}</span>
-          </p>
+          {/* The mark as a consultable STATE, on the line the collector is reading while they pay.
+              Real text, not a colour, so it survives into the row's accessible name. */}
+          {isDeclared && !isUnpriced && (
+            <p className="[font-size:11px] [line-height:16px] [color:var(--success-chip-text)]">
+              {t("allocations.declaredMarker")}
+            </p>
+          )}
         </div>
 
-        {/* Desktop: the shortcut cell gets its own column. */}
-        <div className="hidden md:flex md:items-center md:justify-end">{renderShortcut("desktop")}</div>
+        <div className="flex justify-end">{shortcut}</div>
 
         <MoneyAmountInput
           value={value}
@@ -347,7 +316,7 @@ export default function StorePaymentAllocationRow({
           id={messageId}
           role={isServerRejection ? "alert" : undefined}
           className={cn(
-            "pb-1 [font-size:11.5px]",
+            "pb-2 [font-size:11.5px]",
             messageTone === "neutral" ? "[color:var(--text-muted)]" : "[color:var(--destructive-chip-text)]",
           )}
         >

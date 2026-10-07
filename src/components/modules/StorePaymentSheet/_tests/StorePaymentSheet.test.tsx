@@ -446,11 +446,11 @@ describe("StorePaymentSheet — botón de relleno", () => {
     const fill = fillButtons("Nendoroid Miku")[0];
     const markPaid = screen.getAllByRole("button", { name: /allocations\.markPaidAria.*Sin precio/ })[0];
 
-    // Base-is-mobile, dropped from `md` up: the spelling the guard reads, and the recipe ADR 0027
-    // chose over a `::before` because the amount input sits less than 2N away under `md`.
+    // Base-is-mobile, relaxed to a 32px pointer box from `md` up: the spelling the guard reads, and
+    // the recipe ADR 0027 chose over a `::before` because the amount input sits less than 2N away.
     for (const control of [fill, markPaid]) {
       expect(control.className).toContain("min-h-11");
-      expect(control.className).toContain("md:min-h-0");
+      expect(control.className).toContain("md:min-h-8");
     }
   });
 
@@ -532,7 +532,7 @@ describe('StorePaymentSheet — "Saldada" derivada (C2)', () => {
     await typeAmount("100");
     await openAllocationPanel();
 
-    expect(screen.getAllByText("allocations.settledLabel")).toHaveLength(4); // 2 lines × (mobile + desktop)
+    expect(screen.getAllByText("allocations.settledLabel")).toHaveLength(2); // one chip per settled line
     // Locked, and locked the same way: `readOnly`, never `disabled` (see the focus test below).
     expect(screen.getByLabelText(/allocations\.amountAria.*Pagado a mano/)).toHaveAttribute("readonly");
     expect(screen.getByLabelText(/allocations\.amountAria.*Declarado saldado/)).toHaveAttribute("readonly");
@@ -1152,6 +1152,16 @@ describe("StorePaymentSheet — la lista dice lo que escribe (ADR 0027)", () => 
 
     expect(rowsNamingABalance()).toHaveLength(1);
     expect(printedBalancesMinor()).toEqual([realPopDealerOrder().assignableMinor]);
+  });
+
+  it("prints the order's reference once, in its block header, not on every product row", async () => {
+    renderSheet();
+    await typeAmount("100");
+    await openAllocationPanel();
+
+    // Two products, one order: the filter keeps blocks whole, so the header always travels with its
+    // rows and repeating the reference under each name only made every row two lines tall.
+    expect(screen.getAllByText("ORD-20260105-01")).toHaveLength(1);
   });
 
   it("names it once per ORDER, and the M figures partition what those M orders can take", async () => {

@@ -144,21 +144,34 @@ demo_anchors:
 >   one-line debt readout for the selected currency, the currency select when the store has more
 >   than one, amount + date side by side, the note, and a 52px summary row ("¿A qué va este pago?"
 >   · "Sin asignar todavía" / "N líneas · {total}") whose button enters the second panel. Panel
->   **Asignación** takes the whole body: a recap strip of the amount and date, a totals bar that
->   turns destructive and names a culprit when the declared total overruns the payment, a filter
->   (only past 12 lines), a desktop column header carrying the sort caption,
->   and then the list. The list is **flat** and full-bleed (`-mx-6`), one row per payable line on a
->   `1fr | 120px | 140px` grid at ≥768px (52px rows) and a `1fr | 96px` two-line grid below it
->   (64px rows). Line 1 is the product name (truncated with a `title`, clamped to two lines on
->   mobile); line 2 is the order's `humanReadableId`, repeated on every row so each row is
->   self-describing and a filter match on a reference is visible. When an order's products cannot
->   absorb its balance, a **"Resto del pedido"** row closes its block. The shortcut cell is a **fill
+>   **Asignación** takes the whole body, and the BODY is its scroller (not the list alone). From
+>   the top: the panel's own way back, **"← Volver al pago"** (ghost, top-left, with the payment's
+>   amount and date beside it; it used to be the footer's tertiary action, which on a phone squeezed
+>   three buttons into one row, so the footer here carries only "Cancelar" and the CTA), then the
+>   one-sentence hint while nothing is assigned. Both scroll away. Then a **pinned band**
+>   (`sticky -top-4`, bled over the body's 24px side padding onto a solid surface, hairline below):
+>   the totals, led by what is still **"Sin asignar"** with "Asignado {A} de {P}" under it, turning
+>   destructive and naming a culprit when the declared total overruns the payment; the actions on
+>   the remainder ("Ver la línea", "Cambiar la fecha", "No sé todavía" / "Quitar", "Limpiar"), which
+>   wrap onto their own right-aligned line rather than squeeze the figures; the filter (only past
+>   12 lines); and, from `md`, the column header carrying the sort caption. **Revised 2026-10-07
+>   (owner request):** only the list scrolled before, so on a phone the fixed strips above it left
+>   it about two rows; the mobile sheet also grows to `92dvh` on this panel (78vh elsewhere).
+>   The list is **flat** and sits on the modal's content edges: rows carry a 12px inset for their
+>   invalid marker and the list is pulled out by the same 12px, so names, buttons and fields line
+>   up with the filter, the band and the footer. One row per payable line, **one line at every
+>   width**: `1fr | auto | 140px` from `md` (52px rows) and `1fr | auto | 96px` below it (56px rows),
+>   every cell vertically centred, the name clamped to two lines on desktop and three on a phone.
+>   The order's `humanReadableId` is printed **once**, in the header that opens its block (with the
+>   order's balance), and never repeated under each name: the filter keeps blocks whole, so the
+>   header always travels with its rows. A hairline separates one block from the next. When an
+>   order's products cannot absorb its balance, a **"Resto del pedido"** row closes its block. The shortcut cell is a **fill
 >   control**, not a label: labelled **"Máx."**, it writes the largest amount assignable without
 >   invalidating the draft and prints no figure of its own, the amount it will write living only in
 >   its accessible name (`computeFillableMinor`, recomputed live). A settled line shows a "Saldado"
 >   chip instead, and an unpriced line shows the mark-paid toggle ("Marcar pagado" / "marcado")
 >   rather than a fill control, since there is no number to offer (`ADR 0026`). The order's own
->   balance is instead printed once per order block, on the first row's reference line
+>   balance is instead printed once per order block, in the block header beside the reference
 >   (`orderBalanceMinor`, `FR-05-42a`) — a per-order fact, stated once, rather than a per-line one.
 >   **Corrected 2026-08-14, `ADR 0027`:** the cell used to print that same ceiling as a visible
 >   "Falta {amount}" figure, the line's own static base rather than the live ceiling the button
@@ -174,11 +187,7 @@ demo_anchors:
 >   turns `disabled` under the caret drops the focus onto `<body>`, from where the next `Tab` leaves
 >   the modal. There is no "Saldado" toggle any more, and no zero-amount allocation is ever written.
 >   Loading, empty, error (with
->   "Reintentar") and no-results states all reserve the same 312px so the panel never jumps. The
->   list is the ONLY child of that column allowed to give up height: the recap strip and the totals
->   bar both wrap at 375px, and both carry `shrink-0` so their `min-h` stays a resting floor instead
->   of becoming a ceiling that makes them paint over the text below (see `L082` in
->   `docs/design/PLAYBOOK.md`). Submit
+>   "Reintentar") and no-results states all reserve the same 312px so the panel never jumps. Submit
 >   closes optimistically only when nothing is declared (`FR-05-42b`).
 >
 >   Five behaviors of this sheet are load-bearing and easy to lose in a refactor:
@@ -186,7 +195,7 @@ demo_anchors:
 >      `initialFocusRef`); the panel's own focus handling only fires on a panel CHANGE, never on the
 >      initial open, because a child's effect would otherwise overwrite the modal's. Entering
 >      **Asignación** focuses the filter when it exists and the first line's amount field otherwise
->      (never the recap's "Editar monto o fecha", which is first in document order and leads back
+>      (never "Volver al pago", which is first in document order and leads back
 >      out). Leaving it returns focus to the summary row's button.
 >   2. **"Revisar" / "Ver".** Both clear the filter and then scroll and focus the offending line.
 >      The line they name is always one that is actually RENDERED: an order-level rule implicates
