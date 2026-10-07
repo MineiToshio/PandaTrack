@@ -423,6 +423,17 @@ a product's price afterward, the same freeze every other marked field on this sc
 follows; the mismatch banner above is what catches a total that has gone stale against a later price
 edit, since it recomputes the products' live sum on every render while the total field does not.
 
+**Use the products' sum as the total** (`FR-11-58d`). A row sits right above the total field,
+inside the same card: on the left a muted line with the live sum of the priced products ("Los
+productos suman S/ 150.00"; with unpriced rows "Los productos con precio suman S/ 60.00 · 1 sin
+precio"; with none "Ningún producto tiene precio todavía"), on the right a tonal `sm` `Button` with
+the `Calculator` icon, "Usar este total", full width on mobile and inline from `md`. It mirrors the
+manual create form's "Usar este total" row on purpose, so the two paths offer the same gesture in
+the same words. The line recomputes on every price edit; the total itself only changes when the
+button is pressed, which writes the sum into the input as the collector's own figure. The button is
+disabled only when no product carries a price. Pressing it fires
+`image_intake_calculated_total_used`.
+
 **Required-field validation before save** (`FR-11-58c`). Store, order date, and total are what
 `saveOrderFromDraftAction` refuses to save without. `handleSave` now checks all three before ever
 calling `onSave`, using the app's standard three-part field-error treatment (destructive label,
@@ -817,6 +828,9 @@ The word is always **foto**. Never "extracción", "crédito", or "token".
 | Equal price split            | Repartimos S/ 180.00 en partes iguales. Ajusta si una pieza vale más que la otra                                                                                                                                                       |
 | Blank product name           | El producto 3 se quedó sin nombre. Escríbele uno para poder guardar el pedido.                                                                                                                                                         |
 | Totals mismatch              | Los productos no suman el total · Los productos suman S/ 480.00 y el total del pedido dice S/ 110.00. Guardamos el total tal como está: revisa cuál de los dos es el correcto. Pressing save then raises the shared `DiscrepancyModal` (`FR-11-58a`).                                                         |
+| Products' sum, all priced    | Los productos suman S/ 150.00 · [Usar este total] (`FR-11-58d`)                                                                                                                                                                            |
+| Products' sum, partial       | Los productos con precio suman S/ 60.00 · 1 sin precio · [Usar este total]                                                                                                                                                                 |
+| Products' sum, none priced   | Ningún producto tiene precio todavía · [Usar este total] disabled                                                                                                                                                                          |
 | Shipping cost                | Costo de envío · Lo leímos de las fotos, pero se guarda recién cuando registres la entrega.                                                                                                                                                |
 | Breakdown cleared            | Cambiaste los productos, así que quitamos el desglose de los pagos. Vuelve a marcarlos.                                                                                                                                                |
 | Breakdown, missing amount    | Ponle importe a este pago para poder guardar su desglose.                                                                                                                                                                              |
