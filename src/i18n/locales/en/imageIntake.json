@@ -126,7 +126,7 @@
       "missing": "missing",
       "assumedHint": "The photos do not say it. We filled it in, so it is worth a look.",
       "missingHint": "We did not find it in the photos. Fill it in if you know it.",
-      "totalHint": "The photos state no total. Add up the products or type it in.",
+      "totalHint": "The photos state no total. Use the sum of the products or type it in.",
       "totalDerivedHint": "The photos state no total. We calculated it by adding up {count, plural, one {the price of the # product} other {the prices of the # products}}."
     },
     "fx": {
@@ -212,7 +212,11 @@
       "paid": "Paid up front",
       "total": "Order total",
       "mismatchTitle": "The products do not add up to the total",
-      "mismatchBody": "The products add up to {products} and the order total says {total}. We save the total as it is: check which of the two is right."
+      "mismatchBody": "The products add up to {products} and the order total says {total}. We save the total as it is: check which of the two is right.",
+      "calculated": "The products add up to {total}",
+      "calculatedPartial": "The priced products add up to {total} · {count, plural, one {# without a price} other {# without a price}}",
+      "calculatedNone": "No product has a price yet",
+      "useCalculated": "Use this total"
     },
     "delivery": {
       "cost": "Shipping cost",

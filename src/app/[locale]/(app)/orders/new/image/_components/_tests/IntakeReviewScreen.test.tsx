@@ -761,6 +761,68 @@ describe("IntakeReviewScreen totals reconciliation", () => {
     expect(screen.queryByText(/totals.mismatchTitle/)).toBeNull();
   });
 
+  it("replaces a mismatched total with the products' sum when asked to", () => {
+    renderScreen(buildDraft({ totalCost: field(11000, "read") }));
+
+    fireEvent.click(screen.getByRole("button", { name: "totals.useCalculated" }));
+
+    expect((screen.getByLabelText(/fields.total/) as HTMLInputElement).value).toBe("150.00");
+    expect(screen.queryByText(/totals.mismatchTitle/)).toBeNull();
+  });
+
+  it("offers the sum of the prices as corrected, not as they arrived", () => {
+    renderScreen(buildDraft({ totalCost: field(11000, "read") }));
+
+    fireEvent.change(screen.getAllByLabelText("itemUnitPriceLabel")[0], { target: { value: "115" } });
+    fireEvent.click(screen.getByRole("button", { name: "totals.useCalculated" }));
+
+    expect((screen.getByLabelText(/fields.total/) as HTMLInputElement).value).toBe("175.00");
+  });
+
+  it("offers a partial sum while naming how many products have no price", () => {
+    renderScreen(
+      buildDraft({
+        totalCost: field(null, null),
+        groups: [
+          {
+            sourcePhrase: "el pack chase de Gojo",
+            reason: "split",
+            doubtful: false,
+            priceSplit: "none",
+            products: [
+              { name: "Gojo", unitPrice: null, suggestedProductTypeKey: null, referenceUrl: null },
+              { name: "Gojo (chase)", unitPrice: 6000, suggestedProductTypeKey: null, referenceUrl: null },
+            ],
+          },
+        ],
+      }),
+    );
+
+    expect(screen.getByText(/totals.calculatedPartial.*"count":1/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "totals.useCalculated" }));
+    expect((screen.getByLabelText(/fields.total/) as HTMLInputElement).value).toBe("60.00");
+  });
+
+  it("keeps the sum action disabled while no product has a price", () => {
+    renderScreen(
+      buildDraft({
+        totalCost: field(null, null),
+        groups: [
+          {
+            sourcePhrase: "el pack chase de Gojo",
+            reason: "split",
+            doubtful: false,
+            priceSplit: "none",
+            products: [{ name: "Gojo", unitPrice: null, suggestedProductTypeKey: null, referenceUrl: null }],
+          },
+        ],
+      }),
+    );
+
+    expect(screen.getByText("totals.calculatedNone")).toBeTruthy();
+    expect((screen.getByRole("button", { name: "totals.useCalculated" }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
   it("asks before saving a mismatch, then saves the stated total as is once confirmed", () => {
     const onSave = vi.fn();
     render(
@@ -1370,4 +1432,3 @@ describe("IntakeReviewScreen: required-field validation before save", () => {
     expect(screen.getByText("saveTotalRequired")).toBeTruthy();
   });
 });
-

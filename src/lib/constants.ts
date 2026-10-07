@@ -235,6 +235,7 @@ export const POSTHOG_EVENTS = {
     QUOTA_EXHAUSTED_SHOWN: "image_intake_quota_exhausted_shown",
     ADMIN_QUOTA_OVERRIDE_SET: "image_intake_admin_quota_override_set",
     PHOTO_ZOOM_OPENED: "image_intake_photo_zoom_opened",
+    CALCULATED_TOTAL_USED: "image_intake_calculated_total_used",
   },
   DELIVERY: {
     CREATE_FLOW_OPENED: "delivery_create_flow_opened",

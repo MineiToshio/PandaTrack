@@ -126,7 +126,7 @@
       "missing": "falta",
       "assumedHint": "Las fotos no lo dicen. Lo completamos nosotros, así que conviene revisarlo.",
       "missingHint": "No lo encontramos en las fotos. Complétalo si lo sabes.",
-      "totalHint": "Las fotos no dicen un total. Súmalo de los productos o escríbelo.",
+      "totalHint": "Las fotos no dicen un total. Usa la suma de los productos o escríbelo.",
       "totalDerivedHint": "Las fotos no dicen un total. Lo calculamos sumando {count, plural, one {el precio del # producto} other {el precio de los # productos}}."
     },
     "fx": {
@@ -212,7 +212,11 @@
       "paid": "Adelanto pagado",
       "total": "Total del pedido",
       "mismatchTitle": "Los productos no suman el total",
-      "mismatchBody": "Los productos suman {products} y el total del pedido dice {total}. Guardamos el total tal como está: revisa cuál de los dos es el correcto."
+      "mismatchBody": "Los productos suman {products} y el total del pedido dice {total}. Guardamos el total tal como está: revisa cuál de los dos es el correcto.",
+      "calculated": "Los productos suman {total}",
+      "calculatedPartial": "Los productos con precio suman {total} · {count, plural, one {# sin precio} other {# sin precio}}",
+      "calculatedNone": "Ningún producto tiene precio todavía",
+      "useCalculated": "Usar este total"
     },
     "delivery": {
       "cost": "Costo de envío",

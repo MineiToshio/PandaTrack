@@ -1,6 +1,6 @@
 "use client";
 
-import { ImagePlus, Info, Plus, Scale, ShoppingCart, Wallet, X } from "lucide-react";
+import { Calculator, ImagePlus, Info, Plus, Scale, ShoppingCart, Wallet, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import posthog from "posthog-js";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -155,6 +155,30 @@ function sumProductPrices(draft: ImageIntakeDraft): number | null {
     }
   }
   return sum;
+}
+
+/**
+ * What the products that DO carry a price add up to, for the "use this total" action.
+ *
+ * Unlike `sumProductPrices`, a partial sum is allowed here, because it is offered rather than
+ * stated: the collector sees how many products are left out before choosing to use it, the same
+ * trade the manual form makes. `null` only when no product has a price at all.
+ */
+function sumPricedProducts(draft: ImageIntakeDraft): { sum: number; unpricedCount: number } | null {
+  let sum = 0;
+  let pricedCount = 0;
+  let unpricedCount = 0;
+  for (const group of draft.groups) {
+    for (const product of group.products) {
+      if (product.unitPrice === null) {
+        unpricedCount += 1;
+      } else {
+        sum += product.unitPrice;
+        pricedCount += 1;
+      }
+    }
+  }
+  return pricedCount === 0 ? null : { sum, unpricedCount };
 }
 
 /**
@@ -622,6 +646,20 @@ export default function IntakeReviewScreen({
       totalCost: minorUnits === null ? { value: null, source: null } : { value: minorUnits, source: "read" },
     }));
     clearFieldError("total");
+  };
+
+  // Recomputed on every render from the draft being edited, so a price the collector corrects in a
+  // row moves the offered sum immediately; the total itself only changes when they ask for it.
+  const pricedProducts = sumPricedProducts(draft);
+
+  const handleUseCalculatedTotal = () => {
+    if (pricedProducts === null) return;
+    handleTotalChange(formatCentsForInput(pricedProducts.sum, currencyCode));
+    posthog.capture(POSTHOG_EVENTS.IMAGE_INTAKE.CALCULATED_TOTAL_USED, {
+      product_count: productCount,
+      unpriced_count: pricedProducts.unpricedCount,
+      replaced_existing_total: draft.totalCost.value !== null,
+    });
   };
 
   const handleDeliveryRangeChange = (from: Date | null, to: Date | null) => {
@@ -1193,6 +1231,32 @@ export default function IntakeReviewScreen({
             them meant nothing could be compared without scrolling.
           */}
           <div className="flex flex-col gap-[var(--space-3)] pt-3.5 [border-top:1px_solid_var(--border)]">
+            {productCount > 0 && (
+              <div className="flex flex-col gap-2.5 md:flex-row md:items-center md:justify-between md:gap-3">
+                <p className="numeric text-[12px] [color:var(--text-muted)]">
+                  {pricedProducts === null
+                    ? t("totals.calculatedNone")
+                    : pricedProducts.unpricedCount > 0
+                      ? t("totals.calculatedPartial", {
+                          total: formatAmount(pricedProducts.sum, currencyCode),
+                          count: pricedProducts.unpricedCount,
+                        })
+                      : t("totals.calculated", { total: formatAmount(pricedProducts.sum, currencyCode) })}
+                </p>
+                <Button
+                  type="button"
+                  variant="tonal"
+                  size="sm"
+                  onClick={handleUseCalculatedTotal}
+                  disabled={pricedProducts === null}
+                  leadingIcon={<Calculator size={14} aria-hidden />}
+                  className="w-full md:w-auto"
+                >
+                  {t("totals.useCalculated")}
+                </Button>
+              </div>
+            )}
+
             <ProvenanceValue
               id="intake-total"
               label={t("fields.total")}
