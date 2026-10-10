@@ -168,7 +168,14 @@ demo_anchors:
 >   order's products cannot absorb its balance, a **"Resto del pedido"** row closes its block. The shortcut cell is a **fill
 >   control**, not a label: labelled **"Máx."**, it writes the largest amount assignable without
 >   invalidating the draft and prints no figure of its own, the amount it will write living only in
->   its accessible name (`computeFillableMinor`, recomputed live). A settled line shows a "Saldado"
+>   its accessible name (`computeFillableMinor`, recomputed live). A settled line is **not listed
+>   unless searched for** (`FR-05-42`, 2026-10-07): the unfiltered list ends with a muted line,
+>   "{n} productos ya saldados no se muestran. Búscalos para verlos.", the filter is shown whenever
+>   anything is hidden, a search brings back whole orders with their settled lines, and an order
+>   with nothing left but settled lines shows "Los productos de estos pedidos ya están saldados.
+>   Búscalos si quieres verlos." A settled line the draft is touching (money typed, a rule, a
+>   server refusal) stays listed until the panel is left, so emptying it never unmounts the field
+>   under the caret. When listed, a settled line shows a "Saldado"
 >   chip instead, and an unpriced line shows the mark-paid toggle ("Marcar pagado" / "marcado")
 >   rather than a fill control, since there is no number to offer (`ADR 0026`). The order's own
 >   balance is instead printed once per order block, in the block header beside the reference

@@ -127,7 +127,6 @@ export default function StorePaymentAllocationPanel({
   // believing it had honored it, and the very first "Revisar" / "Ver" would do nothing at all.
   const revealTokenRef = useRef(0);
 
-  const showSearch = status === "ready" && lines.length > ALLOCATION_SEARCH_THRESHOLD;
   const restLabel = t("allocations.restLine");
 
   const labelByKey = useMemo(() => {
@@ -232,16 +231,54 @@ export default function StorePaymentAllocationPanel({
     return figures;
   }, [draft.orders, lines, orderById, orderDraftById, paymentAmountMinor]);
 
-  // The filter selects orders, not lines: a matched order keeps every one of its lines.
+  /**
+   * Settled lines the unfiltered list must keep showing anyway, for as long as this panel is open.
+   *
+   * The unfiltered list is what is still left to pay, so a product already paid in full is hidden
+   * there and only found by searching. Not when the draft is touching it, though: a row can turn
+   * settled UNDER a live draft (the server settles it while an amount is still typed into it), and
+   * that row is the only place the amount can be taken back out. It must also not vanish the moment
+   * it is emptied: the field would unmount with the caret inside it and drop the focus onto
+   * `<body>`, from where the next `Tab` leaves the modal. So a settled line that ever held money, a
+   * rule, or the server's refusal stays for the rest of the visit. Grown during render (the
+   * canonical adjust-state-on-render pattern), so it never paints a frame without the row.
+   */
+  const [keptSettledKeys, setKeptSettledKeys] = useState<ReadonlySet<string>>(() => new Set());
+  const settledKeysToKeep = lines
+    .filter(
+      (line) =>
+        line.state === "settled" &&
+        !keptSettledKeys.has(line.key) &&
+        ((values[line.key] ?? "").trim() !== "" ||
+          validation.blockingLines.has(line.key) ||
+          serverRejectedLineKey === line.key),
+    )
+    .map((line) => line.key);
+  if (settledKeysToKeep.length > 0) setKeptSettledKeys(new Set([...keptSettledKeys, ...settledKeysToKeep]));
+
+  const isListedWithoutQuery = useCallback(
+    (line: AllocationLine) => line.state !== "settled" || keptSettledKeys.has(line.key),
+    [keptSettledKeys],
+  );
+  const hiddenSettledCount = useMemo(
+    () => lines.filter((line) => !isListedWithoutQuery(line)).length,
+    [lines, isListedWithoutQuery],
+  );
+  // Hidden lines are reachable only through the filter, so it is offered whenever something is
+  // hidden, not only past the length at which typing starts to beat scanning.
+  const showSearch = status === "ready" && (lines.length > ALLOCATION_SEARCH_THRESHOLD || hiddenSettledCount > 0);
+
+  // The filter selects orders, not lines: a matched order keeps every one of its lines, settled ones
+  // included, which is how a product already paid in full is found again.
   const visibleLines = useMemo(() => {
-    if (query.trim() === "") return lines;
+    if (query.trim() === "") return lines.filter(isListedWithoutQuery);
     const matchedOrderIds = new Set<string>();
     for (const line of lines) {
       const label = labelByKey.get(line.key) ?? "";
       if (matchesQuery(label, query) || matchesQuery(line.humanReadableId, query)) matchedOrderIds.add(line.orderId);
     }
     return lines.filter((line) => matchedOrderIds.has(line.orderId));
-  }, [lines, labelByKey, query]);
+  }, [lines, labelByKey, query, isListedWithoutQuery]);
 
   /** The last line of each order block, which is where an order-level message is written. */
   const lastLineKeyByOrderId = useMemo(() => {
@@ -373,6 +410,16 @@ export default function StorePaymentAllocationPanel({
       );
     }
 
+    if (visibleLines.length === 0 && query.trim() === "") {
+      // Every line left is already paid in full: nothing to assign, but they are still findable.
+      return (
+        <div className={cn("flex flex-col items-center justify-center gap-2 px-6 text-center", RESERVED_LIST_HEIGHT)}>
+          <PackageOpen size={24} aria-hidden className="[color:var(--text-muted)]" />
+          <p className="[font-size:12.5px] [color:var(--text-secondary)]">{t("allocations.allSettled")}</p>
+        </div>
+      );
+    }
+
     if (visibleLines.length === 0) {
       return (
         <div className={cn("flex flex-col items-center justify-center gap-3 px-6 text-center", RESERVED_LIST_HEIGHT)}>
@@ -385,70 +432,78 @@ export default function StorePaymentAllocationPanel({
     }
 
     return (
-      <ul className="flex flex-col">
-        {visibleLines.map((line) => {
-          const figures = lineFigures.get(line.key);
-          const blockingReason = validation.blockingLines.get(line.key) ?? null;
-          const isServerRejection = serverRejectedLineKey === line.key;
-          const label = labelByKey.get(line.key) ?? restLabel;
+      <>
+        <ul className="flex flex-col">
+          {visibleLines.map((line) => {
+            const figures = lineFigures.get(line.key);
+            const blockingReason = validation.blockingLines.get(line.key) ?? null;
+            const isServerRejection = serverRejectedLineKey === line.key;
+            const label = labelByKey.get(line.key) ?? restLabel;
 
-          const isOrderMessageAnchor = lastLineKeyByOrderId.get(line.orderId) === line.key;
+            const isOrderMessageAnchor = lastLineKeyByOrderId.get(line.orderId) === line.key;
 
-          let message: string | null = null;
-          let messageTone: "error" | "neutral" = "error";
-          if (isServerRejection) message = t("allocations.serverRejectedLine");
-          else if (blockingReason === "overItemBase") message = t("allocations.lineOverBase");
-          else if (isOrderMessageAnchor && blockingReason === "overOrderBalance")
-            message = t("allocations.lineOverOrder");
-          else if (isOrderMessageAnchor && blockingReason === "dateBeforeOrder")
-            message = t("allocations.lineDateBeforeOrder");
-          else if (isOrderMessageAnchor && exhaustedOrderIds.has(line.orderId)) {
-            // Not an error: the block's own budget is exactly spent, which is a legal draft and a
-            // frequent one (it is what pressing "Máx." on the last line of a block produces). It
-            // still has to be SAID, because every fill button of the block goes inert with it and
-            // the reason otherwise lives only on the controls themselves. `lineOverOrder` covers
-            // the neighbouring case, going OVER, and never fires on landing exactly.
-            message = t("allocations.fillDisabledOrder");
-            messageTone = "neutral";
-          }
+            let message: string | null = null;
+            let messageTone: "error" | "neutral" = "error";
+            if (isServerRejection) message = t("allocations.serverRejectedLine");
+            else if (blockingReason === "overItemBase") message = t("allocations.lineOverBase");
+            else if (isOrderMessageAnchor && blockingReason === "overOrderBalance")
+              message = t("allocations.lineOverOrder");
+            else if (isOrderMessageAnchor && blockingReason === "dateBeforeOrder")
+              message = t("allocations.lineDateBeforeOrder");
+            else if (isOrderMessageAnchor && exhaustedOrderIds.has(line.orderId)) {
+              // Not an error: the block's own budget is exactly spent, which is a legal draft and a
+              // frequent one (it is what pressing "Máx." on the last line of a block produces). It
+              // still has to be SAID, because every fill button of the block goes inert with it and
+              // the reason otherwise lives only on the controls themselves. `lineOverOrder` covers
+              // the neighbouring case, going OVER, and never fires on landing exactly.
+              message = t("allocations.fillDisabledOrder");
+              messageTone = "neutral";
+            }
 
-          // An order-level rule marks every line of the block but writes its reason once, on the
-          // block's last line. The other lines point at that same text so a screen reader never
-          // announces "invalid" with nothing to explain it.
-          const groupMessageId =
-            blockingReason === "overOrderBalance" || blockingReason === "dateBeforeOrder"
-              ? lineMessageId(lastLineKeyByOrderId.get(line.orderId) ?? line.key)
-              : undefined;
+            // An order-level rule marks every line of the block but writes its reason once, on the
+            // block's last line. The other lines point at that same text so a screen reader never
+            // announces "invalid" with nothing to explain it.
+            const groupMessageId =
+              blockingReason === "overOrderBalance" || blockingReason === "dateBeforeOrder"
+                ? lineMessageId(lastLineKeyByOrderId.get(line.orderId) ?? line.key)
+                : undefined;
 
-          return (
-            <StorePaymentAllocationRow
-              key={line.key}
-              line={line}
-              label={label}
-              currencyCode={currencyCode}
-              locale={locale}
-              value={values[line.key] ?? ""}
-              orderBalanceMinor={
-                firstLineKeyByOrderId.get(line.orderId) === line.key
-                  ? (orderById.get(line.orderId)?.assignableMinor ?? null)
-                  : null
-              }
-              fillableMinor={figures?.fillableMinor ?? 0}
-              fillDisabledReason={figures?.fillDisabledReason ?? "unavailable"}
-              message={message}
-              messageTone={messageTone}
-              groupMessageId={groupMessageId}
-              isServerRejection={isServerRejection}
-              isInvalid={blockingReason !== null || isServerRejection}
-              declaredInDraft={declaredLineKeys.has(line.key)}
-              query={query}
-              onChange={onChange}
-              onFill={(target) => onFill(target, lineFigures.get(target.key)?.fillableMinor ?? 0)}
-              onToggleDeclared={onToggleDeclared}
-            />
-          );
-        })}
-      </ul>
+            return (
+              <StorePaymentAllocationRow
+                key={line.key}
+                line={line}
+                label={label}
+                currencyCode={currencyCode}
+                locale={locale}
+                value={values[line.key] ?? ""}
+                orderBalanceMinor={
+                  firstLineKeyByOrderId.get(line.orderId) === line.key
+                    ? (orderById.get(line.orderId)?.assignableMinor ?? null)
+                    : null
+                }
+                fillableMinor={figures?.fillableMinor ?? 0}
+                fillDisabledReason={figures?.fillDisabledReason ?? "unavailable"}
+                message={message}
+                messageTone={messageTone}
+                groupMessageId={groupMessageId}
+                isServerRejection={isServerRejection}
+                isInvalid={blockingReason !== null || isServerRejection}
+                declaredInDraft={declaredLineKeys.has(line.key)}
+                query={query}
+                onChange={onChange}
+                onFill={(target) => onFill(target, lineFigures.get(target.key)?.fillableMinor ?? 0)}
+                onToggleDeclared={onToggleDeclared}
+              />
+            );
+          })}
+        </ul>
+        {/* Says the list is not the whole store, and how to reach the rest, once, after the rows. */}
+        {query.trim() === "" && hiddenSettledCount > 0 && (
+          <p className="px-3 pt-3 pb-1 [font-size:11.5px] [color:var(--text-muted)]">
+            {t("allocations.settledHidden", { count: hiddenSettledCount })}
+          </p>
+        )}
+      </>
     );
   }
 
