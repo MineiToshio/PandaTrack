@@ -409,6 +409,8 @@
         "searchLabel": "Search product or order",
         "searchPlaceholder": "Search product or order",
         "serverRejectedLine": "The server refused this line. Adjust the amount.",
+        "allSettled": "The products on these orders are already paid in full. Search to see them.",
+        "settledHidden": "{count, plural, one {# product already paid in full is hidden. Search to see it.} other {# products already paid in full are hidden. Search to see them.}}",
         "settledLabel": "Settled",
         "sortCaption": "most recent first",
         "submitPending": "Recording…",

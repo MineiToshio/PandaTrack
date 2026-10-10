@@ -532,10 +532,70 @@ describe('StorePaymentSheet — "Saldada" derivada (C2)', () => {
     await typeAmount("100");
     await openAllocationPanel();
 
+    // Paid in full is not something left to pay: neither line is listed until it is searched for.
+    expect(screen.queryByText("allocations.settledLabel")).not.toBeInTheDocument();
+    expect(screen.getByText("allocations.allSettled")).toBeInTheDocument();
+    await userEvent.type(screen.getByRole("searchbox"), "ORD-20260105-01");
+
     expect(screen.getAllByText("allocations.settledLabel")).toHaveLength(2); // one chip per settled line
     // Locked, and locked the same way: `readOnly`, never `disabled` (see the focus test below).
     expect(screen.getByLabelText(/allocations\.amountAria.*Pagado a mano/)).toHaveAttribute("readonly");
     expect(screen.getByLabelText(/allocations\.amountAria.*Declarado saldado/)).toHaveAttribute("readonly");
+  });
+});
+
+describe("StorePaymentSheet — líneas saldadas", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  function renderMixedOrder() {
+    return renderSheet({
+      orders: [
+        makeOrder({
+          items: [
+            {
+              itemId: "item-1",
+              name: "Ya pagado",
+              basePagableMinor: 6000,
+              allocatedMinor: 6000,
+              settledByDeclaration: false,
+              paidDeclared: false,
+            },
+            {
+              itemId: "item-2",
+              name: "Por pagar",
+              basePagableMinor: 4000,
+              allocatedMinor: 0,
+              settledByDeclaration: false,
+              paidDeclared: false,
+            },
+          ],
+        }),
+      ],
+    });
+  }
+
+  it("lists only what is left to pay, and says how many paid lines it is hiding", async () => {
+    renderMixedOrder();
+    await typeAmount("40");
+    await openAllocationPanel();
+
+    expect(screen.getByLabelText(/allocations\.amountAria.*Por pagar/)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/allocations\.amountAria.*Ya pagado/)).not.toBeInTheDocument();
+    expect(screen.getByText(/allocations\.settledHidden.*"count":1/)).toBeInTheDocument();
+  });
+
+  it("offers the filter even on a short list when something is hidden, and finds the paid line", async () => {
+    renderMixedOrder();
+    await typeAmount("40");
+    await openAllocationPanel();
+
+    // Two lines is far below the length at which the filter normally earns its place, but a hidden
+    // line has no other way back onto the screen.
+    await userEvent.type(screen.getByRole("searchbox"), "Ya pagado");
+
+    expect(screen.getByLabelText(/allocations\.amountAria.*Ya pagado/)).toHaveAttribute("readonly");
+    expect(screen.getByText("allocations.settledLabel")).toBeInTheDocument();
+    expect(screen.queryByText(/allocations\.settledHidden/)).not.toBeInTheDocument();
   });
 });
 

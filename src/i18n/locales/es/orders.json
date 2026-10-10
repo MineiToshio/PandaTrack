@@ -409,6 +409,8 @@
         "searchLabel": "Buscar producto o pedido",
         "searchPlaceholder": "Buscar producto o pedido",
         "serverRejectedLine": "El servidor rechazó esta línea. Ajusta el monto.",
+        "allSettled": "Los productos de estos pedidos ya están saldados. Búscalos si quieres verlos.",
+        "settledHidden": "{count, plural, one {# producto ya saldado no se muestra. Búscalo para verlo.} other {# productos ya saldados no se muestran. Búscalos para verlos.}}",
         "settledLabel": "Saldado",
         "sortCaption": "más recientes primero",
         "submitPending": "Registrando…",
