@@ -1,6 +1,6 @@
 "use client";
 
-import { Calculator, ImagePlus, Info, Plus, Scale, ShoppingCart, Sparkles, Wallet, X } from "lucide-react";
+import { Calculator, Check, ImagePlus, Info, Plus, Scale, ShoppingCart, Sparkles, Wallet, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import posthog from "posthog-js";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -11,6 +11,7 @@ import SectionTitleWithAccent from "@/components/modules/SectionTitleWithAccent"
 import { useStoreProductTypeName } from "@/app/[locale]/(app)/_components/StoreProductTypeNamesProvider";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { OrderItemsTable } from "../../../_components/share/OrderItemsGrid";
+import IconButton from "@/components/core/IconButton";
 import FieldErrorMsg from "@/components/core/FieldErrorMsg";
 import OrderAddProductSheet, { type ProductFormValue } from "../../../_components/share/OrderAddProductSheet";
 import Input from "@/components/core/Input";
@@ -20,7 +21,7 @@ import AlertBanner from "@/components/modules/AlertBanner";
 import type { StoreComboboxOption } from "@/components/modules/StoreCombobox";
 import { ALLOWED_COLLECTOR_BASE_CURRENCY_CODES } from "@/lib/catalog/collectorCountries";
 import { POSTHOG_EVENTS } from "@/lib/constants";
-import { formatAmount, formatCentsForInput } from "@/lib/currency";
+import { formatAmountSymbolOnly, formatCentsForInput } from "@/lib/currency";
 import { formatDomainDate } from "@/lib/domainDate";
 import { fetchTodayRate } from "@/lib/fx/exchangeRates";
 import { MAX_PAYMENTS_PER_ORDER } from "@/lib/imageIntake/constants";
@@ -515,6 +516,7 @@ export default function IntakeReviewScreen({
   // guarantees one is always there, read from the source or assumed from the collector's base
   // currency, so the screen has nothing left to guess.
   const currencyCode = draft.currency.value ?? NO_CURRENCY_CODE;
+  const formatPrice = (minorUnits: number) => formatAmountSymbolOnly(minorUnits, currencyCode, locale);
   const productCount = countProducts(draft);
   // Read from the chat but not storable on an order: an order has no shipping-cost field, and a
   // shipping cost only becomes a real record once a delivery is registered. It is shown with that
@@ -532,7 +534,7 @@ export default function IntakeReviewScreen({
   const doubtCount = attributeDoubtCount + doubtfulGroupCount + storeDoubtCount;
 
   const paidTotal = draft.payments.reduce((sum, payment) => sum + (payment.amount.value ?? 0), 0);
-  const formattedTotal = draft.totalCost.value !== null ? formatAmount(draft.totalCost.value, currencyCode) : "";
+  const formattedTotal = draft.totalCost.value !== null ? formatPrice(draft.totalCost.value) : "";
 
   /**
    * Says out loud when the rows and the stated total disagree.
@@ -552,6 +554,14 @@ export default function IntakeReviewScreen({
     productsTotal + (shippingCost ?? 0) !== statedTotal
       ? { productsTotal, statedTotal }
       : null;
+
+  const totalsMatch = productsTotal !== null && statedTotal !== null && totalMismatch === null;
+  const isFullyPaid = statedTotal !== null && statedTotal > 0 && paidTotal >= statedTotal;
+  const paidLabelKey = isFullyPaid
+    ? "totals.paidFull"
+    : statedTotal !== null && statedTotal > 0
+      ? "totals.paid"
+      : "totals.paidTotal";
 
   // An order priced in another currency needs a rate, or it lands saved but invisible: it is left
   // out of every base-currency dashboard total with nothing on screen that ever said so.
@@ -1341,7 +1351,7 @@ export default function IntakeReviewScreen({
             the figure the rows are supposed to add up to, and putting it two sections away from
             them meant nothing could be compared without scrolling.
           */}
-          <div className="border-border bg-surface flex flex-col gap-4 rounded-[var(--radius-lg)] border p-4">
+          <div className="border-border flex flex-col gap-4 border-t pt-4">
             {productCount > 0 && (
               <div className="flex flex-col gap-2.5 md:flex-row md:items-center md:justify-between md:gap-3">
                 <p className="numeric text-[12px] [color:var(--text-muted)]">
@@ -1349,22 +1359,29 @@ export default function IntakeReviewScreen({
                     ? t("totals.calculatedNone")
                     : pricedProducts.unpricedCount > 0
                       ? t("totals.calculatedPartial", {
-                          total: formatAmount(pricedProducts.sum, currencyCode),
+                          total: formatPrice(pricedProducts.sum),
                           count: pricedProducts.unpricedCount,
                         })
-                      : t("totals.calculated", { total: formatAmount(pricedProducts.sum, currencyCode) })}
+                      : t("totals.calculated", { total: formatPrice(pricedProducts.sum) })}
                 </p>
-                <Button
-                  type="button"
-                  variant="tonal"
-                  size="sm"
-                  onClick={handleUseCalculatedTotal}
-                  disabled={pricedProducts === null}
-                  leadingIcon={<Calculator size={14} aria-hidden />}
-                  className="w-full md:w-auto"
-                >
-                  {t("totals.useCalculated")}
-                </Button>
+                {totalsMatch ? (
+                  <p role="status" className="text-text-muted flex items-center gap-1.5 text-xs">
+                    <Check size={14} aria-hidden />
+                    {t("totals.matches")}
+                  </p>
+                ) : totalMismatch === null ? (
+                  <Button
+                    type="button"
+                    variant="tonal"
+                    size="sm"
+                    onClick={handleUseCalculatedTotal}
+                    disabled={pricedProducts === null}
+                    leadingIcon={<Calculator size={14} aria-hidden />}
+                    className="min-h-11 w-full md:w-auto lg:min-h-8"
+                  >
+                    {t("totals.useCalculated")}
+                  </Button>
+                ) : null}
               </div>
             )}
 
@@ -1404,13 +1421,11 @@ export default function IntakeReviewScreen({
               )}
             />
 
-            {shippingCost !== null && (
+            {shippingCost !== null && shippingCost > 0 && (
               <div className="flex flex-col gap-[var(--space-1)]">
                 <div className="flex items-baseline justify-between gap-[var(--space-3)] text-[13px]">
                   <span className="[color:var(--text-muted)]">{t("delivery.cost")}</span>
-                  <span className="numeric [color:var(--text-primary)]">
-                    {formatAmount(shippingCost, currencyCode)}
-                  </span>
+                  <span className="numeric [color:var(--text-primary)]">{formatPrice(shippingCost)}</span>
                 </div>
                 <p className="text-[11.5px] [color:var(--text-muted)]">{t("delivery.costNotSaved")}</p>
               </div>
@@ -1418,10 +1433,22 @@ export default function IntakeReviewScreen({
 
             {totalMismatch !== null && (
               <AlertBanner tone="warning" icon={<Scale size={16} />} title={t("totals.mismatchTitle")}>
-                {t("totals.mismatchBody", {
-                  products: formatAmount(totalMismatch.productsTotal, currencyCode),
-                  total: formatAmount(totalMismatch.statedTotal, currencyCode),
-                })}
+                <p>
+                  {t("totals.mismatchBody", {
+                    products: formatPrice(totalMismatch.productsTotal),
+                    total: formatPrice(totalMismatch.statedTotal),
+                  })}
+                </p>
+                <Button
+                  type="button"
+                  variant="tonal"
+                  size="sm"
+                  onClick={handleUseCalculatedTotal}
+                  leadingIcon={<Calculator size={14} aria-hidden />}
+                  className="mt-3 min-h-11 w-full md:w-auto lg:min-h-8"
+                >
+                  {t("totals.useCalculated")}
+                </Button>
               </AlertBanner>
             )}
           </div>
@@ -1463,10 +1490,14 @@ export default function IntakeReviewScreen({
                 const breakdownRow = breakdownRows[index];
                 return (
                   // Keyed by position: the date is editable, so keying on it would remount the field.
-                  <li key={index} className="relative grid gap-4 pr-8 md:grid-cols-2 md:pr-9">
+                  <li
+                    key={index}
+                    className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-2 gap-y-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] md:gap-x-4"
+                  >
                     <ProvenanceValue
                       markerTone="warning"
                       id={`intake-payment-amount-${index}`}
+                      className="col-start-1 row-start-1 min-w-0"
                       label={t("payments.amountLabel", { position: index + 1 })}
                       state={amountState}
                       markerLabel={t(amountState === "assumed" ? "provenance.assumed" : "provenance.missing")}
@@ -1495,6 +1526,7 @@ export default function IntakeReviewScreen({
                           : "neutral"
                       }
                       id={`intake-payment-date-${index}`}
+                      className="col-start-1 row-start-2 min-w-0 md:col-start-2 md:row-start-1"
                       label={t("payments.dateLabel")}
                       state={dateState}
                       markerLabel={t(dateState === "assumed" ? "provenance.assumed" : "provenance.missing")}
@@ -1530,7 +1562,7 @@ export default function IntakeReviewScreen({
                         to exist before splitting it means anything, and it is above. On mobile the
                         row is one column already, so this simply follows the date. */}
                     {breakdownRow !== undefined && (
-                      <div className="md:col-span-2">
+                      <div className="col-span-full min-w-0">
                         <OrderPaymentBreakdownPanel
                           // Unique per payment row: several panels are mounted at once here, and a
                           // shared id namespace would cross every `aria-controls` and
@@ -1557,20 +1589,13 @@ export default function IntakeReviewScreen({
                         />
                       </div>
                     )}
-                    <button
-                      type="button"
+                    <IconButton
+                      size="sm"
+                      icon={<X size={14} aria-hidden />}
                       onClick={() => handleRemovePayment(index)}
                       aria-label={t("payments.removeLabel", { position: index + 1 })}
-                      // Tap target ≥44×44 on mobile via the `::before` pseudo (same mechanism as
-                      // `IconButton`): padding inside a fixed `size-7` box never grows the box, so
-                      // `inset:-8px` on 28px expands the hit area outward to 44 instead. No other
-                      // control is within 8px: the row reserves `pr-8` for this button, and the
-                      // payment rows are `gap-[var(--space-4)]` apart vertically.
-                      // `md:before:inset-0` drops the extra area on desktop.
-                      className="absolute top-0 right-0 grid size-7 shrink-0 cursor-pointer place-items-center rounded-md [color:var(--text-muted)] transition-colors before:absolute before:[inset:-8px] before:content-[''] hover:[color:var(--text-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:[outline-color:var(--focus-ring)] md:before:inset-0"
-                    >
-                      <X size={14} aria-hidden="true" />
-                    </button>
+                      className="col-start-2 row-start-1 mt-8 size-11 self-start [color:var(--text-muted)] before:inset-0 hover:[color:var(--text-primary)] focus-visible:[color:var(--text-primary)] md:col-start-3"
+                    />
                   </li>
                 );
               })}
@@ -1590,8 +1615,8 @@ export default function IntakeReviewScreen({
           </Button>
 
           <div className="flex items-baseline justify-between gap-[var(--space-3)] pt-3.5 text-[13px] [border-top:1px_solid_var(--border)]">
-            <span className="[color:var(--text-muted)]">{t("totals.paid")}</span>
-            <span className="numeric [color:var(--text-primary)]">{formatAmount(paidTotal, currencyCode)}</span>
+            <span className="[color:var(--text-muted)]">{t(paidLabelKey)}</span>
+            <span className="numeric [color:var(--text-primary)]">{formatPrice(paidTotal)}</span>
           </div>
         </div>
       </Card>
@@ -1645,7 +1670,7 @@ export default function IntakeReviewScreen({
         isOpen={pendingMismatchSave !== null && totalMismatch !== null}
         enteredTotal={totalMismatch?.statedTotal ?? 0}
         calculatedTotal={totalMismatch?.productsTotal ?? 0}
-        formatAmount={(cents) => formatAmount(cents, currencyCode)}
+        formatAmount={(cents) => formatPrice(cents)}
         onGoBack={handleMismatchGoBack}
         onSaveAnyway={handleMismatchSaveAnyway}
       />

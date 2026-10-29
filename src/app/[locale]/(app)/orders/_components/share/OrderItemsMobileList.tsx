@@ -26,6 +26,9 @@ type Props = {
   keepEmptyRow?: boolean;
   onCategoryPicked?: (rowId: string) => void;
   renderRowAction?: (row: ItemRow) => ReactNode;
+  /** Opt-in review rows own the full outline, including their trailing actions. */
+  containRowActions?: boolean;
+  formatPrice?: (minorUnits: number) => string;
 };
 
 function parseCentsFromDecimal(value: string): number | null {
@@ -47,6 +50,8 @@ export default function OrderItemsMobileList({
   keepEmptyRow = true,
   onCategoryPicked,
   renderRowAction,
+  containRowActions = false,
+  formatPrice,
 }: Props) {
   const t = useTranslations("orders.create");
   const tAdd = useTranslations("orders.create.addProduct");
@@ -117,7 +122,8 @@ export default function OrderItemsMobileList({
             const Icon = row.productTypeKey ? getStoreProductTypeIcon(row.productTypeKey) : null;
             const qty = parseInt(row.quantity, 10) || 1;
             const priceCents = parseCentsFromDecimal(row.unitPrice);
-            const priceLabel = priceCents != null ? formatAmount(priceCents, currencyCode) : null;
+            const priceLabel =
+              priceCents != null ? (formatPrice?.(priceCents) ?? formatAmount(priceCents, currencyCode)) : null;
             const rowBody = (
               <>
                 <span
@@ -142,15 +148,23 @@ export default function OrderItemsMobileList({
             );
 
             return (
-              <li key={row.rowId} className="flex items-stretch gap-1.5">
+              <li
+                key={row.rowId}
+                className={cn(
+                  "flex items-stretch gap-1.5",
+                  containRowActions && "border-border items-center rounded-[var(--radius-lg)] border pr-1",
+                )}
+              >
                 <button
                   type="button"
                   onClick={() => setSheet({ open: true, rowId: row.rowId })}
                   className={cn(
                     "flex min-w-0 flex-1 items-center gap-2.5 rounded-[10px] px-2.5 py-2.5 text-left",
-                    compact
-                      ? "[border-bottom:1px_solid_var(--border)]"
-                      : "[background:var(--surface)] [border:1px_solid_var(--border)]",
+                    containRowActions
+                      ? "min-h-11"
+                      : compact
+                        ? "[border-bottom:1px_solid_var(--border)]"
+                        : "[background:var(--surface)] [border:1px_solid_var(--border)]",
                     "hover:[background:color-mix(in_oklch,var(--text-primary)_3%,transparent)]",
                   )}
                 >

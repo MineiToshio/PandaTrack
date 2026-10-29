@@ -173,7 +173,7 @@
       "priceNotANumber": "Escribe el precio como número, sin separadores de miles ni símbolos. Ejemplo: 115.00",
       "categorySuggestedHint": "Las categorías son sugerencias nuestras. Cámbialas si no encajan.",
       "referenceLinkLead": "Enlace de las fotos:",
-      "bundleLabel": "{count} productos de una misma línea",
+      "bundleLabel": "Vendidos juntos en la foto: «{phrase}»",
       "splitProduct": "Separar {name}"
     },
     "productSheet": {
@@ -203,6 +203,9 @@
       "breakdownExceedsBalance": "Con los pagos anteriores, este pago supera el total del pedido. Ajusta los importes."
     },
     "totals": {
+      "paidFull": "Pagado completo",
+      "paidTotal": "Total pagado",
+      "matches": "Coincide con el total",
       "paid": "Adelanto pagado",
       "total": "Total del pedido",
       "mismatchTitle": "Los productos no suman el total",

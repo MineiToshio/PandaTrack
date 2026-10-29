@@ -127,6 +127,72 @@ describe("shouldArriveExpanded", () => {
 });
 
 describe("IntakeGroupCard", () => {
+  it("gives split and delete identical muted, centered icon controls with a split tooltip", () => {
+    renderCard();
+    const split = screen.getAllByRole("button", { name: /^splitProduct:/ })[0];
+    const remove = screen.getByRole("button", { name: "itemDeleteLabel 1" });
+    expect(split.getAttribute("title")).toBe(split.getAttribute("aria-label"));
+    for (const button of [split, remove]) {
+      expect(button.className).toContain("size-11");
+      expect(button.className).toContain("lg:size-8");
+      expect(button.className).toContain("[color:var(--text-muted)]");
+      expect(button.className).toContain("focus-visible:[color:var(--text-primary)]");
+      expect(button.querySelector("svg")?.getAttribute("width")).toBe("14");
+      expect(button.closest("td")?.className).toContain("align-middle");
+    }
+  });
+
+  it("keeps the source label and exactly its members inside one continuous table band", () => {
+    render(
+      <OrderItemsTable showQuantity={false} sortable={false} hasRowAction>
+        <IntakeGroupCard
+          group={buildGroup()}
+          groupKey="bundle"
+          currencyCode="PEN"
+          productTypeKeys={PRODUCT_TYPE_KEYS}
+          hasWarning={false}
+          onApply={noopApply}
+          withinTable
+        />
+        <IntakeGroupCard
+          group={buildGroup({ sourcePhrase: "Other source", products: buildProducts(1) })}
+          groupKey="other"
+          currencyCode="PEN"
+          productTypeKeys={PRODUCT_TYPE_KEYS}
+          hasWarning={false}
+          onApply={noopApply}
+          withinTable
+        />
+      </OrderItemsTable>,
+    );
+    const source = screen.getByText(/bundleLabel:.*el pack chase de Gojo/);
+    const band = source.closest("tbody")!;
+    expect(band.getAttribute("aria-labelledby")).toBe(source.closest("summary")?.id);
+    expect(band.className).toContain("[&>tr>td:first-child]:border-l-2");
+    expect(within(band).getAllByLabelText("itemNameLabel")).toHaveLength(2);
+    expect(nameCells()[2].closest("tbody")).not.toBe(band);
+    expect(within(band).getByRole("button", { name: "mergeAction" }).className).toContain(
+      "[background:color-mix(in_oklch,var(--accent)_12%,transparent)]",
+    );
+  });
+
+  it("contains the mobile edit and split targets in the same bordered row and keeps delete in edit", () => {
+    viewport.mobile = true;
+    renderCard({ group: buildGroup({ products: buildProducts(1) }) });
+    const edit = screen.getByRole("button", { name: /^One Piece 1/ });
+    const split = screen.getByRole("button", { name: /^splitProduct:/ });
+    const card = edit.closest("li")!;
+    expect(card).toBe(split.closest("li"));
+    expect(card.className).toContain("border-border");
+    expect(card.className).toMatch(/\bborder\b/);
+    expect(edit.className).toContain("min-h-11");
+    expect(edit.className).not.toContain("border-bottom");
+    expect(split.className).toContain("size-11");
+    expect(split.className).toContain("before:inset-0");
+    fireEvent.click(edit);
+    expect(screen.getByRole("button", { name: "delete" })).toBeTruthy();
+  });
+
   it("renders every product as an editable table row, with no mode to discover first", () => {
     renderCard();
 

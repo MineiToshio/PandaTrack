@@ -131,6 +131,55 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
+describe("review polish: totals and payment status", () => {
+  it("confirms matching totals and offers reconciliation only inside the mismatch warning", () => {
+    mount();
+    expect(screen.queryByRole("button", { name: "totals.useCalculated" })).toBeNull();
+    expect(screen.getByRole("status").textContent).toContain("totals.matches");
+    fireEvent.change(screen.getByLabelText(/fields.total/), { target: { value: "60" } });
+    const warning = screen.getByText("totals.mismatchTitle").closest('[role="note"]') as HTMLElement;
+    fireEvent.click(within(warning).getByRole("button", { name: "totals.useCalculated" }));
+    expect((screen.getByLabelText(/fields.total/) as HTMLInputElement).value).toBe("50.00");
+    expect(screen.queryByRole("button", { name: "totals.useCalculated" })).toBeNull();
+    expect(screen.getByRole("status").textContent).toContain("totals.matches");
+  });
+
+  it.each([5000, 6000])("calls a payment covering the total fully paid (%s minor units)", (amount) => {
+    const value = draft();
+    value.payments = [{ amount: field(amount), paidAt: field("2026-07-20") }];
+    mount(value);
+    expect(screen.getByText("totals.paidFull")).toBeTruthy();
+    expect(screen.queryByText("totals.paid")).toBeNull();
+  });
+
+  it("recomputes full payment status from all payments and the edited order total", () => {
+    const value = draft();
+    value.payments = [
+      { amount: field(2000), paidAt: field("2026-07-20") },
+      { amount: field(3000), paidAt: field("2026-07-21") },
+    ];
+    mount(value);
+    expect(screen.getByText("totals.paidFull")).toBeTruthy();
+    fireEvent.change(screen.getByLabelText(/fields.total/), { target: { value: "60" } });
+    expect(screen.getByText("totals.paid")).toBeTruthy();
+    expect(screen.queryByText("totals.paidFull")).toBeNull();
+  });
+
+  it("only claims full payment while the total is known", () => {
+    const value = draft();
+    value.totalCost = field(null);
+    value.groups[0].products[0].unitPrice = null;
+    value.payments = [{ amount: field(5000), paidAt: field("2026-07-20") }];
+    mount(value);
+    expect(screen.getByText("totals.paidTotal")).toBeTruthy();
+    expect(screen.queryByText("totals.paidFull")).toBeNull();
+    fireEvent.change(screen.getByLabelText(/fields.total/), { target: { value: "50" } });
+    expect(screen.getByText("totals.paidFull")).toBeTruthy();
+    fireEvent.change(screen.getByLabelText(/fields.total/), { target: { value: "" } });
+    expect(screen.queryByText("totals.paidFull")).toBeNull();
+  });
+});
+
 describe("review regression: product recovery", () => {
   it.each([false, true])("adds a missed product with one section action when mobile is %s", (mobile) => {
     viewport.mobile = mobile;

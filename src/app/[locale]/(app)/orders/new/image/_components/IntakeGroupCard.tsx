@@ -1,7 +1,7 @@
 "use client";
 
 import { AlertTriangle, ChevronDown, CircleHelp, ExternalLink, Layers, Scissors } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import posthog from "posthog-js";
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import Button from "@/components/core/Button/Button";
@@ -17,7 +17,7 @@ import {
 } from "@/lib/imageIntake/draftItemRows";
 import { compareNaturally } from "@/lib/imageIntake/naturalSort";
 import { formatReferenceHost } from "@/lib/imageIntake/referenceProductNaming";
-import { formatAmount } from "@/lib/currency";
+import { formatAmountSymbolOnly } from "@/lib/currency";
 import { parseDecimalToMinorUnits } from "@/lib/money/parseDecimalToMinorUnits";
 import { POSTHOG_EVENTS } from "@/lib/constants";
 import { cn } from "@/lib/styles";
@@ -88,6 +88,8 @@ export default function IntakeGroupCard({
   onApply,
 }: IntakeGroupCardProps) {
   const t = useTranslations("imageIntake.review.group");
+  const locale = useLocale();
+  const formatPrice = (minorUnits: number) => formatAmountSymbolOnly(minorUnits, currencyCode, locale);
   const productTypeName = useStoreProductTypeName();
   const isMobile = useIsMobile();
   const [isExpanded, setIsExpanded] = useState(() => shouldArriveExpanded(group));
@@ -112,6 +114,7 @@ export default function IntakeGroupCard({
   );
   const columnCount = useOrderItemsTableColumnCount();
   const rowsId = useId();
+  const evidenceId = useId();
   const hasUntouchedSuggestion = rows.some((row) => row.productTypeKey !== "" && !ownedCategoryRowIds.has(row.rowId));
 
   useEffect(() => {
@@ -259,10 +262,10 @@ export default function IntakeGroupCard({
     return (
       <IconButton
         size="sm"
-        icon={<Scissors size={16} aria-hidden />}
+        icon={<Scissors size={14} aria-hidden />}
         aria-label={label}
         title={label}
-        className="size-11 before:inset-0 lg:size-8"
+        className="size-11 [color:var(--text-muted)] before:inset-0 hover:[color:var(--text-primary)] focus-visible:[color:var(--text-primary)] lg:size-8"
         onClick={() => handleSplitRow(row)}
         data-ph-event={POSTHOG_EVENTS.ORDER.SPLIT_MERGE_MODAL_OPENED}
         data-ph-props={JSON.stringify({ mode: "split", source: "intake_review", product_count: 1 })}
@@ -301,24 +304,28 @@ export default function IntakeGroupCard({
   }
 
   const provenance = showProvenance ? (
-    <div className="border-border-strong bg-surface text-text-secondary flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 border-l-2 px-3 py-1.5 text-xs">
-      <details className="min-w-0 flex-1" onToggle={handleEvidenceToggle}>
+    <div className="text-text-secondary flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 px-3 py-1.5 text-xs">
+      <details className="min-w-0 flex-1 basis-full md:basis-0" onToggle={handleEvidenceToggle}>
         <summary
+          id={evidenceId}
           className={cn(
             "text-text-secondary focus-visible:outline-ring flex min-h-11 cursor-pointer items-center gap-2 rounded focus-visible:outline-2 focus-visible:outline-offset-2 lg:min-h-8",
             group.doubtful && "[color:var(--warning-chip-text)]",
           )}
         >
           {group.doubtful ? <CircleHelp size={16} aria-hidden /> : <Layers size={16} aria-hidden />}
-          {group.doubtful
-            ? t("doubtful")
-            : group.reason === "sealed" && productCount === 1
-              ? t("sealed")
-              : group.reason === "not-nameable"
-                ? t("notNameable")
-                : hasWarning && productCount <= 1
-                  ? t("warning")
-                  : t("bundleLabel", { count: productCount })}
+          <span className="min-w-0 break-words">
+            {productCount > 1
+              ? t("bundleLabel", { phrase: group.sourcePhrase, count: productCount })
+              : group.doubtful
+                ? t("doubtful")
+                : group.reason === "sealed" && productCount === 1
+                  ? t("sealed")
+                  : group.reason === "not-nameable"
+                    ? t("notNameable")
+                    : t("warning")}
+          </span>
+          {productCount > 1 && group.doubtful && <span>{t("doubtful")}</span>}
           <ChevronDown size={14} aria-hidden className="shrink-0" />
         </summary>
         <p className="pt-1 pb-2 break-words">
@@ -328,7 +335,7 @@ export default function IntakeGroupCard({
       {productCount > 1 && (
         <Button
           type="button"
-          variant="ghost"
+          variant="tonal"
           size="sm"
           className="min-h-11 lg:min-h-8"
           onClick={handleMergeGroup}
@@ -345,7 +352,7 @@ export default function IntakeGroupCard({
     hasWarning && groupTotal !== null ? (
       <p className="flex items-start gap-2 px-3 py-2 text-xs [color:var(--warning-chip-text)]">
         <AlertTriangle size={16} aria-hidden className="shrink-0" />
-        {t("priceSplitUneven", { total: formatAmount(groupTotal, currencyCode) })}
+        {t("priceSplitUneven", { total: formatPrice(groupTotal) })}
       </p>
     ) : null;
 
@@ -377,8 +384,8 @@ export default function IntakeGroupCard({
         {groupTotal !== null
           ? t("summaryMeta", {
               count: productCount,
-              unitPrice: formatAmount(Math.round(groupTotal / productCount), currencyCode),
-              total: formatAmount(groupTotal, currencyCode),
+              unitPrice: formatPrice(Math.round(groupTotal / productCount)),
+              total: formatPrice(groupTotal),
             })
           : t("summaryMetaNoPrice", { count: productCount })}
       </span>
@@ -410,9 +417,9 @@ export default function IntakeGroupCard({
       </p>
     ) : null;
 
-  const grid = showRows ? (
+  const grid = (
     <OrderItemsGrid
-      rows={rows}
+      rows={showRows ? rows : []}
       onChange={handleRowsChange}
       productTypeKeys={productTypeKeys}
       tProductTypes={productTypeName}
@@ -430,8 +437,39 @@ export default function IntakeGroupCard({
       onCategoryPicked={handleCategoryPicked}
       tableBodyId={withinTable ? rowsId : undefined}
       renderRowAction={renderSplitAction}
+      compactControls
+      typePickerInlineChevron
+      tableBodyProps={
+        withinTable && showProvenance
+          ? {
+              "aria-labelledby": evidenceId,
+              className: "[&>tr>td:first-child]:border-border-strong [&>tr>td:first-child]:border-l-2",
+            }
+          : undefined
+      }
+      beforeRows={
+        withinTable && (provenance || warning || summary) ? (
+          <tr>
+            <td colSpan={columnCount}>
+              {provenance}
+              {warning}
+              {summary}
+            </td>
+          </tr>
+        ) : undefined
+      }
+      afterRows={
+        withinTable && (references || disclosure) ? (
+          <tr>
+            <td colSpan={columnCount}>
+              {references}
+              {disclosure}
+            </td>
+          </tr>
+        ) : undefined
+      }
     />
-  ) : null;
+  );
 
   const modal = (
     <ProductSplitMergeModal
@@ -448,28 +486,7 @@ export default function IntakeGroupCard({
   if (withinTable) {
     return (
       <>
-        {(provenance || warning || summary) && (
-          <tbody id={!showRows ? rowsId : undefined}>
-            <tr>
-              <td colSpan={columnCount}>
-                {provenance}
-                {warning}
-                {summary}
-              </td>
-            </tr>
-          </tbody>
-        )}
         {grid}
-        {(references || disclosure) && (
-          <tbody>
-            <tr>
-              <td colSpan={columnCount}>
-                {references}
-                {disclosure}
-              </td>
-            </tr>
-          </tbody>
-        )}
         {isSplitMergeOpen && (
           <tbody>
             <tr>
@@ -482,7 +499,11 @@ export default function IntakeGroupCard({
   }
 
   return (
-    <div className="min-w-0">
+    <div
+      role={showProvenance ? "group" : undefined}
+      aria-labelledby={showProvenance ? evidenceId : undefined}
+      className={cn("min-w-0", showProvenance && "border-border-strong border-l-2")}
+    >
       {provenance}
       {warning}
       {summary}
@@ -502,6 +523,8 @@ export default function IntakeGroupCard({
               keepEmptyRow={false}
               onCategoryPicked={handleCategoryPicked}
               renderRowAction={renderSplitAction}
+              containRowActions
+              formatPrice={formatPrice}
             />
           ) : (
             grid

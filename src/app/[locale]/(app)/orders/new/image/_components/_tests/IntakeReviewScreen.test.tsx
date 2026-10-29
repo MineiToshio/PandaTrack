@@ -278,7 +278,7 @@ describe("IntakeReviewScreen", () => {
     );
 
     expect(screen.getByText("delivery.cost")).toBeTruthy();
-    expect(screen.getByText("25.00 PEN")).toBeTruthy();
+    expect(screen.getByText("S/ 25.00")).toBeTruthy();
     expect(screen.getByText("delivery.costNotSaved")).toBeTruthy();
   });
 

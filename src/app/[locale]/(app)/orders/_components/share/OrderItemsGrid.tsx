@@ -12,12 +12,22 @@ import {
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, X } from "lucide-react";
-import { createContext, useContext, useCallback, useId, useMemo, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useCallback,
+  useId,
+  useMemo,
+  useState,
+  type ReactNode,
+  type HTMLAttributes,
+} from "react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/styles";
 import { sanitizeDecimalInput } from "@/lib/decimalInput";
 import { inheritProductTypeFromPrevious } from "@/lib/orders/orderItemUtils";
 import ItemTypePicker from "./ItemTypePicker";
+import IconButton from "@/components/core/IconButton";
 
 type OrderItemsTableConfig = { showQuantity?: boolean; sortable?: boolean; hasRowAction?: boolean };
 
@@ -92,6 +102,8 @@ type OrderItemRowProps = {
   showQuantity: boolean;
   sortable: boolean;
   rowAction?: ReactNode;
+  compactControls: boolean;
+  typePickerInlineChevron: boolean;
   nameError?: string;
   quantityError?: string;
   unitPriceError?: string;
@@ -113,6 +125,8 @@ function OrderItemRow({
   showQuantity,
   sortable,
   rowAction,
+  compactControls,
+  typePickerInlineChevron,
   nameError,
   quantityError,
   unitPriceError,
@@ -141,7 +155,10 @@ function OrderItemRow({
     <tr
       ref={setNodeRef}
       style={style}
-      className={cn(isDragging && "[box-shadow:0_6px_20px_color-mix(in_oklch,black_22%,transparent)]")}
+      className={cn(
+        isDragging && "[box-shadow:0_6px_20px_color-mix(in_oklch,black_22%,transparent)]",
+        compactControls && "[&>td]:align-middle",
+      )}
     >
       {sortable && (
         <td className="px-[3px] py-[2px] text-center align-middle">
@@ -263,22 +280,35 @@ function OrderItemRow({
           onOpenChange={onTypePickerOpenChange}
           onChange={(value) => onProductTypeChange(row.rowId, value)}
           onKeyDown={(e) => onCellKeyDown(e, { column: "type", rowId: row.rowId })}
+          inlineChevron={typePickerInlineChevron}
         />
       </td>
 
-      {rowAction && <td className="px-[3px] py-[2px] align-top">{rowAction}</td>}
+      {rowAction && (
+        <td className={cn("px-[3px] py-[2px]", compactControls ? "align-middle" : "align-top")}>{rowAction}</td>
+      )}
 
       {/* Delete */}
-      <td className="px-[3px] py-[2px] align-top">
+      <td className={cn("px-[3px] py-[2px]", compactControls ? "align-middle" : "align-top")}>
         <div className="flex items-center justify-center gap-0.5">
-          <button
-            type="button"
-            aria-label={`${t("itemDeleteLabel")} ${index + 1}`}
-            onClick={() => onDelete(row.rowId)}
-            className="grid size-11 place-items-center rounded [color:var(--text-muted)] transition-colors hover:[color:var(--destructive)] focus-visible:[box-shadow:0_0_0_2px_var(--focus-ring)] focus-visible:outline-none lg:inline-flex lg:size-[21px]"
-          >
-            <X size={13} aria-hidden />
-          </button>
+          {compactControls ? (
+            <IconButton
+              size="sm"
+              icon={<X size={14} aria-hidden />}
+              aria-label={`${t("itemDeleteLabel")} ${index + 1}`}
+              onClick={() => onDelete(row.rowId)}
+              className="size-11 [color:var(--text-muted)] before:inset-0 hover:[color:var(--text-primary)] focus-visible:[color:var(--text-primary)] lg:size-8"
+            />
+          ) : (
+            <button
+              type="button"
+              aria-label={`${t("itemDeleteLabel")} ${index + 1}`}
+              onClick={() => onDelete(row.rowId)}
+              className="grid size-11 place-items-center rounded [color:var(--text-muted)] transition-colors hover:[color:var(--destructive)] focus-visible:[box-shadow:0_0_0_2px_var(--focus-ring)] focus-visible:outline-none lg:inline-flex lg:size-[21px]"
+            >
+              <X size={13} aria-hidden />
+            </button>
+          )}
         </div>
       </td>
     </tr>
@@ -309,6 +339,13 @@ type OrderItemsGridProps = {
   /** Render a tbody inside a parent OrderItemsTable. Sorting must be disabled. */
   tableBodyId?: string;
   renderRowAction?: (row: ItemRow) => ReactNode;
+  /** Equal, muted icon controls for compact review lists. Manual editors retain their defaults. */
+  compactControls?: boolean;
+  typePickerInlineChevron?: boolean;
+  /** Compose provenance and its member rows in one semantic table section. */
+  beforeRows?: ReactNode;
+  afterRows?: ReactNode;
+  tableBodyProps?: HTMLAttributes<HTMLTableSectionElement>;
 };
 
 export function createEmptyRow(rowId: string): ItemRow {
@@ -335,6 +372,11 @@ export default function OrderItemsGrid({
   onCategoryPicked,
   tableBodyId,
   renderRowAction,
+  compactControls = false,
+  typePickerInlineChevron = false,
+  beforeRows,
+  afterRows,
+  tableBodyProps,
 }: OrderItemsGridProps) {
   const dndId = useId();
   const [openTypePickerRowId, setOpenTypePickerRowId] = useState<string | null>(null);
@@ -502,7 +544,8 @@ export default function OrderItemsGrid({
   }
 
   const renderedRows = (
-    <tbody id={tableBodyId}>
+    <tbody {...tableBodyProps} id={tableBodyId}>
+      {beforeRows}
       {rows.map((row, index) => (
         <OrderItemRow
           key={row.rowId}
@@ -513,6 +556,8 @@ export default function OrderItemsGrid({
           showQuantity={showQuantity}
           sortable={sortable}
           rowAction={renderRowAction?.(row)}
+          compactControls={compactControls}
+          typePickerInlineChevron={typePickerInlineChevron}
           nameError={itemErrors[row.rowId]?.name}
           quantityError={itemErrors[row.rowId]?.quantity}
           unitPriceError={itemErrors[row.rowId]?.unitPrice}
@@ -528,6 +573,7 @@ export default function OrderItemsGrid({
           onCellKeyDown={handleCellKeyDown}
         />
       ))}
+      {afterRows}
     </tbody>
   );
 

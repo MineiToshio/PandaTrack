@@ -173,7 +173,7 @@
       "priceNotANumber": "Write the price as a number, with no thousands separators and no symbols. For example: 115.00",
       "categorySuggestedHint": "The categories are our suggestions. Change any that do not fit.",
       "referenceLinkLead": "Link from the photos:",
-      "bundleLabel": "{count} products from one source line",
+      "bundleLabel": "Sold together in the photo: “{phrase}”",
       "splitProduct": "Split {name}"
     },
     "productSheet": {
@@ -203,6 +203,9 @@
       "breakdownExceedsBalance": "With the earlier payments, this one goes over the order total. Adjust the amounts."
     },
     "totals": {
+      "paidFull": "Paid in full",
+      "paidTotal": "Total paid",
+      "matches": "Matches the total",
       "paid": "Paid up front",
       "total": "Order total",
       "mismatchTitle": "The products do not add up to the total",

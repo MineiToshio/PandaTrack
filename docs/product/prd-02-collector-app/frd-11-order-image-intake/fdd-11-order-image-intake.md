@@ -263,8 +263,10 @@ Single reading column, ordered by what the user is most likely to need to fix:
 3. **Products.** One elevated list surface for the whole order. Desktop has one shared column
    header; mobile reuses the compact `OrderItemsMobileList` and its edit sheet. The naming offer
    precedes the list when applicable.
-4. **Product summary.** A recessed `--surface` block inside Products holds the live subtotal,
-   tonal "Usar este total", editable Total, and the read-only shipping cost with its saving caveat.
+4. **Product summary.** A divider and flat footer rows inside Products hold the live subtotal
+   and editable Total, without another card or background. Matching totals show a quiet check and
+   "Coincide con el total"; a mismatch contains the tonal "Usar este total" inside its warning.
+   Only a positive shipping cost appears with its saving caveat; zero and missing shipping stay hidden.
 5. **Payments.** An outlined form card containing editable amounts, core `DatePickerInput`
    controls and the existing per-payment breakdown panels. "Añadir pago" is tonal.
 6. **Section chrome.** `SectionTitleWithAccent` in its icon-led variant supplies all three
@@ -285,10 +287,13 @@ Single reading column, ordered by what the user is most likely to need to fix:
 
 **Compact provenance** (`FR-11-57`). A clean single-product source line is a plain editable
 row: no "De las fotos" chip, split-count headline, repeated explanation or group separator.
-A multi-product, sealed, not-nameable, doubtful or uneven-price group gets a compact band with one label
-("2 productos de una misma línea" or "No estamos seguros"). Its native keyboard-operable
-`details` disclosure reveals the original source phrase and the grouping explanation on demand.
-"Unir en uno" remains beside the disclosure for multi-product groups. Warnings name their cause
+A multi-product, sealed, not-nameable, doubtful or uneven-price group gets a compact band.
+Multi-product groups state their source immediately: "Vendidos juntos en la foto: «{phrase}»".
+A continuous `--border-strong` left rule spans the header and every member row, ending before the
+next group. On desktop the band and members share one labelled `tbody`; mobile uses one labelled
+group wrapper. Its native keyboard-operable `details` disclosure reveals the grouping explanation
+on demand. Doubtful groups retain "No estamos seguros" as well as the source label.
+"Unir en uno" is tonal beside the disclosure for multi-product groups. Warnings name their cause
 once and use `--warning-chip-text`; no colour-only state is introduced.
 
 **Product page naming offer** (`FR-11-100`, `BR-11-21`), rendered above the product list when a
@@ -333,13 +338,30 @@ A compact `Scissors` icon action sits in every row, with a localized accessible 
 products, prices, categories and links. The group band retains the merge action. Reference links
 remain explicit, safe external anchors. Category suggestions are explained once above the whole
 list, never once per group or per product. The same category picker and mobile edit sheet remain
-available. Mobile rows keep separate 44px targets for edit and split.
+available. Split and delete use matching `IconButton size="sm"` controls and 14px glyphs, centred
+with the row text. Both use `--text-muted` by default and `--text-primary` on hover/focus, with
+real 44px boxes through tablet and 32px boxes from `lg`. Split retains its localized label and
+native title tooltip. The intake category picker keeps a 14px `--text-muted` chevron immediately
+beside the value; the shared picker's default remains unchanged.
+
+Mobile rows own one full-width outline containing both edit and split, with separate real 44px
+minimum targets. Delete remains inside the product's edit sheet, reached by tapping that row.
+Payment rows use equal-width amount/date tracks with a trailing remove control aligned to the
+inputs rather than their labels. On mobile both fields occupy the same track; the remove target
+remains at least 44px and the breakdown spans the full available content width.
+
+Read-only amounts, including group summaries, mobile prices, subtotals, shipping, warnings and
+paid totals, use `formatAmountSymbolOnly` from `src/lib/currency.ts`, the same formatter as order
+detail and the shared payment breakdown (for example, "S/ 260.26"). Editable values stay ungrouped
+with the ISO code suffix. The payments footer reads "Pagado completo" when positive known total
+is covered by all payments, including an overpayment, and "Adelanto pagado" only below a positive known total.
+An unknown or non-positive total uses the neutral "Total pagado". This is a live calculation and does not change payment allocations.
 
 **The screen is the order form, all open** (`FR-11-51c`, `FR-11-51d`). The review uses
 core `Card` surfaces and icon-led `SectionTitleWithAccent` headings following
 [interface-patterns.md](../../../design/interface-patterns.md#section-titles--sectiontitlewithaccent).
 Order details and Payments are outlined `--surface` form containers so elevated controls remain
-distinct; Products is an elevated reading surface with a recessed money summary. This follows
+distinct; Products is an elevated reading surface with a flat, divider-separated money footer. This follows
 [visual-foundations.md](../../../design/visual-foundations.md#choosing-between---surface-and---surface-elevated).
 All three sections stay open. There is no gated wizard, numbered-step chrome or wide sticky rail
 inside this route's constrained form column. The total remains adjacent to the products it sums.
@@ -393,7 +415,7 @@ text is not that. That separation is also why an inline correction does not rese
 `priceSplit`, or a category the collector already owns, while a split or a merge does
 (`FR-11-51a`).
 
-**Totals reconciliation** (`FR-11-58a`). Inside the totals card, an amber `AlertBanner` appears when
+**Totals reconciliation** (`FR-11-58a`). Inside the flat Products footer, an amber `AlertBanner` appears when
 the products' prices do not add up to the stated total, naming both figures. It never blocks the
 save, and it is deliberately not part of the header's doubt count: it is derived from the draft
 rather than read from the chat, and the count has to keep matching what looks interactive. A stated
@@ -412,16 +434,15 @@ a product's price afterward, the same freeze every other marked field on this sc
 follows; the mismatch banner above is what catches a total that has gone stale against a later price
 edit, since it recomputes the products' live sum on every render while the total field does not.
 
-**Use the products' sum as the total** (`FR-11-58d`). A row sits right above the total field,
-inside the same card: on the left a muted line with the live sum of the priced products ("Los
-productos suman S/ 150.00"; with unpriced rows "Los productos con precio suman S/ 60.00 · 1 sin
-precio"; with none "Ningún producto tiene precio todavía"), on the right a tonal `sm` `Button` with
-the `Calculator` icon, "Usar este total", full width on mobile and inline from `md`. It mirrors the
-manual create form's "Usar este total" row on purpose, so the two paths offer the same gesture in
-the same words. The line recomputes on every price edit; the total itself only changes when the
-button is pressed, which writes the sum into the input as the collector's own figure. The button is
-disabled only when no product carries a price. Pressing it fires
-`image_intake_calculated_total_used`.
+**Use the products' sum as the total** (`FR-11-58d`). The muted live sum sits above the Total
+field in the flat Products footer. When all prices are known and products alone, or products plus
+stated shipping, reconcile with the order total, a check and "Coincide con el total" replace the
+redundant action. When they disagree, the existing "Los productos no suman el total" warning owns
+the tonal `sm` "Usar este total" button below its explanation. With an unknown total or partial
+prices, the action remains beside the subtotal and names how many prices are missing; with none
+priced it is disabled. The subtotal follows every price edit, but Total only changes on request.
+Pressing the button writes the priced products' sum (excluding shipping) as the collector's own
+figure and fires `image_intake_calculated_total_used`.
 
 **Required-field validation before save** (`FR-11-58c`). Store, order date, and total are what
 `saveOrderFromDraftAction` refuses to save without. `handleSave` now checks all three before ever
@@ -797,7 +818,7 @@ The word is always **foto**. Never "extracción", "crédito", or "token".
 | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Header, with doubts          | Encontramos 6 productos por S/ 480.00. Revisa 2 datos y guarda.                                                                                                                                                                        |
 | Header, clean                | Todo salió limpio de las fotos. Revísalo y guarda.                                                                                                                                                                                         |
-| Split group                  | Lo separamos en 2 productos. De las fotos: "el pack chase de Gojo". Los vendieron juntos, pero pueden llegarte en días distintos. [Unir en uno]                                                                                            |
+| Split group                  | Vendidos juntos en la foto: «el pack chase de Gojo». Los vendieron juntos, pero pueden llegarte en días distintos. [Unir en uno]                                                                                            |
 | Sealed pack                  | Lo dejamos como un solo producto. Las fotos dicen "Pack Tokyo Revengers 1 y 2 sellado". Viene sellado de editorial, así que llega completo o no llega. [Separar en 2 productos]                                                           |
 | Split with doubt             | Lo separamos, pero no estamos seguros. De las fotos: "pack de Kenshin". Si viene sellado de editorial, únelo en uno. [Unir en uno]                                                                                                         |
 | Not nameable                 | No supimos qué trae. Las fotos dicen "pack de 5 chibis sorpresa" sin decir cuáles. Lo guardamos como un producto. [Separar]                                                                                                               |
@@ -816,10 +837,10 @@ The word is always **foto**. Never "extracción", "crédito", or "token".
 | Equal price split            | Repartimos S/ 180.00 en partes iguales. Ajusta si una pieza vale más que la otra                                                                                                                                                       |
 | Blank product name           | El producto 3 se quedó sin nombre. Escríbele uno para poder guardar el pedido.                                                                                                                                                         |
 | Totals mismatch              | Los productos no suman el total · Los productos suman S/ 480.00 y el total del pedido dice S/ 110.00. Guardamos el total tal como está: revisa cuál de los dos es el correcto. Pressing save then raises the shared `DiscrepancyModal` (`FR-11-58a`).                                                         |
-| Products' sum, all priced    | Los productos suman S/ 150.00 · [Usar este total] (`FR-11-58d`)                                                                                                                                                                            |
+| Products' sum, matching      | Los productos suman S/ 150.00 · Coincide con el total (`FR-11-58d`)                                                                                                                                                                            |
 | Products' sum, partial       | Los productos con precio suman S/ 60.00 · 1 sin precio · [Usar este total]                                                                                                                                                                 |
 | Products' sum, none priced   | Ningún producto tiene precio todavía · [Usar este total] disabled                                                                                                                                                                          |
-| Shipping cost                | Costo de envío · Lo leímos de las fotos, pero se guarda recién cuando registres la entrega.                                                                                                                                                |
+| Shipping cost, positive      | Costo de envío · Lo leímos de las fotos, pero se guarda recién cuando registres la entrega.                                                                                                                                                |
 | Breakdown cleared            | Cambiaste los productos, así que quitamos el desglose de los pagos. Vuelve a marcarlos.                                                                                                                                                |
 | Breakdown, missing amount    | Ponle importe a este pago para poder guardar su desglose.                                                                                                                                                                              |
 | Breakdown, missing date      | Ponle fecha a este pago para poder guardar su desglose.                                                                                                                                                                                |
@@ -835,6 +856,11 @@ Both "No order found" and "Multiple orders" fire from the upload phase (`FR-11-2
 `FR-11-28c`): the review screen never renders for either, so both appear here only because they
 are the terminal, most-informative copy for an otherwise successful read, the same reason the
 other terminal-failure rows above sit in this table.
+
+Payments use "Pagado completo · S/ 260.26" when the total is covered and "Adelanto pagado"
+while a balance remains. In store resolution, only the action words "Crear una nueva" receive
+accent link styling and an underline inside "¿No es esta tienda? Crear una nueva"; the whole
+button remains keyboard-accessible with a visible focus ring and a 44px mobile target.
 
 ### 6.4 Split and merge
 
@@ -957,6 +983,8 @@ and the accessibility rule:
 - **The floating action button** is a labelled control with a visible text label, is reachable
   in the tab order after the main content, and has a touch target of at least 44px. It must
   not trap focus or overlay the last actionable row (hence the reserved bottom padding).
+- **Group membership** is named by the visible source phrase and contained in a labelled table
+  section or mobile group, with a continuous left rule identifying exactly its member rows.
 - **Group collapse** uses a real disclosure pattern with `aria-expanded`; "Ver los 50" states
   the count so the control is meaningful out of context.
 - **One payment breakdown panel per payment row means one `aria-live` region per row**, and that is

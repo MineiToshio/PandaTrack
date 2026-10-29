@@ -287,9 +287,11 @@ export default function StoreResolutionSection({
         <button
           type="button"
           onClick={handleSwitchToCreate}
-          className="self-start text-[12.5px] font-medium [color:var(--text-secondary)] hover:underline"
+          className="text-text-secondary inline-flex min-h-11 flex-wrap items-center gap-x-1 rounded text-left text-xs underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:[outline-color:var(--focus-ring)] lg:min-h-8"
         >
-          {t("switchToCreate")}
+          {t.rich("switchToCreate", {
+            action: (chunks) => <span className="text-accent underline">{chunks}</span>,
+          })}
         </button>
       </section>
     );
