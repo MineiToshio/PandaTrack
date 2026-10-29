@@ -546,6 +546,15 @@ Keep the primary submit CTA clean (label plus `Check` icon, no embedded chip). C
 
 ---
 
+### Provenance is information before it is a warning
+
+An inferred, calculated or missing value must retain its icon and word. Use a neutral provenance
+marker for optional gaps or derived values that do not require corrective action
+(`ProvenanceValue markerTone="neutral"`). Reserve warning emphasis for actual uncertainty or
+money discrepancies, and destructive field treatment for validation failures. Repetition alone
+must never turn optional fields into an attention queue. Intake is the first opt-in consumer;
+existing callers keep the warning default.
+
 ## 7. Chip-Eyebrow + Top-Accent Section Header Pattern (frozen)
 
 This is the canonical section-header language for detail pages where heterogeneous cards coexist in one viewport. **It is a frozen rule.**

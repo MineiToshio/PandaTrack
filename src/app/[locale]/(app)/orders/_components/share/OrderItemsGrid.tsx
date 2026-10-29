@@ -12,12 +12,32 @@ import {
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, X } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { createContext, useContext, useCallback, useId, useMemo, useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/styles";
 import { sanitizeDecimalInput } from "@/lib/decimalInput";
 import { inheritProductTypeFromPrevious } from "@/lib/orders/orderItemUtils";
 import ItemTypePicker from "./ItemTypePicker";
+
+type OrderItemsTableConfig = { showQuantity?: boolean; sortable?: boolean; hasRowAction?: boolean };
+
+function orderItemsColumns({ showQuantity = true, sortable = true, hasRowAction = false }: OrderItemsTableConfig) {
+  return [
+    ...(sortable ? ["sort"] : []),
+    "name",
+    ...(showQuantity ? ["quantity"] : []),
+    "price",
+    "type",
+    ...(hasRowAction ? ["action"] : []),
+    "delete",
+  ];
+}
+
+const OrderItemsColumnCountContext = createContext(orderItemsColumns({}).length);
+
+export function useOrderItemsTableColumnCount(): number {
+  return useContext(OrderItemsColumnCountContext);
+}
 
 export type ItemRow = {
   rowId: string;
@@ -70,6 +90,8 @@ type OrderItemRowProps = {
   productTypeKeys: string[];
   tProductTypes: (key: string) => string;
   showQuantity: boolean;
+  sortable: boolean;
+  rowAction?: ReactNode;
   nameError?: string;
   quantityError?: string;
   unitPriceError?: string;
@@ -89,6 +111,8 @@ function OrderItemRow({
   productTypeKeys,
   tProductTypes,
   showQuantity,
+  sortable,
+  rowAction,
   nameError,
   quantityError,
   unitPriceError,
@@ -104,6 +128,7 @@ function OrderItemRow({
   const t = useTranslations("orders.form");
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: row.rowId,
+    disabled: !sortable,
   });
 
   const style = {
@@ -118,9 +143,9 @@ function OrderItemRow({
       style={style}
       className={cn(isDragging && "[box-shadow:0_6px_20px_color-mix(in_oklch,black_22%,transparent)]")}
     >
-      {/* Drag handle */}
-      <td className="px-[3px] py-[2px] text-center align-middle">
-        {/*
+      {sortable && (
+        <td className="px-[3px] py-[2px] text-center align-middle">
+          {/*
           Row-control geometry (`docs/design/interface-patterns.md` §12, "A dense grid is fixed by
           its row pitch"). This grid never renders below 768px — its callers swap in
           `OrderItemsMobileList` there — so its touch band is the 768-1023px tablet range and the
@@ -131,16 +156,17 @@ function OrderItemRow({
           band — an edge tap would reorder or delete the wrong product. Boxes in flow cannot
           overlap, so resizing is the only fix that cannot mis-target.
         */}
-        <button
-          type="button"
-          aria-label={t("itemDragLabel")}
-          className="grid size-11 cursor-grab place-items-center [color:var(--text-muted)] opacity-35 transition-opacity hover:opacity-70 active:cursor-grabbing lg:inline-flex lg:size-[14px]"
-          {...attributes}
-          {...listeners}
-        >
-          <GripVertical size={14} aria-hidden />
-        </button>
-      </td>
+          <button
+            type="button"
+            aria-label={t("itemDragLabel")}
+            className="grid size-11 cursor-grab place-items-center [color:var(--text-muted)] opacity-35 transition-opacity hover:opacity-70 active:cursor-grabbing lg:inline-flex lg:size-[14px]"
+            {...attributes}
+            {...listeners}
+          >
+            <GripVertical size={14} aria-hidden />
+          </button>
+        </td>
+      )}
 
       {/* Name */}
       <td className="px-[3px] py-[2px]">
@@ -240,6 +266,8 @@ function OrderItemRow({
         />
       </td>
 
+      {rowAction && <td className="px-[3px] py-[2px] align-top">{rowAction}</td>}
+
       {/* Delete */}
       <td className="px-[3px] py-[2px] align-top">
         <div className="flex items-center justify-center gap-0.5">
@@ -273,6 +301,14 @@ type OrderItemsGridProps = {
    * way to say the same thing.
    */
   showQuantity?: boolean;
+  /** Disable drag handles and keyboard reordering for a canonical product order. */
+  sortable?: boolean;
+  /** Manual forms append on Tab; composed lists can keep ordinary focus traversal. */
+  appendOnTab?: boolean;
+  onCategoryPicked?: (rowId: string) => void;
+  /** Render a tbody inside a parent OrderItemsTable. Sorting must be disabled. */
+  tableBodyId?: string;
+  renderRowAction?: (row: ItemRow) => ReactNode;
 };
 
 export function createEmptyRow(rowId: string): ItemRow {
@@ -294,8 +330,13 @@ export default function OrderItemsGrid({
   createNewRow,
   currencyCode,
   showQuantity = true,
+  sortable = true,
+  appendOnTab = true,
+  onCategoryPicked,
+  tableBodyId,
+  renderRowAction,
 }: OrderItemsGridProps) {
-  const t = useTranslations("orders.form");
+  const dndId = useId();
   const [openTypePickerRowId, setOpenTypePickerRowId] = useState<string | null>(null);
 
   const sensors = useSensors(
@@ -381,6 +422,7 @@ export default function OrderItemsGrid({
 
       // Tab on last cell of last row → append new row. No modifier.
       if (
+        appendOnTab &&
         key === "Tab" &&
         !shift &&
         !event.metaKey &&
@@ -397,7 +439,7 @@ export default function OrderItemsGrid({
       }
 
       // Reorder: Alt + Shift + ↑/↓
-      if (altShift && (key === "ArrowUp" || key === "ArrowDown")) {
+      if (sortable && altShift && (key === "ArrowUp" || key === "ArrowDown")) {
         event.preventDefault();
         const direction = key === "ArrowUp" ? -1 : 1;
         const newIndex = index + direction;
@@ -451,68 +493,109 @@ export default function OrderItemsGrid({
         return;
       }
     },
-    [rows, onChange, buildInheritedRow, navigableColumns],
+    [rows, onChange, buildInheritedRow, navigableColumns, sortable, appendOnTab],
   );
 
-  const headerCellClass =
-    "[border-bottom:1px_solid_var(--border)] px-1.5 pt-[3px] pb-[7px] text-[11px] font-semibold [color:var(--text-muted)] whitespace-nowrap";
+  function handleProductTypeChange(rowId: string, value: string) {
+    onCategoryPicked?.(rowId);
+    updateRow(rowId, { productTypeKey: value });
+  }
 
-  const priceHeader = currencyCode ? `${t("itemUnitPriceLabel")} (${currencyCode})` : t("itemUnitPriceLabel");
+  const renderedRows = (
+    <tbody id={tableBodyId}>
+      {rows.map((row, index) => (
+        <OrderItemRow
+          key={row.rowId}
+          row={row}
+          index={index}
+          productTypeKeys={productTypeKeys}
+          tProductTypes={tProductTypes}
+          showQuantity={showQuantity}
+          sortable={sortable}
+          rowAction={renderRowAction?.(row)}
+          nameError={itemErrors[row.rowId]?.name}
+          quantityError={itemErrors[row.rowId]?.quantity}
+          unitPriceError={itemErrors[row.rowId]?.unitPrice}
+          typePickerOpen={openTypePickerRowId === row.rowId}
+          onTypePickerOpenChange={(open) => setOpenTypePickerRowId(open ? row.rowId : null)}
+          onNameChange={(rowId, value) => updateRow(rowId, { name: value })}
+          onQuantityChange={(rowId, value) => updateRow(rowId, { quantity: value })}
+          onUnitPriceChange={(rowId, value) =>
+            updateRow(rowId, { unitPrice: sanitizeDecimalInput(value, currencyCode) })
+          }
+          onProductTypeChange={handleProductTypeChange}
+          onDelete={handleDelete}
+          onCellKeyDown={handleCellKeyDown}
+        />
+      ))}
+    </tbody>
+  );
+
+  if (tableBodyId) return renderedRows;
 
   return (
     <div className="-mx-1 overflow-x-auto">
-      <DndContext id="order-items-dnd" sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <table role="grid" aria-label={t("itemsSectionTitle")} className="w-full border-separate border-spacing-0">
-          <thead>
-            <tr>
-              {/* Handle column: 50px in the touch band (44px target + the cell's 2×3px), 24px from `lg`. */}
-              <th scope="col" className="w-[50px] [border-bottom:1px_solid_var(--border)] lg:w-6" />
-              <th scope="col" className={cn(headerCellClass, "text-left")}>
-                {t("itemNameLabel")}
-              </th>
-              {showQuantity && (
-                <th scope="col" className={cn(headerCellClass, "w-16 text-right")}>
-                  {t("itemQuantityLabel")}
-                </th>
-              )}
-              <th scope="col" className={cn(headerCellClass, "w-[130px] text-right")}>
-                {priceHeader}
-              </th>
-              <th scope="col" className={cn(headerCellClass, "w-[110px] text-left")}>
-                {t("itemProductTypeLabel")}
-              </th>
-              <th scope="col" className="w-14 [border-bottom:1px_solid_var(--border)]" />
-            </tr>
-          </thead>
-          <tbody>
-            <SortableContext items={rows.map((r) => r.rowId)} strategy={verticalListSortingStrategy}>
-              {rows.map((row, index) => (
-                <OrderItemRow
-                  key={row.rowId}
-                  row={row}
-                  index={index}
-                  productTypeKeys={productTypeKeys}
-                  tProductTypes={tProductTypes}
-                  showQuantity={showQuantity}
-                  nameError={itemErrors[row.rowId]?.name}
-                  quantityError={itemErrors[row.rowId]?.quantity}
-                  unitPriceError={itemErrors[row.rowId]?.unitPrice}
-                  typePickerOpen={openTypePickerRowId === row.rowId}
-                  onTypePickerOpenChange={(open) => setOpenTypePickerRowId(open ? row.rowId : null)}
-                  onNameChange={(rowId, value) => updateRow(rowId, { name: value })}
-                  onQuantityChange={(rowId, value) => updateRow(rowId, { quantity: value })}
-                  onUnitPriceChange={(rowId, value) =>
-                    updateRow(rowId, { unitPrice: sanitizeDecimalInput(value, currencyCode) })
-                  }
-                  onProductTypeChange={(rowId, value) => updateRow(rowId, { productTypeKey: value })}
-                  onDelete={handleDelete}
-                  onCellKeyDown={handleCellKeyDown}
-                />
-              ))}
-            </SortableContext>
-          </tbody>
-        </table>
+      <DndContext id={dndId} sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={rows.map((row) => row.rowId)} strategy={verticalListSortingStrategy}>
+          <OrderItemsTable
+            currencyCode={currencyCode}
+            showQuantity={showQuantity}
+            sortable={sortable}
+            hasRowAction={!!renderRowAction}
+          >
+            {renderedRows}
+          </OrderItemsTable>
+        </SortableContext>
       </DndContext>
     </div>
+  );
+}
+
+/** Shared table geometry for the manual editor and composed intake group bodies. */
+export function OrderItemsTable({
+  children,
+  currencyCode,
+  showQuantity = true,
+  sortable = true,
+  hasRowAction = false,
+}: {
+  children: ReactNode;
+  currencyCode?: string;
+  showQuantity?: boolean;
+  sortable?: boolean;
+  hasRowAction?: boolean;
+}) {
+  const t = useTranslations("orders.form");
+  const headerCellClass =
+    "[border-bottom:1px_solid_var(--border)] px-1.5 pt-[3px] pb-[7px] text-[11px] font-semibold [color:var(--text-muted)] whitespace-nowrap";
+  const priceHeader = currencyCode ? `${t("itemUnitPriceLabel")} (${currencyCode})` : t("itemUnitPriceLabel");
+  const columnCount = orderItemsColumns({ showQuantity, sortable, hasRowAction }).length;
+  return (
+    <OrderItemsColumnCountContext.Provider value={columnCount}>
+      <table role="grid" aria-label={t("itemsSectionTitle")} className="w-full border-separate border-spacing-0">
+        <thead>
+          <tr>
+            {sortable && <th scope="col" className="w-[50px] [border-bottom:1px_solid_var(--border)] lg:w-6" />}
+            <th scope="col" className={cn(headerCellClass, "text-left")}>
+              {t("itemNameLabel")}
+            </th>
+            {showQuantity && (
+              <th scope="col" className={cn(headerCellClass, "w-16 text-right")}>
+                {t("itemQuantityLabel")}
+              </th>
+            )}
+            <th scope="col" className={cn(headerCellClass, "w-[130px] text-right")}>
+              {priceHeader}
+            </th>
+            <th scope="col" className={cn(headerCellClass, "w-[110px] text-left")}>
+              {t("itemProductTypeLabel")}
+            </th>
+            {hasRowAction && <th scope="col" className="w-11 [border-bottom:1px_solid_var(--border)] lg:w-8" />}
+            <th scope="col" className="w-14 [border-bottom:1px_solid_var(--border)]" />
+          </tr>
+        </thead>
+        {children}
+      </table>
+    </OrderItemsColumnCountContext.Provider>
   );
 }

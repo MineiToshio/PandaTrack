@@ -7,14 +7,14 @@ status: ACTIVE
 parent: BP-01
 source_features: []
 implementation_status: IMPLEMENTED
-last_updated: 2026-08-02
+last_updated: 2026-10-29
 ---
 
 # WO-03 Product Split and Merge
 
 ## Summary
 
-Ship the bidirectional split and merge operation on the image-intake draft, with one modal reachable from one place: inline on the review screen's group chip, before anything is saved.
+Ship the bidirectional split and merge operation on the image-intake draft, with the canonical modal reachable only from review: a compact split action on each product row and merge on multi-product group bands, before saving.
 
 This is not an enhancement. The breakdown rule dares to split on doubt only because merging costs one tap (`BR-11-06`), so the feature must not be announced to users until this slice lands.
 
@@ -22,12 +22,12 @@ This is not an enhancement. The breakdown rule dares to split on doubt only beca
 
 ## In Scope
 
-- One modal (canonical `Modal` per ADR 0008) opened from the review screen's group chip and nowhere else.
+- One modal (canonical `Modal` per ADR 0008) opened from review row split actions or group merge actions, and nowhere else.
 - Split flow: propose names deduced from a detected range ("Pack One Piece 1 al 3" proposes One Piece 1, One Piece 2, One Piece 3; "Tokyo Revengers 1-2" proposes both volumes). With no detectable range, ask how many to split into with a selector starting at 2. Proposed names and prices are editable before confirming.
 - Merge flow: sum the prices of the selected products into one, with the confirmation copy stating both consequences ("Se suman sus precios en S/ 90.00 y a partir de ahora se entregan juntos, no por separado").
 - Price handling on split reuses the deterministic distribution from WO-01, previewed client-side, and never alters the order total.
 - The operation is a local transform of the draft held in the review screen's state. No server action, no mutation, no `orderId`, no database write.
-- Wire the reverting buttons on the review screen's group chips ("Unir en uno", "Separar en N productos") to this modal.
+- Wire per-row split icon actions and the multi-product group band's "Unir en uno" action to this modal. Splitting one row preserves its siblings, their category/link metadata and the group's doubtful/reason/price-split flags; only splitting the group's sole product resets those flags.
 - Copy: the control label is "Separar en productos", never "en tomos".
 - Analytics: `image_intake_group_split` and `image_intake_group_merged`, each with the product count and whether the group was marked doubtful. These are the events that measure whether the breakdown rule is calibrated: if users merge far more than they split, the rule is too aggressive.
 

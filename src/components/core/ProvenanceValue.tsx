@@ -46,6 +46,8 @@ export type ProvenanceValueProps = {
    * once in the same slot.
    */
   error?: boolean;
+  /** Neutral markers communicate optional gaps without implying a warning. */
+  markerTone?: "warning" | "neutral";
   className?: string;
 };
 
@@ -67,6 +69,7 @@ export default function ProvenanceValue({
   control,
   hint,
   error = false,
+  markerTone = "warning",
   className,
 }: ProvenanceValueProps) {
   return (
@@ -83,7 +86,7 @@ export default function ProvenanceValue({
       >
         {label}
         {state !== "read" && (
-          <Chip variant="warning" size="sm" icon={PROVENANCE_MARKER_ICON[state]}>
+          <Chip variant={markerTone} size="sm" icon={PROVENANCE_MARKER_ICON[state]}>
             {markerLabel}
           </Chip>
         )}

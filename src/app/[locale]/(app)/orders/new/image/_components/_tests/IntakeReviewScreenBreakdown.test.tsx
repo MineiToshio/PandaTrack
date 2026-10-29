@@ -49,6 +49,14 @@ vi.mock("@/lib/fx/exchangeRates", () => ({
   fetchTodayRate: vi.fn(async () => ({ ok: false as const })),
 }));
 
+vi.mock("react-day-picker", () => ({
+  DayPicker: ({ onSelect }: { onSelect: (date: Date) => void }) => (
+    <button type="button" onClick={() => onSelect(new Date(2026, 6, 21))}>
+      Pick July 21
+    </button>
+  ),
+}));
+
 import type { ImageIntakeDraft } from "@/lib/imageIntake/draftSchema";
 import type { IntakeBreakdownPayload } from "@/lib/imageIntake/intakeBreakdownContract";
 import IntakeReviewScreen from "../IntakeReviewScreen";
@@ -147,7 +155,11 @@ function fieldFor(index: number, name: string): HTMLInputElement {
 
 /** The disclosure of one payment row, whatever it currently reads. */
 function breakdownTrigger(index: number): HTMLElement {
-  return within(paymentRow(index)).getAllByRole("button")[0];
+  const trigger = paymentRow(index).querySelector<HTMLButtonElement>(
+    `button[aria-controls="intake-payment-${index}-breakdown"]`,
+  );
+  expect(trigger).toBeInTheDocument();
+  return trigger!;
 }
 
 function paymentsSection(): HTMLElement {
@@ -322,8 +334,12 @@ describe("intake breakdown · what clears the drafts and what does not (T8, §7.
 
     fireEvent.click(screen.getByRole("button", { name: "Eliminar producto 3" }));
 
-    expect(within(paymentRow(0)).getByRole("button", { name: /Desglosar entre productos/ })).toBeInTheDocument();
+    expect(breakdownTrigger(0)).toHaveAttribute("aria-expanded", "false");
     expect(screen.getByText(/Cambiaste los productos/)).toBeInTheDocument();
+    openBreakdown(0);
+    for (const checkbox of within(productListIn(0)).getAllByRole("checkbox")) {
+      expect(checkbox).not.toBeChecked();
+    }
   });
 });
 
@@ -350,7 +366,15 @@ describe("intake breakdown · the save gate is narrow (T9, §8.2)", () => {
 
     expect(onSave).not.toHaveBeenCalled();
     expect(document.activeElement?.id).toBe("intake-payment-date-0");
-    expect(screen.getByText(/Ponle fecha a este pago/)).toBeInTheDocument();
+    const message = screen.getByText(/Ponle fecha a este pago/).closest("[role='alert']")!;
+    expect(message).toBeInTheDocument();
+    expect(message.querySelector("svg.lucide-circle-alert")).toBeTruthy();
+    const date = document.getElementById("intake-payment-date-0")!;
+    expect(date.getAttribute("aria-describedby")).toBe(message.id);
+    expect(date.className).toContain("[border-color:var(--destructive)]");
+    expect(document.querySelector("label[for='intake-payment-date-0']")?.className).toContain(
+      "[color:var(--destructive)]",
+    );
   });
 
   it("(b) still saves when the same incomplete row carries no breakdown", () => {
@@ -537,6 +561,7 @@ describe("intake full-payment defaults", () => {
       "Kingdom 23",
     ]);
     const lines = onSave.mock.calls[0][2]?.[0].lines;
+    expect(onSave.mock.calls[0][2]?.[0].isAutomatic).toBe(true);
     expect(lines).toEqual([
       { position: 1, amountMinor: 10000 },
       { position: 2, amountMinor: 5000 },
@@ -581,7 +606,8 @@ describe("intake full-payment defaults", () => {
     submit();
     expect(onSave).toHaveBeenCalledTimes(1);
     expect(onSave.mock.calls[0][2]).toBeUndefined();
-    fireEvent.change(document.getElementById("intake-payment-date-0")!, { target: { value: "2026-07-21" } });
+    fireEvent.click(document.getElementById("intake-payment-date-0")!);
+    fireEvent.click(screen.getByRole("button", { name: "Pick July 21" }));
     openBreakdown(0);
     expectAllPaid();
     submit();
@@ -590,6 +616,108 @@ describe("intake full-payment defaults", () => {
 });
 
 describe("untouched intake defaults after structural edits", () => {
+  it("naturally sorts a per-row split and re-seeds untouched full payment positions", () => {
+    const onSave = renderScreen(
+      buildDraft({
+        groups: [
+          [
+            { name: "Manga 10", unitPrice: 10000 },
+            { name: "Manga 1 al 2", unitPrice: 10000 },
+          ],
+        ],
+        totalCost: 20000,
+        payments: [{ amount: 20000, paidAt: "2026-07-21" }],
+      }),
+    );
+    openBreakdown(0);
+    fireEvent.click(screen.getByRole("button", { name: "Separar Manga 1 al 2" }));
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Separar en productos" }));
+    expect(screen.getAllByLabelText("Nombre").map((node) => (node as HTMLInputElement).value)).toEqual([
+      "Manga 1",
+      "Manga 2",
+      "Manga 10",
+    ]);
+    expect(screen.queryByText(/Cambiaste los productos/)).toBeNull();
+    openBreakdown(0);
+    const checkboxes = within(productListIn(0)).getAllByRole("checkbox");
+    expect(checkboxes).toHaveLength(3);
+    for (const checkbox of checkboxes) expect(checkbox).toBeChecked();
+    submit();
+    expect(onSave.mock.calls[0][2]).toEqual([
+      {
+        paymentIndex: 0,
+        isAutomatic: true,
+        lines: [
+          { position: 1, amountMinor: 5000 },
+          { position: 2, amountMinor: 5000 },
+          { position: 3, amountMinor: 10000 },
+        ],
+      },
+    ]);
+  });
+
+  it("re-seeds an opened automatic breakdown after adding a missed product", () => {
+    const onSave = renderScreen(
+      buildDraft({ groups: [TWO_PRICED], totalCost: 15000, payments: [{ amount: 15000, paidAt: "2026-07-21" }] }),
+    );
+    openBreakdown(0);
+    fireEvent.click(screen.getByRole("button", { name: "Añadir producto" }));
+    const sheet = screen.getByRole("dialog", { name: "Añadir producto" });
+    fireEvent.change(within(sheet).getByLabelText("Nombre"), { target: { value: "Manga 10" } });
+    fireEvent.change(within(sheet).getByLabelText(/Precio unitario/), { target: { value: "50" } });
+    fireEvent.click(within(sheet).getByRole("button", { name: "Añadir" }));
+    expect(screen.queryByText(/Cambiaste los productos/)).toBeNull();
+    openBreakdown(0);
+    const checkboxes = within(productListIn(0)).getAllByRole("checkbox");
+    expect(checkboxes).toHaveLength(3);
+    for (const checkbox of checkboxes) expect(checkbox).toBeChecked();
+    submit();
+    expect(onSave.mock.calls[0][2]).toEqual([
+      {
+        paymentIndex: 0,
+        isAutomatic: true,
+        lines: [
+          { position: 1, amountMinor: 7500 },
+          { position: 2, amountMinor: 3750 },
+          { position: 3, amountMinor: 3750 },
+        ],
+      },
+    ]);
+  });
+
+  it("removes a final-row group and re-seeds automatic allocations at the surviving positions", () => {
+    const onSave = renderScreen(
+      buildDraft({
+        groups: [[{ name: "Asuka", unitPrice: 3000 }], TWO_PRICED],
+        totalCost: 18000,
+        payments: [{ amount: 18000, paidAt: "2026-07-21" }],
+      }),
+    );
+    openBreakdown(0);
+    fireEvent.click(screen.getAllByRole("button", { name: "Eliminar producto 1" })[0]);
+    expect(screen.queryByText(/Cambiaste los productos/)).toBeNull();
+    openBreakdown(0);
+    const checkboxes = within(productListIn(0)).getAllByRole("checkbox");
+    expect(checkboxes).toHaveLength(2);
+    for (const checkbox of checkboxes) expect(checkbox).toBeChecked();
+    submit();
+    expect(onSave.mock.calls[0][0].groups).toHaveLength(1);
+    expect(onSave.mock.calls[0][0].groups[0].products.map((product: ProductSpec) => product.name)).toEqual([
+      "Berserk deluxe",
+      "Kingdom 23",
+    ]);
+    expect(onSave.mock.calls[0][2]).toEqual([
+      {
+        paymentIndex: 0,
+        isAutomatic: true,
+        lines: [
+          { position: 1, amountMinor: 10000 },
+          { position: 2, amountMinor: 5000 },
+        ],
+      },
+    ]);
+  });
+
   it("re-seeds an opened automatic breakdown after merge and split without a cleared notice", () => {
     const onSave = renderScreen(
       buildDraft({
@@ -620,7 +748,7 @@ describe("untouched intake defaults after structural edits", () => {
     expect(fieldFor(0, "Pack 1 al 2").value).toBe("150.00");
     expect(fieldFor(0, "Nendoroid Asuka").value).toBe("30.00");
 
-    fireEvent.click(screen.getAllByRole("button", { name: /Separar en .* productos/ })[0]);
+    fireEvent.click(screen.getAllByRole("button", { name: "Separar Pack 1 al 2" })[0]);
     fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Separar en productos" }));
 
     expect(screen.queryByText(/Cambiaste los productos/)).toBeNull();

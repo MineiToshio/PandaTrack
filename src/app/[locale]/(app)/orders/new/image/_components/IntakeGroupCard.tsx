@@ -1,11 +1,11 @@
 "use client";
 
-import { AlertTriangle, Check, CircleHelp, ExternalLink, Layers, Sparkles } from "lucide-react";
+import { AlertTriangle, ChevronDown, CircleHelp, ExternalLink, Layers, Scissors } from "lucide-react";
 import { useTranslations } from "next-intl";
 import posthog from "posthog-js";
-import { useCallback, useId, useMemo, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import Button from "@/components/core/Button/Button";
-import Chip from "@/components/core/Chip";
+import IconButton from "@/components/core/IconButton";
 import { useStoreProductTypeName } from "@/app/[locale]/(app)/_components/StoreProductTypeNamesProvider";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import type { ExtractedGroup } from "@/lib/imageIntake/draftSchema";
@@ -15,12 +15,13 @@ import {
   groupToItemRows,
   itemRowsToProducts,
 } from "@/lib/imageIntake/draftItemRows";
+import { compareNaturally } from "@/lib/imageIntake/naturalSort";
 import { formatReferenceHost } from "@/lib/imageIntake/referenceProductNaming";
 import { formatAmount } from "@/lib/currency";
 import { parseDecimalToMinorUnits } from "@/lib/money/parseDecimalToMinorUnits";
 import { POSTHOG_EVENTS } from "@/lib/constants";
 import { cn } from "@/lib/styles";
-import OrderItemsGrid, { type ItemRow } from "../../../_components/share/OrderItemsGrid";
+import OrderItemsGrid, { useOrderItemsTableColumnCount, type ItemRow } from "../../../_components/share/OrderItemsGrid";
 import OrderItemsMobileList from "../../../_components/share/OrderItemsMobileList";
 import ProductSplitMergeModal, {
   type SplitMergePart,
@@ -43,6 +44,12 @@ export type IntakeGroupCardProps = {
   hasWarning: boolean;
   /** Opens the group whatever its size, so the screen can point at a row inside a collapsed one. */
   forceExpanded?: boolean;
+  /** Compose this group as table bodies under the order-wide column header. */
+  withinTable?: boolean;
+  categoriesAreSuggestions?: boolean;
+  ownedCategoryIndexes?: ReadonlySet<number>;
+  onCategoryOwnershipChange?: (ownedIndexes: ReadonlySet<number>) => void;
+  onSuggestionPresenceChange?: (hasSuggestions: boolean) => void;
   /** Reports whether any price cell in this group holds text the money parser cannot read. */
   onPriceValidityChange?: (hasUnreadablePrice: boolean) => void;
   /**
@@ -52,14 +59,6 @@ export type IntakeGroupCardProps = {
    */
   onApply: (updatedGroup: ExtractedGroup) => void;
 };
-
-type GroupTone = "clean" | "warning" | "doubtful";
-
-function resolveTone(group: ExtractedGroup, hasWarning: boolean): GroupTone {
-  if (group.doubtful) return "doubtful";
-  if (hasWarning) return "warning";
-  return "clean";
-}
 
 /** A row-level doubt must never end up hidden behind a summary, whatever the group's size. */
 export function shouldArriveExpanded(group: ExtractedGroup): boolean {
@@ -72,18 +71,7 @@ function rowPriceInMinorUnits(row: ItemRow, currencyCode: string): number | null
   return trimmed === "" ? null : parseDecimalToMinorUnits(trimmed, currencyCode);
 }
 
-/**
- * One block per source phrase: the evidence for what the model did, then the products themselves in
- * the same editable table the manual order form uses.
- *
- * The evidence stays, because quoting the original phrase is the only thing that lets a collector
- * judge a grouping without reopening the conversation (`FR-11-57`). It is a slim header now rather
- * than a card wrapped around stacked rows: the rows were the problem. Name over price, per product,
- * with no column to read down, is dense at two products and unreadable at fifty, and the only way
- * to edit one was a mode the collector had to find first. A real table aligns the prices into a
- * column, makes every cell visibly editable with no mode at all, and is a shape they already know
- * from creating an order by hand.
- */
+/** Keeps source-group editing local while composing compact rows in the order-wide list. */
 export default function IntakeGroupCard({
   group,
   currencyCode,
@@ -91,6 +79,11 @@ export default function IntakeGroupCard({
   productTypeKeys,
   hasWarning,
   forceExpanded = false,
+  withinTable = false,
+  categoriesAreSuggestions = true,
+  ownedCategoryIndexes,
+  onCategoryOwnershipChange,
+  onSuggestionPresenceChange,
   onPriceValidityChange,
   onApply,
 }: IntakeGroupCardProps) {
@@ -99,6 +92,7 @@ export default function IntakeGroupCard({
   const isMobile = useIsMobile();
   const [isExpanded, setIsExpanded] = useState(() => shouldArriveExpanded(group));
   const [isSplitMergeOpen, setIsSplitMergeOpen] = useState(false);
+  const [splitRowId, setSplitRowId] = useState<string | null>(null);
   /**
    * The rows are the edit surface; the draft is derived from them, never the other way round.
    *
@@ -108,13 +102,29 @@ export default function IntakeGroupCard({
    * rebuilt only by the two operations that genuinely replace the product list.
    */
   const [rows, setRows] = useState<ItemRow[]>(() => groupToItemRows(group, currencyCode, groupKey));
-  /** Rows the collector has chosen a category for, so the screen stops calling it a suggestion. */
-  const [ownedCategoryRowIds, setOwnedCategoryRowIds] = useState<ReadonlySet<string>>(() => new Set());
+  const [ownedCategoryRowIds, setOwnedCategoryRowIds] = useState<ReadonlySet<string>>(
+    () =>
+      new Set(
+        groupToItemRows(group, currencyCode, groupKey)
+          .filter((_, index) => !categoriesAreSuggestions || ownedCategoryIndexes?.has(index))
+          .map((row) => row.rowId),
+      ),
+  );
+  const columnCount = useOrderItemsTableColumnCount();
   const rowsId = useId();
+  const hasUntouchedSuggestion = rows.some((row) => row.productTypeKey !== "" && !ownedCategoryRowIds.has(row.rowId));
+
+  useEffect(() => {
+    onSuggestionPresenceChange?.(hasUntouchedSuggestion);
+    onCategoryOwnershipChange?.(
+      new Set(rows.flatMap((row, index) => (ownedCategoryRowIds.has(row.rowId) ? [index] : []))),
+    );
+  }, [hasUntouchedSuggestion, onSuggestionPresenceChange, onCategoryOwnershipChange, ownedCategoryRowIds, rows]);
 
   const carried = useMemo(() => buildCarriedProductData(group, groupKey), [group, groupKey]);
   const showRows = isExpanded || forceExpanded;
-  const tone = resolveTone(group, hasWarning);
+  const showProvenance =
+    rows.length > 1 || group.doubtful || hasWarning || group.reason === "sealed" || group.reason === "not-nameable";
   const productCount = rows.length;
 
   const applyRows = useCallback(
@@ -126,6 +136,10 @@ export default function IntakeGroupCard({
     [carried, currencyCode, group, onApply, onPriceValidityChange],
   );
 
+  function handleCategoryPicked(rowId: string) {
+    setOwnedCategoryRowIds((current) => new Set([...current, rowId]));
+  }
+
   const handleRowsChange = (nextRows: ItemRow[]) => {
     // A category the collector picked themselves stops being a suggestion. Detected by comparing
     // against what the row held a moment ago rather than reported by the picker, because the grid
@@ -135,11 +149,7 @@ export default function IntakeGroupCard({
       (row) => row.productTypeKey !== "" && previousByRowId.get(row.rowId) !== row.productTypeKey,
     );
     if (newlyOwned.length > 0) {
-      setOwnedCategoryRowIds((current) => {
-        const next = new Set(current);
-        newlyOwned.forEach((row) => next.add(row.rowId));
-        return next;
-      });
+      setOwnedCategoryRowIds((current) => new Set([...current, ...newlyOwned.map((row) => row.rowId)]));
       posthog.capture(POSTHOG_EVENTS.IMAGE_INTAKE.CATEGORY_SET, {
         scope: "product",
         product_count: newlyOwned.length,
@@ -149,9 +159,10 @@ export default function IntakeGroupCard({
   };
 
   /** Rebuilds both the rows and the draft after an operation that replaces the product list. */
-  const applyRebuiltGroup = (nextGroup: ExtractedGroup) => {
-    setRows(groupToItemRows(nextGroup, currencyCode, groupKey));
-    setOwnedCategoryRowIds(new Set());
+  const applyRebuiltGroup = (nextGroup: ExtractedGroup, ownedIndexes: number[] = []) => {
+    const nextRows = groupToItemRows(nextGroup, currencyCode, groupKey);
+    setRows(nextRows);
+    setOwnedCategoryRowIds(new Set(ownedIndexes.map((index) => nextRows[index].rowId)));
     onPriceValidityChange?.(false);
     onApply(nextGroup);
   };
@@ -160,12 +171,14 @@ export default function IntakeGroupCard({
     group.products.find((product) => product.suggestedProductTypeKey !== null)?.suggestedProductTypeKey ?? null;
   const firstReferenceUrl = group.products.find((product) => product.referenceUrl !== null)?.referenceUrl ?? null;
 
-  const splitMergeMode: "split" | "merge" = productCount > 1 ? "merge" : "split";
-  const splitMergeSourceItems = rows.map((row) => ({
-    id: row.rowId,
-    name: row.name,
-    unitPrice: rowPriceInMinorUnits(row, currencyCode),
-  }));
+  const splitMergeMode: "split" | "merge" = splitRowId !== null ? "split" : "merge";
+  const splitMergeSourceItems = rows
+    .filter((row) => splitRowId === null || row.rowId === splitRowId)
+    .map((row) => ({
+      id: row.rowId,
+      name: row.name,
+      unitPrice: rowPriceInMinorUnits(row, currencyCode),
+    }));
 
   // Split and merge rebuild the product list, so both carry the group's category and its link
   // forward instead of dropping them: the pieces of a split lot are the same kind of thing as the
@@ -173,71 +186,88 @@ export default function IntakeGroupCard({
   function handleConfirmSplit(parts: SplitMergePart[]) {
     setIsSplitMergeOpen(false);
     posthog.capture(POSTHOG_EVENTS.IMAGE_INTAKE.GROUP_SPLIT, { part_count: parts.length });
-    applyRebuiltGroup({
-      ...group,
-      products: parts.map((part, index) => ({
+    const ownedIndexes: number[] = [];
+    let nextIndex = 0;
+    for (const row of rows) {
+      const count = row.rowId === splitRowId ? parts.length : 1;
+      if (ownedCategoryRowIds.has(row.rowId)) {
+        for (let offset = 0; offset < count; offset += 1) ownedIndexes.push(nextIndex + offset);
+      }
+      nextIndex += count;
+    }
+    const products = rows.flatMap((row) => {
+      if (row.rowId !== splitRowId) return itemRowsToProducts([row], currencyCode, carried);
+      const source = itemRowsToProducts([row], currencyCode, carried)[0];
+      return parts.map((part, index) => ({
         name: part.name,
         unitPrice: part.unitPrice,
-        suggestedProductTypeKey: firstSuggestedCategoryKey,
-        referenceUrl: index === 0 ? firstReferenceUrl : null,
-      })),
-      reason: "split",
-      doubtful: false,
-      priceSplit: "explicit-unit",
+        suggestedProductTypeKey: source?.suggestedProductTypeKey ?? null,
+        referenceUrl: index === 0 ? (source?.referenceUrl ?? null) : null,
+      }));
     });
+    // Ownership follows the products when a structural edit restores natural row order.
+    const ownedProducts = new Set(ownedIndexes.map((index) => products[index]));
+    products.sort((left, right) => compareNaturally(left.name, right.name));
+    applyRebuiltGroup(
+      {
+        ...group,
+        products,
+        ...(productCount === 1
+          ? { reason: "split" as const, doubtful: false, priceSplit: "explicit-unit" as const }
+          : {}),
+      },
+      products.flatMap((product, index) => (ownedProducts.has(product) ? [index] : [])),
+    );
   }
 
   function handleConfirmMerge(mergedName: string, mergedUnitPrice: number | null) {
     setIsSplitMergeOpen(false);
     posthog.capture(POSTHOG_EVENTS.IMAGE_INTAKE.GROUP_MERGED, { merged_count: productCount });
-    applyRebuiltGroup({
-      ...group,
-      products: [
-        {
-          name: mergedName,
-          unitPrice: mergedUnitPrice,
-          suggestedProductTypeKey: firstSuggestedCategoryKey,
-          referenceUrl: firstReferenceUrl,
-        },
-      ],
-      reason: "sealed",
-      doubtful: false,
-      priceSplit: "explicit-unit",
-    });
+    applyRebuiltGroup(
+      {
+        ...group,
+        products: [
+          {
+            name: mergedName,
+            unitPrice: mergedUnitPrice,
+            suggestedProductTypeKey: firstSuggestedCategoryKey,
+            referenceUrl: firstReferenceUrl,
+          },
+        ],
+        reason: "sealed",
+        doubtful: false,
+        priceSplit: "explicit-unit",
+      },
+      rows.some((row) => row.productTypeKey === firstSuggestedCategoryKey && ownedCategoryRowIds.has(row.rowId))
+        ? [0]
+        : [],
+    );
   }
 
-  const toneChip = {
-    // Neutral, not green: this chip reports that nothing needs attention, so it has to be the
-    // quietest thing here or it competes with the amber ones the header's count is about.
-    clean: { variant: "neutral" as const, icon: <Check size={12} />, label: t("clean") },
-    warning: { variant: "warning" as const, icon: <AlertTriangle size={12} />, label: t("warning") },
-    doubtful: { variant: "warning" as const, icon: <CircleHelp size={12} />, label: t("doubtful") },
-  }[tone];
-
-  function resolveHeadline(): string {
-    if (group.reason === "sealed") return t("sealed");
-    if (group.reason === "not-nameable") return t("notNameable");
-    if (group.reason === "open-range") return t("openRange", { count: productCount });
-    return group.doubtful ? t("splitDoubt") : t("split", { count: productCount });
+  function handleSplitRow(row: ItemRow) {
+    setSplitRowId(row.rowId);
+    setIsSplitMergeOpen(true);
   }
 
-  function resolveQuote(): string {
-    if (group.reason === "sealed") return t("sourceQuoteSealed", { phrase: group.sourcePhrase });
-    if (group.reason === "not-nameable") return t("sourceQuoteNotNameable", { phrase: group.sourcePhrase });
-    return t("sourceQuote", { phrase: group.sourcePhrase });
+  function handleMergeGroup() {
+    setSplitRowId(null);
+    setIsSplitMergeOpen(true);
   }
 
-  function resolveWhy(): string {
-    if (group.reason === "sealed") return t("sealedWhy");
-    if (group.reason === "not-nameable") return t("notNameableWhy");
-    if (group.reason === "open-range") return t("openRangeWhy");
-    return group.doubtful ? t("splitDoubtWhy") : t("splitWhy");
-  }
-
-  function resolveRevertLabel(): string {
-    // A group that was kept whole reverts by splitting; a group that was split reverts by merging.
-    if (productCount > 1) return t("mergeAction");
-    return group.reason === "sealed" ? t("splitIntoAction", { count: 2 }) : t("splitAction");
+  function renderSplitAction(row: ItemRow) {
+    const label = (row.name.trim() ? t("splitProduct", { name: row.name.trim() }) : t("splitAction")).trim();
+    return (
+      <IconButton
+        size="sm"
+        icon={<Scissors size={16} aria-hidden />}
+        aria-label={label}
+        title={label}
+        className="size-11 before:inset-0 lg:size-8"
+        onClick={() => handleSplitRow(row)}
+        data-ph-event={POSTHOG_EVENTS.ORDER.SPLIT_MERGE_MODAL_OPENED}
+        data-ph-props={JSON.stringify({ mode: "split", source: "intake_review", product_count: 1 })}
+      />
+    );
   }
 
   const groupTotal = rows.reduce<number | null>((sum, row) => {
@@ -251,54 +281,214 @@ export default function IntakeGroupCard({
       ? t("rangeSeparator", { first: rows[0]?.name ?? "", last: rows[productCount - 1]?.name ?? "" })
       : (rows[0]?.name ?? group.sourcePhrase);
 
-  const hasUnownedSuggestion = rows.some((row) => row.productTypeKey !== "" && !ownedCategoryRowIds.has(row.rowId));
   const referenceUrls = group.products
     .map((product) => product.referenceUrl)
     .filter((url): url is string => url !== null);
 
-  return (
-    <div className="flex flex-col gap-[var(--space-2)]">
-      {/*
-        The evidence, in the four parts `FR-11-57` fixes: what we did, what the chat said quoted
-        verbatim, why, and the control that reverses it. Slim, because the table below it is what
-        the collector actually came to read.
-      */}
-      <div className="flex flex-wrap items-center gap-x-[var(--space-2)] gap-y-[var(--space-1)]">
-        <Chip variant={toneChip.variant} size="sm" icon={toneChip.icon}>
-          {toneChip.label}
-        </Chip>
-        <h4 className="[font-size:var(--text-caption)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
-          {resolveHeadline()}
-        </h4>
-      </div>
-      <p className="[font-size:var(--text-caption)] [color:var(--text-secondary)]">
-        {resolveQuote()} {resolveWhy()}
-      </p>
+  const groupingExplanation =
+    group.reason === "sealed"
+      ? t("sealedWhy")
+      : group.reason === "not-nameable"
+        ? t("notNameableWhy")
+        : group.reason === "open-range"
+          ? t("openRangeWhy")
+          : group.doubtful
+            ? t("splitDoubtWhy")
+            : t("splitWhy");
 
-      {hasWarning && groupTotal !== null && (
-        <p className="[font-size:var(--text-caption)] [color:var(--warning-chip-text)]">
-          {t("priceSplitUneven", { total: formatAmount(groupTotal, currencyCode) })}
+  function handleEvidenceToggle(event: React.SyntheticEvent<HTMLDetailsElement>) {
+    posthog.capture(POSTHOG_EVENTS.IMAGE_INTAKE.GROUP_EVIDENCE_TOGGLED, { expanded: event.currentTarget.open });
+  }
+
+  const provenance = showProvenance ? (
+    <div className="border-border-strong bg-surface text-text-secondary flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 border-l-2 px-3 py-1.5 text-xs">
+      <details className="min-w-0 flex-1" onToggle={handleEvidenceToggle}>
+        <summary
+          className={cn(
+            "text-text-secondary focus-visible:outline-ring flex min-h-11 cursor-pointer items-center gap-2 rounded focus-visible:outline-2 focus-visible:outline-offset-2 lg:min-h-8",
+            group.doubtful && "[color:var(--warning-chip-text)]",
+          )}
+        >
+          {group.doubtful ? <CircleHelp size={16} aria-hidden /> : <Layers size={16} aria-hidden />}
+          {group.doubtful
+            ? t("doubtful")
+            : group.reason === "sealed" && productCount === 1
+              ? t("sealed")
+              : group.reason === "not-nameable"
+                ? t("notNameable")
+                : hasWarning && productCount <= 1
+                  ? t("warning")
+                  : t("bundleLabel", { count: productCount })}
+          <ChevronDown size={14} aria-hidden className="shrink-0" />
+        </summary>
+        <p className="pt-1 pb-2 break-words">
+          {t("sourceQuote", { phrase: group.sourcePhrase })} {groupingExplanation}
         </p>
+      </details>
+      {productCount > 1 && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="min-h-11 lg:min-h-8"
+          onClick={handleMergeGroup}
+          data-ph-event={POSTHOG_EVENTS.ORDER.SPLIT_MERGE_MODAL_OPENED}
+          data-ph-props={JSON.stringify({ mode: "merge", source: "intake_review", product_count: productCount })}
+        >
+          {t("mergeAction")}
+        </Button>
       )}
+    </div>
+  ) : null;
 
-      {!showRows && (
-        <div className="flex flex-col gap-[var(--space-1)]">
-          <strong className="[font-size:var(--text-body)] [color:var(--text-primary)]">{rangeLabel}</strong>
-          <span className="numeric [font-size:var(--text-caption)] [color:var(--text-secondary)]">
-            {groupTotal !== null
-              ? t("summaryMeta", {
-                  count: productCount,
-                  unitPrice: formatAmount(Math.round(groupTotal / productCount), currencyCode),
-                  total: formatAmount(groupTotal, currencyCode),
-                })
-              : t("summaryMetaNoPrice", { count: productCount })}
-          </span>
-        </div>
-      )}
+  const warning =
+    hasWarning && groupTotal !== null ? (
+      <p className="flex items-start gap-2 px-3 py-2 text-xs [color:var(--warning-chip-text)]">
+        <AlertTriangle size={16} aria-hidden className="shrink-0" />
+        {t("priceSplitUneven", { total: formatAmount(groupTotal, currencyCode) })}
+      </p>
+    ) : null;
 
-      {showRows && (
-        <div id={rowsId} className="intake-reveal">
-          {isMobile ? (
+  function handleRowsToggle() {
+    const expanded = !showRows || forceExpanded;
+    setIsExpanded(expanded);
+    posthog.capture(POSTHOG_EVENTS.IMAGE_INTAKE.GROUP_ROWS_TOGGLED, { expanded });
+  }
+
+  const disclosure =
+    productCount > GROUP_EXPANDED_MAX_PRODUCTS ? (
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className="min-h-11 lg:min-h-8"
+        onClick={handleRowsToggle}
+        aria-expanded={showRows}
+        aria-controls={rowsId}
+      >
+        {showRows ? t("collapse", { count: productCount }) : t("expand", { count: productCount })}
+      </Button>
+    ) : null;
+
+  const summary = !showRows ? (
+    <div className="flex flex-col gap-1 px-3 py-2">
+      <strong className="text-text-primary text-sm">{rangeLabel}</strong>
+      <span className="numeric text-text-secondary text-xs">
+        {groupTotal !== null
+          ? t("summaryMeta", {
+              count: productCount,
+              unitPrice: formatAmount(Math.round(groupTotal / productCount), currencyCode),
+              total: formatAmount(groupTotal, currencyCode),
+            })
+          : t("summaryMetaNoPrice", { count: productCount })}
+      </span>
+    </div>
+  ) : null;
+
+  const references =
+    referenceUrls.length > 0 ? (
+      <p className="flex flex-wrap items-center gap-2 px-3 py-1 text-xs">
+        <span className="text-text-muted">{t("referenceLinkLead")}</span>
+        {referenceUrls.map((url) => (
+          <a
+            key={url}
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={t("referenceLinkAria", { host: formatReferenceHost(url) })}
+            data-ph-event={POSTHOG_EVENTS.IMAGE_INTAKE.REFERENCE_LINK_OPENED}
+            className={cn(
+              "inline-flex min-h-11 items-center gap-1 lg:min-h-8",
+              "text-accent underline-offset-4 hover:underline",
+              "focus-visible:outline-ring focus-visible:outline-2 focus-visible:outline-offset-2",
+            )}
+          >
+            <ExternalLink size={16} aria-hidden />
+            {formatReferenceHost(url)}
+          </a>
+        ))}
+      </p>
+    ) : null;
+
+  const grid = showRows ? (
+    <OrderItemsGrid
+      rows={rows}
+      onChange={handleRowsChange}
+      productTypeKeys={productTypeKeys}
+      tProductTypes={productTypeName}
+      createNewRow={() => ({
+        rowId: `${groupKey}-added-${rows.length}`,
+        name: "",
+        quantity: "1",
+        unitPrice: "",
+        productTypeKey: "",
+      })}
+      currencyCode={currencyCode || undefined}
+      showQuantity={false}
+      sortable={false}
+      appendOnTab={false}
+      onCategoryPicked={handleCategoryPicked}
+      tableBodyId={withinTable ? rowsId : undefined}
+      renderRowAction={renderSplitAction}
+    />
+  ) : null;
+
+  const modal = (
+    <ProductSplitMergeModal
+      isOpen={isSplitMergeOpen}
+      onClose={() => setIsSplitMergeOpen(false)}
+      mode={splitMergeMode}
+      currencyCode={currencyCode}
+      sourceItems={splitMergeSourceItems}
+      onConfirmSplit={handleConfirmSplit}
+      onConfirmMerge={handleConfirmMerge}
+    />
+  );
+
+  if (withinTable) {
+    return (
+      <>
+        {(provenance || warning || summary) && (
+          <tbody id={!showRows ? rowsId : undefined}>
+            <tr>
+              <td colSpan={columnCount}>
+                {provenance}
+                {warning}
+                {summary}
+              </td>
+            </tr>
+          </tbody>
+        )}
+        {grid}
+        {(references || disclosure) && (
+          <tbody>
+            <tr>
+              <td colSpan={columnCount}>
+                {references}
+                {disclosure}
+              </td>
+            </tr>
+          </tbody>
+        )}
+        {isSplitMergeOpen && (
+          <tbody>
+            <tr>
+              <td colSpan={columnCount}>{modal}</td>
+            </tr>
+          </tbody>
+        )}
+      </>
+    );
+  }
+
+  return (
+    <div className="min-w-0">
+      {provenance}
+      {warning}
+      {summary}
+      <div id={rowsId}>
+        {showRows &&
+          (isMobile ? (
             <OrderItemsMobileList
               rows={rows}
               onChange={handleRowsChange}
@@ -307,103 +497,19 @@ export default function IntakeGroupCard({
               tProductTypes={productTypeName}
               nextRowId={() => `${groupKey}-added-${rows.length}`}
               showQuantity={false}
+              compact
+              showAddButton={false}
+              keepEmptyRow={false}
+              onCategoryPicked={handleCategoryPicked}
+              renderRowAction={renderSplitAction}
             />
           ) : (
-            <OrderItemsGrid
-              rows={rows}
-              onChange={handleRowsChange}
-              productTypeKeys={productTypeKeys}
-              tProductTypes={productTypeName}
-              createNewRow={() => ({
-                rowId: `${groupKey}-added-${rows.length}`,
-                name: "",
-                quantity: "1",
-                unitPrice: "",
-                productTypeKey: "",
-              })}
-              currencyCode={currencyCode || undefined}
-              showQuantity={false}
-            />
-          )}
-        </div>
-      )}
-
-      {showRows && hasUnownedSuggestion && (
-        // A category is inferred every time and never read, so it is marked as a suggestion with a
-        // word (`FR-11-93`). One line for the group rather than a chip per row: the table earns its
-        // readability from having four columns instead of five.
-        <p className="flex items-center gap-[var(--space-1)] [font-size:var(--text-caption)] [color:var(--text-muted)]">
-          <Sparkles size={12} aria-hidden className="shrink-0" />
-          {t("categorySuggestedHint")}
-        </p>
-      )}
-
-      {referenceUrls.length > 0 && (
-        <p className="flex flex-wrap items-center gap-[var(--space-2)] [font-size:var(--text-caption)]">
-          <span className="[color:var(--text-muted)]">{t("referenceLinkLead")}</span>
-          {referenceUrls.map((url) => (
-            /*
-              A plain anchor, deliberately: this address came out of an image, so it is untrusted
-              content, and `next/link` would let the router prefetch it the moment the row scrolls
-              into view. Nothing may reach that host until the collector decides to go there.
-            */
-            <a
-              key={url}
-              href={url}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={t("referenceLinkAria", { host: formatReferenceHost(url) })}
-              data-ph-event={POSTHOG_EVENTS.IMAGE_INTAKE.REFERENCE_LINK_OPENED}
-              className={cn(
-                "inline-flex min-h-[44px] items-center gap-[var(--space-1)] md:min-h-0",
-                "[color:var(--accent)] underline-offset-4 hover:underline",
-                "focus-visible:[box-shadow:0_0_0_2px_var(--focus-ring)] focus-visible:outline-none",
-              )}
-            >
-              <ExternalLink size={12} aria-hidden />
-              {formatReferenceHost(url)}
-            </a>
+            grid
           ))}
-        </p>
-      )}
-
-      <div className="flex flex-wrap items-center gap-[var(--space-2)]">
-        {productCount > GROUP_EXPANDED_MAX_PRODUCTS && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="min-h-[44px] md:min-h-8"
-            onClick={() => setIsExpanded((current) => !current)}
-            aria-expanded={showRows}
-            aria-controls={rowsId}
-          >
-            {showRows ? t("collapse", { count: productCount }) : t("expand", { count: productCount })}
-          </Button>
-        )}
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="min-h-[44px] md:min-h-8"
-          leadingIcon={<Layers size={14} />}
-          onClick={() => setIsSplitMergeOpen(true)}
-          data-ph-event={POSTHOG_EVENTS.ORDER.SPLIT_MERGE_MODAL_OPENED}
-          data-ph-props={JSON.stringify({ mode: splitMergeMode, source: "intake_review", product_count: productCount })}
-        >
-          {resolveRevertLabel()}
-        </Button>
       </div>
-
-      <ProductSplitMergeModal
-        isOpen={isSplitMergeOpen}
-        onClose={() => setIsSplitMergeOpen(false)}
-        mode={splitMergeMode}
-        currencyCode={currencyCode}
-        sourceItems={splitMergeSourceItems}
-        onConfirmSplit={handleConfirmSplit}
-        onConfirmMerge={handleConfirmMerge}
-      />
+      {references}
+      {disclosure}
+      {modal}
     </div>
   );
 }

@@ -28,6 +28,7 @@ type DatePickerInputProps = {
   placeholder: string;
   disabled?: boolean;
   error?: boolean;
+  "aria-describedby"?: string;
   locale?: string;
   /** When true, disables any date after today (local timezone). */
   disableFuture?: boolean;
@@ -71,6 +72,7 @@ export default function DatePickerInput({
   placeholder,
   disabled = false,
   error = false,
+  "aria-describedby": ariaDescribedBy,
   locale = "en",
   disableFuture = false,
   presets,
@@ -170,6 +172,7 @@ export default function DatePickerInput({
         id={id}
         type="button"
         disabled={disabled}
+        aria-describedby={ariaDescribedBy}
         aria-haspopup="dialog"
         aria-expanded={isOpen}
         onClick={() => setIsOpen((prev) => !prev)}

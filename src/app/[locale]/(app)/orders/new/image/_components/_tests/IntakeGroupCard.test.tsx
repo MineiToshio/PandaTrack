@@ -1,16 +1,26 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen, within } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 
 vi.mock("next-intl", () => ({
   useTranslations: () => {
     const translate = (key: string, values?: Record<string, unknown>) =>
-      values ? `${key}:${JSON.stringify(values)}` : key;
+      key === "splitProduct"
+        ? `splitProduct: ${String(values?.name ?? "")}`
+        : values
+          ? `${key}:${JSON.stringify(values)}`
+          : key;
     translate.has = () => true;
     return translate;
   },
   useLocale: () => "es",
 }));
+
+const viewport = vi.hoisted(() => ({ mobile: false }));
+vi.mock("@/hooks/useIsMobile", () => ({ useIsMobile: () => viewport.mobile }));
+afterEach(() => {
+  viewport.mobile = false;
+});
 
 vi.mock("posthog-js", () => ({ default: { capture: vi.fn() } }));
 
@@ -48,6 +58,9 @@ vi.mock("@/components/modules/Modal/Modal", () => ({
 
 import type { ComponentProps } from "react";
 import type { ExtractedGroup, ExtractedProduct } from "@/lib/imageIntake/draftSchema";
+import posthog from "posthog-js";
+import { POSTHOG_EVENTS } from "@/lib/constants";
+import { OrderItemsTable } from "../../../../_components/share/OrderItemsGrid";
 import IntakeGroupCard, { shouldArriveExpanded } from "../IntakeGroupCard";
 
 function buildGroup(overrides: Partial<ExtractedGroup> = {}): ExtractedGroup {
@@ -136,9 +149,47 @@ describe("IntakeGroupCard", () => {
     expect(disclosure.textContent).toContain("50");
   });
 
-  it("quotes the source phrase verbatim, which is the evidence the user judges from", () => {
+  it("shows no provenance chrome for a clean single-product group", () => {
+    renderCard({ group: buildGroup({ products: buildProducts(1) }) });
+    expect(screen.queryByRole("group")).toBeNull();
+    expect(screen.queryByText(/bundleLabel/)).toBeNull();
+    expect(screen.queryByText(/sourceQuote/)).toBeNull();
+    expect(screen.queryByText("clean")).toBeNull();
+    expect(nameCells()).toHaveLength(1);
+  });
+
+  it("shows one compact provenance disclosure for a multi-product source line", () => {
     renderCard();
-    expect(screen.getByText(/sourceQuote:.*el pack chase de Gojo/)).toBeTruthy();
+    expect(screen.getAllByText(/bundleLabel/)).toHaveLength(1);
+    const evidence = screen.getByText(/bundleLabel/).closest("details");
+    expect(evidence?.open).toBe(false);
+    expect(within(evidence!).getByText(/sourceQuote:.*el pack chase de Gojo/)).toBeTruthy();
+    fireEvent.click(screen.getByText(/bundleLabel/));
+    expect(evidence?.open).toBe(true);
+  });
+
+  it("omits sorting handles and keeps a split action on every row", () => {
+    renderCard();
+    expect(screen.queryByRole("button", { name: "itemDragLabel" })).toBeNull();
+    const actions = screen.getAllByRole("button", { name: /^splitProduct:/ });
+    expect(actions).toHaveLength(2);
+    expect(actions[0].closest("tr")).toBe(nameCells()[0].closest("tr"));
+    expect(actions[1].closest("tr")).toBe(nameCells()[1].closest("tr"));
+    fireEvent.click(actions[1]);
+    expect(screen.getByText("split.title")).toBeTruthy();
+  });
+
+  it("keeps edit and split as separate accessible actions in the mobile list", () => {
+    viewport.mobile = true;
+    renderCard({ group: buildGroup({ products: buildProducts(1) }) });
+    const edit = screen.getByRole("button", { name: /^One Piece 1/ });
+    expect(edit.className).toContain("min-w-0");
+    expect(screen.queryByRole("grid")).toBeNull();
+    const split = screen.getByRole("button", { name: /^splitProduct:/ });
+    expect(split.className).toContain("size-11");
+    fireEvent.click(split);
+    expect(screen.getByText("split.title")).toBeTruthy();
+    expect(screen.queryByText("categorySuggestedHint")).toBeNull();
   });
 
   it("renders the doubtful state with its own word, not only a colour", () => {
@@ -254,7 +305,7 @@ describe("IntakeGroupCard: split and merge", () => {
       }),
     });
 
-    fireEvent.click(screen.getByRole("button", { name: /splitIntoAction/ }));
+    fireEvent.click(screen.getByRole("button", { name: /splitProduct:.*Pack sellado/ }));
     expect(screen.getByText("split.title")).toBeTruthy();
   });
 
@@ -274,27 +325,170 @@ describe("IntakeGroupCard: split and merge", () => {
   });
 });
 
-describe("IntakeGroupCard: suggested category", () => {
-  it("says the categories are suggestions once, for the group, instead of a chip on every row", () => {
+describe("IntakeGroupCard: splitting an individual row", () => {
+  it("splits only the selected product and preserves its sibling's price, category and link", () => {
+    const onApply = vi.fn();
+    const onCategoryOwnershipChange = vi.fn();
+    const sibling = {
+      name: "Manga 10",
+      unitPrice: 9000,
+      suggestedProductTypeKey: "figures",
+      referenceUrl: "https://example.com/gojo",
+    };
     renderCard({
+      onApply,
+      ownedCategoryIndexes: new Set([0]),
+      onCategoryOwnershipChange,
       group: buildGroup({
         products: [
-          { name: "Gojo", unitPrice: 9000, suggestedProductTypeKey: "figures", referenceUrl: null },
-          { name: "Gojo (chase)", unitPrice: 6000, suggestedProductTypeKey: "figures", referenceUrl: null },
+          sibling,
+          {
+            name: "Manga 1-2",
+            unitPrice: 6000,
+            suggestedProductTypeKey: "manga",
+            referenceUrl: "https://example.com/manga",
+          },
         ],
       }),
     });
-
-    expect(screen.getAllByText("categorySuggestedHint")).toHaveLength(1);
+    fireEvent.click(screen.getByRole("button", { name: /splitProduct:.*Manga 1-2/ }));
+    fireEvent.click(screen.getByRole("button", { name: "split.confirm" }));
+    const [updated] = onApply.mock.calls.at(-1) as [ExtractedGroup];
+    expect(updated.products).toEqual([
+      { name: "Manga 1", unitPrice: 3000, suggestedProductTypeKey: "manga", referenceUrl: "https://example.com/manga" },
+      { name: "Manga 2", unitPrice: 3000, suggestedProductTypeKey: "manga", referenceUrl: null },
+      sibling,
+    ]);
+    expect(onCategoryOwnershipChange).toHaveBeenLastCalledWith(new Set([2]));
+    expect(nameCells().map((cell) => cell.value)).toEqual(["Manga 1", "Manga 2", "Manga 10"]);
   });
+});
 
-  it("says nothing about suggestions when the model categorised nothing", () => {
-    renderCard();
-    expect(screen.queryByText("categorySuggestedHint")).toBeNull();
-  });
-
+describe("IntakeGroupCard: suggested category", () => {
   it("offers the manual form's own picker on every row", () => {
     renderCard();
     expect(screen.getAllByRole("button", { name: /itemProductTypeLabel/ })).toHaveLength(2);
+  });
+});
+
+describe("review regression: group evidence and metadata", () => {
+  it.each(["sealed", "not-nameable"] as const)("retains compact source evidence for a %s single product", (reason) => {
+    renderCard({ group: buildGroup({ reason, products: buildProducts(1) }) });
+    const label = reason === "sealed" ? "sealed" : "notNameable";
+    const disclosure = screen.getByText(label).closest("details");
+    expect(disclosure).toBeTruthy();
+    expect(disclosure?.open).toBe(false);
+    expect(within(disclosure!).getByText(/sourceQuote:.*el pack chase de Gojo/)).toBeTruthy();
+  });
+
+  it("preserves doubtful and reason flags for untouched siblings after a row split", () => {
+    const onApply = vi.fn();
+    renderCard({
+      onApply,
+      group: buildGroup({
+        doubtful: true,
+        reason: "not-nameable",
+        priceSplit: "divided-lot",
+        products: [
+          { name: "Manga 1-2", unitPrice: 6000, suggestedProductTypeKey: null, referenceUrl: null },
+          {
+            name: "Unknown link",
+            unitPrice: 1000,
+            suggestedProductTypeKey: null,
+            referenceUrl: "https://example.com/product",
+          },
+        ],
+      }),
+    });
+    fireEvent.click(screen.getByRole("button", { name: /splitProduct:.*Manga/ }));
+    fireEvent.click(screen.getByRole("button", { name: "split.confirm" }));
+    const [updated] = onApply.mock.calls.at(-1) as [ExtractedGroup];
+    expect(updated).toMatchObject({ doubtful: true, reason: "not-nameable", priceSplit: "divided-lot" });
+    expect(updated.products.at(-1)).toEqual({
+      name: "Unknown link",
+      unitPrice: 1000,
+      suggestedProductTypeKey: null,
+      referenceUrl: "https://example.com/product",
+    });
+  });
+
+  it("resets source flags when splitting the only product", () => {
+    const onApply = vi.fn();
+    renderCard({
+      onApply,
+      group: buildGroup({
+        doubtful: true,
+        reason: "sealed",
+        priceSplit: "divided-lot",
+        products: [{ name: "Manga 1-2", unitPrice: 6000, suggestedProductTypeKey: null, referenceUrl: null }],
+      }),
+    });
+    fireEvent.click(screen.getByRole("button", { name: /splitProduct:.*Manga/ }));
+    fireEvent.click(screen.getByRole("button", { name: "split.confirm" }));
+    expect(onApply.mock.calls.at(-1)?.[0]).toMatchObject({
+      doubtful: false,
+      reason: "split",
+      priceSplit: "explicit-unit",
+    });
+  });
+
+  it("derives provenance spans from the surrounding table column configuration", () => {
+    render(
+      <OrderItemsTable sortable showQuantity hasRowAction>
+        <IntakeGroupCard
+          withinTable
+          group={buildGroup()}
+          groupKey="span"
+          currencyCode="PEN"
+          productTypeKeys={PRODUCT_TYPE_KEYS}
+          hasWarning={false}
+          onApply={noopApply}
+        />
+      </OrderItemsTable>,
+    );
+    const columnCount = screen.getAllByRole("columnheader").length;
+    const cell = screen.getByText(/bundleLabel/).closest("td");
+    expect(columnCount).toBe(7);
+    expect(cell?.colSpan).toBe(columnCount);
+  });
+
+  it("reports evidence expansion and collapse with an explicit boolean", () => {
+    renderCard();
+    const details = screen.getByText(/bundleLabel/).closest("details")!;
+    details.open = true;
+    fireEvent(details, new Event("toggle"));
+    expect(posthog.capture).toHaveBeenLastCalledWith(POSTHOG_EVENTS.IMAGE_INTAKE.GROUP_EVIDENCE_TOGGLED, {
+      expanded: true,
+    });
+    details.open = false;
+    fireEvent(details, new Event("toggle"));
+    expect(posthog.capture).toHaveBeenLastCalledWith(POSTHOG_EVENTS.IMAGE_INTAKE.GROUP_EVIDENCE_TOGGLED, {
+      expanded: false,
+    });
+  });
+
+  it("reports row expansion and collapse with an explicit boolean", () => {
+    renderCard({ group: buildGroup({ products: buildProducts(6) }) });
+    const expand = screen.getByRole("button", { name: /^expand:/ });
+    fireEvent.click(expand);
+    expect(posthog.capture).toHaveBeenLastCalledWith(POSTHOG_EVENTS.IMAGE_INTAKE.GROUP_ROWS_TOGGLED, {
+      expanded: true,
+    });
+    const collapse = screen.getByRole("button", { name: /^collapse:/ });
+    fireEvent.click(collapse);
+    expect(posthog.capture).toHaveBeenLastCalledWith(POSTHOG_EVENTS.IMAGE_INTAKE.GROUP_ROWS_TOGGLED, {
+      expanded: false,
+    });
+  });
+
+  it("gives a blank product's split action a complete name without a trailing space", () => {
+    renderCard({
+      group: buildGroup({
+        products: [{ name: "", unitPrice: null, suggestedProductTypeKey: null, referenceUrl: null }],
+      }),
+    });
+    const button = screen.getByRole("button", { name: "splitAction" });
+    expect(button.getAttribute("aria-label")).toBe("splitAction");
+    expect(button.getAttribute("title")).toBe("splitAction");
   });
 });

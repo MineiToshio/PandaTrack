@@ -18,7 +18,7 @@ Turn the foundation into the feature: a user attaches one or more photos, watche
 
 This is the spine of FRD-11. Everything after it is either an enrichment of this screen or another door into it.
 
-**Amended 2026-10-29:** Review initialization uses stable ascending natural product order within groups and group-by-first order before positional breakdown state exists. The reviewed traversal is also the saved order. Untouched positive full payments default to the shared select-all breakdown, conditional on a legal date and sufficient balance; partial payments remain unselected, and collector edits or clearing are preserved. Opening/folding is not an edit. Structural edits re-derive untouched defaults without a cleared notice. Idempotent retries ask to redo only edited or legacy breakdowns. Saved default allocations carry the same item-edit guards as manual ones, so the collector may clear the default before saving. See the owning FRD's review-order amendment and payment breakdown requirement, and the FDD payment breakdown section for unpriced products and undetailed residuals.
+**Amended 2026-10-29:** Review initialization uses stable ascending natural product order within groups and group-by-first order before positional breakdown state exists. The reviewed traversal is also the saved order. Untouched positive full payments default to the shared select-all breakdown, conditional on a legal date and sufficient balance; partial payments remain unselected, and collector edits or clearing are preserved. Opening/folding is not an edit. Per-row splits restore natural product order within the group while preserving sibling metadata and collector-owned categories. All structural edits, including the section add-product action and deleting a final row together with its group, use the same positional breakdown reset to re-derive untouched defaults without a cleared notice. Idempotent retries ask to redo only edited or legacy breakdowns. Saved default allocations carry the same item-edit guards as manual ones, so the collector may clear the default before saving. See the owning FRD's review-order amendment and payment breakdown requirement, and the FDD payment breakdown section for unpriced products and undetailed residuals.
 
 ## In Scope
 
@@ -29,14 +29,14 @@ This is the spine of FRD-11. Everything after it is either an enrichment of this
 - **Currency gate**: when the user has no base currency configured, ask for it before extraction runs and only process the submission once it is set.
 - **"Revisa y confirma" screen**:
   - header summary in both variants ("Encontramos 6 productos por S/ 480.00. Revisa 2 datos y guarda." and "Todo salió limpio de las fotos. Revísalo y guarda."),
-  - read values as plain, non-focusable text; assumed and missing values as focusable controls,
+  - every value editable through shared controls; warning provenance for required gaps and assumptions, neutral for optional gaps and derived values,
   - an assumed currency visibly marked as assumed,
-  - group cards with the four-part structure (what we did, what the chat said quoted verbatim, why, and the reverting action), in their good / amber / doubtful states,
-  - group collapse rules: 2 to 5 expanded, 6 or more collapsed with a summary row, a row-level doubt forcing expansion, warnings aggregating to the group chip,
+  - one coherent product list with a single desktop header and the existing compact mobile list; plain single-product groups are rows without chrome, while multi-product, sealed, not-nameable, doubtful and price-warning groups retain compact evidence; a single tonal add-product action works at every width and deleting a final row removes its group,
+  - group collapse rules: 2 to 5 expanded, 6 or more collapsed with a summary row, a row-level doubt forcing expansion, warnings aggregating once beside the group band,
   - the payment and total rows,
   - "Completar a mano", which opens the manual order form prefilled with what was read,
   - the primary CTA reusing the existing `orders.create.submit` string ("Crear pedido").
-  - **Addition, delivered after the slice**: each product row shows its suggested catalog category with the catalog icon, marked `sugerida` while it is still the model's answer, editable through the same `MobilePicker` the manual product sheet uses, and a collapsed group shows that control once for the whole group (`FR-11-93`, `FR-11-94`). A product identified by a link shows the link as an openable anchor labelled with its host (`FR-11-96`). The page reads the live active catalog and passes the keys down to the group cards; the reviewed category rides to the order write on `orderCreateSchema.items[].productTypeKey`, while the link is not persisted at all. Two analytics events were added: `image_intake_category_set` and `image_intake_reference_link_opened`.
+  - **Addition, delivered after the slice**: each product row uses the shared category picker with its catalog icon; one section hint remains while any untouched model suggestion exists and disappears after explicit collector choices (including re-selection). Ownership survives deletion, split and responsive layout switches (`FR-11-93`, `FR-11-94`). A product identified by a link shows the link as an openable anchor labelled with its host (`FR-11-96`). The page reads the live active catalog and passes the keys down to the group cards; the reviewed category rides to the order write on `orderCreateSchema.items[].productTypeKey`, while the link is not persisted at all. Two analytics events were added: `image_intake_category_set` and `image_intake_reference_link_opened`.
 - Save: map the confirmed draft and call `createOrder` and `addOrderPayment`, writing the idempotency marker into the order note. `createDelivery` is deliberately not called (`OQ-11-08`, `FR-11-52a`): the draft's delivery block is an expected arrival window, which rides on the order's own expected-delivery fields, plus a shipping cost, which the review screen shows and states is stored when the delivery is registered. Optimistic confirmation per `optimistic-client-updates.mdc`.
 - Error surfaces for the intake taxonomy: too many images, file too large, unsupported format, unreadable file, provider failure or timeout, and the 200-product ceiling stop.
 - i18n: a new image-intake namespace in `src/i18n/locales/{es,en}/`, nothing hardcoded.
@@ -45,7 +45,7 @@ This is the spine of FRD-11. Everything after it is either an enrichment of this
 ## Out of Scope
 
 - The creation selector, the floating button, and the shell changes (WO-05). During this slice the route is reached directly.
-- The split and merge modal (WO-03). Group cards render their state and their explanation; the reverting buttons are wired in WO-03.
+- The split and merge modal (WO-03). Compact group disclosures retain the evidence; per-row split and group-level merge actions are wired in WO-03.
 - Store matching, the disambiguator, and inline store creation (WO-04). During this slice the store block shows the matched name as read, with the existing `StoreCombobox` as the fallback control.
 - The share target (WO-06).
 - The photo counter, the overflow interruption, the exhausted state, and the admin override (WO-07). Quota is enforced only by the foundation's global cut-off during this slice.
@@ -73,7 +73,7 @@ This is the spine of FRD-11. Everything after it is either an enrichment of this
 - A signed-in user attaches a chat screenshot, sees the processing steps, lands on "Revisa y confirma", and saves an order that appears in the orders list with the expected store, products, total, and payment.
 - No code path saves an order without passing through the review screen: submitting the extraction alone creates nothing.
 - A user with no base currency configured is asked for it before extraction runs; setting it lets the same submission proceed.
-- A draft with an assumed currency renders the assumed marker, and the value is editable; a draft with a read currency renders it as plain text.
+- A draft with an assumed currency renders the assumed marker, and the value is editable; a draft with a read currency uses the same editable control without a provenance marker.
 - A draft with a group of 50 products arrives collapsed with the summary row; a group of 3 arrives expanded; a group with a row-level doubt arrives expanded regardless of size.
 - A draft implying more than 200 products shows the ceiling message and saves nothing.
 - "Completar a mano" opens the manual form prefilled with the read values and never empty.
@@ -82,7 +82,7 @@ This is the spine of FRD-11. Everything after it is either an enrichment of this
 
 ## Notes
 
-The review screen is the highest-risk surface in the FRD: if it reads as a form, users will scroll and accept, which defeats mandatory review. The FDD ([`fdd-11-order-image-intake.md`](../../fdd-11-order-image-intake.md)) and the prototype ([`prototype/order-image-intake.html`](../../prototype/order-image-intake.html), anchors `#intake-review` and `#intake-group-collapsed`) are the design contract for it.
+The review screen keeps every value visibly editable while compact source disclosures preserve the evidence needed to check model grouping decisions. The FDD ([`fdd-11-order-image-intake.md`](../../fdd-11-order-image-intake.md)) and the prototype ([`prototype/order-image-intake.html`](../../prototype/order-image-intake.html), anchors `#intake-review` and `#intake-group-collapsed`) are the design contract for it.
 
 ## Implementation Notes
 

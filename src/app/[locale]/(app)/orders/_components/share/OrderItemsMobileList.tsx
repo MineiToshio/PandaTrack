@@ -1,7 +1,7 @@
 "use client";
 
 import { Pencil, Plus } from "lucide-react";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import Button from "@/components/core/Button/Button";
 import { cn } from "@/lib/styles";
@@ -19,6 +19,13 @@ type Props = {
   nextRowId: () => string;
   /** Forwarded to the edit sheet; see `OrderAddProductSheet`. */
   showQuantity?: boolean;
+  /** Compact intake composition; manual forms keep their card rows and add button. */
+  compact?: boolean;
+  showAddButton?: boolean;
+  /** Intake removes empty groups instead of retaining a hidden placeholder after deletion. */
+  keepEmptyRow?: boolean;
+  onCategoryPicked?: (rowId: string) => void;
+  renderRowAction?: (row: ItemRow) => ReactNode;
 };
 
 function parseCentsFromDecimal(value: string): number | null {
@@ -35,13 +42,18 @@ export default function OrderItemsMobileList({
   tProductTypes,
   nextRowId,
   showQuantity = true,
+  compact = false,
+  showAddButton = true,
+  keepEmptyRow = true,
+  onCategoryPicked,
+  renderRowAction,
 }: Props) {
   const t = useTranslations("orders.create");
   const tAdd = useTranslations("orders.create.addProduct");
 
   const [sheet, setSheet] = useState<{ open: boolean; rowId: string | null }>({ open: false, rowId: null });
 
-  const visibleRows = rows.filter((r) => r.name.trim().length > 0);
+  const visibleRows = rows.filter((r) => compact || r.name.trim().length > 0);
 
   const handleAdd = (val: ProductFormValue) => {
     const newRow: ItemRow = {
@@ -80,7 +92,7 @@ export default function OrderItemsMobileList({
 
   const handleDelete = (rowId: string) => {
     const next = rows.filter((r) => r.rowId !== rowId);
-    if (next.length === 0) {
+    if (next.length === 0 && keepEmptyRow) {
       onChange([createEmptyRow(nextRowId())]);
     } else {
       onChange(next);
@@ -118,7 +130,9 @@ export default function OrderItemsMobileList({
                   {Icon ? <Icon /> : null}
                 </span>
                 <span className="flex min-w-0 flex-1 flex-col">
-                  <span className="truncate text-[13px] font-medium [color:var(--text-primary)]">{row.name}</span>
+                  <span className="truncate text-[13px] font-medium [color:var(--text-primary)]">
+                    {row.name || tAdd("namePlaceholder")}
+                  </span>
                   <span className="text-[11px] [color:var(--text-muted)]">
                     {/* "×1" on every row is noise where quantity is fixed at one by construction. */}
                     {showQuantity ? `×${qty}${priceLabel ? ` · ${priceLabel}` : ""}` : (priceLabel ?? "")}
@@ -134,29 +148,34 @@ export default function OrderItemsMobileList({
                   onClick={() => setSheet({ open: true, rowId: row.rowId })}
                   className={cn(
                     "flex min-w-0 flex-1 items-center gap-2.5 rounded-[10px] px-2.5 py-2.5 text-left",
-                    "[background:var(--surface)] [border:1px_solid_var(--border)]",
+                    compact
+                      ? "[border-bottom:1px_solid_var(--border)]"
+                      : "[background:var(--surface)] [border:1px_solid_var(--border)]",
                     "hover:[background:color-mix(in_oklch,var(--text-primary)_3%,transparent)]",
                   )}
                 >
                   {rowBody}
                   <Pencil size={14} className="shrink-0 [color:var(--text-muted)]" aria-label={tAdd("editAria")} />
                 </button>
+                {renderRowAction?.(row)}
               </li>
             );
           })}
         </ul>
       )}
 
-      <Button
-        type="button"
-        variant="tonal"
-        size="sm"
-        fullWidth
-        leadingIcon={<Plus size={14} aria-hidden />}
-        onClick={() => setSheet({ open: true, rowId: null })}
-      >
-        {t("addProductButton")}
-      </Button>
+      {showAddButton && (
+        <Button
+          type="button"
+          variant="tonal"
+          size="sm"
+          fullWidth
+          leadingIcon={<Plus size={14} aria-hidden />}
+          onClick={() => setSheet({ open: true, rowId: null })}
+        >
+          {t("addProductButton")}
+        </Button>
+      )}
 
       <OrderAddProductSheet
         showQuantity={showQuantity}
@@ -167,6 +186,7 @@ export default function OrderItemsMobileList({
         productTypeKeys={productTypeKeys}
         tProductTypes={tProductTypes}
         currencyCode={currencyCode}
+        onCategoryConfirmed={editingRow ? () => onCategoryPicked?.(editingRow.rowId) : undefined}
         onSubmit={(val) => {
           if (editingRow) handleEdit(editingRow.rowId, val);
           else handleAdd(val);
