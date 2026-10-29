@@ -162,7 +162,7 @@ Verificación de pares foreground/background del modal Version B contra WCAG AA 
 | `--info` sobre `color-mix(…14%…)`                  | Ícono tono info          | ✅ pasa                             | ✅ pasa   |
 | `--accent` sobre `color-mix(…14%…)`                | Ícono tono default       | ✅ pasa                             | ✅ pasa   |
 | CTA primary (`--text-on-accent` sobre `--accent`)  | Botón primario           | ✅ pasa                             | ✅ pasa   |
-| CTA destructive (blanco sobre `--destructive`)     | Botón eliminar           | ✅ pasa                             | ✅ pasa   |
+| CTA destructive (`--text-on-accent` / `--destructive`, ADR 0041) | Botón eliminar | ✅ pasa | ✅ pasa |
 | `--text-primary` sobre backdrop `oklch(12%…/0.35)` | Texto detrás del overlay | N/A — texto del modal, no del fondo |           |
 | Close button icon sobre `--surface-elevated`       | IconButton x en header   | ✅ pasa (usa `--text-secondary`)    |           |
 

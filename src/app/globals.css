@@ -303,7 +303,7 @@
   --accent-warm: oklch(64% 0.2 22);
   --accent-cool: oklch(58% 0.1 215);
 
-  --focus-ring: oklch(46% 0.2 290 / 0.55);
+  --focus-ring: oklch(46% 0.2 290 / 0.7);
 
   /* Medal rarity — ADR 0036, literal values from tokens-css.md § 12.
      Two tokens per grade: the ring color the artwork consumes directly, and the
@@ -371,7 +371,7 @@
   --text-primary: oklch(96% 0.012 280);
   --text-secondary: oklch(76% 0.02 280);
   --text-muted: oklch(64% 0.02 280);
-  --text-on-accent: oklch(99% 0 0);
+  --text-on-accent: oklch(15% 0.02 290);
 
   --accent: oklch(74% 0.19 290);
   --accent-warm: oklch(80% 0.15 25);
@@ -516,7 +516,7 @@
 
   /* Eyebrow — computed dynamically from accent */
   --eyebrow-bg: color-mix(in oklch, var(--accent) 35%, transparent);
-  --eyebrow-fg: var(--text-on-accent);
+  --eyebrow-fg: var(--text-primary);
   --eyebrow-ring: color-mix(in oklch, var(--accent) 40%, transparent);
 }
 

@@ -353,7 +353,7 @@ elevation model stay shared.
   --accent-warm: oklch(64% 0.2 22);
   --accent-cool: oklch(58% 0.1 215);
 
-  --focus-ring: oklch(46% 0.2 290 / 0.55);
+  --focus-ring: oklch(46% 0.2 290 / 0.7);
 }
 ```
 
@@ -411,7 +411,7 @@ elevation model stay shared.
   --text-primary: oklch(96% 0.012 280);
   --text-secondary: oklch(76% 0.02 280);
   --text-muted: oklch(64% 0.02 280);
-  --text-on-accent: oklch(99% 0 0);
+  --text-on-accent: oklch(15% 0.02 290);
 
   --accent: oklch(74% 0.19 290);
   --accent-warm: oklch(80% 0.15 25);
@@ -461,7 +461,7 @@ The applied values are in §4.1 (light) and §4.2 (dark). The equivalent palette
   --accent-warm: oklch(64% 0.2 22);
   --accent-cool: oklch(58% 0.1 215);
 
-  --focus-ring: oklch(46% 0.2 290 / 0.55);
+  --focus-ring: oklch(46% 0.2 290 / 0.7);
 }
 
 :root[data-palette="velvet"][data-theme="dark"] {
@@ -476,7 +476,7 @@ The applied values are in §4.1 (light) and §4.2 (dark). The equivalent palette
   --text-primary: oklch(96% 0.012 280);
   --text-secondary: oklch(76% 0.02 280);
   --text-muted: oklch(64% 0.02 280);
-  --text-on-accent: oklch(99% 0 0);
+  --text-on-accent: oklch(15% 0.02 290);
 
   --accent: oklch(74% 0.19 290);
   --accent-warm: oklch(80% 0.15 25);
@@ -747,7 +747,7 @@ points to.
 
   /* Eyebrow — computed dynamically from accent */
   --eyebrow-bg: color-mix(in oklch, var(--accent) 35%, transparent);
-  --eyebrow-fg: var(--text-on-accent);
+  --eyebrow-fg: var(--text-primary);
   --eyebrow-ring: color-mix(in oklch, var(--accent) 40%, transparent);
 }
 ```
