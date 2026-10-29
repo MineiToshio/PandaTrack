@@ -1,6 +1,7 @@
 import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
+import { getAssetRemotePatterns } from "./src/lib/images/assetRemotePatterns";
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
@@ -35,11 +36,9 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "lh3.googleusercontent.com",
       },
-      // Cloudflare R2 public bucket URLs (user avatars and other ASSETS_PUBLIC_BASE_URL hosts)
-      {
-        protocol: "https",
-        hostname: "*.r2.dev",
-      },
+      // Store logos and user avatars: the bucket's *.r2.dev URL plus this environment's
+      // ASSETS_PUBLIC_BASE_URL host (production serves them from a custom domain).
+      ...getAssetRemotePatterns(process.env.ASSETS_PUBLIC_BASE_URL),
     ],
   },
   async rewrites() {
