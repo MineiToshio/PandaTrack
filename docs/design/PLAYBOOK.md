@@ -1,6 +1,6 @@
 ---
 title: PandaTrack — Playbook de implementación de UI
-last_updated: 2026-06-16
+last_updated: 2026-10-29
 status: vivo · cargar antes de cualquier implementación de UI
 owner: Sergio Minei
 ---
@@ -36,7 +36,7 @@ Variants disponibles + cuándo usar:
 
 | Coloquial    | Variant técnica | Demo class     | Visual                                                                                                                                          |
 | ------------ | --------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| "primario"   | `primary`       | `.btn.primary` | Relleno sólido `--accent`, texto blanco                                                                                                         |
+| "primario"   | `primary`       | `.btn.primary` | Relleno sólido `--accent`, texto `--text-on-accent` (claro en light, tinta oscura en dark; ADR 0041). |
 | "secundario" | `tonal`         | `.btn.accent`  | Tinted `--accent` 10% + texto `--accent` + borde `--accent` 28%                                                                                 |
 | "terciario"  | `ghost`         | `.btn.ghost`   | Fondo transparente + borde visible `--border-strong`. A pesar del nombre, **sí tiene borde** — es lo que otras design systems llaman "outline". |
 
@@ -190,7 +190,7 @@ Componente canónico cross-app para navegación "Volver" / "Atrás". Vive típic
 ### Colores
 
 - **Velvet** es la paleta única en `src/`. Las otras paletas (Lilac, Plum, Lagoon, Forest) viven solo en demo HTML para referencia futura.
-- `--text-on-accent` light = blanco; dark = oscuro. Decisión S3-B para AA. Si te molesta visualmente, no cambies sin abrir un ADR.
+- `--text-on-accent` light = near-white; dark = dark violet ink. [ADR 0041](decisions/0041-solid-accent-foreground-contrast.md) records the values and contrast guard. Do not change the pairing without measuring rest/hover/active and reviewing solid status consumers.
 - Status enums usan tokens semánticos: `--success`, `--warning`, `--destructive`, `--info`. Nunca hex literales.
 - **Alpha sobre tokens neutros (`--background`, `--surface*`, `--border`, `--text-*`): usar `color-mix(in oklab, …, transparent)`, NO `in oklch`** — en oklch el hue deriva hacia rojo al mezclar con `transparent` y los tokens de chroma bajo se ven rosados (L074). `in oklch` queda reservado para tintar tokens de acento de chroma alto (chips, top-accents).
   - **Convención blanket, enforced por guardia (S13).** No _toda_ mezcla neutra en oklch drifta: si ambos endpoints comparten el hue Velvet (285) el hue se preserva (idéntico a oklab). Pero la regla es **blanket** — no es evidente en tiempo de autoría cuál instancia va a derivar — y la guardia `src/test/design-token-guard.test.ts` falla la suite ante cualquier `color-mix(in oklch, var(--<neutral>))`. La misma guardia bloquea clases Tailwind theme-blind (`text-white`/`bg-{color}-{n}`/etc.) en `.tsx`. Cero-dep (sin ESLint plugin ni stylelint), por ADR 0010.

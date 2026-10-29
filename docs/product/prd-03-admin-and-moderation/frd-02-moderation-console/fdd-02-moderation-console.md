@@ -5,7 +5,7 @@ slug: moderation-console
 title: Moderation Console - Feature Design Document
 status: ACTIVE
 parent: FRD-02
-last_updated: 2026-07-27
+last_updated: 2026-10-29
 prototype: ./prototype/moderation-console.html
 design_system: ../../../design/README.md
 demo_anchors:
@@ -137,7 +137,7 @@ The Moderation Console introduces no new tokens, palettes, surfaces, or type ram
 | Primary and confirm actions        | `--accent` / `--destructive`  | `.btn.primary` review confirm; `.btn.destructive` removal   |
 | Counters                           | chip / `--surface-elevated`   | `.queue-counts` `.qcount`                                   |
 
-Solid action buttons take their label color from the ported button classes exactly as the design system defines them: `.btn.primary` and `.btn.destructive` carry a near-white label, `.btn.warning` a dark label, so contrast holds in both themes across all five palettes without a console-local token.
+Solid primary and destructive action buttons consume the shared `--text-on-accent` foreground: near-white in light, dark violet ink in dark, as defined by [ADR 0041](../../../design/decisions/0041-solid-accent-foreground-contrast.md). Modal success/warning actions reuse that primary foreground with semantic fills. Their light-theme text contrast remains approximately 3.89:1 / 2.65:1, below AA for normal text: this is pre-existing and outside ADR 0041, not an AA guarantee from the shared primary button correction. The console inherits the live Velvet system without a console-local token; prototype-only alternative palettes are not a live-app contrast guarantee.
 
 ### 3.2 Typography
 

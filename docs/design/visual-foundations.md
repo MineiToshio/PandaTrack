@@ -54,7 +54,7 @@ Light and dark are **siblings, not inversions.** Every token has an independentl
 
 Two hard constraints anchor the whole palette:
 
-- **Never pure black or pure white.** The light canvas is a warm lead-violet "old letter paper", not hospital white; the dark canvas is a deep night blue-violet, not `#000`. Even `--text-on-accent` (the one near-white) carries a faint chroma in light mode.
+- **Never pure black or pure white.** The light canvas is a warm lead-violet "old letter paper", not hospital white; the dark canvas is a deep night blue-violet, not `#000`. `--text-on-accent` is near-white with a faint chroma in light mode and violet ink in dark mode.
 - **WCAG 2.2 AA is inviolable** for every foreground/background pair. Body, labels, and chip text meet ≥4.5:1; UI components, focus rings, and functional borders meet ≥3:1; text over `--accent` targets ≥4.5:1. `--text-muted` is held to 4.5:1 even at 12–13px so that timestamps and helper text stay legible at the smallest sizes the system renders.
 
 The theme toggle exposes **only `light` and `dark`** — there is no separate "system / auto" token set; the two values above are the entire surface.
@@ -131,9 +131,26 @@ If a border must do real separating work, escalate from `--border` to `--border-
 | `--text-primary`   | Body, headings, central dashboard numbers, the label of a focused input. Never for secondary metadata.                                                                                                                                                                                                                                 |
 | `--text-secondary` | Subtitles, field labels, short descriptions, breadcrumbs. **Code identifiers (`PT-XXXXXX` and derivatives) live here** — they are the outdoor-critical case and need the higher contrast (see [ADR 0007](decisions/0007-text-muted-outdoor-code-mono-reassignment.md)). Use only when a nearby `--text-primary` defines the hierarchy. |
 | `--text-muted`     | Timestamps, uppercase eyebrows, helper text 11–13px, non-identifier inline mono. Holds **4.5:1 even at 12–13px**. Never for primary body, the first visible label of a field, or code identifiers (those go in `--text-secondary`).                                                                                                    |
-| `--text-on-accent` | Text over solid `--accent` only (primary CTA, accent-solid badge). Near-white in both modes. Never over an accent tint or state layer.                                                                                                                                                                                                 |
+| `--text-on-accent` | Foreground over solid accent fills (primary CTA, accent-solid badge, selected day/check) and the existing solid status controls. Near-white in light, dark violet ink in dark. Never use it over a translucent accent tint; tinted chips and selected navigation keep `--accent` text. |
 
-`--text-on-accent` is intentionally near-white in both modes to match the mental model "button = white text". In dark mode this is a deliberate, human-ratified exception to the strict AA math against the bright accent. Any `<Button>` or accent badge consumes `var(--text-on-accent)`; nothing hardcodes `text-white`.
+`--text-on-accent` is `oklch(99% 0.005 285)` in light and `oklch(15% 0.02 290)` in dark. The dark ink preserves the bright Velvet accent used by links, progress bars, toggles, and selected states while making solid controls legible. This replaces the former near-white-in-dark exception: AA has no exception for the primary CTA. Components consume the token; nothing hardcodes `text-white`. See [ADR 0041](decisions/0041-solid-accent-foreground-contrast.md) for the alternatives and consumer review.
+
+##### Primary button contrast contract
+
+The shared `Button` recipe uses `--accent` for the fill and `--text-on-accent` for text. Hover and active paint a `--text-primary` overlay using `--state-hover-mix` / `--state-pressed-mix` (light 6% / 12%, dark 8% / 14%). Its `::after` covers both the fill and the label; calculate both composites, not just text against an altered fill. The guard also checks an uncovered label in case content stacking changes.
+
+| Theme | Text, rest | Text, hover | Text, active | Fill / canvas, rest / hover / active | Focus / canvas |
+| ----- | ---------- | ----------- | ------------ | ----------------------------------- | -------------- |
+| Light | 7.62:1 | 7.15:1 | 6.67:1 | 6.37 / 6.73 / 7.11:1 | 3.46:1 |
+| Dark | 7.73:1 | 7.08:1 | 6.28:1 | 8.08 / 8.67 / 9.14:1 | 3.84:1 |
+
+These are full-precision OKLCH-to-sRGB calculations with channel clipping, then sRGB alpha compositing and WCAG relative luminance. They are reference calculations, not screenshot pixel measurements; browser gamut mapping and rasterization can differ slightly. The primary text minimum is 4.5:1 and fill/focus minimum is 3:1 on each of `--background`, `--surface`, and `--surface-elevated`. `src/test/primary-button-contrast-guard.test.ts` reads `globals.css` and the actual shared primary and destructive button recipes to enforce those thresholds in both themes, including hover and active.
+
+Destructive button text also passes in every guarded state: light 5.48 / 5.28 / 5.07:1 and dark 6.81 / 6.20 / 5.50:1 (rest / hover / active). These results do not extend to the light solid warning/success overrides, whose pre-existing contrast limitations are recorded in ADR 0041.
+
+The legacy `--eyebrow-bg` is a 35% accent tint over the canvas. Its `--eyebrow-fg` alias uses `--text-primary` (8.00:1 light, 9.98:1 dark), not `--text-on-accent`, which is reserved for solid fills. `--accent` itself would yield only 3.61:1 light and 4.40:1 dark on this tint. The Tailwind `--color-eyebrow-fg` alias remains intact, and the same contrast guard covers this pair in both themes.
+
+Native disabled buttons keep `--text-muted` on `--surface-elevated`, `--border`, and no shadow or opacity (6.17:1 light, 5.76:1 dark text). Inactive controls are exempt from WCAG contrast minima; their subdued treatment stays separate from the enabled CTA. Existing disabled anchors retain the primary pair because their recipe only applies `aria-disabled` pointer/opacity rules.
 
 #### Accents
 
@@ -263,7 +280,7 @@ The rank ladder (conquered, current, locked, top/cima) needs a state ramp, but n
 
 | Token / state  | Recipe                                                                                                                                                                                       |
 | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--focus-ring` | Accent-derived ring (`oklch(46% 0.20 290 / 0.55)` light, `oklch(74% 0.19 290 / 0.65)` dark). Outline of any `:focus-visible`. Never a fill, never on `:hover`.                               |
+| `--focus-ring` | Accent-derived ring (`oklch(46% 0.20 290 / 0.7)` light, `oklch(74% 0.19 290 / 0.65)` dark). Outline of any `:focus-visible`. Never a fill, never on `:hover`. Alpha is composited against the adjacent surface before checking 3:1. |
 | `hover`        | `color-mix(in oklab, var(--text-primary) 6%, transparent)` (light) / `8%` (dark), applied as an overlay above the control surface.                                                           |
 | `pressed`      | `color-mix(in oklab, var(--text-primary) 12%, transparent)` (light) / `14%` (dark), replacing the hover layer during `:active`.                                                              |
 | `selected`     | bg `color-mix(in oklch, var(--accent) 14%, var(--surface))`, border `color-mix(in oklch, var(--accent) 28%, var(--surface))`. Active filter chip, active sidebar item, selected list option. |

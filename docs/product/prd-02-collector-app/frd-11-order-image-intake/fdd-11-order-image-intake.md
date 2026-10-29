@@ -976,6 +976,7 @@ identical at every width. Nothing in this feature scrolls horizontally.
 Beyond the system baseline in [ADR 0006](../../../design/decisions/0006-color-blindness-icon-label-contract.md)
 and the accessibility rule:
 
+- **The review screen's primary create action** consumes the shared solid-accent pair in both themes, including hover, active, and keyboard focus. It follows [ADR 0041](../../../design/decisions/0041-solid-accent-foreground-contrast.md), with no screen-local color override; an enabled CTA must remain distinct from the muted disabled treatment.
 - **Read versus assumed must not rely on colour.** An assumed value carries a visible word
   ("asumido") and an icon, not only an amber tint. A screen reader must announce the assumed
   state as part of the field, not as decorative text.
