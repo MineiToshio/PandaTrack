@@ -10,7 +10,7 @@
  * is what every helper in this module checks.
  */
 
-export type SupportedEncodedImageType = "image/webp" | "image/jpeg";
+export type SupportedEncodedImageType = "image/webp" | "image/jpeg" | "image/png";
 
 export type EncodedCanvasResult = {
   blob: Blob;
@@ -18,6 +18,10 @@ export type EncodedCanvasResult = {
 };
 
 let webpSupportCache: boolean | null = null;
+
+const OPAQUE_ALPHA_VALUE = 255;
+const RGBA_CHANNEL_COUNT = 4;
+const ALPHA_CHANNEL_OFFSET = 3;
 
 /**
  * Returns whether the current browser's canvas encoder can actually produce WebP output.
@@ -57,10 +61,28 @@ function canvasToBlob(canvas: HTMLCanvasElement, type: string, quality: number):
   });
 }
 
+function hasAlphaPixels(canvas: HTMLCanvasElement): boolean {
+  try {
+    const context = canvas.getContext("2d");
+    if (!context) return true;
+
+    const { data } = context.getImageData(0, 0, canvas.width, canvas.height);
+    for (let index = ALPHA_CHANNEL_OFFSET; index < data.length; index += RGBA_CHANNEL_COUNT) {
+      if (data[index] < OPAQUE_ALPHA_VALUE) return true;
+    }
+    return false;
+  } catch {
+    // Unreadable pixels may contain transparency, so JPEG would risk flattening the image.
+    return true;
+  }
+}
+
 /**
  * Encodes a canvas to a blob and verifies the real type the encoder produced, rather than
  * trusting `preferredType`. If the verified type does not match what was requested, retries with
- * JPEG. Never returns a blob whose `type` disagrees with the `mimeType` it reports, which is the
+ * JPEG by default. With `preserveAlpha` enabled, tries PNG for transparent or unreadable pixels
+ * before retrying JPEG if PNG fails. Never returns a blob whose `type` disagrees with the
+ * `mimeType` it reports, which is the
  * exact mismatch that previously let Safari's silent PNG substitution reach callers that assumed
  * a WebP blob because that is what they asked for.
  *
@@ -72,11 +94,20 @@ export async function encodeCanvasToBlob(
   preferredType: SupportedEncodedImageType,
   quality: number,
   fallbackQuality: number = quality,
+  { preserveAlpha = false }: { preserveAlpha?: boolean } = {},
 ): Promise<EncodedCanvasResult> {
+  let webpBlob: Blob | null = null;
   if (preferredType === "image/webp") {
-    const blob = await canvasToBlob(canvas, "image/webp", quality);
-    if (blob && blob.type === "image/webp") {
-      return { blob, mimeType: "image/webp" };
+    webpBlob = await canvasToBlob(canvas, "image/webp", quality);
+    if (webpBlob && webpBlob.type === "image/webp") {
+      return { blob: webpBlob, mimeType: "image/webp" };
+    }
+  }
+
+  if (preserveAlpha && (preferredType === "image/png" || hasAlphaPixels(canvas))) {
+    const pngBlob = webpBlob?.type === "image/png" ? webpBlob : await canvasToBlob(canvas, "image/png", quality);
+    if (pngBlob && pngBlob.type === "image/png") {
+      return { blob: pngBlob, mimeType: "image/png" };
     }
   }
 
@@ -90,6 +121,7 @@ export async function encodeCanvasToBlob(
 }
 
 /** Maps a verified encoded type to the file extension callers should use, instead of hardcoding one. */
-export function extensionForEncodedType(mimeType: SupportedEncodedImageType): "webp" | "jpg" {
+export function extensionForEncodedType(mimeType: SupportedEncodedImageType): "webp" | "jpg" | "png" {
+  if (mimeType === "image/png") return "png";
   return mimeType === "image/webp" ? "webp" : "jpg";
 }

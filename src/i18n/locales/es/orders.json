@@ -477,8 +477,8 @@
       "delete": "Eliminar pedido",
       "reactivate": "Reactivar pedido",
       "more": "Más acciones",
-      "cancelDisabledTooltip": "Este pedido tiene items asociados a una entrega. Desasócialos desde la entrega para poder cancelarlo.",
-      "deleteDisabledTooltip": "No se puede eliminar este pedido porque tiene items asociados a una entrega. Desasócialos primero.",
+      "cancelDisabledTooltip": "Este pedido tiene productos asociados a una entrega. Desasócialos desde la entrega para poder cancelarlo.",
+      "deleteDisabledTooltip": "No se puede eliminar este pedido porque tiene productos asociados a una entrega. Desasócialos primero.",
       "quickArrival": "Ya me llegó"
     },
     "items": {
@@ -620,7 +620,7 @@
       "confirm": "Cancelar pedido",
       "cancel": "Volver",
       "errorGeneral": "No se pudo cancelar el pedido. Intenta de nuevo.",
-      "errorLinkedDelivery": "Este pedido tiene items asociados a una entrega. Desasócialos primero.",
+      "errorLinkedDelivery": "Este pedido tiene productos asociados a una entrega. Desasócialos primero.",
       "creditClearsMarks": "Las marcas de pagado de los productos también se quitan."
     },
     "deleteModal": {
@@ -633,7 +633,7 @@
       "confirm": "Eliminar pedido",
       "cancel": "Cancelar",
       "errorGeneral": "No se pudo eliminar el pedido. Intenta de nuevo.",
-      "errorLinkedDelivery": "Este pedido tiene items asociados a una entrega. Desasócialos primero."
+      "errorLinkedDelivery": "Este pedido tiene productos asociados a una entrega. Desasócialos primero."
     },
     "cancellationCallout": {
       "label": "Motivo de cancelación"

@@ -986,7 +986,7 @@ Fuente de verdad permanente (`docs/design/`):
 - `docs/design/states.md` — estados transversales empty/loading/error.
 - `docs/design/ux-copy.md` — voice library (voz constante + matriz de tono).
 - `docs/design/components.md` — mapa de componentes (qué existe, cuándo usar, ruta canónica en `src/`).
-- `docs/design/decisions/` — ADRs aceptados (0001–0014).
+- `docs/design/decisions/` — ADRs aceptados; consultar el índice en `docs/design/decisions/README.md`.
 
 Refuerzo (reglas):
 

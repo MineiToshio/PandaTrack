@@ -264,7 +264,7 @@ export default function StoreLogoField({
         getCroppedImageDataUrl(editorImageUrl, cropArea),
         getProcessedImageBlob(editorImageUrl, cropArea, STORE_LOGO_OUTPUT_SIZE_PX),
       ]);
-      // The encoder falls back to JPEG on engines without real WebP support (see canvasEncoding.ts),
+      // Without WebP support, transparent logos may use PNG and opaque logos use JPEG,
       // so the file extension must follow the verified mimeType instead of assuming WebP.
       const processedFile = new File(
         [processedImage.blob],

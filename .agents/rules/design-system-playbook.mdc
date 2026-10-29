@@ -34,7 +34,7 @@ Permanent design system (`docs/design/`):
 - `docs/design/states.md` — cross-cutting empty/loading/error states.
 - `docs/design/ux-copy.md` — voice + tone library.
 - `docs/design/components.md` — component map (what exists, when to use, canonical `src/` path).
-- `docs/design/decisions/` — accepted ADRs (0001–0014).
+- `docs/design/decisions/` — accepted ADRs; the index in `docs/design/decisions/README.md` is the authoritative list.
 
 This system was produced by a redesign subproject, kept only as historical context (not a source of rules or specs to follow). The authoritative sources are `docs/design/` and the code in `src/`. For the visual reference of a screen, use its per-FRD prototype (`docs/product/<prd>/<frd>/prototype/<slug>.html`).
 

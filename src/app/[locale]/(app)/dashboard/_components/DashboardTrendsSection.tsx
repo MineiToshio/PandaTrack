@@ -191,7 +191,7 @@ export default async function DashboardTrendsSection({ data, locale, selection }
                   <p className="[font-size:12px] [letter-spacing:0.06em] [color:var(--text-muted)] uppercase">
                     {t("trends.spend.currentMonthLabel")}
                   </p>
-                  <p className="mt-1 [font-size:22px] [font-weight:var(--font-weight-bold)] [letter-spacing:-0.02em] [color:var(--text-primary)] tabular-nums">
+                  <p className="mt-1 [font-size:22px] [font-weight:var(--font-weight-display)] [letter-spacing:-0.02em] [color:var(--text-primary)] tabular-nums">
                     {money(spend.currentMonthMinor)}
                   </p>
                 </div>
@@ -218,7 +218,7 @@ export default async function DashboardTrendsSection({ data, locale, selection }
                   <p className="[font-size:12px] [letter-spacing:0.06em] [color:var(--text-muted)] uppercase">
                     {t("trends.committed.totalLabel")}
                   </p>
-                  <p className="mt-1 [font-size:22px] [font-weight:var(--font-weight-bold)] [letter-spacing:-0.02em] [color:var(--text-primary)] tabular-nums">
+                  <p className="mt-1 [font-size:22px] [font-weight:var(--font-weight-display)] [letter-spacing:-0.02em] [color:var(--text-primary)] tabular-nums">
                     {money(committedTotalMinor)}
                   </p>
                 </div>

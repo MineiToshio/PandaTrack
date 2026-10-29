@@ -220,7 +220,7 @@ export default async function DashboardCollectionZone({ data, locale, storesHref
             {collection.statusDistribution.map((entry) => (
               <span key={entry.status} className="inline-flex items-center gap-1.5">
                 <StatusChip kind="orderStatus" value={entry.status} size="sm" />
-                <span className="[font-size:12.5px] [font-weight:var(--font-weight-bold)] [color:var(--text-primary)] tabular-nums">
+                <span className="[font-size:12.5px] [font-weight:var(--font-weight-display)] [color:var(--text-primary)] tabular-nums">
                   {entry.count}
                 </span>
               </span>

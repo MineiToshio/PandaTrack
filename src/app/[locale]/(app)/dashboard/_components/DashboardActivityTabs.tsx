@@ -94,7 +94,7 @@ export default function DashboardActivityTabs({ tabs, tablistLabel }: DashboardA
               {tab.label}
               {tab.count !== undefined && tab.count > 0 && (
                 <span
-                  className="rounded-full px-1.5 [font-size:10px] [font-weight:var(--font-weight-bold)] [color:var(--warning-chip-text)] tabular-nums [background:color-mix(in_oklch,var(--warning)_18%,transparent)]"
+                  className="rounded-full px-1.5 [font-size:10px] [font-weight:var(--font-weight-display)] [color:var(--warning-chip-text)] tabular-nums [background:color-mix(in_oklch,var(--warning)_18%,transparent)]"
                   aria-hidden="true"
                 >
                   {tab.count}

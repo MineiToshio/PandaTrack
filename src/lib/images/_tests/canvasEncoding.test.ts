@@ -17,6 +17,14 @@ function mockToDataURL(webpSupported: boolean) {
   });
 }
 
+function mockPixelData(data = new Uint8ClampedArray([0, 0, 0, 255])) {
+  const getImageData = vi.fn(() => ({ data }));
+  vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue({
+    getImageData,
+  } as unknown as CanvasRenderingContext2D);
+  return getImageData;
+}
+
 /** Mocks `toBlob` to return a blob whose real type is decided per requested type, simulating either a spec-compliant encoder or Safari's silent PNG substitution. */
 function mockToBlob(typeForRequest: (requestedType: string | undefined) => string | null) {
   vi.spyOn(HTMLCanvasElement.prototype, "toBlob").mockImplementation(function (
@@ -36,6 +44,7 @@ function mockToBlob(typeForRequest: (requestedType: string | undefined) => strin
 describe("canvasEncoding", () => {
   beforeEach(() => {
     resetEncoderSupportCache();
+    mockPixelData();
   });
 
   afterEach(() => {
@@ -73,6 +82,7 @@ describe("canvasEncoding", () => {
 
       expect(result.mimeType).toBe("image/webp");
       expect(result.blob.type).toBe("image/webp");
+      expect(canvas.getContext("2d")?.getImageData).not.toHaveBeenCalled();
     });
 
     it("falls back to a correctly labelled JPEG when the requested WebP type comes back mismatched (the Safari PNG-substitution bug)", async () => {
@@ -97,6 +107,79 @@ describe("canvasEncoding", () => {
       expect(result.blob.type).toBe(result.mimeType);
     });
 
+    it.each([0, 254])("preserves PNG when WebP is unavailable and a pixel has alpha %s", async (alpha) => {
+      mockToBlob((type) => (type === "image/webp" ? "image/png" : type ?? "image/png"));
+      const getImageData = mockPixelData(new Uint8ClampedArray([0, 0, 0, 255, 255, 255, 255, alpha]));
+      const canvas = document.createElement("canvas");
+      canvas.width = 2;
+      canvas.height = 1;
+
+      const result = await encodeCanvasToBlob(canvas, "image/webp", 0.85, 0.85, { preserveAlpha: true });
+
+      expect(result.mimeType).toBe("image/png");
+      expect(result.blob.type).toBe("image/png");
+      expect(getImageData).toHaveBeenCalledWith(0, 0, 2, 1);
+      expect(canvas.toBlob).toHaveBeenCalledTimes(1);
+    });
+
+    it("preserves PNG when WebP is unavailable and reading pixels throws", async () => {
+      mockToBlob((type) => (type === "image/webp" ? "image/png" : type ?? "image/png"));
+      mockPixelData().mockImplementation(() => {
+        throw new DOMException("The canvas is tainted.", "SecurityError");
+      });
+
+      const result = await encodeCanvasToBlob(document.createElement("canvas"), "image/webp", 0.85, 0.85, {
+        preserveAlpha: true,
+      });
+
+      expect(result.mimeType).toBe("image/png");
+      expect(result.blob.type).toBe("image/png");
+    });
+
+    it("uses PNG for transparent pixels when explicitly preserving alpha with the JPEG fallback", async () => {
+      mockToBlob((type) => type ?? "image/png");
+      mockPixelData(new Uint8ClampedArray([255, 255, 255, 0]));
+
+      const result = await encodeCanvasToBlob(document.createElement("canvas"), "image/jpeg", 0.9, 0.9, {
+        preserveAlpha: true,
+      });
+
+      expect(result.mimeType).toBe("image/png");
+      expect(result.blob.type).toBe("image/png");
+    });
+
+    it.each(["image/webp", "image/jpeg"] as const)("skips alpha inspection by default for %s", async (preferredType) => {
+      mockToBlob((type) => (type === "image/webp" ? "image/png" : type ?? "image/png"));
+      const getImageData = mockPixelData(new Uint8ClampedArray([0, 0, 0, 0]));
+
+      const result = await encodeCanvasToBlob(document.createElement("canvas"), preferredType, 0.85);
+
+      expect(result.mimeType).toBe("image/jpeg");
+      expect(result.blob.type).toBe("image/jpeg");
+      expect(getImageData).not.toHaveBeenCalled();
+    });
+
+    it.each([null, "image/webp"])("retries JPEG when PNG encoding returns %s", async (pngResultType) => {
+      mockPixelData(new Uint8ClampedArray([0, 0, 0, 0]));
+      mockToBlob((type) => {
+        if (type === "image/webp") return null;
+        if (type === "image/png") return pngResultType;
+        return "image/jpeg";
+      });
+      const canvas = document.createElement("canvas");
+
+      const result = await encodeCanvasToBlob(canvas, "image/webp", 0.85, 0.9, { preserveAlpha: true });
+
+      expect(result.mimeType).toBe("image/jpeg");
+      expect(result.blob.type).toBe("image/jpeg");
+      expect(vi.mocked(canvas.toBlob).mock.calls.map(([, type]) => type)).toEqual([
+        "image/webp",
+        "image/png",
+        "image/jpeg",
+      ]);
+      expect(canvas.toBlob).toHaveBeenLastCalledWith(expect.any(Function), "image/jpeg", 0.9);
+    });
+
     it("throws when neither WebP nor the JPEG fallback can be encoded", async () => {
       mockToBlob(() => null);
       const canvas = document.createElement("canvas");
@@ -108,9 +191,10 @@ describe("canvasEncoding", () => {
   });
 
   describe("extensionForEncodedType", () => {
-    it("maps WebP to webp and JPEG to jpg", () => {
+    it("maps WebP to webp, JPEG to jpg, and PNG to png", () => {
       expect(extensionForEncodedType("image/webp")).toBe("webp");
       expect(extensionForEncodedType("image/jpeg")).toBe("jpg");
+      expect(extensionForEncodedType("image/png")).toBe("png");
     });
   });
 

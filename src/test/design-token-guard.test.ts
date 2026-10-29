@@ -110,13 +110,13 @@ function isTestPath(path: string): boolean {
   return /\.test\.[tj]sx?$/.test(path) || /(?:^|\/)(?:_tests|__tests__)(?:\/|$)/.test(path);
 }
 
-function collect(dir: string, extensions: string[]): string[] {
+function collect(dir: string, extensions: string[], includeTests = false): string[] {
   const out: string[] = [];
   for (const entry of readdirSync(dir)) {
     const full = join(dir, entry);
     if (statSync(full).isDirectory()) {
-      out.push(...collect(full, extensions));
-    } else if (extensions.some((ext) => full.endsWith(ext)) && !isTestPath(full)) {
+      out.push(...collect(full, extensions, includeTests));
+    } else if (extensions.some((ext) => full.endsWith(ext)) && (includeTests || !isTestPath(full))) {
       out.push(full);
     }
   }
@@ -148,6 +148,14 @@ function countByFile(files: string[], pattern: RegExp): Record<string, number> {
 }
 
 describe("design-token guard", () => {
+  it("has no theme-blind var(--font-weight-bold) in TSX files", () => {
+    const hits = scan(collect(SRC_DIR, [".tsx"], true), /var\(\s*--font-weight-bold\s*\)/);
+    expect(
+      hits,
+      `Use var(--font-weight-display) for theme-aware heavy text (700 light, 670 dark):\n${hits.join("\n")}`,
+    ).toEqual([]);
+  });
+
   it("has no theme-blind Tailwind utility classes in components", () => {
     const hits = scan(collect(SRC_DIR, [".tsx"]), THEME_BLIND_CLASS);
     expect(hits, `Use semantic theme tokens instead of literal colors:\n${hits.join("\n")}`).toEqual([]);
