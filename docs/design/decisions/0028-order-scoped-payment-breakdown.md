@@ -62,6 +62,10 @@ all 626 existing allocations are single-line, so no real distribution has ever b
 legitimate _because_ the act changed, and for no other reason. **If anyone ever wants to DERIVE a
 split again, ADR 0025's measurement still stands and still says no.**
 
+**Amended 2026-10-29 (owner-requested intake exception).** On the unsaved image-intake review only, a positive payment equal to the order total defaults an untouched breakdown to the existing select-all computation. A 100% payment proves coverage of every product (ADR 0026), and the owner asked to avoid declaring that coverage product by product. The collector can inspect, edit or clear the default before saving; those edits win. Opening or folding is not an edit, and an untouched payment changed away from 100% returns to no selection. Seed only when the date is legal and the payment fits the remaining balance, so automatic allocations do not introduce a new save block for a payment previously skipped as incomplete. Keep the existing formulas, unpriced-product behavior, ceilings and undetailed residual: product amounts plus residual partition the transfer (ADR 0027). This exception does not attribute historical money or change defaults on order detail. Untouched defaults are re-derived after structural product edits without a cleared-breakdown notice. The save payload marks them as automatic so an idempotent retry does not ask the collector to redo a declaration they never entered; edited and legacy breakdowns retain that warning.
+
+After saving, seeded product amounts are real per-product allocations with the same edit guards as a manual breakdown. Removing an allocated product is refused with `ITEM_HAS_ALLOCATION`; reducing its priced value below the allocated amount is refused with `ITEM_PRICE_BELOW_ALLOCATED` (`src/lib/data/orders/orderItemMutations.ts`). The collector can still clear the automatic default before saving to keep the payment at order level instead.
+
 ### 2. I-7 — the residual has a closed form, in two terms, and is named rather than spread
 
 ```

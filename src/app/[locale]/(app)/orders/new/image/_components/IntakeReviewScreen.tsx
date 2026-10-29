@@ -1,10 +1,19 @@
 "use client";
 
-import { Calculator, ImagePlus, Info, Plus, Scale, ShoppingCart, Wallet, X } from "lucide-react";
+import { Calculator, Check, ImagePlus, Info, Plus, Scale, ShoppingCart, Sparkles, Wallet, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import posthog from "posthog-js";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Button from "@/components/core/Button/Button";
+import Card from "@/components/core/Card";
+import DatePickerInput from "@/components/core/DatePickerInput";
+import SectionTitleWithAccent from "@/components/modules/SectionTitleWithAccent";
+import { useStoreProductTypeName } from "@/app/[locale]/(app)/_components/StoreProductTypeNamesProvider";
+import { useIsMobile } from "@/hooks/useIsMobile";
+import { OrderItemsTable } from "../../../_components/share/OrderItemsGrid";
+import IconButton from "@/components/core/IconButton";
+import FieldErrorMsg from "@/components/core/FieldErrorMsg";
+import OrderAddProductSheet, { type ProductFormValue } from "../../../_components/share/OrderAddProductSheet";
 import Input from "@/components/core/Input";
 import ProvenanceValue, { resolveProvenanceState, type ProvenanceState } from "@/components/core/ProvenanceValue";
 import Select from "@/components/core/Select";
@@ -12,20 +21,25 @@ import AlertBanner from "@/components/modules/AlertBanner";
 import type { StoreComboboxOption } from "@/components/modules/StoreCombobox";
 import { ALLOWED_COLLECTOR_BASE_CURRENCY_CODES } from "@/lib/catalog/collectorCountries";
 import { POSTHOG_EVENTS } from "@/lib/constants";
-import { formatAmount, formatCentsForInput } from "@/lib/currency";
+import { formatAmountSymbolOnly, formatCentsForInput } from "@/lib/currency";
 import { formatDomainDate } from "@/lib/domainDate";
 import { fetchTodayRate } from "@/lib/fx/exchangeRates";
 import { MAX_PAYMENTS_PER_ORDER } from "@/lib/imageIntake/constants";
 import type { ImageIntakeDraft } from "@/lib/imageIntake/draftSchema";
 import {
+  applyIntakeBreakdownChange,
   buildIntakeBreakdownPayload,
   flattenDraftToBreakdownItems,
   resolveIntakeBreakdownContext,
   resolveIntakeBreakdownSaveBlock,
+  resolveIntakeDefaultBreakdown,
+  resetIntakeBreakdownStates,
   resolveTodayUtcIso,
+  type IntakeBreakdownPanelState,
   type IntakePaymentRow,
   type IntakeSaveBlockReason,
 } from "@/lib/imageIntake/intakeBreakdown";
+import { sortDraftProductsNaturally } from "@/lib/imageIntake/naturalSort";
 import type { IntakeBreakdownPayload } from "@/lib/imageIntake/intakeBreakdownContract";
 import { findProductsNeedingReferenceSheet, formatReferenceHost } from "@/lib/imageIntake/referenceProductNaming";
 import { parseDecimalToMinorUnits } from "@/lib/money/parseDecimalToMinorUnits";
@@ -34,7 +48,6 @@ import {
   deriveBreakdown,
   hasBreakdownDraft,
   offersBreakdown,
-  recomputeBreakdown,
   type BreakdownContext,
   type BreakdownDerived,
   type BreakdownItem,
@@ -45,13 +58,6 @@ import { cn } from "@/lib/styles";
 import DiscrepancyModal from "../../../_components/share/DiscrepancyModal";
 import FxRateAttribution from "../../../_components/share/FxRateAttribution";
 import OrderPaymentBreakdownPanel from "../../../_components/share/OrderPaymentBreakdownPanel";
-import {
-  ORDER_SECTION_CARD_CLASS,
-  ORDER_SECTION_COMPACT_BODY_CLASS,
-  ORDER_SECTION_COMPACT_HEADER_CLASS,
-  ORDER_SECTION_COMPACT_ICON_CLASS,
-  ORDER_SECTION_HEADING_CLASS,
-} from "../../../_components/share/orderSectionChrome";
 import IntakeGroupCard from "./IntakeGroupCard";
 import StoreResolutionSection from "./StoreResolutionSection";
 import OrderDeliveryRangeField from "@/app/[locale]/(app)/orders/_components/share/OrderDeliveryRangeField";
@@ -215,7 +221,7 @@ function resolveTotalCostProvenance(rawDraft: ImageIntakeDraft): ProvenanceState
 type IntakeBreakdownRow = {
   row: IntakePaymentRow;
   ctx: BreakdownContext;
-  state: BreakdownPanelState;
+  state: IntakeBreakdownPanelState;
   derived: BreakdownDerived;
 };
 
@@ -234,7 +240,8 @@ const EMPTY_BREAKDOWN_ROWS: IntakeBreakdownRow[] = [];
 function resolveIntakeBreakdownRows(input: {
   items: BreakdownItem[];
   payments: ImageIntakeDraft["payments"];
-  states: Record<number, BreakdownPanelState>;
+  states: Record<number, IntakeBreakdownPanelState>;
+  orderDateIso: string | null;
   totalCostMinor: number;
   currencyCode: string;
 }): IntakeBreakdownRow[] {
@@ -251,7 +258,15 @@ function resolveIntakeBreakdownRows(input: {
       totalCostMinor,
       currencyCode,
     });
-    const state = recomputeBreakdown(stored, ctx);
+    const state = resolveIntakeDefaultBreakdown({
+      stored: states[paymentIndex],
+      items,
+      ctx,
+      totalCostMinor,
+      paidAtIso: payment.paidAt.value,
+      orderDateIso: input.orderDateIso,
+      todayIso: resolveTodayUtcIso(),
+    });
     resolved.push({
       row: { amountMinor, breakdown: state },
       ctx,
@@ -322,14 +337,6 @@ function findBlankProductName(draft: ImageIntakeDraft): { groupIndex: number; po
   return null;
 }
 
-/**
- * Cards that animate in on arrival. Past this many the delay is dropped rather than extended: a
- * fifty-group stagger would make the last card arrive four seconds after the first, which is not
- * emphasis, it is a wait.
- */
-const STAGGERED_GROUP_CARDS = 6;
-const GROUP_CARD_STAGGER_MS = 50;
-
 /** Matches the six-decimal precision `exchangeRateSchema` accepts. */
 const EXCHANGE_RATE_INPUT_DECIMALS = 6;
 
@@ -390,20 +397,15 @@ function scrollToFirstIntakeError(fieldKey: RequiredIntakeFieldKey) {
     container.scrollIntoView({ behavior: "smooth", block: "center" });
   }
   const focusable =
-    container instanceof HTMLInputElement || container instanceof HTMLSelectElement
+    container instanceof HTMLInputElement ||
+    container instanceof HTMLSelectElement ||
+    container instanceof HTMLButtonElement
       ? container
       : container.querySelector<HTMLElement>("input, select, button, [tabindex]");
   focusable?.focus({ preventScroll: true });
 }
 
-/**
- * The single unskippable screen between an extraction and a saved order.
- *
- * It is built as a document rather than a form on purpose: values that were genuinely read render
- * as plain text through `ProvenanceValue`, and only guesses and gaps become controls. A screen full
- * of inputs invites scrolling and accepting, which would defeat the only safeguard this feature
- * has. Anything else the user wants to change is reachable through "Completar a mano".
- */
+/** Editable review before save, with explicit provenance and the shared order form controls. */
 export default function IntakeReviewScreen({
   initialDraft,
   baseCurrencyCode,
@@ -416,6 +418,8 @@ export default function IntakeReviewScreen({
   remainingPhotos,
   onAddProductSheet,
 }: IntakeReviewScreenProps) {
+  const isMobile = useIsMobile();
+  const productTypeName = useStoreProductTypeName();
   const t = useTranslations("imageIntake.review");
   const tOrders = useTranslations("orders");
   const tErrors = useTranslations("imageIntake.errors");
@@ -427,10 +431,20 @@ export default function IntakeReviewScreen({
   // the chat actually stated.
   const seededInitialDraft = withDerivedTotal(initialDraft);
 
-  const [draft, setDraft] = useState<ImageIntakeDraft>(seededInitialDraft);
+  const [draft, setDraft] = useState<ImageIntakeDraft>(() => sortDraftProductsNaturally(seededInitialDraft));
   /** The row a blocked save is about, so the screen can open its group and name it. */
   const [blankNameAt, setBlankNameAt] = useState<{ groupIndex: number; position: number } | null>(null);
   /** Groups reporting a price field whose text the money parser cannot read. */
+  const [groupKeys, setGroupKeys] = useState(() => initialDraft.groups.map((_, index) => `g${index}`));
+  const nextGroupKey = useRef(initialDraft.groups.length);
+  const [collectorAddedGroupKeys, setCollectorAddedGroupKeys] = useState<ReadonlySet<string>>(() => new Set());
+  const [categorySuggestionByGroup, setCategorySuggestionByGroup] = useState<ReadonlyMap<string, boolean>>(
+    () => new Map(),
+  );
+  const [categoryOwnershipByGroup, setCategoryOwnershipByGroup] = useState<ReadonlyMap<string, ReadonlySet<number>>>(
+    () => new Map(),
+  );
+  const [isAddProductOpen, setIsAddProductOpen] = useState(false);
   const [groupsWithInvalidPrice, setGroupsWithInvalidPrice] = useState<ReadonlySet<number>>(() => new Set());
   /**
    * Field-level save-blocking errors, keyed by `RequiredIntakeFieldKey`. Follows the repository's
@@ -502,6 +516,7 @@ export default function IntakeReviewScreen({
   // guarantees one is always there, read from the source or assumed from the collector's base
   // currency, so the screen has nothing left to guess.
   const currencyCode = draft.currency.value ?? NO_CURRENCY_CODE;
+  const formatPrice = (minorUnits: number) => formatAmountSymbolOnly(minorUnits, currencyCode, locale);
   const productCount = countProducts(draft);
   // Read from the chat but not storable on an order: an order has no shipping-cost field, and a
   // shipping cost only becomes a real record once a delivery is registered. It is shown with that
@@ -519,7 +534,7 @@ export default function IntakeReviewScreen({
   const doubtCount = attributeDoubtCount + doubtfulGroupCount + storeDoubtCount;
 
   const paidTotal = draft.payments.reduce((sum, payment) => sum + (payment.amount.value ?? 0), 0);
-  const formattedTotal = draft.totalCost.value !== null ? formatAmount(draft.totalCost.value, currencyCode) : "";
+  const formattedTotal = draft.totalCost.value !== null ? formatPrice(draft.totalCost.value) : "";
 
   /**
    * Says out loud when the rows and the stated total disagree.
@@ -539,6 +554,14 @@ export default function IntakeReviewScreen({
     productsTotal + (shippingCost ?? 0) !== statedTotal
       ? { productsTotal, statedTotal }
       : null;
+
+  const totalsMatch = productsTotal !== null && statedTotal !== null && totalMismatch === null;
+  const isFullyPaid = statedTotal !== null && statedTotal > 0 && paidTotal >= statedTotal;
+  const paidLabelKey = isFullyPaid
+    ? "totals.paidFull"
+    : statedTotal !== null && statedTotal > 0
+      ? "totals.paid"
+      : "totals.paidTotal";
 
   // An order priced in another currency needs a rate, or it lands saved but invisible: it is left
   // out of every base-currency dashboard total with nothing on screen that ever said so.
@@ -603,9 +626,28 @@ export default function IntakeReviewScreen({
     setBlankNameAt((current) => (current === null ? null : null));
     const nextDraft = {
       ...draft,
-      groups: draft.groups.map((group, index) => (index === groupIndex ? updatedGroup : group)),
+      groups: (groupIndex === draft.groups.length
+        ? [...draft.groups, updatedGroup]
+        : draft.groups.map((group, index) => (index === groupIndex ? updatedGroup : group))
+      ).filter((group) => group.products.length > 0),
     };
     setDraft(nextDraft);
+    if (groupIndex === draft.groups.length) {
+      const key = `g${nextGroupKey.current++}`;
+      setGroupKeys((current) => [...current, key]);
+      setCollectorAddedGroupKeys((current) => new Set([...current, key]));
+      setCategorySuggestionByGroup((current) => new Map(current).set(key, false));
+    } else if (updatedGroup.products.length === 0) {
+      setGroupKeys((current) => current.filter((_, index) => index !== groupIndex));
+      setGroupsWithInvalidPrice(
+        (current) =>
+          new Set(
+            [...current]
+              .filter((index) => index !== groupIndex)
+              .map((index) => (index > groupIndex ? index - 1 : index)),
+          ),
+      );
+    }
 
     /*
       The ONE predicate that invalidates every breakdown draft on the screen: the COUNT of flattened
@@ -620,9 +662,43 @@ export default function IntakeReviewScreen({
     */
     if (flattenDraftToBreakdownItems(nextDraft).length === flattenDraftToBreakdownItems(draft).length) return;
     // Only say so when there was something to lose: a panel nobody typed into needs no apology.
-    setWasBreakdownCleared(Object.values(breakdownStates).some(hasBreakdownDraft));
-    setBreakdownStates({});
+    setWasBreakdownCleared(
+      Object.values(breakdownStates).some((state) => state.isUntouched !== true && hasBreakdownDraft(state)),
+    );
+    setBreakdownStates(resetIntakeBreakdownStates(breakdownStates, flattenDraftToBreakdownItems(nextDraft)));
   };
+
+  function handleProductAdded(value: ProductFormValue) {
+    handleGroupApply(draft.groups.length, {
+      sourcePhrase: value.name,
+      reason: "split",
+      doubtful: false,
+      priceSplit: "explicit-unit",
+      products: [
+        {
+          name: value.name,
+          unitPrice: value.unitPrice.trim() ? parseDecimalToMinorUnits(value.unitPrice, currencyCode) : null,
+          suggestedProductTypeKey: value.productTypeKey || null,
+          referenceUrl: null,
+        },
+      ],
+    });
+    setIsAddProductOpen(false);
+  }
+
+  function handleCategoryOwnership(groupKey: string, indexes: ReadonlySet<number>) {
+    setCategoryOwnershipByGroup((current) => {
+      const previous = current.get(groupKey);
+      if ((previous?.size ?? 0) === indexes.size && [...indexes].every((index) => previous?.has(index))) return current;
+      return new Map(current).set(groupKey, indexes);
+    });
+  }
+
+  function handleSuggestionPresence(groupKey: string, hasSuggestions: boolean) {
+    setCategorySuggestionByGroup((current) =>
+      current.get(groupKey) === hasSuggestions ? current : new Map(current).set(groupKey, hasSuggestions),
+    );
+  }
 
   const handleOrderDateChange = (value: string) => {
     // A value the user typed is no longer the system's assumption, so it is recorded as read. The
@@ -682,9 +758,9 @@ export default function IntakeReviewScreen({
 
   /**
    * One breakdown draft per payment row, by row index. Absent means the collector has not touched
-   * that row's panel, which is the same thing as an empty draft and is treated as one below.
+   * that row's panel. Its default stays derived until the collector edits the breakdown.
    */
-  const [breakdownStates, setBreakdownStates] = useState<Record<number, BreakdownPanelState>>({});
+  const [breakdownStates, setBreakdownStates] = useState<Record<number, IntakeBreakdownPanelState>>({});
   /** Whether a structural product change just wiped the drafts, so the screen can say so. */
   const [wasBreakdownCleared, setWasBreakdownCleared] = useState(false);
 
@@ -715,6 +791,7 @@ export default function IntakeReviewScreen({
         items: breakdownItems,
         payments: draft.payments,
         states: breakdownStates,
+        orderDateIso: draft.orderDate.value,
         totalCostMinor: draft.totalCost.value ?? 0,
         currencyCode,
       })
@@ -722,7 +799,10 @@ export default function IntakeReviewScreen({
 
   const handleBreakdownChange = (index: number, next: BreakdownPanelState) => {
     setWasBreakdownCleared(false);
-    setBreakdownStates((current) => ({ ...current, [index]: next }));
+    setBreakdownStates((current) => ({
+      ...current,
+      [index]: applyIntakeBreakdownChange(breakdownRows[index].state, next),
+    }));
     clearFieldError(paymentFieldKey("amount", index));
     clearFieldError(paymentFieldKey("date", index));
   };
@@ -972,6 +1052,24 @@ export default function IntakeReviewScreen({
       ),
     [draft.warnings],
   );
+  const groupRows = draft.groups.map((group, index) => (
+    <IntakeGroupCard
+      key={groupKeys[index]}
+      group={group}
+      groupKey={groupKeys[index]}
+      categoriesAreSuggestions={!collectorAddedGroupKeys.has(groupKeys[index])}
+      ownedCategoryIndexes={categoryOwnershipByGroup.get(groupKeys[index])}
+      onCategoryOwnershipChange={(indexes) => handleCategoryOwnership(groupKeys[index], indexes)}
+      onSuggestionPresenceChange={(hasSuggestions) => handleSuggestionPresence(groupKeys[index], hasSuggestions)}
+      withinTable={!isMobile}
+      currencyCode={currencyCode}
+      productTypeKeys={productTypeKeys}
+      hasWarning={warningPhrases.has(group.sourcePhrase)}
+      forceExpanded={blankNameAt?.groupIndex === index}
+      onPriceValidityChange={(hasInvalidPrice) => handleGroupPriceValidity(index, hasInvalidPrice)}
+      onApply={(updatedGroup) => handleGroupApply(index, updatedGroup)}
+    />
+  ));
   return (
     // The bottom padding only exists to clear the fixed mobile bar, so it stops where that bar
     // does: on `md` and up the actions are inline and the reserved strip would be dead space.
@@ -991,18 +1089,14 @@ export default function IntakeReviewScreen({
         </p>
       </header>
 
-      {/*
-        SECTION 1 — Datos del pedido. Same chrome as the manual order form, because this is the
-        same job: the fields of one order, all open, nothing behind a step.
-      */}
-      <section className={ORDER_SECTION_CARD_CLASS} aria-labelledby="intake-section-order">
-        <header className={ORDER_SECTION_COMPACT_HEADER_CLASS}>
-          <Info size={16} aria-hidden="true" className={ORDER_SECTION_COMPACT_ICON_CLASS} />
-          <h3 id="intake-section-order" className={ORDER_SECTION_HEADING_CLASS}>
+      {/* Keep the familiar form field order while allowing every section to be reviewed at once. */}
+      <Card as="section" variant="outlined" padding="none" aria-labelledby="intake-section-order">
+        <header className="border-border border-b px-4 py-4 md:px-5">
+          <SectionTitleWithAccent as="h3" id="intake-section-order" icon={Info} iconClassName="text-accent">
             {t("fieldsTitle")}
-          </h3>
+          </SectionTitleWithAccent>
         </header>
-        <div className={ORDER_SECTION_COMPACT_BODY_CLASS}>
+        <div className="flex min-w-0 flex-col gap-4 p-4 md:p-5">
           {/*
             The same two rows the manual order form uses, in the same order: store beside currency,
             then order date beside the expected window. Whatever the collector already knows from
@@ -1014,9 +1108,13 @@ export default function IntakeReviewScreen({
               options={storeOptions}
               onChange={handleStoreChange}
               error={Boolean(fieldErrors.get("store"))}
+              provenanceState={
+                draft.store.matchedStoreId === null ? "missing" : resolveProvenanceState(initialDraft.store.name)
+              }
             />
 
             <ProvenanceValue
+              markerTone="warning"
               id="intake-currency"
               label={t("fields.currency")}
               state={provenance.currency}
@@ -1039,14 +1137,12 @@ export default function IntakeReviewScreen({
 
           <div className="grid items-start gap-4 md:grid-cols-2">
             <ProvenanceValue
+              markerTone="warning"
               id="intake-order-date"
               label={t("fields.orderDate")}
               state={provenance.orderDate}
               markerLabel={t(provenance.orderDate === "assumed" ? "provenance.assumed" : "provenance.missing")}
               error={Boolean(fieldErrors.get("orderDate"))}
-              // The error message replaces the hint in the same slot: `Input` already renders it
-              // (with `role="alert"` and `aria-invalid`) when `error` is a string, so this component
-              // is not asked to render it a second time.
               hint={
                 fieldErrors.get("orderDate")
                   ? undefined
@@ -1055,17 +1151,26 @@ export default function IntakeReviewScreen({
                     : t(provenance.orderDate === "assumed" ? "provenance.assumedHint" : "provenance.missingHint")
               }
               control={({ id }) => (
-                <Input
-                  id={id}
-                  type="date"
-                  value={draft.orderDate.value ?? ""}
-                  error={fieldErrors.get("orderDate")}
-                  onChange={(event) => handleOrderDateChange(event.target.value)}
-                />
+                <>
+                  <DatePickerInput
+                    id={id}
+                    value={isoToLocalDate(draft.orderDate.value)}
+                    error={Boolean(fieldErrors.get("orderDate"))}
+                    aria-describedby={fieldErrors.has("orderDate") ? "intake-order-date-error" : undefined}
+                    placeholder={tOrders("form.orderDatePlaceholder")}
+                    locale={locale}
+                    disableFuture
+                    onChange={(date) => handleOrderDateChange(localDateToIso(date) ?? "")}
+                  />
+                  {fieldErrors.get("orderDate") && (
+                    <FieldErrorMsg id="intake-order-date-error">{fieldErrors.get("orderDate")}</FieldErrorMsg>
+                  )}
+                </>
               )}
             />
 
             <ProvenanceValue
+              markerTone={provenance.deliveryFrom === "assumed" ? "warning" : "neutral"}
               id="intake-delivery-range"
               label={t("fields.deliveryRange")}
               state={provenance.deliveryFrom}
@@ -1130,17 +1235,16 @@ export default function IntakeReviewScreen({
             )}
           </div>
         </div>
-      </section>
+      </Card>
 
-      {/* SECTION 2 — Productos, in the same table the manual form uses. */}
-      <section className={ORDER_SECTION_CARD_CLASS} aria-labelledby="intake-section-products">
-        <header className={ORDER_SECTION_COMPACT_HEADER_CLASS}>
-          <ShoppingCart size={16} aria-hidden="true" className={ORDER_SECTION_COMPACT_ICON_CLASS} />
-          <h3 id="intake-section-products" className={ORDER_SECTION_HEADING_CLASS}>
+      {/* Products share the manual form's table geometry and editable cells. */}
+      <Card as="section" variant="elevated" padding="none" aria-labelledby="intake-section-products">
+        <header className="border-border border-b px-4 py-4 md:px-5">
+          <SectionTitleWithAccent as="h3" id="intake-section-products" icon={ShoppingCart} iconClassName="text-accent">
             {t("groupsTitle")}
-          </h3>
+          </SectionTitleWithAccent>
         </header>
-        <div className={ORDER_SECTION_COMPACT_BODY_CLASS}>
+        <div className="flex min-w-0 flex-col gap-4 p-4 md:p-5">
           {/*
             A pointed offer, never a generic warning: it names the rows whose name is still only a
             link, and it says out loud what accepting it costs. It blocks nothing, because the
@@ -1199,38 +1303,55 @@ export default function IntakeReviewScreen({
             </p>
           )}
 
-          {draft.groups.map((group, index) => (
-            /*
-              One block per group, separated by a hairline rather than nested in its own card: the
-              section card already draws the boundary, and a card inside a card is what made this
-              screen read as cramped.
-            */
-            <div
-              key={`${group.sourcePhrase}-${index}`}
-              className={cn("intake-rise-in", index > 0 && "pt-[var(--space-4)] [border-top:1px_solid_var(--border)]")}
-              style={
-                index < STAGGERED_GROUP_CARDS ? { animationDelay: `${index * GROUP_CARD_STAGGER_MS}ms` } : undefined
-              }
-            >
-              <IntakeGroupCard
-                group={group}
-                groupKey={`g${index}`}
-                currencyCode={currencyCode}
-                productTypeKeys={productTypeKeys}
-                hasWarning={warningPhrases.has(group.sourcePhrase)}
-                forceExpanded={blankNameAt?.groupIndex === index}
-                onPriceValidityChange={(hasInvalidPrice) => handleGroupPriceValidity(index, hasInvalidPrice)}
-                onApply={(updatedGroup) => handleGroupApply(index, updatedGroup)}
-              />
+          {draft.groups.some(
+            (group, index) =>
+              categorySuggestionByGroup.get(groupKeys[index]) ??
+              group.products.some((product) => product.suggestedProductTypeKey !== null),
+          ) && (
+            <p className="text-text-muted flex items-start gap-2 text-xs">
+              <Sparkles size={16} aria-hidden className="shrink-0" />
+              {t("group.categorySuggestedHint")}
+            </p>
+          )}
+
+          {isMobile ? (
+            <div className="flex min-w-0 flex-col gap-1">{groupRows}</div>
+          ) : (
+            <div className="min-w-0 overflow-x-auto">
+              <OrderItemsTable currencyCode={currencyCode} showQuantity={false} sortable={false} hasRowAction>
+                {groupRows}
+              </OrderItemsTable>
             </div>
-          ))}
+          )}
+
+          <Button
+            type="button"
+            variant="tonal"
+            size="sm"
+            className="self-start"
+            leadingIcon={<Plus size={16} aria-hidden />}
+            onClick={() => setIsAddProductOpen(true)}
+            data-ph-event={POSTHOG_EVENTS.IMAGE_INTAKE.PRODUCT_ADD_OPENED}
+          >
+            {tOrders("create.addProductButton")}
+          </Button>
+          <OrderAddProductSheet
+            open={isAddProductOpen}
+            onOpenChange={setIsAddProductOpen}
+            mode="create"
+            currencyCode={currencyCode}
+            productTypeKeys={productTypeKeys}
+            tProductTypes={productTypeName}
+            showQuantity={false}
+            onSubmit={handleProductAdded}
+          />
 
           {/*
             The order's cost lives with the products, exactly as it does in the manual form: it is
             the figure the rows are supposed to add up to, and putting it two sections away from
             them meant nothing could be compared without scrolling.
           */}
-          <div className="flex flex-col gap-[var(--space-3)] pt-3.5 [border-top:1px_solid_var(--border)]">
+          <div className="border-border flex flex-col gap-4 border-t pt-4">
             {productCount > 0 && (
               <div className="flex flex-col gap-2.5 md:flex-row md:items-center md:justify-between md:gap-3">
                 <p className="numeric text-[12px] [color:var(--text-muted)]">
@@ -1238,26 +1359,34 @@ export default function IntakeReviewScreen({
                     ? t("totals.calculatedNone")
                     : pricedProducts.unpricedCount > 0
                       ? t("totals.calculatedPartial", {
-                          total: formatAmount(pricedProducts.sum, currencyCode),
+                          total: formatPrice(pricedProducts.sum),
                           count: pricedProducts.unpricedCount,
                         })
-                      : t("totals.calculated", { total: formatAmount(pricedProducts.sum, currencyCode) })}
+                      : t("totals.calculated", { total: formatPrice(pricedProducts.sum) })}
                 </p>
-                <Button
-                  type="button"
-                  variant="tonal"
-                  size="sm"
-                  onClick={handleUseCalculatedTotal}
-                  disabled={pricedProducts === null}
-                  leadingIcon={<Calculator size={14} aria-hidden />}
-                  className="w-full md:w-auto"
-                >
-                  {t("totals.useCalculated")}
-                </Button>
+                {totalsMatch ? (
+                  <p role="status" className="text-text-muted flex items-center gap-1.5 text-xs">
+                    <Check size={14} aria-hidden />
+                    {t("totals.matches")}
+                  </p>
+                ) : totalMismatch === null ? (
+                  <Button
+                    type="button"
+                    variant="tonal"
+                    size="sm"
+                    onClick={handleUseCalculatedTotal}
+                    disabled={pricedProducts === null}
+                    leadingIcon={<Calculator size={14} aria-hidden />}
+                    className="min-h-11 w-full md:w-auto lg:min-h-8"
+                  >
+                    {t("totals.useCalculated")}
+                  </Button>
+                ) : null}
               </div>
             )}
 
             <ProvenanceValue
+              markerTone={provenance.totalCost === "derived" ? "neutral" : "warning"}
               id="intake-total"
               label={t("fields.total")}
               state={provenance.totalCost}
@@ -1269,8 +1398,7 @@ export default function IntakeReviewScreen({
                     : t("provenance.missing")
               }
               error={Boolean(fieldErrors.get("total"))}
-              // The error message replaces the hint in the same slot, same reasoning as the order
-              // date field above.
+              // Input renders its own field error in the hint slot.
               hint={
                 fieldErrors.get("total")
                   ? undefined
@@ -1293,13 +1421,11 @@ export default function IntakeReviewScreen({
               )}
             />
 
-            {shippingCost !== null && (
+            {shippingCost !== null && shippingCost > 0 && (
               <div className="flex flex-col gap-[var(--space-1)]">
                 <div className="flex items-baseline justify-between gap-[var(--space-3)] text-[13px]">
                   <span className="[color:var(--text-muted)]">{t("delivery.cost")}</span>
-                  <span className="numeric [color:var(--text-primary)]">
-                    {formatAmount(shippingCost, currencyCode)}
-                  </span>
+                  <span className="numeric [color:var(--text-primary)]">{formatPrice(shippingCost)}</span>
                 </div>
                 <p className="text-[11.5px] [color:var(--text-muted)]">{t("delivery.costNotSaved")}</p>
               </div>
@@ -1307,25 +1433,36 @@ export default function IntakeReviewScreen({
 
             {totalMismatch !== null && (
               <AlertBanner tone="warning" icon={<Scale size={16} />} title={t("totals.mismatchTitle")}>
-                {t("totals.mismatchBody", {
-                  products: formatAmount(totalMismatch.productsTotal, currencyCode),
-                  total: formatAmount(totalMismatch.statedTotal, currencyCode),
-                })}
+                <p>
+                  {t("totals.mismatchBody", {
+                    products: formatPrice(totalMismatch.productsTotal),
+                    total: formatPrice(totalMismatch.statedTotal),
+                  })}
+                </p>
+                <Button
+                  type="button"
+                  variant="tonal"
+                  size="sm"
+                  onClick={handleUseCalculatedTotal}
+                  leadingIcon={<Calculator size={14} aria-hidden />}
+                  className="mt-3 min-h-11 w-full md:w-auto lg:min-h-8"
+                >
+                  {t("totals.useCalculated")}
+                </Button>
               </AlertBanner>
             )}
           </div>
         </div>
-      </section>
+      </Card>
 
-      {/* SECTION 3 — Pagos. */}
-      <section className={ORDER_SECTION_CARD_CLASS} aria-labelledby="intake-section-payments">
-        <header className={ORDER_SECTION_COMPACT_HEADER_CLASS}>
-          <Wallet size={16} aria-hidden="true" className={ORDER_SECTION_COMPACT_ICON_CLASS} />
-          <h3 id="intake-section-payments" className={ORDER_SECTION_HEADING_CLASS}>
+      {/* Payments remain independent rows with their own allocation panels. */}
+      <Card as="section" variant="outlined" padding="none" aria-labelledby="intake-section-payments">
+        <header className="border-border border-b px-4 py-4 md:px-5">
+          <SectionTitleWithAccent as="h3" id="intake-section-payments" icon={Wallet} iconClassName="text-accent">
             {t("payments.title")}
-          </h3>
+          </SectionTitleWithAccent>
         </header>
-        <div className={ORDER_SECTION_COMPACT_BODY_CLASS}>
+        <div className="flex min-w-0 flex-col gap-4 p-4 md:p-5">
           {/* Said once for the whole section, because the change wipes every row at once. It is not
               an error: nothing is blocked, and the products the collector just restructured are the
               reason the old lines no longer point anywhere. */}
@@ -1353,9 +1490,14 @@ export default function IntakeReviewScreen({
                 const breakdownRow = breakdownRows[index];
                 return (
                   // Keyed by position: the date is editable, so keying on it would remount the field.
-                  <li key={index} className="relative grid gap-4 pr-8 md:grid-cols-2 md:pr-9">
+                  <li
+                    key={index}
+                    className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-2 gap-y-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] md:gap-x-4"
+                  >
                     <ProvenanceValue
+                      markerTone="warning"
                       id={`intake-payment-amount-${index}`}
+                      className="col-start-1 row-start-1 min-w-0"
                       label={t("payments.amountLabel", { position: index + 1 })}
                       state={amountState}
                       markerLabel={t(amountState === "assumed" ? "provenance.assumed" : "provenance.missing")}
@@ -1378,7 +1520,13 @@ export default function IntakeReviewScreen({
                       )}
                     />
                     <ProvenanceValue
+                      markerTone={
+                        dateState === "assumed" || (breakdownRow?.derived.foot.emittedLineCount ?? 0) > 0
+                          ? "warning"
+                          : "neutral"
+                      }
                       id={`intake-payment-date-${index}`}
+                      className="col-start-1 row-start-2 min-w-0 md:col-start-2 md:row-start-1"
                       label={t("payments.dateLabel")}
                       state={dateState}
                       markerLabel={t(dateState === "assumed" ? "provenance.assumed" : "provenance.missing")}
@@ -1389,13 +1537,24 @@ export default function IntakeReviewScreen({
                           : t(dateState === "assumed" ? "provenance.assumedHint" : "provenance.missingHint")
                       }
                       control={({ id }) => (
-                        <Input
-                          id={id}
-                          type="date"
-                          value={payment.paidAt.value ?? ""}
-                          error={dateError}
-                          onChange={(event) => handlePaymentDateChange(index, event.target.value)}
-                        />
+                        <>
+                          <DatePickerInput
+                            id={id}
+                            value={isoToLocalDate(payment.paidAt.value)}
+                            error={Boolean(dateError)}
+                            aria-describedby={dateError ? `intake-payment-date-error-${index}` : undefined}
+                            placeholder={tOrders("form.orderDatePlaceholder")}
+                            locale={locale}
+                            disableFuture
+                            popupAlign="end"
+                            onChange={(date) => handlePaymentDateChange(index, localDateToIso(date) ?? "")}
+                          />
+                          {dateError && (
+                            <FieldErrorMsg id={`intake-payment-date-error-${index}`} className="mt-1.5">
+                              {dateError}
+                            </FieldErrorMsg>
+                          )}
+                        </>
                       )}
                     />
 
@@ -1403,7 +1562,7 @@ export default function IntakeReviewScreen({
                         to exist before splitting it means anything, and it is above. On mobile the
                         row is one column already, so this simply follows the date. */}
                     {breakdownRow !== undefined && (
-                      <div className="md:col-span-2">
+                      <div className="col-span-full min-w-0">
                         <OrderPaymentBreakdownPanel
                           // Unique per payment row: several panels are mounted at once here, and a
                           // shared id namespace would cross every `aria-controls` and
@@ -1430,20 +1589,13 @@ export default function IntakeReviewScreen({
                         />
                       </div>
                     )}
-                    <button
-                      type="button"
+                    <IconButton
+                      size="sm"
+                      icon={<X size={14} aria-hidden />}
                       onClick={() => handleRemovePayment(index)}
                       aria-label={t("payments.removeLabel", { position: index + 1 })}
-                      // Tap target ≥44×44 on mobile via the `::before` pseudo (same mechanism as
-                      // `IconButton`): padding inside a fixed `size-7` box never grows the box, so
-                      // `inset:-8px` on 28px expands the hit area outward to 44 instead. No other
-                      // control is within 8px: the row reserves `pr-8` for this button, and the
-                      // payment rows are `gap-[var(--space-4)]` apart vertically.
-                      // `md:before:inset-0` drops the extra area on desktop.
-                      className="absolute top-0 right-0 grid size-7 shrink-0 cursor-pointer place-items-center rounded-md [color:var(--text-muted)] transition-colors before:absolute before:[inset:-8px] before:content-[''] hover:[color:var(--text-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:[outline-color:var(--focus-ring)] md:before:inset-0"
-                    >
-                      <X size={14} aria-hidden="true" />
-                    </button>
+                      className="col-start-2 row-start-1 mt-8 size-11 self-start [color:var(--text-muted)] before:inset-0 hover:[color:var(--text-primary)] focus-visible:[color:var(--text-primary)] md:col-start-3"
+                    />
                   </li>
                 );
               })}
@@ -1452,7 +1604,7 @@ export default function IntakeReviewScreen({
 
           <Button
             type="button"
-            variant="ghost"
+            variant="tonal"
             size="sm"
             className="self-start"
             onClick={handleAddPayment}
@@ -1463,11 +1615,11 @@ export default function IntakeReviewScreen({
           </Button>
 
           <div className="flex items-baseline justify-between gap-[var(--space-3)] pt-3.5 text-[13px] [border-top:1px_solid_var(--border)]">
-            <span className="[color:var(--text-muted)]">{t("totals.paid")}</span>
-            <span className="numeric [color:var(--text-primary)]">{formatAmount(paidTotal, currencyCode)}</span>
+            <span className="[color:var(--text-muted)]">{t(paidLabelKey)}</span>
+            <span className="numeric [color:var(--text-primary)]">{formatPrice(paidTotal)}</span>
           </div>
         </div>
-      </section>
+      </Card>
 
       {/*
         Desktop footer (inline). Mobile uses the fixed bar below. A bar pinned to the viewport
@@ -1518,7 +1670,7 @@ export default function IntakeReviewScreen({
         isOpen={pendingMismatchSave !== null && totalMismatch !== null}
         enteredTotal={totalMismatch?.statedTotal ?? 0}
         calculatedTotal={totalMismatch?.productsTotal ?? 0}
-        formatAmount={(cents) => formatAmount(cents, currencyCode)}
+        formatAmount={(cents) => formatPrice(cents)}
         onGoBack={handleMismatchGoBack}
         onSaveAnyway={handleMismatchSaveAnyway}
       />

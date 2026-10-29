@@ -2,6 +2,9 @@
 
 import { useTranslations } from "next-intl";
 import { useState } from "react";
+import Chip from "@/components/core/Chip";
+import type { ProvenanceState } from "@/components/core/ProvenanceValue";
+import { CircleHelp, Sparkles } from "lucide-react";
 import Button from "@/components/core/Button/Button";
 import FieldErrorMsg from "@/components/core/FieldErrorMsg";
 import Input from "@/components/core/Input";
@@ -30,6 +33,7 @@ export type StoreResolutionSectionProps = {
   className?: string;
   onChange: (storeId: string | null) => void;
   error?: boolean;
+  provenanceState?: ProvenanceState;
 };
 
 /** Sentinel radio value for "Ninguna, crear una nueva" — never a real store id (cuids never start with "_"). */
@@ -97,9 +101,11 @@ export default function StoreResolutionSection({
   options,
   onChange,
   error,
+  provenanceState,
   className,
 }: StoreResolutionSectionProps) {
   const t = useTranslations("stores.intakeResolution");
+  const tProvenance = useTranslations("imageIntake.review.provenance");
   const tStore = useTranslations("imageIntake.review.store");
   const tDuplicate = useTranslations("stores.duplicate");
   const tErrors = useTranslations("imageIntake.errors");
@@ -244,11 +250,26 @@ export default function StoreResolutionSection({
         <label
           htmlFor="intake-store-change"
           className={cn(
-            "flex min-h-[1.625rem] items-center text-[13px] font-medium",
+            "flex min-h-[1.625rem] flex-wrap items-center gap-2 text-[13px] font-medium",
             error ? "[color:var(--destructive)]" : "[color:var(--text-secondary)]",
           )}
         >
           {tStore("label")}
+          {provenanceState && provenanceState !== "read" && (
+            <Chip
+              variant="warning"
+              size="sm"
+              icon={
+                provenanceState === "assumed" ? (
+                  <Sparkles size={12} aria-hidden />
+                ) : (
+                  <CircleHelp size={12} aria-hidden />
+                )
+              }
+            >
+              {tProvenance(provenanceState === "assumed" ? "assumed" : "missing")}
+            </Chip>
+          )}
         </label>
         <StoreCombobox
           id="intake-store-change"
@@ -266,9 +287,11 @@ export default function StoreResolutionSection({
         <button
           type="button"
           onClick={handleSwitchToCreate}
-          className="self-start text-[12.5px] font-medium [color:var(--text-secondary)] hover:underline"
+          className="text-text-secondary inline-flex min-h-11 flex-wrap items-center gap-x-1 rounded text-left text-xs underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:[outline-color:var(--focus-ring)] lg:min-h-8"
         >
-          {t("switchToCreate")}
+          {t.rich("switchToCreate", {
+            action: (chunks) => <span className="text-accent underline">{chunks}</span>,
+          })}
         </button>
       </section>
     );

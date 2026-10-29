@@ -2,8 +2,12 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next-intl", () => ({
-  useTranslations: () => (key: string, values?: Record<string, unknown>) =>
-    values ? `${key}:${JSON.stringify(values)}` : key,
+  useTranslations: () => {
+    const translate = (key: string, values?: Record<string, unknown>) =>
+      values ? `${key}:${JSON.stringify(values)}` : key;
+    translate.rich = (key: string, tags: Record<string, (chunks: string) => unknown>) => tags.action(key);
+    return translate;
+  },
 }));
 
 const { createStoreFromIntakeActionMock, confirmStoreMatchActionMock } = vi.hoisted(() => ({

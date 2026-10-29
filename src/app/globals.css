@@ -2011,49 +2011,7 @@ body {
   }
 }
 
-/* ───────────────────────────────────────────────────────────
-   14. Image intake review — arrival, disclosure, and value change
-
-   Three surfaces, three jobs, composed from the §2 motion tokens:
-   the group cards arrive (bounded stagger), an opened group reveals
-   its rows, and a figure that was recomputed cross-fades. Only
-   `transform`, `opacity`, and `clip-path` are animated — never
-   `height`, `padding`, or `margin`.
-   ─────────────────────────────────────────────────────────── */
-@keyframes intake-rise-in {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-/* `backwards`, never `both`: `both` retains the keyframes' end state forever, and for the reveal
-   below that end state is a `clip-path`, which keeps clipping long after the animation is over —
-   cutting the 2px focus ring off every field and chip that sits on the container's edge. `backwards`
-   applies the start state before the animation and hands the element back to its own styles after. */
-.intake-rise-in {
-  animation: intake-rise-in var(--motion-base) var(--ease-out-expressive) backwards;
-}
-
-@keyframes intake-reveal {
-  from {
-    opacity: 0;
-    clip-path: inset(0 0 100% 0);
-  }
-  to {
-    opacity: 1;
-    clip-path: inset(0 0 0 0);
-  }
-}
-
-.intake-reveal {
-  animation: intake-reveal var(--motion-base) var(--ease-out-expressive) backwards;
-}
-
+/* Image intake review value changes use the shared motion tokens. */
 @keyframes intake-value-in {
   from {
     opacity: 0;
@@ -2080,13 +2038,10 @@ body {
   }
 }
 
-/* Reduced ≠ none (motion.md §4). The travel and the stagger go; the cross-fade stays, so a
-   card that just appeared and a figure that just changed still read as events. Written with
+/* Reduced ≠ none (motion.md §4). A changed figure retains its cross-fade. Written with
    `!important` because §12's global floor would otherwise clamp these to 0.01ms, which is
    none. */
 @media (prefers-reduced-motion: reduce) {
-  .intake-rise-in,
-  .intake-reveal,
   .intake-value-in {
     animation-name: intake-value-in !important;
     animation-duration: 150ms !important;

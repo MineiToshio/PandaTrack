@@ -674,7 +674,7 @@
     "createErrorCountryRequired": "Primero completa tu país en Configuración.",
     "createErrorServer": "No pudimos crear la tienda. Inténtalo de nuevo.",
     "backToCandidates": "Volver a las opciones",
-    "switchToCreate": "¿No es esta tienda? Crear una nueva",
+    "switchToCreate": "¿No es esta tienda? <action>Crear una nueva</action>",
     "switchToSearch": "Buscar en tiendas existentes"
   }
 }

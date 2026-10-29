@@ -49,6 +49,14 @@ vi.mock("@/lib/fx/exchangeRates", () => ({
   fetchTodayRate: vi.fn(async () => ({ ok: false as const })),
 }));
 
+vi.mock("react-day-picker", () => ({
+  DayPicker: ({ onSelect }: { onSelect: (date: Date) => void }) => (
+    <button type="button" onClick={() => onSelect(new Date(2026, 6, 21))}>
+      Pick July 21
+    </button>
+  ),
+}));
+
 import type { ImageIntakeDraft } from "@/lib/imageIntake/draftSchema";
 import type { IntakeBreakdownPayload } from "@/lib/imageIntake/intakeBreakdownContract";
 import IntakeReviewScreen from "../IntakeReviewScreen";
@@ -126,7 +134,7 @@ function paymentRow(index: number): HTMLElement {
 }
 
 function openBreakdown(index: number) {
-  fireEvent.click(within(paymentRow(index)).getByRole("button", { name: /Desglosar entre productos/ }));
+  fireEvent.click(breakdownTrigger(index));
 }
 
 function selectAllIn(index: number) {
@@ -147,7 +155,11 @@ function fieldFor(index: number, name: string): HTMLInputElement {
 
 /** The disclosure of one payment row, whatever it currently reads. */
 function breakdownTrigger(index: number): HTMLElement {
-  return within(paymentRow(index)).getAllByRole("button")[0];
+  const trigger = paymentRow(index).querySelector<HTMLButtonElement>(
+    `button[aria-controls="intake-payment-${index}-breakdown"]`,
+  );
+  expect(trigger).toBeInTheDocument();
+  return trigger!;
 }
 
 function paymentsSection(): HTMLElement {
@@ -322,8 +334,12 @@ describe("intake breakdown · what clears the drafts and what does not (T8, §7.
 
     fireEvent.click(screen.getByRole("button", { name: "Eliminar producto 3" }));
 
-    expect(within(paymentRow(0)).getByRole("button", { name: /Desglosar entre productos/ })).toBeInTheDocument();
+    expect(breakdownTrigger(0)).toHaveAttribute("aria-expanded", "false");
     expect(screen.getByText(/Cambiaste los productos/)).toBeInTheDocument();
+    openBreakdown(0);
+    for (const checkbox of within(productListIn(0)).getAllByRole("checkbox")) {
+      expect(checkbox).not.toBeChecked();
+    }
   });
 });
 
@@ -350,7 +366,15 @@ describe("intake breakdown · the save gate is narrow (T9, §8.2)", () => {
 
     expect(onSave).not.toHaveBeenCalled();
     expect(document.activeElement?.id).toBe("intake-payment-date-0");
-    expect(screen.getByText(/Ponle fecha a este pago/)).toBeInTheDocument();
+    const message = screen.getByText(/Ponle fecha a este pago/).closest("[role='alert']")!;
+    expect(message).toBeInTheDocument();
+    expect(message.querySelector("svg.lucide-circle-alert")).toBeTruthy();
+    const date = document.getElementById("intake-payment-date-0")!;
+    expect(date.getAttribute("aria-describedby")).toBe(message.id);
+    expect(date.className).toContain("[border-color:var(--destructive)]");
+    expect(document.querySelector("label[for='intake-payment-date-0']")?.className).toContain(
+      "[color:var(--destructive)]",
+    );
   });
 
   it("(b) still saves when the same incomplete row carries no breakdown", () => {
@@ -391,7 +415,7 @@ describe("intake breakdown · a corrected price re-splits, a typed line does not
     setUpEightyPaid();
 
     // The total does not move with it (`FR-11-58b`), so the residual is what absorbs the gap.
-    fireEvent.change(priceCells()[1], { target: { value: "40" } });
+    fireEvent.change(priceCells()[0], { target: { value: "40" } });
 
     expect(fieldFor(0, "Kingdom 23").value).toBe("26.67");
     expect(fieldFor(0, "Berserk deluxe").value).toBe("21.33");
@@ -402,7 +426,7 @@ describe("intake breakdown · a corrected price re-splits, a typed line does not
     const onSave = vi.fn();
     setUpEightyPaid(onSave);
 
-    fireEvent.change(priceCells()[1], { target: { value: "40" } });
+    fireEvent.change(priceCells()[0], { target: { value: "40" } });
     fireEvent.change(fieldFor(0, "Kingdom 23"), { target: { value: "30.00" } });
 
     expect(fieldFor(0, "Kingdom 23").value).toBe("30.00");
@@ -416,8 +440,8 @@ describe("intake breakdown · a corrected price re-splits, a typed line does not
       {
         paymentIndex: 0,
         lines: [
-          { position: 1, amountMinor: 3000 },
-          { position: 2, amountMinor: 1333 },
+          { position: 1, amountMinor: 1333 },
+          { position: 2, amountMinor: 3000 },
         ],
       },
     ]);
@@ -462,8 +486,8 @@ describe("intake breakdown · a payment nobody split sends nothing (T14, §5)", 
       {
         paymentIndex: 0,
         lines: [
-          { position: 1, amountMinor: 2667 },
-          { position: 2, amountMinor: 5333 },
+          { position: 1, amountMinor: 5333 },
+          { position: 2, amountMinor: 2667 },
         ],
       },
     ]);
@@ -512,5 +536,230 @@ describe("intake breakdown · the residual is never blamed on unpriced products 
     expect(fieldFor(1, "Berserk deluxe").value).toBe("66.67");
     expect(within(paymentRow(1)).getByText(/Sin desglosar S\/ 33\.33/)).toBeInTheDocument();
     expect(within(paymentRow(1)).queryByText(/no corresponden a ningún producto/)).toBeNull();
+  });
+});
+
+describe("intake full-payment defaults", () => {
+  function fullPayment(paidAt: string | null = "2026-07-21") {
+    return buildDraft({ groups: [TWO_PRICED], totalCost: 15000, payments: [{ amount: 15000, paidAt }] });
+  }
+
+  function expectAllPaid() {
+    for (const name of ["Kingdom 23", "Berserk deluxe"]) {
+      expect(within(rowFor(0, name)).getByRole("checkbox")).toBeChecked();
+    }
+    expect(fieldFor(0, "Kingdom 23").value).toBe("50.00");
+    expect(fieldFor(0, "Berserk deluxe").value).toBe("100.00");
+  }
+
+  it("seeds every product and saves allocations in the naturally sorted traversal order", () => {
+    const onSave = renderScreen(fullPayment());
+    // Save before opening: the first render already owns the computed allocation.
+    submit();
+    expect(onSave.mock.calls[0][0].groups[0].products.map((product: ProductSpec) => product.name)).toEqual([
+      "Berserk deluxe",
+      "Kingdom 23",
+    ]);
+    const lines = onSave.mock.calls[0][2]?.[0].lines;
+    expect(onSave.mock.calls[0][2]?.[0].isAutomatic).toBe(true);
+    expect(lines).toEqual([
+      { position: 1, amountMinor: 10000 },
+      { position: 2, amountMinor: 5000 },
+    ]);
+    expect(lines?.reduce((sum: number, line: { amountMinor: number }) => sum + line.amountMinor, 0)).toBe(15000);
+    openBreakdown(0);
+    expectAllPaid();
+  });
+
+  it("returns to no selection for a partial payment even after opening the untouched panel", () => {
+    const onSave = renderScreen(fullPayment());
+    openBreakdown(0);
+    expectAllPaid();
+    fireEvent.change(document.getElementById("intake-payment-amount-0")!, { target: { value: "80" } });
+    expect(
+      within(productListIn(0))
+        .getAllByRole("checkbox")
+        .every((node) => !(node as HTMLInputElement).checked),
+    ).toBe(true);
+    submit();
+    expect(onSave.mock.calls[0][2]).toBeUndefined();
+  });
+
+  it("respects a user-cleared full-payment selection through amount changes", () => {
+    const onSave = renderScreen(fullPayment());
+    openBreakdown(0);
+    expectAllPaid();
+    fireEvent.click(within(paymentRow(0)).getByRole("button", { name: "Limpiar el desglose" }));
+    fireEvent.change(document.getElementById("intake-payment-amount-0")!, { target: { value: "80" } });
+    fireEvent.change(document.getElementById("intake-payment-amount-0")!, { target: { value: "150" } });
+    expect(
+      within(productListIn(0))
+        .getAllByRole("checkbox")
+        .every((node) => !(node as HTMLInputElement).checked),
+    ).toBe(true);
+    submit();
+    expect(onSave.mock.calls[0][2]).toBeUndefined();
+  });
+
+  it("keeps an undated full payment saveable and seeds once its date is valid", () => {
+    const onSave = renderScreen(fullPayment(null));
+    submit();
+    expect(onSave).toHaveBeenCalledTimes(1);
+    expect(onSave.mock.calls[0][2]).toBeUndefined();
+    fireEvent.click(document.getElementById("intake-payment-date-0")!);
+    fireEvent.click(screen.getByRole("button", { name: "Pick July 21" }));
+    openBreakdown(0);
+    expectAllPaid();
+    submit();
+    expect(onSave.mock.calls[1][2]?.[0].lines).toHaveLength(2);
+  });
+});
+
+describe("untouched intake defaults after structural edits", () => {
+  it("naturally sorts a per-row split and re-seeds untouched full payment positions", () => {
+    const onSave = renderScreen(
+      buildDraft({
+        groups: [
+          [
+            { name: "Manga 10", unitPrice: 10000 },
+            { name: "Manga 1 al 2", unitPrice: 10000 },
+          ],
+        ],
+        totalCost: 20000,
+        payments: [{ amount: 20000, paidAt: "2026-07-21" }],
+      }),
+    );
+    openBreakdown(0);
+    fireEvent.click(screen.getByRole("button", { name: "Separar Manga 1 al 2" }));
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Separar en productos" }));
+    expect(screen.getAllByLabelText("Nombre").map((node) => (node as HTMLInputElement).value)).toEqual([
+      "Manga 1",
+      "Manga 2",
+      "Manga 10",
+    ]);
+    expect(screen.queryByText(/Cambiaste los productos/)).toBeNull();
+    openBreakdown(0);
+    const checkboxes = within(productListIn(0)).getAllByRole("checkbox");
+    expect(checkboxes).toHaveLength(3);
+    for (const checkbox of checkboxes) expect(checkbox).toBeChecked();
+    submit();
+    expect(onSave.mock.calls[0][2]).toEqual([
+      {
+        paymentIndex: 0,
+        isAutomatic: true,
+        lines: [
+          { position: 1, amountMinor: 5000 },
+          { position: 2, amountMinor: 5000 },
+          { position: 3, amountMinor: 10000 },
+        ],
+      },
+    ]);
+  });
+
+  it("re-seeds an opened automatic breakdown after adding a missed product", () => {
+    const onSave = renderScreen(
+      buildDraft({ groups: [TWO_PRICED], totalCost: 15000, payments: [{ amount: 15000, paidAt: "2026-07-21" }] }),
+    );
+    openBreakdown(0);
+    fireEvent.click(screen.getByRole("button", { name: "Añadir producto" }));
+    const sheet = screen.getByRole("dialog", { name: "Añadir producto" });
+    fireEvent.change(within(sheet).getByLabelText("Nombre"), { target: { value: "Manga 10" } });
+    fireEvent.change(within(sheet).getByLabelText(/Precio unitario/), { target: { value: "50" } });
+    fireEvent.click(within(sheet).getByRole("button", { name: "Añadir" }));
+    expect(screen.queryByText(/Cambiaste los productos/)).toBeNull();
+    openBreakdown(0);
+    const checkboxes = within(productListIn(0)).getAllByRole("checkbox");
+    expect(checkboxes).toHaveLength(3);
+    for (const checkbox of checkboxes) expect(checkbox).toBeChecked();
+    submit();
+    expect(onSave.mock.calls[0][2]).toEqual([
+      {
+        paymentIndex: 0,
+        isAutomatic: true,
+        lines: [
+          { position: 1, amountMinor: 7500 },
+          { position: 2, amountMinor: 3750 },
+          { position: 3, amountMinor: 3750 },
+        ],
+      },
+    ]);
+  });
+
+  it("removes a final-row group and re-seeds automatic allocations at the surviving positions", () => {
+    const onSave = renderScreen(
+      buildDraft({
+        groups: [[{ name: "Asuka", unitPrice: 3000 }], TWO_PRICED],
+        totalCost: 18000,
+        payments: [{ amount: 18000, paidAt: "2026-07-21" }],
+      }),
+    );
+    openBreakdown(0);
+    fireEvent.click(screen.getAllByRole("button", { name: "Eliminar producto 1" })[0]);
+    expect(screen.queryByText(/Cambiaste los productos/)).toBeNull();
+    openBreakdown(0);
+    const checkboxes = within(productListIn(0)).getAllByRole("checkbox");
+    expect(checkboxes).toHaveLength(2);
+    for (const checkbox of checkboxes) expect(checkbox).toBeChecked();
+    submit();
+    expect(onSave.mock.calls[0][0].groups).toHaveLength(1);
+    expect(onSave.mock.calls[0][0].groups[0].products.map((product: ProductSpec) => product.name)).toEqual([
+      "Berserk deluxe",
+      "Kingdom 23",
+    ]);
+    expect(onSave.mock.calls[0][2]).toEqual([
+      {
+        paymentIndex: 0,
+        isAutomatic: true,
+        lines: [
+          { position: 1, amountMinor: 10000 },
+          { position: 2, amountMinor: 5000 },
+        ],
+      },
+    ]);
+  });
+
+  it("re-seeds an opened automatic breakdown after merge and split without a cleared notice", () => {
+    const onSave = renderScreen(
+      buildDraft({
+        groups: [TWO_PRICED, [{ name: "Nendoroid Asuka", unitPrice: 3000 }]],
+        totalCost: 18000,
+        payments: [{ amount: 18000, paidAt: "2026-07-21" }],
+      }),
+    );
+    openBreakdown(0);
+    expect(within(productListIn(0)).getAllByRole("checkbox")).toHaveLength(3);
+
+    fireEvent.click(screen.getByRole("button", { name: "Unir en uno" }));
+    const mergeDialog = screen.getByRole("dialog");
+    fireEvent.change(within(mergeDialog).getByLabelText("Nombre del producto unido"), {
+      target: { value: "Pack 1 al 2" },
+    });
+    fireEvent.change(within(mergeDialog).getByLabelText("Precio del producto unido"), { target: { value: "150" } });
+    fireEvent.click(within(mergeDialog).getByRole("button", { name: "Unir en uno" }));
+
+    expect(screen.queryByText(/Cambiaste los productos/)).toBeNull();
+    openBreakdown(0);
+    expect(within(productListIn(0)).getAllByRole("checkbox")).toHaveLength(2);
+    expect(
+      within(productListIn(0))
+        .getAllByRole("checkbox")
+        .every((node) => (node as HTMLInputElement).checked),
+    ).toBe(true);
+    expect(fieldFor(0, "Pack 1 al 2").value).toBe("150.00");
+    expect(fieldFor(0, "Nendoroid Asuka").value).toBe("30.00");
+
+    fireEvent.click(screen.getAllByRole("button", { name: "Separar Pack 1 al 2" })[0]);
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Separar en productos" }));
+
+    expect(screen.queryByText(/Cambiaste los productos/)).toBeNull();
+    openBreakdown(0);
+    expect(within(productListIn(0)).getAllByRole("checkbox")).toHaveLength(3);
+    expect(
+      within(productListIn(0))
+        .getAllByRole("checkbox")
+        .every((node) => (node as HTMLInputElement).checked),
+    ).toBe(true);
+    submit();
+    expect(onSave.mock.calls[0][2]?.[0].lines.reduce((sum, line) => sum + line.amountMinor, 0)).toBe(18000);
   });
 });

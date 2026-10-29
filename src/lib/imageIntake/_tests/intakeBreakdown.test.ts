@@ -9,6 +9,9 @@ import {
 } from "@/lib/orders/orderPaymentBreakdown";
 import type { ImageIntakeDraft } from "../draftSchema";
 import {
+  applyIntakeBreakdownChange,
+  resetIntakeBreakdownStates,
+  resolveIntakeDefaultBreakdown,
   buildIntakeBreakdownPayload,
   flattenDraftToBreakdownItems,
   resolveIntakeBreakdownContext,
@@ -408,5 +411,114 @@ describe("resolveIntakeBreakdownSaveBlock · the narrow gate (§8.2)", () => {
         { amountMinor: 10000, paidAtIso: TODAY, hasBreakdown: true },
       ]),
     ).toBeNull();
+  });
+});
+
+describe("intake full-payment allocation defaults", () => {
+  function resolve(prices: (number | null)[], totalCostMinor = 15000) {
+    const draft = buildDraft([prices], totalCostMinor);
+    const items = flattenDraftToBreakdownItems(draft);
+    const ctx = resolveIntakeBreakdownContext({
+      items,
+      rows: [{ amountMinor: totalCostMinor, breakdown: null }],
+      paymentIndex: 0,
+      totalCostMinor,
+      currencyCode: CURRENCY,
+    });
+    const input = {
+      items,
+      ctx,
+      totalCostMinor,
+      paidAtIso: "2026-08-02",
+      orderDateIso: "2026-08-01",
+      todayIso: "2026-08-03",
+    };
+    return { input, state: resolveIntakeDefaultBreakdown({ ...input, stored: undefined }) };
+  }
+
+  it.each([
+    { prices: [5000, 10000], amounts: [5000, 10000], residual: 0 },
+    { prices: [null, null], amounts: [7500, 7500], residual: 0 },
+    { prices: [5000, null], amounts: [5000, 0], residual: 10000 },
+    { prices: [5000, 5000], amounts: [5000, 5000], residual: 5000 },
+    { prices: [10000, 20000], amounts: [5000, 10000], residual: 0 },
+  ])("uses select-all semantics and partitions the payment for $prices", ({ prices, amounts, residual }) => {
+    const { input, state } = resolve(prices);
+    expect(state.draft.every((entry) => entry.selected)).toBe(true);
+    expect(state.draft.map((entry) => entry.amountMinor)).toEqual(amounts);
+    const derived = deriveBreakdown(state, input.ctx, CURRENCY);
+    expect(derived.foot.residualMinor).toBe(residual);
+    expect(derived.foot.assignedMinor + derived.foot.residualMinor).toBe(15000);
+    expect(
+      buildIntakeBreakdownPayload([{ amountMinor: 15000, breakdown: state }])?.[0].lines.map(
+        (line) => line.amountMinor,
+      ),
+    ).toEqual(amounts.filter((amount) => amount > 0));
+  });
+
+  it("withdraws the default for partial payments but preserves a collector-cleared selection", () => {
+    const { input, state } = resolve([5000, 10000]);
+    expect(state.draft.every((entry) => entry.selected)).toBe(true);
+    const opened = applyIntakeBreakdownChange(state, { ...state, isOpen: true });
+    const partial = resolveIntakeDefaultBreakdown({
+      ...input,
+      stored: opened,
+      ctx: { ...input.ctx, paymentAmountMinor: 8000 },
+    });
+    expect(partial.draft.every((entry) => !entry.selected && entry.amountMinor === 0)).toBe(true);
+    const cleared = applyIntakeBreakdownChange(state, {
+      ...state,
+      draft: state.draft.map((entry) => ({ ...entry, selected: false, amountMinor: 0 })),
+    });
+    const resolved = resolveIntakeDefaultBreakdown({ ...input, stored: cleared });
+    expect(resolved.draft.every((entry) => !entry.selected && entry.amountMinor === 0)).toBe(true);
+  });
+
+  it("re-derives an opened automatic default after a structural reset while clearing touched rows", () => {
+    const { input, state } = resolve([5000, 10000]);
+    const opened = applyIntakeBreakdownChange(state, { ...state, isOpen: true });
+    const items = flattenDraftToBreakdownItems(buildDraft([[5000, 5000, 5000]], 15000));
+    const reset = resetIntakeBreakdownStates({ 0: opened, 1: { ...state, isUntouched: false } }, items);
+    const ctx = resolveIntakeBreakdownContext({
+      items,
+      rows: [{ amountMinor: 15000, breakdown: null }],
+      paymentIndex: 0,
+      totalCostMinor: 15000,
+      currencyCode: CURRENCY,
+    });
+    const reseeded = resolveIntakeDefaultBreakdown({ ...input, items, ctx, stored: reset[0] });
+    expect(reseeded.isUntouched).toBe(true);
+    expect(reseeded.draft.map((line) => line.amountMinor)).toEqual([5000, 5000, 5000]);
+    expect(reseeded.draft.every((line) => line.selected)).toBe(true);
+    expect(reset[1].draft.every((line) => !line.selected && line.amountMinor === 0)).toBe(true);
+    expect(
+      resolveIntakeDefaultBreakdown({ ...input, items, ctx, stored: reset[1] }).draft.every((line) => !line.selected),
+    ).toBe(true);
+  });
+
+  it("marks only untouched automatic allocations in the save payload", () => {
+    const { state } = resolve([5000, 10000]);
+    const automatic = buildIntakeBreakdownPayload([{ amountMinor: 15000, breakdown: state }]);
+    expect(automatic?.[0]).toHaveProperty("isAutomatic", true);
+    expect(intakeBreakdownSchema.parse(automatic)[0]).toHaveProperty("isAutomatic", true);
+    const edited = applyIntakeBreakdownChange(state, { ...state, draft: state.draft.map((line) => ({ ...line })) });
+    expect(buildIntakeBreakdownPayload([{ amountMinor: 15000, breakdown: edited }])?.[0]).not.toHaveProperty(
+      "isAutomatic",
+    );
+  });
+
+  it("does not seed invalid dates or payments exceeding the remaining balance", () => {
+    const { input, state } = resolve([5000, 10000]);
+    expect(state.draft.every((entry) => entry.selected)).toBe(true);
+    for (const paidAtIso of [null, "2026-07-31", "2026-08-04"]) {
+      const invalid = resolveIntakeDefaultBreakdown({ ...input, stored: undefined, paidAtIso });
+      expect(invalid.draft.every((entry) => !entry.selected)).toBe(true);
+    }
+    const over = resolveIntakeDefaultBreakdown({
+      ...input,
+      stored: undefined,
+      ctx: { ...input.ctx, orderRemainingBalanceMinor: 10000 },
+    });
+    expect(over.draft.every((entry) => !entry.selected)).toBe(true);
   });
 });

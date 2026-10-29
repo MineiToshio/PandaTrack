@@ -7,7 +7,7 @@ import { MAX_PAYMENTS_PER_ORDER, MAX_PRODUCTS_PER_ORDER } from "./constants";
  *
  * It rides BESIDE the draft, never inside it. The draft is the model's answer, re-parsed
  * server-side, and putting a split in there would hand a machine the one declaration ADR 0028
- * reserves for the collector. This contract is the collector's own, and it is a separate argument
+ * reserves for the collector, except for the reviewed full-payment default. This is a separate argument
  * of the save action for exactly that reason.
  *
  * The key is the product's POSITION in the flattened draft, not an id: the order items have no ids
@@ -34,6 +34,8 @@ export const intakeBreakdownEntrySchema = z.object({
     .min(0)
     .max(MAX_PAYMENTS_PER_ORDER - 1),
   lines: z.array(intakeBreakdownLineSchema).min(1).max(MAX_PRODUCTS_PER_ORDER),
+  /** Advisory retry feedback only; omitted by legacy clients and after any collector edit. */
+  isAutomatic: z.boolean().optional(),
 });
 
 /**

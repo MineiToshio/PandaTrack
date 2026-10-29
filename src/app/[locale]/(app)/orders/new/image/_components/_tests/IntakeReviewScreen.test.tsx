@@ -1,5 +1,5 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next-intl", () => {
   const translate = (key: string, values?: Record<string, unknown>) =>
@@ -122,9 +122,20 @@ function submitAndConfirm(button: HTMLElement = desktopSubmit()) {
   if (confirm !== null) fireEvent.click(confirm);
 }
 
+function pickOrderDate() {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date(2026, 7, 2, 12));
+  fireEvent.click(screen.getByLabelText(/fields.orderDate/));
+  fireEvent.click(screen.getByRole("button", { name: /August 1st, 2026/ }));
+}
+
 function manualButtons() {
   return screen.getAllByRole("button", { name: "manual" });
 }
+
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 beforeEach(() => {
   fetchTodayRateMock.mockReset();
@@ -132,6 +143,38 @@ beforeEach(() => {
 });
 
 describe("IntakeReviewScreen", () => {
+  it("composes all source groups under one product header and one category hint", () => {
+    const base = buildDraft();
+    const group = base.groups[0];
+    renderScreen(
+      buildDraft({
+        groups: [
+          { ...group, sourcePhrase: "first", products: [{ ...group.products[0], suggestedProductTypeKey: "figures" }] },
+          {
+            ...group,
+            sourcePhrase: "second",
+            products: [{ ...group.products[1], suggestedProductTypeKey: "figures" }],
+          },
+        ],
+      }),
+    );
+    const section = screen.getByRole("region", { name: "groupsTitle" });
+    expect(within(section).getAllByRole("grid")).toHaveLength(1);
+    expect(within(section).getAllByRole("columnheader", { name: "itemNameLabel" })).toHaveLength(1);
+    expect(within(section).getAllByText("group.categorySuggestedHint")).toHaveLength(1);
+    expect(within(section).getAllByLabelText("itemNameLabel")).toHaveLength(2);
+    expect(within(section).queryByText(/bundleLabel/)).toBeNull();
+    expect(within(section).queryByRole("button", { name: "itemDragLabel" })).toBeNull();
+    expect(within(section).getAllByRole("button", { name: /^splitProduct:/ })).toHaveLength(2);
+  });
+
+  it("uses neutral provenance for an optional missing delivery estimate", () => {
+    renderScreen(buildDraft());
+    const control = screen.getByLabelText(/fields.deliveryRange/);
+    const label = document.querySelector(`label[for="${control.id}"]`)!;
+    expect(within(label as HTMLElement).getByText("provenance.missing").className).not.toContain("warning");
+  });
+
   it("renders every attribute as a control, with nothing behind a mode to discover", () => {
     renderScreen(buildDraft());
 
@@ -235,7 +278,7 @@ describe("IntakeReviewScreen", () => {
     );
 
     expect(screen.getByText("delivery.cost")).toBeTruthy();
-    expect(screen.getByText("25.00 PEN")).toBeTruthy();
+    expect(screen.getByText("S/ 25.00")).toBeTruthy();
     expect(screen.getByText("delivery.costNotSaved")).toBeTruthy();
   });
 
@@ -296,7 +339,7 @@ describe("IntakeReviewScreen", () => {
     // Edit a field the review screen exposes as a control before leaving, so the assertion below
     // can only pass if the manual-click handler received the current (edited) draft, not the one
     // the screen was first rendered with.
-    fireEvent.change(screen.getByLabelText(/fields.orderDate/), { target: { value: "2026-08-01" } });
+    pickOrderDate();
 
     manualButtons()[0].click();
 
@@ -653,7 +696,7 @@ describe("IntakeReviewScreen action bars", () => {
       />,
     );
 
-    fireEvent.change(screen.getByLabelText(/fields.orderDate/), { target: { value: "2026-08-01" } });
+    pickOrderDate();
     const [inlineManual, stickyManual] = manualButtons();
     inlineManual.click();
     stickyManual.click();
@@ -955,6 +998,8 @@ describe("IntakeReviewScreen payments", () => {
   });
 
   it("adds another row alongside an already-extracted payment, and includes both on save", () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-07-29T12:00:00Z"));
     const onSave = vi.fn();
     render(
       <IntakeReviewScreen
@@ -977,7 +1022,8 @@ describe("IntakeReviewScreen payments", () => {
     expect(amountInputs).toHaveLength(2);
 
     fireEvent.change(amountInputs[1], { target: { value: "50" } });
-    fireEvent.change(dateInputs[1], { target: { value: "2026-07-25" } });
+    fireEvent.click(dateInputs[1]);
+    fireEvent.click(screen.getByRole("button", { name: /July 25.*2026/ }));
     submitAndConfirm();
 
     const [saved] = onSave.mock.calls[0] as [ImageIntakeDraft];
@@ -1317,7 +1363,10 @@ describe("IntakeReviewScreen: required-field validation before save", () => {
 
     expect(onSave).not.toHaveBeenCalled();
     const dateInput = screen.getByLabelText(/fields.orderDate/) as HTMLInputElement;
-    expect(dateInput.getAttribute("aria-invalid")).toBe("true");
+    expect(dateInput.tagName).toBe("BUTTON");
+    expect(dateInput.className).toContain("[border-color:var(--destructive)]");
+    expect(dateInput.getAttribute("aria-describedby")).toBe("intake-order-date-error");
+    expect(document.getElementById("intake-order-date-error")?.getAttribute("role")).toBe("alert");
     expect(screen.getByText("saveOrderDateRequired")).toBeTruthy();
   });
 

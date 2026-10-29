@@ -33,6 +33,8 @@ type OrderAddProductSheetProps = {
    * offer a second, conflicting way to say the same thing.
    */
   showQuantity?: boolean;
+  /** Reports an explicit category choice only when the edit is committed. */
+  onCategoryConfirmed?: () => void;
 };
 
 const EMPTY: ProductFormValue = { name: "", quantity: "1", unitPrice: "", productTypeKey: "" };
@@ -48,11 +50,13 @@ export default function OrderAddProductSheet({
   onDelete,
   currencyCode,
   showQuantity = true,
+  onCategoryConfirmed,
 }: OrderAddProductSheetProps) {
   const t = useTranslations("orders.create.addProduct");
   const tPicker = useTranslations("orders.picker");
 
   const [value, setValue] = useState<ProductFormValue>(initial ?? EMPTY);
+  const [categoryWasPicked, setCategoryWasPicked] = useState(false);
   const [typePickerOpen, setTypePickerOpen] = useState(false);
   const nameId = useId();
   const qtyId = useId();
@@ -64,6 +68,7 @@ export default function OrderAddProductSheet({
     if (open) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setValue(initial ?? EMPTY);
+      setCategoryWasPicked(false);
     }
   }, [open, initial]);
 
@@ -71,12 +76,18 @@ export default function OrderAddProductSheet({
 
   const handleSubmit = () => {
     if (nameInvalid) return;
+    if (categoryWasPicked) onCategoryConfirmed?.();
     onSubmit({
       ...value,
       quantity: value.quantity.trim() || "1",
     });
     onOpenChange(false);
   };
+
+  function handleCategorySelect(key: string) {
+    setValue({ ...value, productTypeKey: key });
+    setCategoryWasPicked(true);
+  }
 
   const typeIconNode = value.productTypeKey
     ? createElement(getStoreProductTypeIcon(value.productTypeKey), { size: 14, "aria-hidden": true })
@@ -256,7 +267,7 @@ export default function OrderAddProductSheet({
           };
         })}
         selectedValue={value.productTypeKey || null}
-        onSelect={(v) => setValue({ ...value, productTypeKey: v })}
+        onSelect={handleCategorySelect}
       />
     </Sheet>
   );

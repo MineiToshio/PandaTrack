@@ -49,6 +49,8 @@ export type ItemTypePickerProps = {
    * a phone.
    */
   presentation?: ItemTypePickerPresentation;
+  /** Keep the disclosure next to its value in compact reading lists. */
+  inlineChevron?: boolean;
 };
 
 /**
@@ -93,6 +95,7 @@ export default function ItemTypePicker({
   onKeyDown,
   appearance = "cell",
   presentation = "popover",
+  inlineChevron = false,
 }: ItemTypePickerProps) {
   const tPicker = useTranslations("orders.picker");
   const isMobile = useIsMobile();
@@ -230,11 +233,17 @@ export default function ItemTypePicker({
         }
       >
         {iconNode}
-        <span className={isChip ? "truncate" : "min-w-0 flex-1 truncate"}>{selectedLabel ?? placeholder}</span>
+        <span className={isChip ? "truncate" : inlineChevron ? "min-w-0 truncate" : "min-w-0 flex-1 truncate"}>
+          {selectedLabel ?? placeholder}
+        </span>
         {isChip ? (
           <ChevronsUpDown size={12} className="shrink-0 [color:var(--text-muted)]" aria-hidden />
         ) : (
-          <ChevronDown size={10} className="shrink-0 opacity-50" aria-hidden />
+          <ChevronDown
+            size={inlineChevron ? 14 : 10}
+            className={cn("shrink-0", inlineChevron ? "text-text-muted" : "opacity-50")}
+            aria-hidden
+          />
         )}
       </button>
 

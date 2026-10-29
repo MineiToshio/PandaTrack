@@ -674,7 +674,7 @@
     "createErrorCountryRequired": "First complete your country in Settings.",
     "createErrorServer": "We could not create the store. Try again.",
     "backToCandidates": "Back to the options",
-    "switchToCreate": "Not this store? Create a new one",
+    "switchToCreate": "Not this store? <action>Create a new one</action>",
     "switchToSearch": "Search existing stores"
   }
 }

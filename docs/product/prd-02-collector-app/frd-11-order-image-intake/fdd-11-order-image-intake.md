@@ -5,7 +5,7 @@ slug: order-image-intake
 title: Order Image Intake - Feature Design Document
 status: ACTIVE
 parent: FRD-11
-last_updated: 2026-07-30
+last_updated: 2026-10-29
 prototype: ./prototype/order-image-intake.html
 design_system: ../../../design/README.md
 demo_anchors:
@@ -257,17 +257,20 @@ already running (`FR-11-65`). There is no confirmation screen in front of it.
 Single reading column, ordered by what the user is most likely to need to fix:
 
 1. **Header summary.** One sentence with the outcome and the remaining work.
-2. **Store block.** Collapses to an attribute row on an exact phone match; expands to a
-   disambiguator or an inline creation card otherwise (§2.5).
-3. **Attribute rows** (date, currency, total). Read values are plain text. Assumed values
-   carry the assumed marker and are focusable.
-4. **Product groups.** One card per source phrase, preceded by the naming offer when one applies
-   (below).
-5. **Payments.**
-6. **Totals card**: paid up front, order total, and, when the chat stated one, the shipping cost
-   with a caption saying it is stored when the delivery is registered (`FR-11-52a`). The figure is
-   shown rather than dropped, because a number the user saw in their own chat disappearing without
-   a word is indistinguishable from a bug.
+2. **Order details.** An outlined form card with the store resolution control beside currency,
+   then order date beside estimated delivery. Every value stays editable. Exchange rate spans
+   both columns when needed.
+3. **Products.** One elevated list surface for the whole order. Desktop has one shared column
+   header; mobile reuses the compact `OrderItemsMobileList` and its edit sheet. The naming offer
+   precedes the list when applicable.
+4. **Product summary.** A divider and flat footer rows inside Products hold the live subtotal
+   and editable Total, without another card or background. Matching totals show a quiet check and
+   "Coincide con el total"; a mismatch contains the tonal "Usar este total" inside its warning.
+   Only a positive shipping cost appears with its saving caveat; zero and missing shipping stay hidden.
+5. **Payments.** An outlined form card containing editable amounts, core `DatePickerInput`
+   controls and the existing per-payment breakdown panels. "Añadir pago" is tonal.
+6. **Section chrome.** `SectionTitleWithAccent` in its icon-led variant supplies all three
+   section headings. There are no invented wizard steps or repeated accent borders.
 7. **Actions**, rendered once per viewport shape and never both at the same width, following the
    dual action pattern in
    [`docs/design/interface-patterns.md`](../../../design/interface-patterns.md) §1:
@@ -282,19 +285,18 @@ Single reading column, ordered by what the user is most likely to need to fix:
    whichever one the collector presses. The strip of bottom padding that clears the sticky bar is
    gated to the same breakpoint, so the desktop layout does not end in dead space.
 
-**Group card anatomy** (`FR-11-57`), always the same four parts in the same order:
+**Compact provenance** (`FR-11-57`). A clean single-product source line is a plain editable
+row: no "De las fotos" chip, split-count headline, repeated explanation or group separator.
+A multi-product, sealed, not-nameable, doubtful or uneven-price group gets a compact band.
+Multi-product groups state their source immediately: "Vendidos juntos en la foto: «{phrase}»".
+A continuous `--border-strong` left rule spans the header and every member row, ending before the
+next group. On desktop the band and members share one labelled `tbody`; mobile uses one labelled
+group wrapper. Its native keyboard-operable `details` disclosure reveals the grouping explanation
+on demand. Doubtful groups retain "No estamos seguros" as well as the source label.
+"Unir en uno" is tonal beside the disclosure for multi-product groups. Warnings name their cause
+once and use `--warning-chip-text`; no colour-only state is introduced.
 
-| Part               | Example                                                         |
-| ------------------ | --------------------------------------------------------------- |
-| What we did        | "Lo separamos en 2 productos."                                  |
-| What the photos said | `De las fotos: "el pack chase de Gojo"`                             |
-| Why                | "Los vendieron juntos, pero pueden llegarte en días distintos." |
-| The way back       | `[Unir en uno]`                                                 |
-
-Quoting the original phrase is what lets the user judge without reopening WhatsApp. It is not
-decoration; it is the evidence.
-
-**Product page naming offer** (`FR-11-100`, `BR-11-21`), rendered above the group cards when a
+**Product page naming offer** (`FR-11-100`, `BR-11-21`), rendered above the product list when a
 product carries a link and is still weakly named. `AlertBanner` in `info` tone with an `ImagePlus`
 icon, following the costed re-do offer pattern in
 [`docs/design/interface-patterns.md`](../../../design/interface-patterns.md) §6:
@@ -322,48 +324,47 @@ renaming the product through split or merge removes it without a dismiss control
 | 6 or more                        | Collapsed | `One Piece 1 a 50 · 50 productos · S/ 12.00 c/u · S/ 600.00` `[Ver los 50]` `[Unir en uno]` |
 | Any size, with a row-level doubt | Expanded  | The doubt is never hidden behind a summary                                                  |
 
-Warnings aggregate upward: the amber price-split warning lives on the group chip, not repeated
+Warnings aggregate upward: the price-split warning lives once beside its group band, not repeated
 fifty times. Actions on a collapsed group operate on the whole group.
 
-**Product row anatomy.** An expanded row carries the name and the price on the first line, and
-underneath them, only when there is something to show, two caption-sized affordances:
+**Product row anatomy.** Desktop rows reuse `OrderItemsGrid` cells for name, unit price,
+category and delete, with quantity and manual drag sorting disabled explicitly. Its `OrderItemsTable`
+composition gives all group bodies one column header and identical column widths. Manual create
+and edit keep sorting enabled by default, with unique DnD context IDs. Intake disables both the
+drag handle and keyboard reordering; it does not introduce another ordering policy.
 
-| Affordance     | Shape                                                                                       |
-| -------------- | ------------------------------------------------------------------------------------------- |
-| Category       | Bordered pill: catalog icon, category name (or "Sin categoría"), chevron. Opens the picker. |
-| Reference link | Accent-coloured anchor: external-link icon plus the link's host, never the whole address.   |
+A compact `Scissors` icon action sits in every row, with a localized accessible name and title
+("Separar Gojo"). It opens the existing split modal for that product alone, retaining sibling
+products, prices, categories and links. The group band retains the merge action. Reference links
+remain explicit, safe external anchors. Category suggestions are explained once above the whole
+list, never once per group or per product. The same category picker and mobile edit sheet remain
+available. Split and delete use matching `IconButton size="sm"` controls and 14px glyphs, centred
+with the row text. Both use `--text-muted` by default and `--text-primary` on hover/focus, with
+real 44px boxes through tablet and 32px boxes from `lg`. Split retains its localized label and
+native title tooltip. The intake category picker keeps a 14px `--text-muted` chevron immediately
+beside the value; the shared picker's default remains unchanged.
 
-The category pill carries the amber `sugerida` chip whenever the value is the model's answer rather
-than the collector's, because a category is inferred every time and must never read as something the
-chat stated (`FR-11-90`, `FR-11-93`). Once the collector picks one, the chip goes away: it is their
-answer now. A collapsed group shows the pill once, for the whole group, with the caption "Se aplica a
-los N productos" (`FR-11-94`); a group whose rows disagree reads "Categorías distintas" instead of
-promoting one of them.
+Mobile rows own one full-width outline containing both edit and split, with separate real 44px
+minimum targets. Delete remains inside the product's edit sheet, reached by tapping that row.
+Payment rows use equal-width amount/date tracks with a trailing remove control aligned to the
+inputs rather than their labels. On mobile both fields occupy the same track; the remove target
+remains at least 44px and the breakdown spans the full available content width.
 
-The pill is the trigger of `<ItemTypePicker>` (`orders/_components/share/ItemTypePicker.tsx`), the
-same component the manual product form's item grid uses, in its `chip` appearance and `adaptive`
-presentation. Adaptive means it resolves the surface the way `<Modal>` does: the searchable popover is right for a
-pointer and wrong for a thumb, and the bottom sheet is the reverse, so the component picks by
-viewport rather than each caller guessing. This is what `FR-11-93`'s "the same picker" has to mean in practice — the screen previously
-mounted `MobilePicker` unconditionally and served a phone drawer to desktop collectors. One picker is
-open per card at a time, pointed at whichever row asked for it, so a fifty-row group never mounts
-fifty option lists.
+Read-only amounts, including group summaries, mobile prices, subtotals, shipping, warnings and
+paid totals, use `formatAmountSymbolOnly` from `src/lib/currency.ts`, the same formatter as order
+detail and the shared payment breakdown (for example, "S/ 260.26"). Editable values stay ungrouped
+with the ISO code suffix. The payments footer reads "Pagado completo" when positive known total
+is covered by all payments, including an overpayment, and "Adelanto pagado" only below a positive known total.
+An unknown or non-positive total uses the neutral "Total pagado". This is a live calculation and does not change payment allocations.
 
-**The screen is the order form, all open** (`FR-11-51c`, `FR-11-51d`). It is built from the same
-section cards as `OrderEditForm` (`orderSectionChrome.ts`): a bordered elevated card per section,
-a circular Lucide bullet, a mono eyebrow, a subtitle heading, and a body indented to clear the
-bullet. Three sections, nothing behind a step: **Datos del pedido**, **Productos y costos** (the tables plus
-the order total), **Pagos**. The first section keeps the manual form's own field order, row for row:
-store beside currency, then order date beside the expected window, with the exchange rate taking a
-full-width row underneath when the order is in a foreign currency. Anything the collector already
-knows from creating an order by hand is where they last saw it.
-
-The total lives with the products, not with the dates, for the same reason the manual form puts it
-there: it is the figure the rows are supposed to add up to, and two sections away from them nothing
-could be compared without scrolling. The sections are **not numbered** and their icon sits inline
-with the title rather than in a reserved left rail. The order forms number theirs because the
-collector is walking a sequence; this screen is one order that already exists, so "PASO 1" invented
-an order that is not there and the rail spent 3.75rem of every row holding a 28px circle.
+**The screen is the order form, all open** (`FR-11-51c`, `FR-11-51d`). The review uses
+core `Card` surfaces and icon-led `SectionTitleWithAccent` headings following
+[interface-patterns.md](../../../design/interface-patterns.md#section-titles--sectiontitlewithaccent).
+Order details and Payments are outlined `--surface` form containers so elevated controls remain
+distinct; Products is an elevated reading surface with a flat, divider-separated money footer. This follows
+[visual-foundations.md](../../../design/visual-foundations.md#choosing-between---surface-and---surface-elevated).
+All three sections stay open. There is no gated wizard, numbered-step chrome or wide sticky rail
+inside this route's constrained form column. The total remains adjacent to the products it sums.
 
 This replaced a document that rendered read values as inert text and opened them through a
 screen-level "Corregir" control. Both halves failed in the same way: with the values inert, nothing
@@ -376,24 +377,34 @@ or missing value carries `asumido` / `falta` beside its label through `<Provenan
 this screen derived on its own (today, only a total summed from priced products, `FR-11-58b`) carries
 `calculado`, and a read value carries nothing.
 
-The marker alone was not enough. Everything on this screen came out of a photo, so "asumido" read as
-a synonym for the whole feature rather than as a distinction, and the group chips named a verdict
-("Verificar") without ever naming its cause. Both now explain themselves where they appear: a marked
-field carries a hint under it saying the chat did not state the value and we filled it in, and the
-group chips name the reason instead of the verdict, `De las fotos` / `Precio repartido` / `No estamos
-seguros`. A hint under the field rather than a tooltip, because the tooltip would be unreachable on
-the surface where most of these drafts are reviewed.
+Provenance still distinguishes guessed, missing and calculated fields with a word and icon.
+Required missing fields and assumed values use warning markers, including store and currency.
+Only optional delivery/payment-date gaps and derived totals opt into `ProvenanceValue`'s neutral
+tone. A payment date becomes required when its breakdown allocates money to products.
+Hints remain under the corresponding field. Required-field failures use the existing destructive label, control and message treatment;
+actual grouping doubts, price-split warnings and total discrepancies retain attention emphasis.
+Other consumers of `ProvenanceValue` keep the warning default.
 
-**Products are the manual form's own table** (`FR-11-51d`). `OrderItemsGrid` on a pointer,
-`OrderItemsMobileList` below 768px, exactly as the manual order form composes them, with
-`showQuantity={false}`. The prices align into a column, every cell is visibly editable, the category
-is the grid's own `Tipo` cell, and rows can be reordered, added and deleted with the shortcuts the
-collector already knows.
+**One product list** (`FR-11-51d`). There is one header and no per-source table, card, hairline,
+repeated category hint or full-width split button. Group identity remains in the draft for editing,
+price validity, split/merge and payment breakdown resets. Only meaningful provenance is disclosed,
+and all existing save, discrepancy and manual-completion paths remain available.
 
-The group evidence survives as a **slim header above each group's table** rather than as a card
-around stacked rows: the tone chip, the headline, the quoted source phrase and the reason, then the
-table, then the split/merge control. A card per group nested inside the section card is what made
-the screen read as cramped. Groups are separated by a hairline, not by another card.
+One tonal "Añadir producto" below the list opens the shared add-product form at every width.
+It appends a collector-owned group; its chosen category is never called a model suggestion.
+Deleting the last row removes its group, including on mobile, and never leaves an invisible blank
+row that blocks saving. Stable group identities preserve sibling edits and category ownership
+when earlier groups are removed. Blank rows created with desktop shortcuts remain editable on
+mobile. Tab never inserts a row in intake; manual create/edit keep their append-on-Tab default.
+
+The section hint stays only while an untouched model category remains. Explicit category choices,
+even re-selecting the same category, remove the suggestion status and survive mobile/desktop
+layout switches. Split parts inherit that status;
+splitting one row in a multi-product group preserves the group's doubt, reason and price-split
+flags for its untouched siblings. Splitting a single-product group resets those flags as before.
+Spanning evidence cells derive their column span from the shared table configuration.
+Order date and payment dates both use core `DatePickerInput`, with canonical `FieldErrorMsg`
+errors linked to the trigger via `aria-describedby`.
 
 A collapsed group (`FR-11-53`) still collapses: its summary line replaces the table until "Ver los
 N" is pressed, and a blank name inside it forces it open so the screen never reports a problem
@@ -404,7 +415,7 @@ text is not that. That separation is also why an inline correction does not rese
 `priceSplit`, or a category the collector already owns, while a split or a merge does
 (`FR-11-51a`).
 
-**Totals reconciliation** (`FR-11-58a`). Inside the totals card, an amber `AlertBanner` appears when
+**Totals reconciliation** (`FR-11-58a`). Inside the flat Products footer, an amber `AlertBanner` appears when
 the products' prices do not add up to the stated total, naming both figures. It never blocks the
 save, and it is deliberately not part of the header's doubt count: it is derived from the draft
 rather than read from the chat, and the count has to keep matching what looks interactive. A stated
@@ -423,16 +434,15 @@ a product's price afterward, the same freeze every other marked field on this sc
 follows; the mismatch banner above is what catches a total that has gone stale against a later price
 edit, since it recomputes the products' live sum on every render while the total field does not.
 
-**Use the products' sum as the total** (`FR-11-58d`). A row sits right above the total field,
-inside the same card: on the left a muted line with the live sum of the priced products ("Los
-productos suman S/ 150.00"; with unpriced rows "Los productos con precio suman S/ 60.00 · 1 sin
-precio"; with none "Ningún producto tiene precio todavía"), on the right a tonal `sm` `Button` with
-the `Calculator` icon, "Usar este total", full width on mobile and inline from `md`. It mirrors the
-manual create form's "Usar este total" row on purpose, so the two paths offer the same gesture in
-the same words. The line recomputes on every price edit; the total itself only changes when the
-button is pressed, which writes the sum into the input as the collector's own figure. The button is
-disabled only when no product carries a price. Pressing it fires
-`image_intake_calculated_total_used`.
+**Use the products' sum as the total** (`FR-11-58d`). The muted live sum sits above the Total
+field in the flat Products footer. When all prices are known and products alone, or products plus
+stated shipping, reconcile with the order total, a check and "Coincide con el total" replace the
+redundant action. When they disagree, the existing "Los productos no suman el total" warning owns
+the tonal `sm` "Usar este total" button below its explanation. With an unknown total or partial
+prices, the action remains beside the subtotal and names how many prices are missing; with none
+priced it is disabled. The subtotal follows every price edit, but Total only changes on request.
+Pressing the button writes the priced products' sum (excluding shipping) as the collector's own
+figure and fires `image_intake_calculated_total_used`.
 
 **Required-field validation before save** (`FR-11-58c`). Store, order date, and total are what
 `saveOrderFromDraftAction` refuses to save without. `handleSave` now checks all three before ever
@@ -470,7 +480,13 @@ justified on the detail by two narrow columns (~300px aside, ~327px sheet); here
 ~600px and the name column simply stretches. Roomy, not broken, and the alternative is a second
 layout for the third consumer of a component that has just shipped.
 
-Two things differ from the detail, and both are consequences of the order not existing yet:
+**Amendment 2026-10-29, natural order and full-payment defaults.** Before the editable draft is initialized, products sort ascending naturally within each group and groups sort by their first sorted product name. Numeric, case/accent-insensitive comparison uses a fixed locale and stable ties. Source groups remain intact even when names interleave; the same traversal determines saved positions. No re-sort occurs during name editing. A per-row split restores natural order within that group, carrying sibling metadata and collector-owned categories to their new positions.
+
+An untouched positive payment equal to the order total preselects all eligible products, using the shared panel's select-all computation while remaining folded. Opening or closing preserves the automatic state; selection, amount, mode edits or clearing make the breakdown the collector's own. If the payment becomes partial before such an edit, its automatic selection disappears. Date validity and sufficient remaining balance are prerequisites for this automatic default: an undated payment stays empty and saveable, with the existing server skip feedback, and becomes selected once its date is legal. Explicitly entered breakdowns retain the existing date gate. All-unpriced products use equal parts; mixed-price products retain zero-weight unpriced entries and an undetailed residual. Product amounts plus residual always partition the payment (ADR 0027), including shipping or mismatched totals. This owner-requested intake exception is recorded in ADR 0028.
+
+The save payload carries an optional `isAutomatic` boolean only for untouched defaults. On an idempotent retry, those defaults do not trigger the warning to redo a breakdown; edited and legacy breakdowns still do. Normal refused-payment warnings remain unchanged. Saved automatic product amounts are real allocations, so item removal and reductions below allocated value follow the manual breakdown's guards (`ITEM_HAS_ALLOCATION`, `ITEM_PRICE_BELOW_ALLOCATED`); the collector can clear the default before saving.
+
+Two other things differ from the detail, and both are consequences of the order not existing yet:
 
 - **The undetailed-pool strip is suppressed** (`undetailedPaidMinor={0}`). Its two sentences ("Ya
   pagaste X a este pedido sin decir a qué producto", "Por eso no sabemos cuánto le falta a cada
@@ -485,8 +501,9 @@ There is no inline refusal marking here (`refusedItemId={null}`): the server ans
 exists and this screen is gone, so `FR-11-104`'s pre-save gate stands in for it. A row the gate
 refuses is marked and focused exactly like the three required draft fields above
 (`intake-payment-date-N` / `intake-payment-amount-N`), with no banner. A structural change to the
-products (split, merge, add, remove) clears every breakdown draft on the screen and says so once, at
-the top of the Pagos section; correcting a name or a price does not, and instead re-runs the split
+products (per-row split, merge, add via the section action, or remove including the final row and its group) uses one positional reset path, clears touched breakdown drafts and says so once, at
+the top of the Pagos section, only when a collector declaration was cleared. Untouched automatic
+defaults are re-derived against the new products without that notice; correcting a name or a price does not, and instead re-runs the split
 over the lines nobody typed into.
 
 Each panel carries its own `aria-live` region and its own set of DOM ids, namespaced by
@@ -556,26 +573,20 @@ The feature introduces no new tokens. It applies existing ones from
 ### 3.1 Colour roles
 
 | Role                                            | Token              | Where                                                                             |
-| ----------------------------------------------- | ------------------ | --------------------------------------------------------------------------------- |
+| ------------------------------------- | --------------------- | --------------------------------------------------------------------------------- |
 | Read value                                      | `--text-primary`   | Plain-text attribute values on the review screen                                  |
 | Supporting label and source quote               | `--text-secondary` | Attribute labels, the `De las fotos: "..."` line                                      |
-| Confident group                                 | `--text-secondary` | Group chip when the split is clean, in the neutral chip variant                   |
-| Assumed value, price-split warning, low balance | `--warning`        | The assumed chip, the equal-split note, "Te quedan 6 fotos este mes."             |
-| Doubtful group, quota overflow                  | `--warning`        | Doubtful group chip, the overflow banner                                          |
+| Compact group provenance              | `--text-secondary`    | Multi-product source disclosure; clean single rows have none                      |
+| Optional/derived attribute provenance | `--text-muted`        | Neutral icon-and-word marker beside the field label                               |
+| Price-split warning                   | `--warning-chip-text` | One group-level explanation                                                       |
+| Doubtful group, quota overflow        | `--warning-chip-text` | Doubt label or overflow banner, always with words and icon                        |
 | Blocked or failed                               | `--destructive`    | Provider failure, the 200-product ceiling stop, no order found, validation errors |
 | Neutral information                             | `--info`           | The first-time quota explainer                                                    |
 
-**Amber is the busiest colour on this screen and that is intentional**: it is the colour of
-"we guessed, look at this". It must never be the only signal
-([ADR 0006](../../../design/decisions/0006-color-blindness-icon-label-contract.md)); every
-amber element carries an icon and a word.
-
-The clean group chip is **neutral, not green**, and that is the counterpart of the same decision.
-Amber only reads as "look here" if the chips that mean "nothing to do" stay quiet; a saturated
-success colour on every well-read group competes with the few amber ones for exactly the attention
-the header's count is directing. The chips carry neutral, amber, and destructive tints only, never
-the brand accent: the accent belongs to the primary CTA and the focus rings, and a chip wearing it
-would read as the thing to press.
+Amber is reserved for actionable grouping or money concerns, rather than optional missing
+attributes. Neutral provenance markers retain icon plus word, in both themes. Section icons use
+`--accent`; body copy uses `--text-primary`, supporting copy `--text-secondary` / `--text-muted`,
+and warning text uses `--warning-chip-text`. No route-specific palette is introduced.
 
 ### 3.2 Typography
 
@@ -600,20 +611,20 @@ pinned into it. The bottom sheet and the modal follow
 All from [components.md](../../../design/components.md) unless marked new.
 
 | Component                                 | Use here                                                                                                                                                                                                                                    |
-| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `Modal` / `Sheet`                         | Selector overlay, split and merge modal                                                                                                                                                                                                     |
-| `Card` / `SectionCard`                    | Selector cards, group cards, store block                                                                                                                                                                                                    |
-| `Chip` / `Pill`                           | Assumed marker, passive photo counter, group state chip                                                                                                                                                                                     |
+| `Card` / `SectionTitleWithAccent`                         | Review form/list surfaces and canonical icon-led section headings                                                                                                                                                                           |
+| `Chip` / `Pill`                                           | Neutral attribute provenance and passive photo counter                                                                                                                                                                                      |
 | `StatusChip`                              | The saved order's status, unchanged                                                                                                                                                                                                         |
 | `AlertBanner`                             | Quota overflow, the 200-product ceiling stop, no order found, provider failure, the product-page naming offer, the totals mismatch notice                                                                                                   |
 | `EmptyState`                              | Hosts the inline selector cards                                                                                                                                                                                                             |
 | `Skeleton`                                | Not used: the processing screen names real steps instead                                                                                                                                                                                    |
 | `Toast`                                   | Not used by this feature today: the save navigates to the created order, and split and merge are local draft transforms with a visible inverse control rather than an undo window                                                           |
 | `Button` / `IconButton`                   | Primary CTA, group actions, remove-photo control                                                                                                                                                                                            |
-| `Input` / `Select` / `Combobox`           | Every attribute of the draft, plus the split modal. Provenance is a marker on the label, not a difference in editability                                                                                                                    |
+| `Input` / `DatePickerInput` / `Select` / `Combobox`       | Editable draft attributes, payment dates and split modal. Provenance is a marker on the label, not a difference in editability                                                                                                              |
 | `Radio` / `ReportReasonPicker` pattern    | The store disambiguator's vertical single-select shape                                                                                                                                                                                      |
 | `StoreCombobox`                           | The "Cambiar" path on the store block                                                                                                                                                                                                       |
-| `OrderItemsGrid` / `OrderItemsMobileList` | The products themselves, shared verbatim with the manual order form (`showQuantity={false}`)                                                                                                                                                |
+| `OrderItemsGrid` / `OrderItemsMobileList`                 | Shared product cells/mobile editor; intake opts into no sorting, compact rows and row split actions. `OrderItemsTable` supplies the single desktop header                                                                                   |
 | `ItemTypePicker`                          | The per-product (and per-collapsed-group) category picker, in `chip` appearance and `adaptive` presentation: literally the manual item grid's own component, so `FR-11-93` holds at every width. It delegates to `MobilePicker` below 768px |
 | `ImageCropper`                            | Not used: intake never crops, it compresses                                                                                                                                                                                                 |
 | `Tooltip`                                 | Not used on mobile-critical affordances                                                                                                                                                                                                     |
@@ -629,11 +640,9 @@ here and added there in the change that creates them):
 2. **`OrderCreateMethodSelector`** (orders subtree `_components/share/`): one component with
    an `inline` and an `overlay` presentation. Scoped to the orders subtree until a second
    domain needs a method selector.
-3. **`ProvenanceValue`** (`core/`): renders a `Field<T>` as plain text when read and as a
-   marked control when assumed or missing. It is the component that makes `BR-11-02`
-   structurally true instead of a convention. Its `layout="row"` keeps an attribute's geometry
-   identical either way, and its `editing` prop is the single hook correction mode pulls
-   (`FR-11-51`) — screen-wide, never per field.
+3. **`ProvenanceValue`** (`core/`): provenance icon and word attached to an editable control's
+   label. Read values have no marker; assumed, missing and calculated values retain one. Intake
+   opts into `markerTone="neutral"`; the warning default for other callers is preserved.
 
 `ItemTypePicker` is not new to the codebase, but it is newly shared: it was defined inside
 `OrderItemsGrid.tsx` and not exported, which is why the review screen had grown a second, phone-only
@@ -772,7 +781,7 @@ the same word.
 
 ### 6.2 Quota
 
-| Surface                                             | es                                                                                                                                                                        |
+| Surface       | es                                                                                                                  |
 | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Passive counter                                     | Te quedan 17 fotos este mes                                                                                                                                               |
 | First-time explainer                                | Cada foto que subes gasta una de tu bolsa mensual.                                                                                                                        |
@@ -805,11 +814,11 @@ The word is always **foto**. Never "extracción", "crédito", or "token".
 
 ### 6.3 Review screen
 
-| Surface                      | es                                                                                                                                                                                                                                     |
+| Surface       | es                                                                                                                  |
 | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Header, with doubts          | Encontramos 6 productos por S/ 480.00. Revisa 2 datos y guarda.                                                                                                                                                                        |
 | Header, clean                | Todo salió limpio de las fotos. Revísalo y guarda.                                                                                                                                                                                         |
-| Split group                  | Lo separamos en 2 productos. De las fotos: "el pack chase de Gojo". Los vendieron juntos, pero pueden llegarte en días distintos. [Unir en uno]                                                                                            |
+| Split group                  | Vendidos juntos en la foto: «el pack chase de Gojo». Los vendieron juntos, pero pueden llegarte en días distintos. [Unir en uno]                                                                                            |
 | Sealed pack                  | Lo dejamos como un solo producto. Las fotos dicen "Pack Tokyo Revengers 1 y 2 sellado". Viene sellado de editorial, así que llega completo o no llega. [Separar en 2 productos]                                                           |
 | Split with doubt             | Lo separamos, pero no estamos seguros. De las fotos: "pack de Kenshin". Si viene sellado de editorial, únelo en uno. [Unir en uno]                                                                                                         |
 | Not nameable                 | No supimos qué trae. Las fotos dicen "pack de 5 chibis sorpresa" sin decir cuáles. Lo guardamos como un producto. [Separar]                                                                                                               |
@@ -828,10 +837,10 @@ The word is always **foto**. Never "extracción", "crédito", or "token".
 | Equal price split            | Repartimos S/ 180.00 en partes iguales. Ajusta si una pieza vale más que la otra                                                                                                                                                       |
 | Blank product name           | El producto 3 se quedó sin nombre. Escríbele uno para poder guardar el pedido.                                                                                                                                                         |
 | Totals mismatch              | Los productos no suman el total · Los productos suman S/ 480.00 y el total del pedido dice S/ 110.00. Guardamos el total tal como está: revisa cuál de los dos es el correcto. Pressing save then raises the shared `DiscrepancyModal` (`FR-11-58a`).                                                         |
-| Products' sum, all priced    | Los productos suman S/ 150.00 · [Usar este total] (`FR-11-58d`)                                                                                                                                                                            |
+| Products' sum, matching      | Los productos suman S/ 150.00 · Coincide con el total (`FR-11-58d`)                                                                                                                                                                            |
 | Products' sum, partial       | Los productos con precio suman S/ 60.00 · 1 sin precio · [Usar este total]                                                                                                                                                                 |
 | Products' sum, none priced   | Ningún producto tiene precio todavía · [Usar este total] disabled                                                                                                                                                                          |
-| Shipping cost                | Costo de envío · Lo leímos de las fotos, pero se guarda recién cuando registres la entrega.                                                                                                                                                |
+| Shipping cost, positive      | Costo de envío · Lo leímos de las fotos, pero se guarda recién cuando registres la entrega.                                                                                                                                                |
 | Breakdown cleared            | Cambiaste los productos, así que quitamos el desglose de los pagos. Vuelve a marcarlos.                                                                                                                                                |
 | Breakdown, missing amount    | Ponle importe a este pago para poder guardar su desglose.                                                                                                                                                                              |
 | Breakdown, missing date      | Ponle fecha a este pago para poder guardar su desglose.                                                                                                                                                                                |
@@ -848,6 +857,11 @@ Both "No order found" and "Multiple orders" fire from the upload phase (`FR-11-2
 are the terminal, most-informative copy for an otherwise successful read, the same reason the
 other terminal-failure rows above sit in this table.
 
+Payments use "Pagado completo · S/ 260.26" when the total is covered and "Adelanto pagado"
+while a balance remains. In store resolution, only the action words "Crear una nueva" receive
+accent link styling and an underline inside "¿No es esta tienda? Crear una nueva"; the whole
+button remains keyboard-accessible with a visible focus ring and a 44px mobile target.
+
 ### 6.4 Split and merge
 
 | Surface       | es                                                                                                                  |
@@ -862,7 +876,7 @@ product being inside a live delivery can block the operation.
 
 ### 6.5 Upload errors
 
-| Cause                     | es                                                                                                        |
+| Cause                               | es                                                                                                                                                             |
 | ------------------------- | ---------------------------------------------------------------------------------------------------------- |
 | Too many images           | Son muchas fotos para una sola subida. Envía hasta 20 por vez.                                            |
 | Prepared photo too large  | Una de las fotos sigue pesando demasiado después de optimizarla. Recórtala o divídela en dos capturas.    |
@@ -969,6 +983,8 @@ and the accessibility rule:
 - **The floating action button** is a labelled control with a visible text label, is reachable
   in the tab order after the main content, and has a touch target of at least 44px. It must
   not trap focus or overlay the last actionable row (hence the reserved bottom padding).
+- **Group membership** is named by the visible source phrase and contained in a labelled table
+  section or mobile group, with a continuous left rule identifying exactly its member rows.
 - **Group collapse** uses a real disclosure pattern with `aria-expanded`; "Ver los 50" states
   the count so the control is meaningful out of context.
 - **One payment breakdown panel per payment row means one `aria-live` region per row**, and that is

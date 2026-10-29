@@ -178,15 +178,18 @@ export async function saveOrderFromDraftAction(
       // lands on after a first attempt died between writing the order and writing its payments, and
       // in that case an unknown suffix of the payment rows never made it. Which ones cannot be
       // recovered: `recordDraftPayments` steps over a refused row instead of stopping, so counting
-      // what is already there and calling the rest lost is wrong in both directions. So every row
-      // that carried a breakdown is named, on purpose over-reporting, and the collector checks the
-      // order's own detail, where the panel has lived since ADR 0028.
+      // what is already there and calling the rest lost is wrong in both directions. Edited and
+      // legacy breakdowns are named conservatively so the collector can check the order's detail.
+      // Untouched automatic defaults contain no collector-entered lines to redo; recorded full-order
+      // payment proves coverage without those individual allocations.
       return {
         ok: true,
         orderId: existingOrderId,
         paymentsRecorded: 0,
         paymentsSkipped: 0,
-        skippedBreakdownIndexes: breakdowns.map((entry) => entry.paymentIndex),
+        skippedBreakdownIndexes: breakdowns
+          .filter((entry) => entry.isAutomatic !== true)
+          .map((entry) => entry.paymentIndex),
         breakdownDropped: 0,
       };
     }
