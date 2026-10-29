@@ -7,7 +7,7 @@ status: ACTIVE
 parent: BP-01
 source_features: []
 implementation_status: IMPLEMENTED
-last_updated: 2026-07-29
+last_updated: 2026-10-29
 ---
 
 # WO-02 Image Upload and "Revisa y confirma"
@@ -17,6 +17,8 @@ last_updated: 2026-07-29
 Turn the foundation into the feature: a user attaches one or more photos, watches them being read, reviews the result on a single unskippable screen, and saves a real order.
 
 This is the spine of FRD-11. Everything after it is either an enrichment of this screen or another door into it.
+
+**Amended 2026-10-29:** Review initialization uses stable ascending natural product order within groups and group-by-first order before positional breakdown state exists. The reviewed traversal is also the saved order. Untouched positive full payments default to the shared select-all breakdown, conditional on a legal date and sufficient balance; partial payments remain unselected, and collector edits or clearing are preserved. Opening/folding is not an edit. See the owning FRD's review-order amendment and payment breakdown requirement, and the FDD payment breakdown section for unpriced products and undetailed residuals.
 
 ## In Scope
 

@@ -126,7 +126,7 @@ function paymentRow(index: number): HTMLElement {
 }
 
 function openBreakdown(index: number) {
-  fireEvent.click(within(paymentRow(index)).getByRole("button", { name: /Desglosar entre productos/ }));
+  fireEvent.click(breakdownTrigger(index));
 }
 
 function selectAllIn(index: number) {
@@ -391,7 +391,7 @@ describe("intake breakdown · a corrected price re-splits, a typed line does not
     setUpEightyPaid();
 
     // The total does not move with it (`FR-11-58b`), so the residual is what absorbs the gap.
-    fireEvent.change(priceCells()[1], { target: { value: "40" } });
+    fireEvent.change(priceCells()[0], { target: { value: "40" } });
 
     expect(fieldFor(0, "Kingdom 23").value).toBe("26.67");
     expect(fieldFor(0, "Berserk deluxe").value).toBe("21.33");
@@ -402,7 +402,7 @@ describe("intake breakdown · a corrected price re-splits, a typed line does not
     const onSave = vi.fn();
     setUpEightyPaid(onSave);
 
-    fireEvent.change(priceCells()[1], { target: { value: "40" } });
+    fireEvent.change(priceCells()[0], { target: { value: "40" } });
     fireEvent.change(fieldFor(0, "Kingdom 23"), { target: { value: "30.00" } });
 
     expect(fieldFor(0, "Kingdom 23").value).toBe("30.00");
@@ -416,8 +416,8 @@ describe("intake breakdown · a corrected price re-splits, a typed line does not
       {
         paymentIndex: 0,
         lines: [
-          { position: 1, amountMinor: 3000 },
-          { position: 2, amountMinor: 1333 },
+          { position: 1, amountMinor: 1333 },
+          { position: 2, amountMinor: 3000 },
         ],
       },
     ]);
@@ -462,8 +462,8 @@ describe("intake breakdown · a payment nobody split sends nothing (T14, §5)", 
       {
         paymentIndex: 0,
         lines: [
-          { position: 1, amountMinor: 2667 },
-          { position: 2, amountMinor: 5333 },
+          { position: 1, amountMinor: 5333 },
+          { position: 2, amountMinor: 2667 },
         ],
       },
     ]);
@@ -512,5 +512,79 @@ describe("intake breakdown · the residual is never blamed on unpriced products 
     expect(fieldFor(1, "Berserk deluxe").value).toBe("66.67");
     expect(within(paymentRow(1)).getByText(/Sin desglosar S\/ 33\.33/)).toBeInTheDocument();
     expect(within(paymentRow(1)).queryByText(/no corresponden a ningún producto/)).toBeNull();
+  });
+});
+
+describe("intake full-payment defaults", () => {
+  function fullPayment(paidAt: string | null = "2026-07-21") {
+    return buildDraft({ groups: [TWO_PRICED], totalCost: 15000, payments: [{ amount: 15000, paidAt }] });
+  }
+
+  function expectAllPaid() {
+    for (const name of ["Kingdom 23", "Berserk deluxe"]) {
+      expect(within(rowFor(0, name)).getByRole("checkbox")).toBeChecked();
+    }
+    expect(fieldFor(0, "Kingdom 23").value).toBe("50.00");
+    expect(fieldFor(0, "Berserk deluxe").value).toBe("100.00");
+  }
+
+  it("seeds every product and saves allocations in the naturally sorted traversal order", () => {
+    const onSave = renderScreen(fullPayment());
+    // Save before opening: the first render already owns the computed allocation.
+    submit();
+    expect(onSave.mock.calls[0][0].groups[0].products.map((product: ProductSpec) => product.name)).toEqual([
+      "Berserk deluxe",
+      "Kingdom 23",
+    ]);
+    const lines = onSave.mock.calls[0][2]?.[0].lines;
+    expect(lines).toEqual([
+      { position: 1, amountMinor: 10000 },
+      { position: 2, amountMinor: 5000 },
+    ]);
+    expect(lines?.reduce((sum: number, line: { amountMinor: number }) => sum + line.amountMinor, 0)).toBe(15000);
+    openBreakdown(0);
+    expectAllPaid();
+  });
+
+  it("returns to no selection for a partial payment even after opening the untouched panel", () => {
+    const onSave = renderScreen(fullPayment());
+    openBreakdown(0);
+    expectAllPaid();
+    fireEvent.change(document.getElementById("intake-payment-amount-0")!, { target: { value: "80" } });
+    expect(
+      within(productListIn(0))
+        .getAllByRole("checkbox")
+        .every((node) => !(node as HTMLInputElement).checked),
+    ).toBe(true);
+    submit();
+    expect(onSave.mock.calls[0][2]).toBeUndefined();
+  });
+
+  it("respects a user-cleared full-payment selection through amount changes", () => {
+    const onSave = renderScreen(fullPayment());
+    openBreakdown(0);
+    expectAllPaid();
+    fireEvent.click(within(paymentRow(0)).getByRole("button", { name: "Limpiar el desglose" }));
+    fireEvent.change(document.getElementById("intake-payment-amount-0")!, { target: { value: "80" } });
+    fireEvent.change(document.getElementById("intake-payment-amount-0")!, { target: { value: "150" } });
+    expect(
+      within(productListIn(0))
+        .getAllByRole("checkbox")
+        .every((node) => !(node as HTMLInputElement).checked),
+    ).toBe(true);
+    submit();
+    expect(onSave.mock.calls[0][2]).toBeUndefined();
+  });
+
+  it("keeps an undated full payment saveable and seeds once its date is valid", () => {
+    const onSave = renderScreen(fullPayment(null));
+    submit();
+    expect(onSave).toHaveBeenCalledTimes(1);
+    expect(onSave.mock.calls[0][2]).toBeUndefined();
+    fireEvent.change(document.getElementById("intake-payment-date-0")!, { target: { value: "2026-07-21" } });
+    openBreakdown(0);
+    expectAllPaid();
+    submit();
+    expect(onSave.mock.calls[1][2]?.[0].lines).toHaveLength(2);
   });
 });

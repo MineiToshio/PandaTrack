@@ -5,7 +5,7 @@ slug: order-image-intake
 title: Order Image Intake - Feature Design Document
 status: ACTIVE
 parent: FRD-11
-last_updated: 2026-07-30
+last_updated: 2026-10-29
 prototype: ./prototype/order-image-intake.html
 design_system: ../../../design/README.md
 demo_anchors:
@@ -470,7 +470,11 @@ justified on the detail by two narrow columns (~300px aside, ~327px sheet); here
 ~600px and the name column simply stretches. Roomy, not broken, and the alternative is a second
 layout for the third consumer of a component that has just shipped.
 
-Two things differ from the detail, and both are consequences of the order not existing yet:
+**Amendment 2026-10-29, natural order and full-payment defaults.** Before the editable draft is initialized, products sort ascending naturally within each group and groups sort by their first sorted product name. Numeric, case/accent-insensitive comparison uses a fixed locale and stable ties. Source groups remain intact even when names interleave; the same traversal determines saved positions. No re-sort occurs during name editing.
+
+An untouched positive payment equal to the order total preselects all eligible products, using the shared panel's select-all computation while remaining folded. Opening or closing preserves the automatic state; selection, amount, mode edits or clearing make the breakdown the collector's own. If the payment becomes partial before such an edit, its automatic selection disappears. Date validity and sufficient remaining balance are prerequisites for this automatic default: an undated payment stays empty and saveable, with the existing server skip feedback, and becomes selected once its date is legal. Explicitly entered breakdowns retain the existing date gate. All-unpriced products use equal parts; mixed-price products retain zero-weight unpriced entries and an undetailed residual. Product amounts plus residual always partition the payment (ADR 0027), including shipping or mismatched totals. This owner-requested intake exception is recorded in ADR 0028.
+
+Two other things differ from the detail, and both are consequences of the order not existing yet:
 
 - **The undetailed-pool strip is suppressed** (`undetailedPaidMinor={0}`). Its two sentences ("Ya
   pagaste X a este pedido sin decir a qué producto", "Por eso no sabemos cuánto le falta a cada

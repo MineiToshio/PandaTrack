@@ -18,14 +18,19 @@ import { fetchTodayRate } from "@/lib/fx/exchangeRates";
 import { MAX_PAYMENTS_PER_ORDER } from "@/lib/imageIntake/constants";
 import type { ImageIntakeDraft } from "@/lib/imageIntake/draftSchema";
 import {
+  applyIntakeBreakdownChange,
   buildIntakeBreakdownPayload,
   flattenDraftToBreakdownItems,
   resolveIntakeBreakdownContext,
   resolveIntakeBreakdownSaveBlock,
+  resolveIntakeDefaultBreakdown,
+  resetIntakeBreakdownStates,
   resolveTodayUtcIso,
+  type IntakeBreakdownPanelState,
   type IntakePaymentRow,
   type IntakeSaveBlockReason,
 } from "@/lib/imageIntake/intakeBreakdown";
+import { sortDraftProductsNaturally } from "@/lib/imageIntake/naturalSort";
 import type { IntakeBreakdownPayload } from "@/lib/imageIntake/intakeBreakdownContract";
 import { findProductsNeedingReferenceSheet, formatReferenceHost } from "@/lib/imageIntake/referenceProductNaming";
 import { parseDecimalToMinorUnits } from "@/lib/money/parseDecimalToMinorUnits";
@@ -34,7 +39,6 @@ import {
   deriveBreakdown,
   hasBreakdownDraft,
   offersBreakdown,
-  recomputeBreakdown,
   type BreakdownContext,
   type BreakdownDerived,
   type BreakdownItem,
@@ -215,7 +219,7 @@ function resolveTotalCostProvenance(rawDraft: ImageIntakeDraft): ProvenanceState
 type IntakeBreakdownRow = {
   row: IntakePaymentRow;
   ctx: BreakdownContext;
-  state: BreakdownPanelState;
+  state: IntakeBreakdownPanelState;
   derived: BreakdownDerived;
 };
 
@@ -234,7 +238,8 @@ const EMPTY_BREAKDOWN_ROWS: IntakeBreakdownRow[] = [];
 function resolveIntakeBreakdownRows(input: {
   items: BreakdownItem[];
   payments: ImageIntakeDraft["payments"];
-  states: Record<number, BreakdownPanelState>;
+  states: Record<number, IntakeBreakdownPanelState>;
+  orderDateIso: string | null;
   totalCostMinor: number;
   currencyCode: string;
 }): IntakeBreakdownRow[] {
@@ -251,7 +256,15 @@ function resolveIntakeBreakdownRows(input: {
       totalCostMinor,
       currencyCode,
     });
-    const state = recomputeBreakdown(stored, ctx);
+    const state = resolveIntakeDefaultBreakdown({
+      stored: states[paymentIndex],
+      items,
+      ctx,
+      totalCostMinor,
+      paidAtIso: payment.paidAt.value,
+      orderDateIso: input.orderDateIso,
+      todayIso: resolveTodayUtcIso(),
+    });
     resolved.push({
       row: { amountMinor, breakdown: state },
       ctx,
@@ -427,7 +440,7 @@ export default function IntakeReviewScreen({
   // the chat actually stated.
   const seededInitialDraft = withDerivedTotal(initialDraft);
 
-  const [draft, setDraft] = useState<ImageIntakeDraft>(seededInitialDraft);
+  const [draft, setDraft] = useState<ImageIntakeDraft>(() => sortDraftProductsNaturally(seededInitialDraft));
   /** The row a blocked save is about, so the screen can open its group and name it. */
   const [blankNameAt, setBlankNameAt] = useState<{ groupIndex: number; position: number } | null>(null);
   /** Groups reporting a price field whose text the money parser cannot read. */
@@ -621,7 +634,7 @@ export default function IntakeReviewScreen({
     if (flattenDraftToBreakdownItems(nextDraft).length === flattenDraftToBreakdownItems(draft).length) return;
     // Only say so when there was something to lose: a panel nobody typed into needs no apology.
     setWasBreakdownCleared(Object.values(breakdownStates).some(hasBreakdownDraft));
-    setBreakdownStates({});
+    setBreakdownStates(resetIntakeBreakdownStates(breakdownStates, flattenDraftToBreakdownItems(nextDraft)));
   };
 
   const handleOrderDateChange = (value: string) => {
@@ -682,9 +695,9 @@ export default function IntakeReviewScreen({
 
   /**
    * One breakdown draft per payment row, by row index. Absent means the collector has not touched
-   * that row's panel, which is the same thing as an empty draft and is treated as one below.
+   * that row's panel. Its default stays derived until the collector edits the breakdown.
    */
-  const [breakdownStates, setBreakdownStates] = useState<Record<number, BreakdownPanelState>>({});
+  const [breakdownStates, setBreakdownStates] = useState<Record<number, IntakeBreakdownPanelState>>({});
   /** Whether a structural product change just wiped the drafts, so the screen can say so. */
   const [wasBreakdownCleared, setWasBreakdownCleared] = useState(false);
 
@@ -715,6 +728,7 @@ export default function IntakeReviewScreen({
         items: breakdownItems,
         payments: draft.payments,
         states: breakdownStates,
+        orderDateIso: draft.orderDate.value,
         totalCostMinor: draft.totalCost.value ?? 0,
         currencyCode,
       })
@@ -722,7 +736,10 @@ export default function IntakeReviewScreen({
 
   const handleBreakdownChange = (index: number, next: BreakdownPanelState) => {
     setWasBreakdownCleared(false);
-    setBreakdownStates((current) => ({ ...current, [index]: next }));
+    setBreakdownStates((current) => ({
+      ...current,
+      [index]: applyIntakeBreakdownChange(breakdownRows[index].state, next),
+    }));
     clearFieldError(paymentFieldKey("amount", index));
     clearFieldError(paymentFieldKey("date", index));
   };

@@ -2,6 +2,8 @@ import {
   buildBreakdownAllocations,
   buildBreakdownContext,
   buildBreakdownLines,
+  createBreakdownState,
+  recomputeBreakdown,
   type BreakdownContext,
   type BreakdownItem,
   type BreakdownPanelState,
@@ -232,4 +234,58 @@ export function resolveIntakeBreakdownSaveBlock(input: {
   }
 
   return null;
+}
+
+/** Intake defaults remain derived until the collector changes the breakdown itself. */
+export type IntakeBreakdownPanelState = BreakdownPanelState & { isUntouched?: boolean };
+
+/** Opening or folding the panel does not turn an automatic default into a declaration. */
+export function applyIntakeBreakdownChange(
+  current: IntakeBreakdownPanelState,
+  next: BreakdownPanelState,
+): IntakeBreakdownPanelState {
+  const disclosureOnly = current.draft === next.draft && current.isOpen !== next.isOpen;
+  return { ...next, isUntouched: current.isUntouched === true && disclosureOnly };
+}
+
+export function resolveIntakeDefaultBreakdown(input: {
+  stored: IntakeBreakdownPanelState | undefined;
+  items: BreakdownItem[];
+  ctx: BreakdownContext;
+  totalCostMinor: number;
+  paidAtIso: string | null;
+  orderDateIso: string | null;
+  todayIso: string;
+}): IntakeBreakdownPanelState {
+  const { stored, items, ctx, totalCostMinor, paidAtIso, orderDateIso, todayIso } = input;
+  if (stored !== undefined && stored.isUntouched !== true) return recomputeBreakdown(stored, ctx);
+
+  const fresh = createBreakdownState(items);
+  const saveBlock = resolveIntakeBreakdownSaveBlock({
+    rows: [{ amountMinor: ctx.paymentAmountMinor, paidAtIso, hasBreakdown: true }],
+    totalCostMinor: ctx.orderRemainingBalanceMinor,
+    orderDateIso,
+    todayIso,
+  });
+  // Incomplete payments used to be skipped without blocking the order. Do not add a date gate
+  // through an automatic allocation; seed once the payment is legal instead.
+  const selectAll = totalCostMinor > 0 && ctx.paymentAmountMinor === totalCostMinor && saveBlock === null;
+  const eligibleIds = new Set(ctx.lines.filter((line) => line.eligible).map((line) => line.itemId));
+  const state = recomputeBreakdown(
+    {
+      ...fresh,
+      isOpen: stored?.isOpen ?? false,
+      draft: fresh.draft.map((entry) => ({ ...entry, selected: selectAll && eligibleIds.has(entry.itemId) })),
+    },
+    ctx,
+  );
+  return { ...state, isUntouched: true };
+}
+
+/** Structural edits invalidate positional declarations, including explicitly cleared ones. */
+export function resetIntakeBreakdownStates(
+  states: Record<number, IntakeBreakdownPanelState>,
+  items: BreakdownItem[],
+): Record<number, IntakeBreakdownPanelState> {
+  return Object.fromEntries(Object.keys(states).map((index) => [index, createBreakdownState(items)]));
 }
