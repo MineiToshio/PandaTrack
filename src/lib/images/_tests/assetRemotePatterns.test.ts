@@ -16,6 +16,10 @@ describe("getAssetRemotePatterns", () => {
     expect(isOptimizable(patterns, PRODUCTION_LOGO_URL)).toBe(true);
   });
 
+  it("accepts the production base even when it is configured as a bare host", () => {
+    expect(isOptimizable(getAssetRemotePatterns("assets.pandatrack.app"), PRODUCTION_LOGO_URL)).toBe(true);
+  });
+
   it("keeps the bucket's r2.dev URL optimizable whatever the configured base is", () => {
     expect(isOptimizable(getAssetRemotePatterns("https://assets.pandatrack.app"), DEV_LOGO_URL)).toBe(true);
     expect(isOptimizable(getAssetRemotePatterns(undefined), DEV_LOGO_URL)).toBe(true);
@@ -45,7 +49,7 @@ describe("next.config.ts image remotePatterns", () => {
   });
 
   it("accepts every logo URL the upload builds from ASSETS_PUBLIC_BASE_URL", async () => {
-    vi.stubEnv("ASSETS_PUBLIC_BASE_URL", "https://assets.pandatrack.app");
+    vi.stubEnv("ASSETS_PUBLIC_BASE_URL", "assets.pandatrack.app");
     vi.resetModules();
 
     const { default: nextConfig } = await import("../../../../next.config");

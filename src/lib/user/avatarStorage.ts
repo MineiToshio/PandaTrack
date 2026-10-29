@@ -3,6 +3,7 @@ import "server-only";
 import { DeleteObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { CLOUDFLARE_ASSET_ROUTES } from "@/lib/constants";
 import { createR2RequestHandler } from "@/lib/r2RequestHandler";
+import { normalizeAssetsPublicBaseUrl } from "@/lib/images/assetsPublicBaseUrl";
 import { AVATAR_OUTPUT_CONTENT_TYPE } from "@/lib/user/avatarShared";
 
 type AssetStorageConfig = {
@@ -27,7 +28,7 @@ function getAssetStorageConfig(): AssetStorageConfig {
   const region = process.env.ASSETS_STORAGE_REGION?.trim();
   const accessKeyId = process.env.ASSETS_STORAGE_ACCESS_KEY_ID?.trim();
   const secretAccessKey = process.env.ASSETS_STORAGE_SECRET_ACCESS_KEY?.trim();
-  const publicBaseUrl = process.env.ASSETS_PUBLIC_BASE_URL?.trim().replace(/\/+$/, "");
+  const publicBaseUrl = normalizeAssetsPublicBaseUrl(process.env.ASSETS_PUBLIC_BASE_URL);
 
   if (!bucket || !endpoint || !region || !accessKeyId || !secretAccessKey || !publicBaseUrl) {
     throw new Error("Assets storage is not configured.");
