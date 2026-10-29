@@ -259,3 +259,55 @@ describe("saveOrderFromDraftAction · the retry is not mute (T6)", () => {
     expect(result).toMatchObject({ ok: true, skippedBreakdownIndexes: [] });
   });
 });
+
+describe("automatic intake breakdown retries", () => {
+  const automatic = {
+    paymentIndex: 0,
+    isAutomatic: true,
+    lines: [
+      { position: 1, amountMinor: 5000 },
+      { position: 2, amountMinor: 6000 },
+      { position: 3, amountMinor: 4000 },
+    ],
+  };
+
+  it("does not warn about an untouched automatic full-payment breakdown on an idempotent retry", async () => {
+    findOrderIdByNoteMarkerMock.mockResolvedValue(ORDER_ID);
+    const result = await saveOrderFromDraftAction(
+      buildDraft([{ amount: 15000, paidAt: "2026-07-21" }]),
+      null,
+      SAVE_TOKEN,
+      [automatic],
+    );
+    expect(result).toMatchObject({ ok: true, orderId: ORDER_ID, skippedBreakdownIndexes: [] });
+    expect(createOrderMock).not.toHaveBeenCalled();
+    expect(addOrderPaymentMock).not.toHaveBeenCalled();
+  });
+
+  it("still warns about edited breakdowns when automatic and manual rows are retried together", async () => {
+    findOrderIdByNoteMarkerMock.mockResolvedValue(ORDER_ID);
+    const result = await saveOrderFromDraftAction(
+      buildDraft([
+        { amount: 15000, paidAt: "2026-07-21" },
+        { amount: 4000, paidAt: "2026-07-22" },
+      ]),
+      null,
+      SAVE_TOKEN,
+      [automatic, { paymentIndex: 1, isAutomatic: false, lines: [{ position: 2, amountMinor: 4000 }] }],
+    );
+    expect(result).toMatchObject({ ok: true, skippedBreakdownIndexes: [1] });
+    expect(addOrderPaymentMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects a non-boolean automatic marker before checking an idempotency match", async () => {
+    findOrderIdByNoteMarkerMock.mockResolvedValue(ORDER_ID);
+    const result = await saveOrderFromDraftAction(
+      buildDraft([{ amount: 15000, paidAt: "2026-07-21" }]),
+      null,
+      SAVE_TOKEN,
+      [{ ...automatic, isAutomatic: "true" }],
+    );
+    expect(result).toEqual({ ok: false, code: "invalid-draft" });
+    expect(findOrderIdByNoteMarkerMock).not.toHaveBeenCalled();
+  });
+});

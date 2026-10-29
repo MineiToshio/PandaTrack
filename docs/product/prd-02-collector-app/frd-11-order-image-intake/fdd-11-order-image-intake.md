@@ -474,6 +474,8 @@ layout for the third consumer of a component that has just shipped.
 
 An untouched positive payment equal to the order total preselects all eligible products, using the shared panel's select-all computation while remaining folded. Opening or closing preserves the automatic state; selection, amount, mode edits or clearing make the breakdown the collector's own. If the payment becomes partial before such an edit, its automatic selection disappears. Date validity and sufficient remaining balance are prerequisites for this automatic default: an undated payment stays empty and saveable, with the existing server skip feedback, and becomes selected once its date is legal. Explicitly entered breakdowns retain the existing date gate. All-unpriced products use equal parts; mixed-price products retain zero-weight unpriced entries and an undetailed residual. Product amounts plus residual always partition the payment (ADR 0027), including shipping or mismatched totals. This owner-requested intake exception is recorded in ADR 0028.
 
+The save payload carries an optional `isAutomatic` boolean only for untouched defaults. On an idempotent retry, those defaults do not trigger the warning to redo a breakdown; edited and legacy breakdowns still do. Normal refused-payment warnings remain unchanged. Saved automatic product amounts are real allocations, so item removal and reductions below allocated value follow the manual breakdown's guards (`ITEM_HAS_ALLOCATION`, `ITEM_PRICE_BELOW_ALLOCATED`); the collector can clear the default before saving.
+
 Two other things differ from the detail, and both are consequences of the order not existing yet:
 
 - **The undetailed-pool strip is suppressed** (`undetailedPaidMinor={0}`). Its two sentences ("Ya
@@ -489,8 +491,9 @@ There is no inline refusal marking here (`refusedItemId={null}`): the server ans
 exists and this screen is gone, so `FR-11-104`'s pre-save gate stands in for it. A row the gate
 refuses is marked and focused exactly like the three required draft fields above
 (`intake-payment-date-N` / `intake-payment-amount-N`), with no banner. A structural change to the
-products (split, merge, add, remove) clears every breakdown draft on the screen and says so once, at
-the top of the Pagos section; correcting a name or a price does not, and instead re-runs the split
+products (split, merge, add, remove) clears touched breakdown drafts and says so once, at
+the top of the Pagos section, only when a collector declaration was cleared. Untouched automatic
+defaults are re-derived against the new products without that notice; correcting a name or a price does not, and instead re-runs the split
 over the lines nobody typed into.
 
 Each panel carries its own `aria-live` region and its own set of DOM ids, namespaced by

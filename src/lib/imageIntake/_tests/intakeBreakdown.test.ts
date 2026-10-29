@@ -10,6 +10,7 @@ import {
 import type { ImageIntakeDraft } from "../draftSchema";
 import {
   applyIntakeBreakdownChange,
+  resetIntakeBreakdownStates,
   resolveIntakeDefaultBreakdown,
   buildIntakeBreakdownPayload,
   flattenDraftToBreakdownItems,
@@ -471,6 +472,39 @@ describe("intake full-payment allocation defaults", () => {
     });
     const resolved = resolveIntakeDefaultBreakdown({ ...input, stored: cleared });
     expect(resolved.draft.every((entry) => !entry.selected && entry.amountMinor === 0)).toBe(true);
+  });
+
+  it("re-derives an opened automatic default after a structural reset while clearing touched rows", () => {
+    const { input, state } = resolve([5000, 10000]);
+    const opened = applyIntakeBreakdownChange(state, { ...state, isOpen: true });
+    const items = flattenDraftToBreakdownItems(buildDraft([[5000, 5000, 5000]], 15000));
+    const reset = resetIntakeBreakdownStates({ 0: opened, 1: { ...state, isUntouched: false } }, items);
+    const ctx = resolveIntakeBreakdownContext({
+      items,
+      rows: [{ amountMinor: 15000, breakdown: null }],
+      paymentIndex: 0,
+      totalCostMinor: 15000,
+      currencyCode: CURRENCY,
+    });
+    const reseeded = resolveIntakeDefaultBreakdown({ ...input, items, ctx, stored: reset[0] });
+    expect(reseeded.isUntouched).toBe(true);
+    expect(reseeded.draft.map((line) => line.amountMinor)).toEqual([5000, 5000, 5000]);
+    expect(reseeded.draft.every((line) => line.selected)).toBe(true);
+    expect(reset[1].draft.every((line) => !line.selected && line.amountMinor === 0)).toBe(true);
+    expect(
+      resolveIntakeDefaultBreakdown({ ...input, items, ctx, stored: reset[1] }).draft.every((line) => !line.selected),
+    ).toBe(true);
+  });
+
+  it("marks only untouched automatic allocations in the save payload", () => {
+    const { state } = resolve([5000, 10000]);
+    const automatic = buildIntakeBreakdownPayload([{ amountMinor: 15000, breakdown: state }]);
+    expect(automatic?.[0]).toHaveProperty("isAutomatic", true);
+    expect(intakeBreakdownSchema.parse(automatic)[0]).toHaveProperty("isAutomatic", true);
+    const edited = applyIntakeBreakdownChange(state, { ...state, draft: state.draft.map((line) => ({ ...line })) });
+    expect(buildIntakeBreakdownPayload([{ amountMinor: 15000, breakdown: edited }])?.[0]).not.toHaveProperty(
+      "isAutomatic",
+    );
   });
 
   it("does not seed invalid dates or payments exceeding the remaining balance", () => {

@@ -588,3 +588,50 @@ describe("intake full-payment defaults", () => {
     expect(onSave.mock.calls[1][2]?.[0].lines).toHaveLength(2);
   });
 });
+
+describe("untouched intake defaults after structural edits", () => {
+  it("re-seeds an opened automatic breakdown after merge and split without a cleared notice", () => {
+    const onSave = renderScreen(
+      buildDraft({
+        groups: [TWO_PRICED, [{ name: "Nendoroid Asuka", unitPrice: 3000 }]],
+        totalCost: 18000,
+        payments: [{ amount: 18000, paidAt: "2026-07-21" }],
+      }),
+    );
+    openBreakdown(0);
+    expect(within(productListIn(0)).getAllByRole("checkbox")).toHaveLength(3);
+
+    fireEvent.click(screen.getByRole("button", { name: "Unir en uno" }));
+    const mergeDialog = screen.getByRole("dialog");
+    fireEvent.change(within(mergeDialog).getByLabelText("Nombre del producto unido"), {
+      target: { value: "Pack 1 al 2" },
+    });
+    fireEvent.change(within(mergeDialog).getByLabelText("Precio del producto unido"), { target: { value: "150" } });
+    fireEvent.click(within(mergeDialog).getByRole("button", { name: "Unir en uno" }));
+
+    expect(screen.queryByText(/Cambiaste los productos/)).toBeNull();
+    openBreakdown(0);
+    expect(within(productListIn(0)).getAllByRole("checkbox")).toHaveLength(2);
+    expect(
+      within(productListIn(0))
+        .getAllByRole("checkbox")
+        .every((node) => (node as HTMLInputElement).checked),
+    ).toBe(true);
+    expect(fieldFor(0, "Pack 1 al 2").value).toBe("150.00");
+    expect(fieldFor(0, "Nendoroid Asuka").value).toBe("30.00");
+
+    fireEvent.click(screen.getAllByRole("button", { name: /Separar en .* productos/ })[0]);
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Separar en productos" }));
+
+    expect(screen.queryByText(/Cambiaste los productos/)).toBeNull();
+    openBreakdown(0);
+    expect(within(productListIn(0)).getAllByRole("checkbox")).toHaveLength(3);
+    expect(
+      within(productListIn(0))
+        .getAllByRole("checkbox")
+        .every((node) => (node as HTMLInputElement).checked),
+    ).toBe(true);
+    submit();
+    expect(onSave.mock.calls[0][2]?.[0].lines.reduce((sum, line) => sum + line.amountMinor, 0)).toBe(18000);
+  });
+});

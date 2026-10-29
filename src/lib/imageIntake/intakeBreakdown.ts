@@ -31,8 +31,8 @@ const DRAFT_ITEM_QUANTITY = 1;
 export type IntakePaymentRow = {
   /** What the amount field holds, in minor units. 0 when it is empty. */
   amountMinor: number;
-  /** The row's own breakdown draft, or `null` while the row has never been opened. */
-  breakdown: BreakdownPanelState | null;
+  /** The row's resolved breakdown, including a folded automatic default, or `null` when absent. */
+  breakdown: IntakeBreakdownPanelState | null;
 };
 
 /**
@@ -153,7 +153,9 @@ export function buildIntakeBreakdownPayload(rows: IntakePaymentRow[]): IntakeBre
       position: Number(allocation.orderItemId),
       amountMinor: allocation.amountMinor,
     }));
-    return lines.length === 0 ? [] : [{ paymentIndex, lines }];
+    return lines.length === 0
+      ? []
+      : [{ paymentIndex, lines, ...(row.breakdown.isUntouched === true ? { isAutomatic: true } : {}) }];
   });
   return entries.length === 0 ? undefined : entries;
 }
@@ -287,5 +289,10 @@ export function resetIntakeBreakdownStates(
   states: Record<number, IntakeBreakdownPanelState>,
   items: BreakdownItem[],
 ): Record<number, IntakeBreakdownPanelState> {
-  return Object.fromEntries(Object.keys(states).map((index) => [index, createBreakdownState(items)]));
+  // Untouched defaults contain no collector declaration to clear; derive them against the new items.
+  return Object.fromEntries(
+    Object.entries(states)
+      .filter(([, state]) => state.isUntouched !== true)
+      .map(([index]) => [index, createBreakdownState(items)]),
+  );
 }

@@ -633,7 +633,9 @@ export default function IntakeReviewScreen({
     */
     if (flattenDraftToBreakdownItems(nextDraft).length === flattenDraftToBreakdownItems(draft).length) return;
     // Only say so when there was something to lose: a panel nobody typed into needs no apology.
-    setWasBreakdownCleared(Object.values(breakdownStates).some(hasBreakdownDraft));
+    setWasBreakdownCleared(
+      Object.values(breakdownStates).some((state) => state.isUntouched !== true && hasBreakdownDraft(state)),
+    );
     setBreakdownStates(resetIntakeBreakdownStates(breakdownStates, flattenDraftToBreakdownItems(nextDraft)));
   };
 

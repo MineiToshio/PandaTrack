@@ -18,7 +18,7 @@ Turn the foundation into the feature: a user attaches one or more photos, watche
 
 This is the spine of FRD-11. Everything after it is either an enrichment of this screen or another door into it.
 
-**Amended 2026-10-29:** Review initialization uses stable ascending natural product order within groups and group-by-first order before positional breakdown state exists. The reviewed traversal is also the saved order. Untouched positive full payments default to the shared select-all breakdown, conditional on a legal date and sufficient balance; partial payments remain unselected, and collector edits or clearing are preserved. Opening/folding is not an edit. See the owning FRD's review-order amendment and payment breakdown requirement, and the FDD payment breakdown section for unpriced products and undetailed residuals.
+**Amended 2026-10-29:** Review initialization uses stable ascending natural product order within groups and group-by-first order before positional breakdown state exists. The reviewed traversal is also the saved order. Untouched positive full payments default to the shared select-all breakdown, conditional on a legal date and sufficient balance; partial payments remain unselected, and collector edits or clearing are preserved. Opening/folding is not an edit. Structural edits re-derive untouched defaults without a cleared notice. Idempotent retries ask to redo only edited or legacy breakdowns. Saved default allocations carry the same item-edit guards as manual ones, so the collector may clear the default before saving. See the owning FRD's review-order amendment and payment breakdown requirement, and the FDD payment breakdown section for unpriced products and undetailed residuals.
 
 ## In Scope
 
