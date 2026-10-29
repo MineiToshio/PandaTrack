@@ -6,6 +6,7 @@ import { nextCookies } from "better-auth/next-js";
 import * as Sentry from "@sentry/nextjs";
 import { prisma } from "@/lib/prisma";
 import { getAppBaseUrl, getPublicSiteUrl } from "@/lib/app-url";
+import { AUTH_SESSION_EXPIRES_IN_SECONDS, AUTH_SESSION_UPDATE_AGE_SECONDS } from "@/lib/constants";
 import { captureBrowsingLocaleOnSignIn } from "@/lib/auth/authLocaleCapture";
 import { handlePasswordRecoveryRequest } from "@/lib/auth/authPasswordRecovery";
 import { buildVerificationConfirmHref, getLocaleSegment } from "@/lib/auth/authRedirect";
@@ -87,6 +88,8 @@ export const auth = betterAuth({
    * JWT-in-cookie user snapshots.
    */
   session: {
+    expiresIn: AUTH_SESSION_EXPIRES_IN_SECONDS,
+    updateAge: AUTH_SESSION_UPDATE_AGE_SECONDS,
     cookieCache: {
       enabled: false,
     },

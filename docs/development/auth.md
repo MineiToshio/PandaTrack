@@ -41,7 +41,9 @@ The OAuth consent screen is **published (In production)**, User type **External*
 
 ## Server-side session
 
-- **Get current session**: use `getSession()` from `@/lib/auth/auth-server` in Server Components, Server Actions, or Route Handlers. It reads the session from request cookies.
+- **Get current session**: use `getSession()` from `@/lib/auth/auth-server` in Server Components, Server Actions, or Route Handlers. It reads the session from request cookies and never refreshes it (`disableRefresh`).
+- **Lifetime**: the session slides for a year (`AUTH_SESSION_EXPIRES_IN_SECONDS`), pushed forward at most once a day (`AUTH_SESSION_UPDATE_AGE_SECONDS`). Better Auth's default is 7 days, which signed out any collector who skipped a week.
+- **Who refreshes it**: only the `/api/auth/get-session` route, called from the browser by `SessionKeepAlive` in the app shell (on mount and when the tab or installed PWA returns to the foreground, throttled to once an hour). A refresh from a Server Component is a trap: it pushes the database expiry forward but cannot write the cookie (`nextCookies` swallows the failure), so the cookie still lapses on its original date and the collector is signed out with a session that looks alive in the database.
 - **Sign out**: signout is handled by the Better Auth API. The client calls the sign-out endpoint (e.g. via the auth client in a later slice). Invoking the API invalidates the session and clears the cookie.
 
 ## Key files
