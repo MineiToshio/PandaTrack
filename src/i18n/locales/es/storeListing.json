@@ -32,8 +32,8 @@
   "pagination": {
     "showing": "Mostrando {start}–{end} de {total} {total, plural, one {tienda} other {tiendas}}",
     "loadMore": "Cargar más",
-    "navigationAriaLabel": "Paginacion de tiendas",
-    "goToPageAriaLabel": "Ir a la pagina {page}",
+    "navigationAriaLabel": "Paginación de tiendas",
+    "goToPageAriaLabel": "Ir a la página {page}",
     "previous": "Anterior",
     "next": "Siguiente",
     "perPage": "Por página"
