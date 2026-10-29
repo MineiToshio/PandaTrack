@@ -2,15 +2,25 @@
 
 ADRs in this repository live in `docs/design/decisions/` and use a four-digit number prefix without the `ADR-` prefix (e.g. `0034-store-account-reconciliation-adjustment.md`). ADRs also carry YAML frontmatter with: `title`, `date`, `status`, `session`, `owner`, `trigger`, `updates`, and `extends`.
 
-The template below is for the Markdown body section only.
+Copy the block below and replace the placeholders. Use lowercase `accepted`, `proposed`, or `superseded` for `status`. Keep `extends` only when the decision extends an existing ADR; add `supersedes` when it replaces one. Save as `docs/design/decisions/NNNN-short-kebab-title.md` using the next free number after the highest existing ADR number, and add a row to `docs/design/decisions/README.md` in the same change.
 
+```markdown
+---
+title: "ADR NNNN - [Decision Title]"
+date: YYYY-MM-DD
+status: proposed
+session: "[Work context that produced the decision]"
+owner: "[Decision owner]"
+trigger: "[Finding or change that required the decision]"
+updates: "[Comma-separated repository-relative paths changed to carry the decision]"
+extends: "[Related ADR numbers and the decisions being extended, if applicable]"
 ---
 
 # NNNN: [Decision Title]
 
-- Status: `Proposed | Accepted | Superseded`
+- Status: Proposed
 - Date: `YYYY-MM-DD`
-- Owners:
+- Owner:
 - Related feature:
 
 ## Context
@@ -53,3 +63,4 @@ State the decision clearly and specifically.
 ## References
 
 -
+```
