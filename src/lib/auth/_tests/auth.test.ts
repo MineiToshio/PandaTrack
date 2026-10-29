@@ -103,6 +103,19 @@ describe("auth config", () => {
     });
   });
 
+  it("keeps a collector signed in for a year, sliding forward at most once a day", async () => {
+    await import("@/lib/auth/auth");
+
+    expect(betterAuthMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        session: expect.objectContaining({
+          expiresIn: 60 * 60 * 24 * 365,
+          updateAge: 60 * 60 * 24,
+        }),
+      }),
+    );
+  });
+
   it("registers a user create hook for username injection", async () => {
     const { generateUniqueUsernameForNewUserMock } = await import("@/lib/auth/_tests/authUsernameMocks");
     generateUniqueUsernameForNewUserMock.mockResolvedValue({ username: "panda-1234" });

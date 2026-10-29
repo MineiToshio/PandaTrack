@@ -13,6 +13,18 @@ export const APP_SHELL_SIDEBAR_STORAGE_KEY = "appShellSidebarExpanded";
  */
 export const ORDER_LIST_VIEW_COOKIE_NAME = "pandatrack-orders-view";
 
+/**
+ * Sliding session lifetime: a collector who comes back at least once a year never has to sign in
+ * again. Better Auth's default is seven days, which signed out anyone who skipped a week.
+ */
+export const AUTH_SESSION_EXPIRES_IN_SECONDS = 60 * 60 * 24 * 365;
+
+/** Minimum age before a session's expiry (and its cookie) is pushed forward again. */
+export const AUTH_SESSION_UPDATE_AGE_SECONDS = 60 * 60 * 24;
+
+/** Client throttle for the shell's session keep-alive request (tab focus, PWA resume). */
+export const AUTH_SESSION_KEEPALIVE_MIN_INTERVAL_MS = 60 * 60 * 1000;
+
 /** Height of the verification email banner (px) for layout offset. Used so the fixed sidebar starts below it. */
 export const VERIFICATION_BANNER_HEIGHT_PX = 56;
 

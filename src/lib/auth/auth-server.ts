@@ -6,12 +6,18 @@ import { roleGrantsAdmin } from "@/lib/auth/adminRole";
  * Returns the current session from the request cookies (server-side only).
  * Use in Server Components, Server Actions, or Route Handlers.
  *
+ * Never refreshes the session: a Server Component cannot write cookies, so a refresh here would
+ * push the database expiry forward while the browser cookie silently kept its old expiry, and the
+ * collector would be signed out when that cookie lapsed. The refresh belongs to the
+ * `/api/auth/get-session` route, which the shell's keep-alive calls from the browser.
+ *
  * @returns The session and user, or null if unauthenticated
  */
 export async function getSession() {
   const requestHeaders = await headers();
   return auth.api.getSession({
     headers: requestHeaders,
+    query: { disableRefresh: true },
   });
 }
 

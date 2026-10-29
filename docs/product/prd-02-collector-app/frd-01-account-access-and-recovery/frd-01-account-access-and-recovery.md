@@ -98,6 +98,7 @@ As a returning collector, I want Google and email/password to map to the same ac
 - `FR-01-21`: Reset-password tokens must be single-use and must revoke all of the user's existing sessions when the password is changed.
 - `FR-01-22`: Authenticated users must sync to Kit on session creation without blocking the auth flow; the sync must no-op when Kit is not configured and must never surface its failures to the user (captured to Sentry only).
 - `FR-01-23`: All recovery and verification emails must be localized, with the locale resolved in order from the reset/verification URL, then the request cookie, then `Accept-Language`, defaulting to `es`.
+- `FR-01-24`: A signed-in collector must stay signed in, on the web and in the installed PWA, for as long as they return at least once a year. The session slides forward (at most once a day) every time the app is opened or brought back to the foreground; it ends only on sign-out, password reset, or a full year without use.
 
 ## Business Rules
 

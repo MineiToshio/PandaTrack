@@ -14,6 +14,7 @@ import { cn } from "@/lib/styles";
 import AppNavDrawer from "./AppNavDrawer";
 import { HeaderTitleProvider } from "./HeaderTitleContext";
 import ServiceWorkerRegistration from "./ServiceWorkerRegistration";
+import SessionKeepAlive from "./SessionKeepAlive";
 import TimezoneCapture from "./TimezoneCapture";
 import type { PhotoCounterSnapshot } from "@/app/[locale]/(app)/orders/_components/share/photoCounterContract";
 import type { AppShellUserIdentity } from "./types";
@@ -82,6 +83,7 @@ export default function AppLayout({
           welcomeCelebrationPending={welcomeCelebrationPending}
         >
           <ServiceWorkerRegistration />
+          <SessionKeepAlive />
           <TimezoneCapture storedTimezone={storedTimezone} />
           {/* Shell root: carries --sidebar-current-w so all children can reference it */}
           <div
