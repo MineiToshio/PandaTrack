@@ -75,7 +75,7 @@ export default function DashboardDonut({
       <div className="absolute flex flex-col items-center">
         <span
           title={centerTitle}
-          className="[font-size:19px] [font-weight:var(--font-weight-bold)] [letter-spacing:-0.02em] [color:var(--text-primary)] tabular-nums"
+          className="[font-size:19px] [font-weight:var(--font-weight-display)] [letter-spacing:-0.02em] [color:var(--text-primary)] tabular-nums"
         >
           {centerValue}
         </span>

@@ -63,7 +63,7 @@ export default async function DashboardCashZone({ data, locale }: DashboardCashZ
             <p className="mb-2 [font-size:12px] [letter-spacing:0.06em] [color:var(--text-muted)] uppercase">
               {t("cash.currentMonthLabel")}
             </p>
-            <p className="[font-size:clamp(28px,4.4vw,38px)] [line-height:1] [font-weight:var(--font-weight-bold)] [letter-spacing:-0.03em] [color:var(--text-muted)] tabular-nums">
+            <p className="[font-size:clamp(28px,4.4vw,38px)] [line-height:1] [font-weight:var(--font-weight-display)] [letter-spacing:-0.03em] [color:var(--text-muted)] tabular-nums">
               {money(0)}
             </p>
           </div>
@@ -97,7 +97,7 @@ export default async function DashboardCashZone({ data, locale }: DashboardCashZ
           <p className="mb-2 [font-size:12px] [letter-spacing:0.06em] [color:var(--text-muted)] uppercase">
             {t("cash.currentMonthLabel")}
           </p>
-          <p className="[font-size:clamp(28px,4.4vw,38px)] [line-height:1] [font-weight:var(--font-weight-bold)] [letter-spacing:-0.03em] [color:var(--text-primary)] tabular-nums">
+          <p className="[font-size:clamp(28px,4.4vw,38px)] [line-height:1] [font-weight:var(--font-weight-display)] [letter-spacing:-0.03em] [color:var(--text-primary)] tabular-nums">
             {money(cashObligations.currentMonth.totalMinor)}
           </p>
           {cashObligations.overdue.totalMinor > 0 && (

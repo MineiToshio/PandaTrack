@@ -265,6 +265,10 @@ aliases maps legacy tokens (`--primary`, `--card`, etc.) onto the new system.
 
 ## 3. `:root` — font weights, state layers, cross-palette status defaults
 
+Use `var(--font-weight-display)` for heavy text (700 light, 670 dark).
+Tailwind's `var(--font-weight-bold)` resolves to a constant 700 in both themes and bypasses
+this reduction. Its use in `src/**/*.tsx` is blocked by `src/test/design-token-guard.test.ts`.
+
 ```css
 :root {
   /* Font weights */

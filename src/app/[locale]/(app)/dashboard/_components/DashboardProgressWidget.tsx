@@ -89,7 +89,7 @@ export default function DashboardProgressWidget({ locale, summary, medals }: Das
           {summary.hasPoints ? (
             <div className="flex min-w-0 flex-1 flex-col items-end gap-1.5">
               <p className="flex flex-wrap items-baseline justify-end gap-x-1.5">
-                <span className="[font-family:var(--font-mono)] [font-size:clamp(26px,4vw,34px)] [line-height:1] [font-weight:var(--font-weight-bold)] [letter-spacing:-0.02em] [color:var(--text-primary)] tabular-nums">
+                <span className="[font-family:var(--font-mono)] [font-size:clamp(26px,4vw,34px)] [line-height:1] [font-weight:var(--font-weight-display)] [letter-spacing:-0.02em] [color:var(--text-primary)] tabular-nums">
                   {/* `"en"` explicitly, never the UI locale: number layout in this app is
                       locale-independent (comma thousands, period decimal), so a Spanish reader
                       would otherwise see `9.360` here and `9,360.00` on every amount beside it. */}

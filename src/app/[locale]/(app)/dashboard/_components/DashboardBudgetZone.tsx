@@ -97,7 +97,7 @@ export default async function DashboardBudgetZone({ data, locale }: DashboardBud
       <DashboardZoneView event={POSTHOG_EVENTS.DASHBOARD.BUDGET_ZONE_VIEWED} props={{ state: status }} />
       <DashboardZoneCard {...cardBase} title={t("budget.title")}>
         <div className="flex flex-1 flex-col">
-          <p className="[font-size:clamp(28px,4.4vw,38px)] [line-height:1] [font-weight:var(--font-weight-bold)] [letter-spacing:-0.03em] [color:var(--text-primary)] tabular-nums">
+          <p className="[font-size:clamp(28px,4.4vw,38px)] [line-height:1] [font-weight:var(--font-weight-display)] [letter-spacing:-0.03em] [color:var(--text-primary)] tabular-nums">
             {/*
               Spelled out rather than a "/" separator: the sol renders as "S/", so "S/ 0.00 / S/
               1,000.00" puts three slashes in one line and reads as a formatting glitch before it

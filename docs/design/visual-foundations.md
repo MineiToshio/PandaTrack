@@ -371,6 +371,10 @@ Auxiliary weight tokens decouple components from raw numbers, so mode-specific w
 
 Components consume `var(--font-weight-display)` and friends — never a literal `font-weight: 700`. The only typographic differences between modes are these reduced display/title/body-medium weights and body color resolving to 96% L (not 100%) in dark via `--text-primary`. Italics are prohibited in every tier.
 
+Tailwind's `var(--font-weight-bold)` stays at 700 in both themes, bypassing the dark-mode
+optical compensation. Use `var(--font-weight-display)` for heavy text (700 light, 670 dark).
+`src/test/design-token-guard.test.ts` rejects `var(--font-weight-bold)` in `src/**/*.tsx`.
+
 ### Letter-spacing and feature settings
 
 | Tier                      | `font-feature-settings`  | Why                                                                                   |

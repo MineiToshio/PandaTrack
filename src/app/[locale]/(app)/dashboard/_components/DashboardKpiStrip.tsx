@@ -95,7 +95,7 @@ export default async function DashboardKpiStrip({ data, locale }: DashboardKpiSt
                 <TileIcon size={18} />
               </span>
               <span className="flex min-w-0 flex-col gap-px">
-                <span className="truncate [font-size:19px] [font-weight:var(--font-weight-bold)] [letter-spacing:-0.02em] [color:var(--text-primary)] tabular-nums">
+                <span className="truncate [font-size:19px] [font-weight:var(--font-weight-display)] [letter-spacing:-0.02em] [color:var(--text-primary)] tabular-nums">
                   {tile.value}
                 </span>
                 <span className="flex items-center gap-1 [font-size:11px] [letter-spacing:0.05em] [color:var(--text-muted)] uppercase">

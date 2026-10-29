@@ -54,7 +54,7 @@ export default function UserAvatarHero({ displayName, imageUrl, size = "s56", cl
     <span
       className={cn(
         "relative inline-flex flex-shrink-0 items-center justify-center overflow-hidden rounded-full",
-        "[font-weight:var(--font-weight-bold)] [letter-spacing:0.5px] [color:var(--text-on-accent)]",
+        "[font-weight:var(--font-weight-display)] [letter-spacing:0.5px] [color:var(--text-on-accent)]",
         "[background:linear-gradient(135deg,var(--accent),var(--accent-warm))]",
         "[box-shadow:0_6px_18px_color-mix(in_oklch,var(--accent)_35%,transparent),0_2px_4px_color-mix(in_oklch,var(--accent)_18%,transparent)]",
         SIZE_CLASSES[size],
