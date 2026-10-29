@@ -34,10 +34,15 @@ function mockCreateImageBitmap() {
   );
 }
 
-function mockCanvasContext() {
-  vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue({
+function mockCanvasContext(alpha = 255) {
+  const context = {
     drawImage: vi.fn(),
-  } as unknown as CanvasRenderingContext2D);
+    fillRect: vi.fn(),
+    fillStyle: "",
+    getImageData: vi.fn(() => ({ data: new Uint8ClampedArray([0, 0, 0, alpha]) })),
+  };
+  vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(context as unknown as CanvasRenderingContext2D);
+  return context;
 }
 
 function mockWebpSupport(supported: boolean) {
@@ -167,6 +172,28 @@ describe("compressForIntake", () => {
   it("never logs a full image payload to the console", () => {
     const source = readFileSync(join(__dirname, "../compressForIntake.ts"), "utf-8");
     expect(source).not.toMatch(/console\.log/);
+  });
+
+  it.each([1080, 4800])("encodes transparent intake as JPEG without reading pixels on non-WebP engines (height %s)", async (height) => {
+    mockWebpSupport(false);
+    const context = mockCanvasContext(0);
+    mockToBlobSize(1000);
+
+    const result = await compressForIntake(createFakeImageFile(1080, height, 500_000));
+
+    for (const segment of result.segments) {
+      expect.soft(segment.mimeType).toBe("image/jpeg");
+      expect.soft(segment.blob.type).toBe("image/jpeg");
+    }
+    expect(context.getImageData).not.toHaveBeenCalled();
+    expect(context.fillStyle).toBe("white");
+    expect(context.fillRect).toHaveBeenCalledTimes(result.segments.length);
+    result.segments.forEach((segment, index) => {
+      expect(context.fillRect).toHaveBeenNthCalledWith(index + 1, 0, 0, segment.width, segment.height);
+      expect(context.fillRect.mock.invocationCallOrder[index]).toBeLessThan(
+        context.drawImage.mock.invocationCallOrder[index],
+      );
+    });
   });
 });
 

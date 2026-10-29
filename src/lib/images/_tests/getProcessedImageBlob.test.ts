@@ -11,9 +11,10 @@ class FakeImage {
   }
 }
 
-function mockCanvasContext() {
+function mockCanvasContext(alpha = 255) {
   vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue({
     drawImage: vi.fn(),
+    getImageData: vi.fn(() => ({ data: new Uint8ClampedArray([0, 0, 0, alpha]) })),
   } as unknown as CanvasRenderingContext2D);
 }
 
@@ -65,6 +66,16 @@ describe("getProcessedImageBlob", () => {
 
     expect(result.mimeType).toBe("image/webp");
     expect(result.blob.type).toBe("image/webp");
+  });
+
+  it("preserves transparent logos as PNG when WebP is unavailable", async () => {
+    mockCanvasContext(0);
+    mockToBlob((type) => (type === "image/webp" ? "image/png" : type ?? "image/png"));
+
+    const result = await getProcessedImageBlob("blob:fake-source", { x: 0, y: 0, width: 100, height: 100 }, 256);
+
+    expect(result.mimeType).toBe("image/png");
+    expect(result.blob.type).toBe("image/png");
   });
 
   it("never returns a blob whose type disagrees with the reported mimeType", async () => {

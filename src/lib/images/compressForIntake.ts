@@ -100,6 +100,18 @@ async function encodeCanvas(canvas: HTMLCanvasElement, webpQuality: number): Pro
   return encodeCanvasToBlob(canvas, preferredType, quality, INTAKE_JPEG_QUALITY);
 }
 
+function prepareIntakeCanvasContext(canvas: HTMLCanvasElement): CanvasRenderingContext2D {
+  const context = canvas.getContext("2d");
+  if (!context) {
+    throw new Error("Could not create canvas context.");
+  }
+
+  // Intake needs readable text, so flatten transparent areas onto white before JPEG can turn them black.
+  context.fillStyle = "white";
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  return context;
+}
+
 /**
  * Draws one segment of the proportionally scaled source onto a fresh canvas and encodes it.
  * `scale` maps scaled-space coordinates back to the decoded source image, so a single
@@ -119,10 +131,7 @@ async function encodeSegment(
   canvas.width = targetWidth;
   canvas.height = segmentHeight;
 
-  const context = canvas.getContext("2d");
-  if (!context) {
-    throw new Error("Could not create canvas context.");
-  }
+  const context = prepareIntakeCanvasContext(canvas);
 
   context.drawImage(
     source,
@@ -184,10 +193,7 @@ export async function compressForIntake(
     canvas.width = targetWidth;
     canvas.height = height;
 
-    const context = canvas.getContext("2d");
-    if (!context) {
-      throw new Error("Could not create canvas context.");
-    }
+    const context = prepareIntakeCanvasContext(canvas);
 
     context.drawImage(decoded.drawable, 0, 0, decoded.width, decoded.height, 0, 0, targetWidth, height);
 

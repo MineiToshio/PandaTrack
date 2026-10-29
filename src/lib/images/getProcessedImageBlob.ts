@@ -21,8 +21,9 @@ export type ProcessedImageBlob = EncodedCanvasResult;
  * Requests WebP but verifies the encoder's real output type instead of trusting the request:
  * Safari's canvas encoder (iPhone and Mac) previously accepted the WebP request and silently
  * returned a PNG blob, which is how avatars and store logos ended up stored as PNG bytes under a
- * ".webp" filename. Falls back to a correctly labelled JPEG when that happens; callers must read
- * `mimeType` off the result rather than assuming WebP.
+ * ".webp" filename. Falls back to JPEG for opaque pixels or PNG for transparent or unreadable
+ * pixels when PNG encoding succeeds; callers must read `mimeType` off the result rather than
+ * assuming WebP.
  */
 export async function getProcessedImageBlob(
   src: string,
@@ -40,5 +41,5 @@ export async function getProcessedImageBlob(
 
   ctx.drawImage(image, cropArea.x, cropArea.y, cropArea.width, cropArea.height, 0, 0, outputSize, outputSize);
 
-  return encodeCanvasToBlob(canvas, "image/webp", quality);
+  return encodeCanvasToBlob(canvas, "image/webp", quality, quality, { preserveAlpha: true });
 }
