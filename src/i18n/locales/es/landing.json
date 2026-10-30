@@ -77,7 +77,7 @@
   "features": {
     "eyebrow": "Todo en un solo lugar",
     "title": "Lo que necesitas para llevar tu colección al día",
-    "subtitle": "Desde la compra hasta que llega a tus manos, PandaTrack te acompaña en cada paso.",
+    "subtitle": "Desde el pedido hasta que llega a tus manos, PandaTrack te acompaña en cada paso.",
     "cards": {
       "stores": {
         "title": "Tiendas de confianza",
@@ -93,7 +93,7 @@
       },
       "deliveries": {
         "title": "Entregas, incluso divididas",
-        "description": "Sigue cada entrega y maneja sin problema los pedidos que llegan en varios envíos."
+        "description": "Sigue cada entrega y maneja sin problema los pedidos que llegan por partes."
       },
       "reminders": {
         "title": "Avisos a tiempo",

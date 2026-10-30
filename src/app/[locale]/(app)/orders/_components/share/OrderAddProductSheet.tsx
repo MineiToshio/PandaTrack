@@ -150,7 +150,7 @@ export default function OrderAddProductSheet({
     >
       <div className="space-y-3.5">
         <div className="space-y-1.5">
-          <label htmlFor={nameId} className="block text-[12px] font-medium [color:var(--text-secondary)]">
+          <label htmlFor={nameId} className="block text-[12px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-secondary)]">
             {t("nameLabel")}
           </label>
           <input
@@ -171,7 +171,7 @@ export default function OrderAddProductSheet({
         </div>
 
         <div className="space-y-1.5">
-          <label htmlFor={typeId} className="block text-[12px] font-medium [color:var(--text-secondary)]">
+          <label htmlFor={typeId} className="block text-[12px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-secondary)]">
             {t("typeLabel")}
           </label>
           <button
@@ -209,7 +209,7 @@ export default function OrderAddProductSheet({
         <div className={cn("grid gap-3", showQuantity ? "grid-cols-2 items-end" : "grid-cols-1")}>
           {showQuantity && (
             <div className="space-y-1.5">
-              <label htmlFor={qtyId} className="block text-[12px] font-medium [color:var(--text-secondary)]">
+              <label htmlFor={qtyId} className="block text-[12px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-secondary)]">
                 {t("quantityLabel")}
               </label>
               <input
@@ -228,7 +228,7 @@ export default function OrderAddProductSheet({
             </div>
           )}
           <div className="space-y-1.5">
-            <label htmlFor={priceId} className="block text-[12px] font-medium [color:var(--text-secondary)]">
+            <label htmlFor={priceId} className="block text-[12px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-secondary)]">
               <span>{t("unitPriceLabel")}</span>{" "}
               {currencyCode && <span className="[color:var(--text-muted)]">({currencyCode})</span>}
             </label>

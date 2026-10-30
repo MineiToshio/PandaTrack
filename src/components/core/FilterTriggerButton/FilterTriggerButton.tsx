@@ -61,7 +61,7 @@ export default function FilterTriggerButton({
         {isActive && (
           <span
             aria-hidden="true"
-            className="absolute top-0.5 right-0.5 inline-flex h-[14px] min-w-[14px] items-center justify-center rounded-full px-[2px] text-[9px] leading-none font-bold [color:var(--text-on-accent)] [background:var(--accent)]"
+            className="absolute top-0.5 right-0.5 inline-flex h-[14px] min-w-[14px] items-center justify-center rounded-full px-[2px] text-[9px] leading-none [font-weight:var(--font-weight-display)] [color:var(--text-on-accent)] [background:var(--accent)]"
           >
             {appliedCount > 9 ? "9+" : appliedCount}
           </span>
@@ -86,7 +86,7 @@ export default function FilterTriggerButton({
       {isActive && (
         <span
           aria-hidden="true"
-          className="ml-1 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-[3px] text-[10px] font-bold [color:var(--text-on-accent)] [background:var(--accent)]"
+          className="ml-1 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-[3px] text-[10px] [font-weight:var(--font-weight-display)] [color:var(--text-on-accent)] [background:var(--accent)]"
         >
           {appliedCount > 9 ? "9+" : appliedCount}
         </span>

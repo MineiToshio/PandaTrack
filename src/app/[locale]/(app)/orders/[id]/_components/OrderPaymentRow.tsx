@@ -98,7 +98,7 @@ export default function OrderPaymentRow({
             </p>
           )}
         </div>
-        <span className="text-text-title shrink-0 font-semibold tabular-nums">{amountLabel}</span>
+        <span className="text-text-title shrink-0 [font-weight:var(--font-weight-title)] tabular-nums">{amountLabel}</span>
         {/* Demo `.pay-row .pay-delete`: 28×28 · rounded 6px · transparent bg · muted icon.
             Tap target ≥44×44 on mobile via the `::before` pseudo, the same mechanism as
             `IconButton` and the twin control in `StorePaymentRow`: padding inside a fixed `size-7`

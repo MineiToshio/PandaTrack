@@ -29,7 +29,7 @@ export default function DashboardFxPartialNotice({
         <Link
           href={reconcileHref}
           data-ph-event={POSTHOG_EVENTS.DASHBOARD.RECONCILE_CTA_CLICKED}
-          className="[font-weight:var(--font-weight-semibold)] whitespace-nowrap [color:var(--accent)] hover:underline"
+          className="[font-weight:var(--font-weight-title)] whitespace-nowrap [color:var(--accent)] hover:underline"
         >
           {reconcileLabel}
         </Link>

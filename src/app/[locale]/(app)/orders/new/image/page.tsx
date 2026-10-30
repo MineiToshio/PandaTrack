@@ -93,7 +93,7 @@ export default async function OrdersNewImagePage({ params, searchParams }: Props
     <div className={cn(APP_SHELL_FORM_RAIL_CLASSNAME, "flex flex-col gap-[var(--space-4)]")}>
       <BackNavLink href={ordersHref}>{t("backToList")}</BackNavLink>
 
-      <h1 className="hidden [font-size:var(--text-title)] leading-tight font-semibold [color:var(--text-primary)] md:block">
+      <h1 className="hidden [font-size:var(--text-title)] leading-tight [font-weight:var(--font-weight-title)] [color:var(--text-primary)] md:block">
         {t("title")}
       </h1>
 

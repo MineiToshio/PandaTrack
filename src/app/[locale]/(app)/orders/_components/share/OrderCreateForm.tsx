@@ -541,7 +541,7 @@ export default function OrderCreateForm({ stores, productTypeKeys, baseCurrencyC
     // Width + horizontal padding come from the shell `<main>` (APP_SHELL_MAIN_CLASSNAME).
     <div className="space-y-4 pb-[calc(76px+env(safe-area-inset-bottom))] md:pb-0">
       <BackNavLink href={ordersHref}>{tCreate("backToList")}</BackNavLink>
-      <h1 className="hidden text-[28px] leading-tight font-semibold [color:var(--text-primary)] md:block">
+      <h1 className="hidden text-[28px] leading-tight [font-weight:var(--font-weight-title)] [color:var(--text-primary)] md:block">
         {tCreate("title")}
       </h1>
 
@@ -591,7 +591,7 @@ export default function OrderCreateForm({ stores, productTypeKeys, baseCurrencyC
               >
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-1.5">
-                    <label htmlFor="order-store" className="text-[13px] font-medium [color:var(--text-secondary)]">
+                    <label htmlFor="order-store" className="text-[13px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-secondary)]">
                       {tForm("storeLabel")} <span className="[color:var(--destructive)]">*</span>
                     </label>
                     <OrderStoreField
@@ -612,7 +612,7 @@ export default function OrderCreateForm({ stores, productTypeKeys, baseCurrencyC
                     {storeError && <FieldErrorMsg>{storeError}</FieldErrorMsg>}
                   </div>
                   <div className="space-y-1.5">
-                    <label htmlFor="order-currency" className="text-[13px] font-medium [color:var(--text-secondary)]">
+                    <label htmlFor="order-currency" className="text-[13px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-secondary)]">
                       {tForm("currencyLabel")} <span className="[color:var(--destructive)]">*</span>
                     </label>
                     <OrderCurrencyField
@@ -635,7 +635,7 @@ export default function OrderCreateForm({ stores, productTypeKeys, baseCurrencyC
                 </div>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-1.5">
-                    <label htmlFor="order-date" className="text-[13px] font-medium [color:var(--text-secondary)]">
+                    <label htmlFor="order-date" className="text-[13px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-secondary)]">
                       {tForm("orderDateLabel")} <span className="[color:var(--destructive)]">*</span>
                     </label>
                     <DatePickerInput
@@ -653,7 +653,7 @@ export default function OrderCreateForm({ stores, productTypeKeys, baseCurrencyC
                     {orderDateError && <FieldErrorMsg>{orderDateError}</FieldErrorMsg>}
                   </div>
                   <div className="space-y-1.5">
-                    <label htmlFor="delivery-range" className="text-[13px] font-medium [color:var(--text-secondary)]">
+                    <label htmlFor="delivery-range" className="text-[13px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-secondary)]">
                       {tForm("deliveryRangeLabel")}
                     </label>
                     <OrderDeliveryRangeField
@@ -754,7 +754,7 @@ export default function OrderCreateForm({ stores, productTypeKeys, baseCurrencyC
 
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-1.5">
-                    <label htmlFor="order-total" className="text-[13px] font-medium [color:var(--text-secondary)]">
+                    <label htmlFor="order-total" className="text-[13px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-secondary)]">
                       {tForm("totalCostLabel")}
                       {currencyCode ? ` (${currencyCode})` : ""} <span className="[color:var(--destructive)]">*</span>
                     </label>
@@ -782,10 +782,10 @@ export default function OrderCreateForm({ stores, productTypeKeys, baseCurrencyC
                     <div className="space-y-1.5">
                       <label
                         htmlFor="order-exchange-rate"
-                        className="text-[13px] font-medium [color:var(--text-secondary)]"
+                        className="text-[13px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-secondary)]"
                       >
                         {tForm("exchangeRateLabel")} {currencyCode}→{baseCurrencyCode}{" "}
-                        <span className="text-[11px] font-normal [color:var(--text-muted)]">
+                        <span className="text-[11px] [font-weight:var(--font-weight-regular)] [color:var(--text-muted)]">
                           {tCreate("fxOptional")}
                         </span>
                       </label>
@@ -847,15 +847,15 @@ export default function OrderCreateForm({ stores, productTypeKeys, baseCurrencyC
                 >
                   <dl className="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1.5 text-[13px]">
                     <dt className="text-[11.5px] [color:var(--text-muted)]">{tCreate("summaryStore")}</dt>
-                    <dd className="font-medium">{selectedStore?.name ?? "—"}</dd>
+                    <dd className="[font-weight:var(--font-weight-medium-body)]">{selectedStore?.name ?? "—"}</dd>
                     <dt className="text-[11.5px] [color:var(--text-muted)]">{tCreate("summaryCurrency")}</dt>
-                    <dd className="font-medium">
+                    <dd className="[font-weight:var(--font-weight-medium-body)]">
                       {currencyCode ? `${currencyCode} · ${tCurrencies(currencyCode as never)}` : "—"}
                     </dd>
                     <dt className="text-[11.5px] [color:var(--text-muted)]">{tCreate("summaryDate")}</dt>
-                    <dd className="font-medium">{orderDateForReview}</dd>
+                    <dd className="[font-weight:var(--font-weight-medium-body)]">{orderDateForReview}</dd>
                     <dt className="text-[11.5px] [color:var(--text-muted)]">{tCreate("summaryDelivery")}</dt>
-                    <dd className={cn("font-medium", deliveryReview === "—" && "[color:var(--text-muted)]")}>
+                    <dd className={cn("[font-weight:var(--font-weight-medium-body)]", deliveryReview === "—" && "[color:var(--text-muted)]")}>
                       {deliveryReview}
                     </dd>
                     <div className="col-span-2 my-1.5 h-px [background:var(--border)]" />
@@ -867,7 +867,7 @@ export default function OrderCreateForm({ stores, productTypeKeys, baseCurrencyC
                     </dd>
                     <div className="col-span-2 my-1.5 h-px [background:var(--border)]" />
                     <dt className="text-[11.5px] [color:var(--text-muted)]">{tCreate("confirmTotalLabel")}</dt>
-                    <dd className="text-[17px] font-bold [font-variant-numeric:tabular-nums]">{totalLabelForReview}</dd>
+                    <dd className="text-[17px] [font-weight:var(--font-weight-display)] [font-variant-numeric:tabular-nums]">{totalLabelForReview}</dd>
                   </dl>
                 </div>
 
@@ -879,7 +879,7 @@ export default function OrderCreateForm({ stores, productTypeKeys, baseCurrencyC
                     aria-expanded={showInitialPayment}
                     className="flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left"
                   >
-                    <span className="text-[12.5px] font-medium [color:var(--text-secondary)]">
+                    <span className="text-[12.5px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-secondary)]">
                       {tCreate("initialPayment.toggle")}
                     </span>
                     <ChevronDown
@@ -931,7 +931,7 @@ export default function OrderCreateForm({ stores, productTypeKeys, baseCurrencyC
                         <div className="space-y-1.5">
                           <label
                             htmlFor="order-initial-payment-amount"
-                            className="text-[13px] font-medium [color:var(--text-secondary)]"
+                            className="text-[13px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-secondary)]"
                           >
                             {tCreate("initialPayment.amountLabel")}
                             {currencyCode ? ` (${currencyCode})` : ""}
@@ -952,7 +952,7 @@ export default function OrderCreateForm({ stores, productTypeKeys, baseCurrencyC
                         <div className="space-y-1.5">
                           <label
                             htmlFor="order-initial-payment-date"
-                            className="text-[13px] font-medium [color:var(--text-secondary)]"
+                            className="text-[13px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-secondary)]"
                           >
                             {tCreate("initialPayment.dateLabel")}
                           </label>

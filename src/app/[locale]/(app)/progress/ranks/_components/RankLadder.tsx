@@ -201,7 +201,7 @@ function LadderRung({ entry, state, totalPoints, isSummit, className, progress }
 
   const facts = (
     <>
-      <span className={cn(FACT_CLASSNAME, "text-text-title [font-weight:var(--font-weight-semibold)]")}>
+      <span className={cn(FACT_CLASSNAME, "text-text-title [font-weight:var(--font-weight-mono)]")}>
         {t("ranksTab.threshold", { points: entry.threshold })}
       </span>
       {showMissing ? (
@@ -267,7 +267,7 @@ function LadderRung({ entry, state, totalPoints, isSummit, className, progress }
             />
           </div>
 
-          <span className="text-text-title [font-family:var(--font-display)] [font-size:var(--text-subtitle)] [line-height:var(--text-subtitle--line-height)] [font-weight:var(--font-weight-semibold)]">
+          <span className="text-text-title [font-family:var(--font-display)] [font-size:var(--text-subtitle)] [line-height:var(--text-subtitle--line-height)] [font-weight:var(--font-weight-title)]">
             {name}
           </span>
           <span className="text-text-secondary max-w-[44ch] [font-size:var(--text-caption)]">{lore}</span>
@@ -305,7 +305,7 @@ function LadderRung({ entry, state, totalPoints, isSummit, className, progress }
         ) : null}
         <span
           className={cn(
-            "[font-size:var(--text-body)] [font-weight:var(--font-weight-semibold)]",
+            "[font-size:var(--text-body)] [font-weight:var(--font-weight-title)]",
             state === "locked" ? "text-text-secondary" : "text-text-title",
           )}
         >
@@ -317,7 +317,7 @@ function LadderRung({ entry, state, totalPoints, isSummit, className, progress }
 
       <div className="flex basis-full flex-row flex-wrap items-center gap-x-[var(--space-3)] gap-y-[var(--space-1)] md:basis-auto md:flex-col md:items-end md:text-right">
         {state === "current" ? (
-          <span className={cn(FACT_CLASSNAME, "text-text-title [font-weight:var(--font-weight-semibold)]")}>
+          <span className={cn(FACT_CLASSNAME, "text-text-title [font-weight:var(--font-weight-mono)]")}>
             {t("ranksTab.threshold", { points: entry.threshold })}
           </span>
         ) : (

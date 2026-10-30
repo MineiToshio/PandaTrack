@@ -139,7 +139,7 @@ export default async function StoresPage({ params, searchParams }: StoresPagePro
         <div className="space-y-5">
           {/* Chrome — renders instantly. Only the count (data) is a skeleton; the title is real. */}
           <div className="flex items-baseline gap-2.5">
-            <h1 className="[font-size:var(--text-display)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
+            <h1 className="[font-size:var(--text-display)] [font-weight:var(--font-weight-title)] [color:var(--text-primary)]">
               {tListing("s6.hero.title")}
             </h1>
             <Suspense

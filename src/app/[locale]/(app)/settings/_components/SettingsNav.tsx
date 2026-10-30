@@ -113,7 +113,7 @@ export default function SettingsNav({ value, onChange, labels, panelIdBase = "se
                       "[border-left:2px_solid_var(--accent)]",
                       "[background:color-mix(in_oklch,var(--accent)_10%,transparent)]",
                       "[color:var(--accent)]",
-                      "[font-weight:var(--font-weight-medium)]",
+                      "[font-weight:var(--font-weight-medium-body)]",
                     ]
                   : "[border-left:2px_solid_transparent]",
               )}
@@ -159,7 +159,7 @@ export default function SettingsNav({ value, onChange, labels, panelIdBase = "se
                 onKeyDown={(event) => handleKeyDown(event, "horizontal")}
                 className={cn(
                   "flex flex-1 items-center justify-center gap-1.5 rounded-[7px] px-2 py-[7px] whitespace-nowrap",
-                  "text-[12.5px] [font-weight:var(--font-weight-medium)] [color:var(--text-secondary)]",
+                  "text-[12.5px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-secondary)]",
                   "transition-colors",
                   "focus-visible:[outline:2px_solid_var(--focus-ring)] focus-visible:[outline-offset:-2px]",
                   active && [

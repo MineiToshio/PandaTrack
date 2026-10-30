@@ -9,7 +9,7 @@
     "goBack": "Volver y corregir",
     "saveAnyway": "Guardar de todos modos",
     "whyTitle": "¿Por qué puede pasar?",
-    "whyBody": "Envío, impuestos o promociones aplicados sobre el subtotal. El costo total siempre prevalece sobre la suma de ítems.",
+    "whyBody": "Envío, impuestos o promociones aplicados sobre el subtotal. El costo total siempre prevalece sobre la suma de productos.",
     "keepEntered": "Mantener el total ingresado",
     "useCalculated": "Usar el total calculado ({amount})"
   },
@@ -72,12 +72,12 @@
     "summaryDate": "Fecha",
     "summaryDelivery": "Entrega aprox.",
     "summaryProducts": "Productos",
-    "summaryItems": "{count, plural, one {# ítem} other {# ítems}}",
+    "summaryItems": "{count, plural, one {# producto} other {# productos}}",
     "summaryTotal": "Total",
     "summaryEmpty": "—",
     "summaryItemsLine": "{count} · {firstName}",
     "summaryStep1": "{store} · {currency} · {date}",
-    "summaryStep2": "{count, plural, one {# ítem} other {# ítems}} · {total}",
+    "summaryStep2": "{count, plural, one {# producto} other {# productos}} · {total}",
     "confirmTotalLabel": "Total del pedido",
     "confirmCta": "Crear pedido",
     "submitShortcutHint": "o presiona ⌘ Enter",
@@ -88,7 +88,7 @@
     "shortcutInsert": "Insertar",
     "shortcutOrder": "Ordenar",
     "shortcutDelete": "Borrar",
-    "calculatedTotalLabel": "Total calculado desde ítems: {total}",
+    "calculatedTotalLabel": "Total calculado desde productos: {total}",
     "calculatedTotalShortLabel": "Total calculado: {total}",
     "useCalculatedTotal": "Usar este total",
     "useCalculatedTotalAria": "Usar la suma calculada como total del pedido",
@@ -135,11 +135,11 @@
     },
     "emptyStores": {
       "title": "Sin tiendas aún",
-      "description": "Antes de crear un pedido necesitas registrar al menos una tienda donde hayas hecho la compra.",
+      "description": "Antes de crear un pedido necesitas registrar al menos una tienda donde hayas hecho un pedido.",
       "cta": "Crear primera tienda",
       "backToList": "Volver a Pedidos",
       "mobileTitle": "Primero crea una tienda",
-      "mobileDescription": "Para crear un pedido necesitas al menos una tienda. Es donde vas a registrar la compra: nombre, contacto y monedas."
+      "mobileDescription": "Para crear un pedido necesitas al menos una tienda. Es donde vas a registrar el pedido: nombre, contacto y monedas."
     }
   },
   "picker": {
@@ -177,7 +177,7 @@
     "sectionDatosTitle": "Datos del pedido",
     "sectionDatosSubtitle": "{storeName} · {currencyCode}",
     "sectionProductosTitle": "Productos y costos",
-    "sectionProductosSubtitle": "Ítems y total del pedido"
+    "sectionProductosSubtitle": "Productos y total del pedido"
   },
   "emptyState": {
     "title": "Primero, agrega una tienda",
@@ -371,7 +371,7 @@
       "allocations": {
         "hint": "Asigna solo lo que sabes con certeza. El resto, déjalo en \"No sé todavía\".",
         "loading": "Cargando pedidos…",
-        "empty": "No tienes pedidos abiertos con saldo pendiente en esta moneda.",
+        "empty": "No tienes pedidos con saldo pendiente en esta moneda.",
         "amountAria": "Monto para {name}",
         "back": "Volver al pago",
         "clear": "Limpiar",
@@ -611,7 +611,7 @@
       "subtitle": "El pedido quedará archivado como Cancelado",
       "descriptionBase": "Podrás reactivarlo más adelante desde el detalle del pedido. El historial se conserva.",
       "paymentsQuestion": "Pagaste {amount} de este pedido. ¿Qué hacemos con ese dinero?",
-      "paymentsCreditLabel": "Queda a favor de {store}",
+      "paymentsCreditLabel": "Conservar a tu favor el saldo con {store}",
       "paymentsCreditHint": "Lo usarás en otros pedidos de esa tienda.",
       "paymentsLostLabel": "Lo doy por perdido",
       "paymentsLostHint": "La tienda se quedó con el dinero.",

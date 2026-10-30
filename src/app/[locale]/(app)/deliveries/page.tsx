@@ -163,7 +163,7 @@ export default async function DeliveriesPage({ params, searchParams }: Deliverie
       <div className="space-y-5">
         {/* Chrome — renders instantly. Only the counter (data) is a skeleton; the title is real. */}
         <div className="hidden flex-wrap items-baseline gap-2.5 lg:flex">
-          <h1 className="[font-size:var(--text-display)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
+          <h1 className="[font-size:var(--text-display)] [font-weight:var(--font-weight-title)] [color:var(--text-primary)]">
             {t("list.title")}
           </h1>
           <Suspense

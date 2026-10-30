@@ -128,7 +128,7 @@ export default function StoreReviewForm({
             disabled={isPending}
             ariaLabel={t("detail.reviews.form.ratingLabel")}
           />
-          <Typography size="sm" className="text-text-body font-medium">
+          <Typography size="sm" className="text-text-body [font-weight:var(--font-weight-medium-body)]">
             {ratingValue > 0
               ? t("detail.reviews.form.ratingSelected", { rating: ratingValue })
               : t("detail.reviews.form.ratingPlaceholder")}

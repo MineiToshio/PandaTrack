@@ -161,7 +161,7 @@ export default function Sheet({
             <header className="flex items-start gap-3 px-5 pt-2 pb-3 [border-bottom:1px_solid_var(--border)]">
               <h2
                 id={titleId}
-                className="flex-1 [font-size:var(--text-subtitle)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]"
+                className="flex-1 [font-size:var(--text-subtitle)] [font-weight:var(--font-weight-title)] [color:var(--text-primary)]"
               >
                 {title}
               </h2>

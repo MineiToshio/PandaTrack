@@ -157,7 +157,7 @@ export default function Toast({ toast, onRemove }: ToastProps) {
           </span>
           {/* `break-words` on both support lines and the name: a long medal name must wrap inside
               the container's `sm:max-w-sm`, never clip or push the dismiss target off the edge. */}
-          <p className="text-text-body mt-0.5 text-sm leading-snug font-bold break-words">{message}</p>
+          <p className="text-text-body mt-0.5 text-sm leading-snug [font-weight:var(--font-weight-display)] break-words">{message}</p>
           <span className="text-text-muted mt-0.5 block text-xs leading-snug break-words">{achievement.meta}</span>
         </div>
       ) : (
@@ -167,7 +167,7 @@ export default function Toast({ toast, onRemove }: ToastProps) {
         <button
           type="button"
           onClick={handleActionClick}
-          className="text-accent shrink-0 cursor-pointer text-sm font-semibold hover:underline"
+          className="text-accent shrink-0 cursor-pointer text-sm [font-weight:var(--font-weight-title)] hover:underline"
         >
           {action.label}
         </button>

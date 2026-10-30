@@ -29,7 +29,7 @@
       "storeNoResults": "Sin tiendas que coincidan.",
       "eligibleCount": "{count, plural, one {# producto sin entregar} other {# productos sin entregar}}",
       "storeListAriaLabel": "Tiendas con productos elegibles",
-      "storeHelper": "Solo aparecen tiendas con productos pendientes de entrega. Las tiendas sin pedidos abiertos no se listan."
+      "storeHelper": "Solo aparecen tiendas con productos pendientes de entrega. Las tiendas sin pedidos activos no se listan."
     },
     "step2": {
       "eyebrow": "Paso 2 · Productos",
@@ -191,7 +191,7 @@
       "store": "Tienda",
       "shippedDate": "Fecha de envío",
       "expectedArrival": "Llegada estimada",
-      "receivedDate": "Fecha de recepción",
+      "receivedDate": "Fecha de llegada",
       "cost": "Costo de envío",
       "exchangeRate": "Tipo de cambio",
       "exchangeRateValue": "1 {from} = {rate} {to}",
@@ -212,10 +212,10 @@
       "title": "¿Marcar como llegada?",
       "confirm": "Marcar como llegada",
       "cancel": "Cancelar",
-      "dateLabel": "Fecha de recepción",
+      "dateLabel": "Fecha de llegada",
       "requiredSr": "obligatorio",
       "dateHelper": "Solo fechas pasadas o de hoy.",
-      "dateRequired": "Selecciona la fecha de recepción.",
+      "dateRequired": "Selecciona la fecha de llegada.",
       "dateInFuture": "La fecha no puede ser futura.",
       "infoBox": "{count, plural, one {El <strong>producto</strong> pasará} other {Los <strong># productos</strong> pasarán}} a <strong>Entregado</strong> y los pedidos origen se actualizarán. Podrás reabrir la entrega si algo no llegó bien."
     },

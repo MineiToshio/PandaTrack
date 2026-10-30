@@ -16,7 +16,7 @@ export default function CooldownChip({ label, emphasis, className }: CooldownChi
     <span
       className={cn(
         "inline-flex w-fit items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px]",
-        "[font-weight:var(--font-weight-medium)] [color:var(--warning)]",
+        "[font-weight:var(--font-weight-medium-body)] [color:var(--warning)]",
         "[background:color-mix(in_oklch,var(--warning)_12%,transparent)]",
         "[border:1px_solid_color-mix(in_oklch,var(--warning)_24%,transparent)]",
         className,
@@ -28,7 +28,7 @@ export default function CooldownChip({ label, emphasis, className }: CooldownChi
         {emphasis ? (
           <>
             {" "}
-            <strong className="[font-weight:var(--font-weight-semibold)]">{emphasis}</strong>
+            <strong className="[font-weight:var(--font-weight-title)]">{emphasis}</strong>
           </>
         ) : null}
       </span>

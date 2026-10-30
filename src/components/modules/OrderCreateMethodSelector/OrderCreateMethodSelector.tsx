@@ -157,7 +157,7 @@ function SelectorCard({
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <span className="font-semibold [color:var(--text-primary)]">{title}</span>
+            <span className="[font-weight:var(--font-weight-title)] [color:var(--text-primary)]">{title}</span>
             {badge && (
               <Chip variant="success" size="sm">
                 {badge}

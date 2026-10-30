@@ -155,7 +155,7 @@ export default function StoreAvatar({
         border: "1px solid color-mix(in oklch, var(--accent) 28%, var(--border))",
         color: "var(--accent)",
         fontFamily: "var(--font-display)",
-        fontWeight: "var(--font-weight-semibold)",
+        fontWeight: "var(--font-weight-title)",
         fontSize: LETTER_FONT_SIZES[size],
         lineHeight: 1,
       }}

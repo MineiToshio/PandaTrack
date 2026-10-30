@@ -173,7 +173,7 @@ export default function StoreCombobox({
           {selected ? (
             <>
               <StoreOptionAvatar name={selected.name} logoUrl={selected.logoUrl} size={24} />
-              <span className="min-w-0 flex-1 truncate text-[13px] font-medium [color:var(--text-primary)]">
+              <span className="min-w-0 flex-1 truncate text-[13px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-primary)]">
                 {selected.name}
               </span>
             </>
@@ -234,7 +234,7 @@ export default function StoreCombobox({
               className="flex min-w-0 flex-1 items-center gap-2.5 text-left"
             >
               <StoreOptionAvatar name={selected!.name} logoUrl={selected!.logoUrl} size={24} />
-              <span className="min-w-0 flex-1 truncate text-[13px] font-medium [color:var(--text-primary)]">
+              <span className="min-w-0 flex-1 truncate text-[13px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-primary)]">
                 {selected!.name}
               </span>
             </button>
@@ -350,7 +350,7 @@ export default function StoreCombobox({
                     )}
                   >
                     <StoreOptionAvatar name={store.name} logoUrl={store.logoUrl} size={24} />
-                    <span className="min-w-0 flex-1 truncate font-medium">{store.name}</span>
+                    <span className="min-w-0 flex-1 truncate [font-weight:var(--font-weight-medium-body)]">{store.name}</span>
                     {store.meta && <span className="shrink-0 text-[11px] [color:var(--text-muted)]">{store.meta}</span>}
                   </button>
                 </li>
@@ -365,7 +365,7 @@ export default function StoreCombobox({
                   aria-selected={safeActive === filtered.length}
                   onMouseEnter={() => setActiveIdx(filtered.length)}
                   className={cn(
-                    "flex w-full items-center gap-2 rounded-md px-2 py-2 text-[13px] font-medium [color:var(--accent)]",
+                    "flex w-full items-center gap-2 rounded-md px-2 py-2 text-[13px] [font-weight:var(--font-weight-medium-body)] [color:var(--accent)]",
                     safeActive === filtered.length
                       ? "[background:color-mix(in_oklch,var(--accent)_12%,transparent)]"
                       : "hover:[background:color-mix(in_oklch,var(--accent)_8%,transparent)]",

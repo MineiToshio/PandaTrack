@@ -29,7 +29,7 @@ export default function DashboardChartCard({
   return (
     <div className="flex flex-col rounded-[14px] p-4 [background:var(--surface-elevated)] [border:1px_solid_var(--border)]">
       <div className="mb-3">
-        <h3 className="[font-size:14.5px] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
+        <h3 className="[font-size:14.5px] [font-weight:var(--font-weight-title)] [color:var(--text-primary)]">
           {title}
         </h3>
         <p className="mt-0.5 [font-size:12.5px] [color:var(--text-secondary)]">{subtitle}</p>

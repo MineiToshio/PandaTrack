@@ -12,7 +12,7 @@ type AuditLogTableProps = {
 const HEADER_CELL_CLASS = cn(
   "px-4 py-3 text-left align-middle",
   "[font-family:var(--font-mono)] [font-size:var(--text-eyebrow)] uppercase [letter-spacing:0.06em]",
-  "[font-weight:var(--font-weight-semibold)] [color:var(--text-muted)]",
+  "[font-weight:var(--font-weight-mono)] [color:var(--text-muted)]",
   // Same header tint as `OrdersTable` / `DeliveriesTable`: a neutral mix over the shell fill.
   "[border-bottom:1px_solid_var(--border)] [background:color-mix(in_oklab,var(--text-primary)_3%,var(--surface-elevated))]",
 );
@@ -22,7 +22,7 @@ const BODY_CELL_CLASS = cn(
   "[color:var(--text-secondary)] [border-bottom:1px_solid_var(--border)]",
 );
 
-const MONO_CLASS = "[font-family:var(--font-mono)] [letter-spacing:0.04em] [font-weight:var(--font-weight-medium)]";
+const MONO_CLASS = "[font-family:var(--font-mono)] [letter-spacing:0.04em] [font-weight:var(--font-weight-mono)]";
 
 /**
  * Read-only audit log table (newest first). Semantic `<table>` inside its own horizontally
@@ -80,7 +80,7 @@ export default async function AuditLogTable({ entries, locale }: AuditLogTablePr
               </td>
               <td className={BODY_CELL_CLASS}>
                 <div className="flex min-w-0 flex-col gap-0.5">
-                  <span className="[font-weight:var(--font-weight-medium)] [color:var(--text-primary)]">
+                  <span className="[font-weight:var(--font-weight-medium-body)] [color:var(--text-primary)]">
                     {t(auditTargetTypeLabelKey(entry.targetType))}
                   </span>
                   <span

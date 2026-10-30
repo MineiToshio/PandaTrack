@@ -64,7 +64,7 @@ export default function Chip({ variant = "neutral", icon, size = "md", className
       className={cn(
         "inline-flex items-center gap-[var(--space-1_5)] whitespace-nowrap",
         "rounded-[var(--radius-pill)]",
-        "[font-family:var(--font-sans)] [font-weight:var(--font-weight-medium)]",
+        "[font-family:var(--font-sans)] [font-weight:var(--font-weight-medium-body)]",
         size === "md" && [
           "[font-size:var(--text-caption)] [line-height:var(--text-caption--line-height)]",
           "px-[9px] py-[3px]",

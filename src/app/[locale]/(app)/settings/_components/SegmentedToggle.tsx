@@ -48,7 +48,7 @@ export default function SegmentedToggle<T extends string>({
             disabled={disabled}
             onClick={() => onChange(option.value)}
             className={cn(
-              "rounded-[7px] px-3 py-1.5 text-[12.5px] [font-weight:var(--font-weight-medium)]",
+              "rounded-[7px] px-3 py-1.5 text-[12.5px] [font-weight:var(--font-weight-medium-body)]",
               "[color:var(--text-secondary)] transition-colors",
               "focus-visible:[outline:2px_solid_var(--focus-ring)] focus-visible:[outline-offset:-2px]",
               active && [

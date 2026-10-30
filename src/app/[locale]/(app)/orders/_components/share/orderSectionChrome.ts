@@ -19,7 +19,7 @@ export const ORDER_SECTION_EYEBROW_CLASS =
   "block [font-family:var(--font-mono)] [font-size:var(--text-eyebrow)] [font-weight:var(--font-weight-mono)] [letter-spacing:0.06em] [color:var(--text-muted)] uppercase";
 
 export const ORDER_SECTION_HEADING_CLASS =
-  "mt-0.5 [font-size:var(--text-subtitle)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]";
+  "mt-0.5 [font-size:var(--text-subtitle)] [font-weight:var(--font-weight-title)] [color:var(--text-primary)]";
 
 export const ORDER_SECTION_BODY_CLASS = "flex flex-col gap-4 p-4 md:pt-5 md:pr-5 md:pb-5 md:pl-[3.75rem]";
 

@@ -136,7 +136,7 @@ export default function OrderItemsMobileList({
                   {Icon ? <Icon /> : null}
                 </span>
                 <span className="flex min-w-0 flex-1 flex-col">
-                  <span className="truncate text-[13px] font-medium [color:var(--text-primary)]">
+                  <span className="truncate text-[13px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-primary)]">
                     {row.name || tAdd("namePlaceholder")}
                   </span>
                   <span className="text-[11px] [color:var(--text-muted)]">

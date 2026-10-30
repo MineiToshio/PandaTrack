@@ -87,7 +87,7 @@ export default function EmptyState({
             {icon}
           </span>
         ) : null}
-        <HeadingTag className="[font-size:var(--text-subtitle)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
+        <HeadingTag className="[font-size:var(--text-subtitle)] [font-weight:var(--font-weight-title)] [color:var(--text-primary)]">
           {title}
         </HeadingTag>
         {subtitle && (
@@ -126,7 +126,7 @@ export default function EmptyState({
             {eyebrow}
           </span>
         )}
-        <HeadingTag className="mb-2 [font-size:var(--text-title)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
+        <HeadingTag className="mb-2 [font-size:var(--text-title)] [font-weight:var(--font-weight-title)] [color:var(--text-primary)]">
           {title}
         </HeadingTag>
         {subtitle && (
@@ -149,7 +149,7 @@ export default function EmptyState({
     >
       {visual && <div aria-hidden="true">{visual}</div>}
       <div className="flex flex-col gap-1">
-        <HeadingTag className="[font-size:var(--text-subtitle)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
+        <HeadingTag className="[font-size:var(--text-subtitle)] [font-weight:var(--font-weight-title)] [color:var(--text-primary)]">
           {title}
         </HeadingTag>
         {subtitle && (

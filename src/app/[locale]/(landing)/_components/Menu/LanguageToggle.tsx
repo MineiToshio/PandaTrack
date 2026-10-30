@@ -69,7 +69,7 @@ export default function LanguageToggle({
               <span
                 aria-current="true"
                 className={cn(
-                  "text-foreground flex py-2 font-semibold",
+                  "text-foreground flex py-2 [font-weight:var(--font-weight-title)]",
                   compact ? "items-start" : "items-center justify-center",
                 )}
                 style={compact ? undefined : { minHeight: MIN_TOUCH_TARGET_PX, minWidth: MIN_TOUCH_TARGET_PX }}

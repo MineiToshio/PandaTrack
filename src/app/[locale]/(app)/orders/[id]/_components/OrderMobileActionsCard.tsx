@@ -38,9 +38,9 @@ export default function OrderMobileActionsCard({
   const showCancel = !isCancelled && !isCompleted;
 
   const rowClass =
-    "flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm font-medium text-text-body hover:bg-muted/30 transition-colors";
+    "flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm [font-weight:var(--font-weight-medium-body)] text-text-body hover:bg-muted/30 transition-colors";
   const destructiveRowClass =
-    "flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors";
+    "flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm [font-weight:var(--font-weight-medium-body)] text-destructive hover:bg-destructive/10 transition-colors";
 
   return (
     <section
@@ -50,7 +50,7 @@ export default function OrderMobileActionsCard({
       <div className="border-border border-b px-[18px] py-3">
         <h2
           id="mobile-actions-heading"
-          className="text-text-muted font-mono text-[11px] font-medium tracking-[0.08em] uppercase"
+          className="text-text-muted font-mono text-[11px] [font-weight:var(--font-weight-mono)] tracking-[0.08em] uppercase"
         >
           {t("detail.mobileActions.sectionTitle")}
         </h2>

@@ -350,7 +350,7 @@ export default function DashboardLineChart({
             textAnchor="end"
             fill="var(--text-primary)"
             fontSize={11.5}
-            fontWeight={600}
+            fontWeight="var(--font-weight-title)"
             // The label sits wherever the last point lands, which on a dense series means on top of
             // the line itself. Painting the stroke first lays a card-coloured halo behind the
             // glyphs, so the value stays readable without a box that would clutter the plot.
@@ -369,7 +369,7 @@ export default function DashboardLineChart({
           className="pointer-events-none absolute top-0 -translate-x-1/2 rounded-[10px] px-2.5 py-2 [font-size:12px] [box-shadow:var(--shadow-2)] [background:var(--surface-elevated)] [border:1px_solid_var(--border-strong)]"
           style={{ left: `${tooltipLeftPercent}%` }}
         >
-          <p className="mb-1 [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
+          <p className="mb-1 [font-weight:var(--font-weight-title)] [color:var(--text-primary)]">
             {spansMultipleYears ? `${hoveredPoint.label} ${hoveredPoint.year}` : hoveredPoint.label}
           </p>
           {series.map((entry) => (

@@ -161,7 +161,7 @@ export default async function DashboardCashZone({ data, locale }: DashboardCashZ
                 : t("cash.cancelledNote", { amount: money(lostOnCancelled.totalMinor) })}{" "}
               <Link
                 href={`${ordersHref}?status=${OrderStatus.CANCELLED}`}
-                className="[font-weight:var(--font-weight-semibold)] whitespace-nowrap [color:var(--accent)] hover:underline"
+                className="[font-weight:var(--font-weight-title)] whitespace-nowrap [color:var(--accent)] hover:underline"
               >
                 {t("cash.cancelledLink")}
               </Link>
@@ -187,7 +187,7 @@ export default async function DashboardCashZone({ data, locale }: DashboardCashZ
                 href={`${ordersHref}?status=${OrderStatus.COMPLETED}&balance=true`}
                 data-ph-event={POSTHOG_EVENTS.DASHBOARD.UNRECORDED_PAYMENTS_LINK_CLICKED}
                 data-ph-props={JSON.stringify({ source: "cash_zone_unrecorded_line" })}
-                className="[font-weight:var(--font-weight-semibold)] whitespace-nowrap [color:var(--accent)] hover:underline"
+                className="[font-weight:var(--font-weight-title)] whitespace-nowrap [color:var(--accent)] hover:underline"
               >
                 {t("cash.unrecordedLink")}
               </Link>

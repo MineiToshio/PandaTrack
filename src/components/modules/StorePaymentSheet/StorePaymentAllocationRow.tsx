@@ -248,7 +248,7 @@ export default function StorePaymentAllocationRow({
           block has nothing above it to be told apart from. */}
       {hasBlockHeader && (
         <p className="mt-2 flex items-center gap-1 pt-3 [font-size:11.5px] [line-height:16px] [color:var(--text-secondary)] tabular-nums [border-top:1px_solid_var(--border)] group-first/row:mt-0 group-first/row:pt-1 group-first/row:[border-top:0]">
-          <span className="truncate [font-family:var(--font-mono)] font-medium">
+          <span className="truncate [font-family:var(--font-mono)] [font-weight:var(--font-weight-mono)]">
             <Highlighted text={line.humanReadableId} query={query} />
           </span>
           <span className="shrink-0">

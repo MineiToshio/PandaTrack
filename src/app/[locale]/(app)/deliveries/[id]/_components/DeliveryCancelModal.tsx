@@ -54,7 +54,7 @@ export default function DeliveryCancelModal({
         <p className="text-text-secondary text-[13.5px] leading-relaxed">
           {t.rich("detail.cancelModal.description", {
             count: productCount,
-            strong: (chunks) => <strong className="text-text-primary font-semibold">{chunks}</strong>,
+            strong: (chunks) => <strong className="text-text-primary [font-weight:var(--font-weight-title)]">{chunks}</strong>,
           })}
         </p>
         <p className="text-text-muted text-[12.5px]">{t("detail.cancelModal.reversibleNote")}</p>

@@ -87,14 +87,14 @@ export default function DeliveryDeleteModal({
         <p className="text-text-secondary mb-3.5 text-[13.5px] leading-relaxed">
           {t.rich("detail.deleteModal.description", {
             id: humanReadableId,
-            strong: (chunks) => <strong className="text-text-primary font-semibold">{chunks}</strong>,
+            strong: (chunks) => <strong className="text-text-primary [font-weight:var(--font-weight-title)]">{chunks}</strong>,
           })}
         </p>
         <div className="space-y-1.5">
           <label htmlFor="delivery-delete-confirm" className="text-text-secondary block text-[13px]">
             {t.rich("detail.deleteModal.typeToConfirmLabel", {
               word: confirmWord,
-              strong: (chunks) => <strong className="text-text-title font-semibold">{chunks}</strong>,
+              strong: (chunks) => <strong className="text-text-title [font-weight:var(--font-weight-title)]">{chunks}</strong>,
             })}
           </label>
           <Input

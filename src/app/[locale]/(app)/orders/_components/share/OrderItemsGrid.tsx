@@ -613,7 +613,7 @@ export function OrderItemsTable({
 }) {
   const t = useTranslations("orders.form");
   const headerCellClass =
-    "[border-bottom:1px_solid_var(--border)] px-1.5 pt-[3px] pb-[7px] text-[11px] font-semibold [color:var(--text-muted)] whitespace-nowrap";
+    "[border-bottom:1px_solid_var(--border)] px-1.5 pt-[3px] pb-[7px] text-[11px] [font-weight:var(--font-weight-title)] [color:var(--text-muted)] whitespace-nowrap";
   const priceHeader = currencyCode ? `${t("itemUnitPriceLabel")} (${currencyCode})` : t("itemUnitPriceLabel");
   const columnCount = orderItemsColumns({ showQuantity, sortable, hasRowAction }).length;
   return (

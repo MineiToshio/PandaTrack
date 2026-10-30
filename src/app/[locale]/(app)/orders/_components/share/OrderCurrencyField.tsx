@@ -119,7 +119,7 @@ export default function OrderCurrencyField({
           description,
           searchText: `${opt.code} ${opt.label}`,
           icon: (
-            <span className="font-mono text-[13px] leading-none font-semibold">
+            <span className="font-mono text-[13px] leading-none [font-weight:var(--font-weight-mono)]">
               {CURRENCY_GLYPHS[opt.code] ?? opt.code}
             </span>
           ),
@@ -334,7 +334,7 @@ export default function OrderCurrencyField({
                 >
                   <span className="min-w-0 flex-1 truncate">{opt.label}</span>
                   {isBase && (
-                    <span className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium [color:var(--accent)] [background:color-mix(in_oklch,var(--accent)_10%,transparent)]">
+                    <span className="shrink-0 rounded px-1.5 py-0.5 text-[10px] [font-weight:var(--font-weight-medium-body)] [color:var(--accent)] [background:color-mix(in_oklch,var(--accent)_10%,transparent)]">
                       base
                     </span>
                   )}

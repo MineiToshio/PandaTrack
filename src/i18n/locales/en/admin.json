@@ -47,7 +47,7 @@
     "proposedBy": "Proposed by",
     "sellerType": {
       "RETAILER": "Retailer",
-      "PERSON": "Person",
+      "PERSON": "Individual",
       "PROXY": "Proxy"
     },
     "presence": {
@@ -246,7 +246,7 @@
     "searchPlaceholder": "Username or email",
     "searchSubmit": "Search",
     "adminTag": "Admin",
-    "openLedger": "View ledger",
+    "openLedger": "View point ledger",
     "backToSearch": "Back to search",
     "idle": {
       "title": "Find an account",

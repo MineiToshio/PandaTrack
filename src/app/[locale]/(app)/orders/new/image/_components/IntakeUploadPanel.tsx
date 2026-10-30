@@ -84,7 +84,7 @@ const REORDER_BUTTON_CLASS = cn(
  * the same way and the two cannot drift apart visually.
  */
 function renderStrong(chunks: ReactNode): ReactNode {
-  return <strong className="[font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">{chunks}</strong>;
+  return <strong className="[font-weight:var(--font-weight-title)] [color:var(--text-primary)]">{chunks}</strong>;
 }
 
 /** True when the MIME type is one this surface, and the server validator, accepts. */
@@ -367,7 +367,7 @@ export default function IntakeUploadPanel({
     >
       <div className="flex flex-col gap-[var(--space-2)]">
         <div className="flex flex-wrap items-center justify-between gap-[var(--space-2)]">
-          <h2 className="[font-size:var(--text-subtitle)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
+          <h2 className="[font-size:var(--text-subtitle)] [font-weight:var(--font-weight-title)] [color:var(--text-primary)]">
             {t("title")}
           </h2>
           {/* Passive counter: information, never a gate, and never an alert that steals focus
@@ -454,7 +454,7 @@ export default function IntakeUploadPanel({
           )}
         >
           <UploadCloud size={28} aria-hidden />
-          <span className="[font-size:var(--text-body)] [font-weight:var(--font-weight-medium)] [color:var(--text-primary)]">
+          <span className="[font-size:var(--text-body)] [font-weight:var(--font-weight-medium-body)] [color:var(--text-primary)]">
             {dropzoneLabel}
           </span>
           <span className="[font-size:var(--text-caption)]">{t("dropzoneHint")}</span>
@@ -528,7 +528,7 @@ export default function IntakeUploadPanel({
                 <span
                   className={cn(
                     "absolute top-1 left-1 flex min-w-6 items-center gap-1 rounded-[var(--radius-pill)] px-1.5 py-0.5",
-                    "[font-size:var(--text-caption)] [font-weight:var(--font-weight-medium)]",
+                    "[font-size:var(--text-caption)] [font-weight:var(--font-weight-medium-body)]",
                     "[color:var(--text-primary)] [background:var(--surface-elevated)] [border:1px_solid_var(--border)]",
                   )}
                 >

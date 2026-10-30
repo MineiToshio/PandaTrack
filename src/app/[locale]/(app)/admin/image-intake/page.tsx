@@ -100,7 +100,7 @@ export default async function AdminImageIntakePage({ params, searchParams }: Adm
                   <Card variant="outlined" padding="md">
                     <div className="flex flex-col gap-[var(--space-3)]">
                       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                        <span className="[font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
+                        <span className="[font-weight:var(--font-weight-title)] [color:var(--text-primary)]">
                           {account.username}
                         </span>
                         <span className="[font-size:var(--text-caption)] [color:var(--text-muted)]">

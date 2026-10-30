@@ -109,7 +109,7 @@ export default async function DashboardBudgetZone({ data, locale }: DashboardBud
               ("… de S/" / "200,000.00"), which is worse than the slash it replaced.
             */}
             <span className="whitespace-nowrap">{money(budget.consumedMinor)}</span>{" "}
-            <span className="[font-size:18px] [font-weight:var(--font-weight-semibold)] whitespace-nowrap [color:var(--text-muted)]">
+            <span className="[font-size:18px] [font-weight:var(--font-weight-title)] whitespace-nowrap [color:var(--text-muted)]">
               {t("budget.ofGoal", { amount: money(budgetAmountMinor) })}
             </span>
           </p>

@@ -43,7 +43,7 @@ export default function SectionTitleWithAccent({
     <div className={cn("flex min-w-0 items-center gap-2", className)}>
       {lead}
       {as === "div" ? (
-        <div id={id} className={cn(TITLE_CLASS, "text-text-title text-lg font-semibold tracking-tighter")}>
+        <div id={id} className={cn(TITLE_CLASS, "text-text-title text-lg [font-weight:var(--font-weight-title)] tracking-tighter")}>
           {children}
         </div>
       ) : (

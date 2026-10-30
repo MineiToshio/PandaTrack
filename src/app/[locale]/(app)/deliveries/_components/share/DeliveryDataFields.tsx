@@ -63,7 +63,7 @@ export default function DeliveryDataFields({
     <div className="space-y-4">
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-1.5">
-          <label htmlFor={`${idPrefix}-date`} className="text-[13px] font-medium [color:var(--text-secondary)]">
+          <label htmlFor={`${idPrefix}-date`} className="text-[13px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-secondary)]">
             {t("create.fields.shippedDateLabel")} <span className="[color:var(--destructive)]">*</span>
           </label>
           <DatePickerInput
@@ -85,9 +85,9 @@ export default function DeliveryDataFields({
           )}
         </div>
         <div className="space-y-1.5">
-          <label htmlFor={`${idPrefix}-arrival`} className="text-[13px] font-medium [color:var(--text-secondary)]">
+          <label htmlFor={`${idPrefix}-arrival`} className="text-[13px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-secondary)]">
             {t("create.fields.arrivalLabel")}{" "}
-            <span className="text-[11px] font-normal [color:var(--text-muted)]">
+            <span className="text-[11px] [font-weight:var(--font-weight-regular)] [color:var(--text-muted)]">
               {t("create.fields.arrivalOptional")}
             </span>
           </label>
@@ -106,7 +106,7 @@ export default function DeliveryDataFields({
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <div className="space-y-1.5">
-          <label htmlFor={`${idPrefix}-cost`} className="text-[13px] font-medium [color:var(--text-secondary)]">
+          <label htmlFor={`${idPrefix}-cost`} className="text-[13px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-secondary)]">
             {t("create.fields.costLabel")} <span className="[color:var(--destructive)]">*</span>
           </label>
           <Input
@@ -128,7 +128,7 @@ export default function DeliveryDataFields({
           )}
         </div>
         <div className="space-y-1.5">
-          <label htmlFor={`${idPrefix}-currency`} className="text-[13px] font-medium [color:var(--text-secondary)]">
+          <label htmlFor={`${idPrefix}-currency`} className="text-[13px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-secondary)]">
             {t("create.fields.currencyLabel")} <span className="[color:var(--destructive)]">*</span>
           </label>
           <Select
@@ -162,7 +162,7 @@ export default function DeliveryDataFields({
         {/* FX only renders when the currency differs from the user base. */}
         {showExchangeRate && (
           <div className="space-y-1.5">
-            <label htmlFor={`${idPrefix}-fx`} className="text-[13px] font-medium [color:var(--text-secondary)]">
+            <label htmlFor={`${idPrefix}-fx`} className="text-[13px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-secondary)]">
               {t("create.fields.fxLabel")} <span className="[color:var(--destructive)]">*</span>
             </label>
             <Input

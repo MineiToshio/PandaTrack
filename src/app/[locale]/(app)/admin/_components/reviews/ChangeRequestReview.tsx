@@ -75,7 +75,7 @@ export default async function ChangeRequestReview({ store, request, locale }: Ch
         <div className="flex items-center gap-1.5 text-xs [color:var(--text-muted)]">
           <User className="size-3.5 shrink-0" aria-hidden />
           <span>{t("proposedBy")}</span>
-          <span className="text-text-secondary font-medium">@{request.requester.username}</span>
+          <span className="text-text-secondary [font-weight:var(--font-weight-medium-body)]">@{request.requester.username}</span>
         </div>
       </ReviewSection>
 

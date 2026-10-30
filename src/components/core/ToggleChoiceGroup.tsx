@@ -136,7 +136,7 @@ export default function ToggleChoiceGroup(props: ToggleChoiceGroupProps) {
             ) : null}
             {renderTileBody ? (
               <span className="min-w-0 flex-1">
-                <span className="block [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
+                <span className="block [font-weight:var(--font-weight-title)] [color:var(--text-primary)]">
                   {option.label}
                 </span>
                 <span className="mt-0.5 block [font-size:var(--text-caption)] [color:var(--text-muted)]">

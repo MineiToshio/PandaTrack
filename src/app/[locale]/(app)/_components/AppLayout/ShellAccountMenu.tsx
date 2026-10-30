@@ -50,7 +50,7 @@ function AccountAvatar({ user, size = "md", className, withChrome = true }: Acco
   return (
     <span
       className={cn(
-        "text-text-title relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full font-semibold",
+        "text-text-title relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full [font-weight:var(--font-weight-title)]",
         withChrome && "bg-primary/15 border-border border",
         AVATAR_SIZE_CLASSNAME[size],
         className,
@@ -176,7 +176,7 @@ export default function ShellAccountMenu({
           <AccountAvatar user={user} size="sm" withChrome={false} />
         </span>
         <span className="flex min-w-0 flex-1 flex-col">
-          <span className="text-text-title truncate text-sm font-semibold">{displayName}</span>
+          <span className="text-text-title truncate text-sm [font-weight:var(--font-weight-title)]">{displayName}</span>
           {secondaryName ? <span className="text-text-muted truncate text-xs">{secondaryName}</span> : null}
         </span>
         <ChevronUp
@@ -198,7 +198,7 @@ export default function ShellAccountMenu({
           <div className={cn(TINTED_SURFACE_GRADIENT_STOPS, "flex items-center gap-3 bg-linear-to-br px-4 py-4")}>
             <AccountAvatar user={user} size="lg" />
             <div className="min-w-0">
-              <p className="text-text-title truncate text-sm font-semibold">{displayName}</p>
+              <p className="text-text-title truncate text-sm [font-weight:var(--font-weight-title)]">{displayName}</p>
               <p className="text-text-muted truncate text-xs">{t("account.identityCaption")}</p>
             </div>
           </div>
@@ -206,7 +206,7 @@ export default function ShellAccountMenu({
           <div className="flex flex-col gap-1 p-2">
             <Link
               href={`/${locale}${ROUTES.settings}`}
-              className="focus-visible:ring-ring focus-visible:ring-offset-background text-text-body hover:bg-foreground/[0.06] hover:text-foreground inline-flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+              className="focus-visible:ring-ring focus-visible:ring-offset-background text-text-body hover:bg-foreground/[0.06] hover:text-foreground inline-flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm [font-weight:var(--font-weight-medium-body)] transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
               onClick={handleItemSelect}
               data-ph-event={POSTHOG_EVENTS.APP_SHELL.ACCOUNT_MENU_ITEM_CLICKED}
               data-ph-props={JSON.stringify({ destination: "settings", surface })}
@@ -218,7 +218,7 @@ export default function ShellAccountMenu({
             <button
               type="button"
               onClick={handleSignOut}
-              className="focus-visible:ring-ring focus-visible:ring-offset-background text-destructive hover:bg-destructive/10 hover:text-destructive inline-flex min-h-11 w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+              className="focus-visible:ring-ring focus-visible:ring-offset-background text-destructive hover:bg-destructive/10 hover:text-destructive inline-flex min-h-11 w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-2 text-left text-sm [font-weight:var(--font-weight-medium-body)] transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
               data-ph-event={POSTHOG_EVENTS.APP_SHELL.ACCOUNT_MENU_ITEM_CLICKED}
               data-ph-props={JSON.stringify({ destination: "sign-out", surface })}
             >

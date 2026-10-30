@@ -20,7 +20,7 @@ type DeliveryActionsSheetProps = {
 };
 
 const ROW_CLASS =
-  "flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-[14.5px] font-medium transition-colors";
+  "flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-[14.5px] [font-weight:var(--font-weight-medium-body)] transition-colors";
 
 /**
  * Mobile "Más acciones" overflow sheet (ADR 0011, action-sheet variant):

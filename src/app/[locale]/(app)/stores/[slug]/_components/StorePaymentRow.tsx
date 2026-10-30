@@ -142,7 +142,7 @@ export default function StorePaymentRow({ payment, locale, onConfirmDelete }: St
               currencyCode={payment.currencyCode}
             />
           </div>
-          <span className="text-text-title ml-auto shrink-0 text-[14px] font-semibold tabular-nums md:ml-0">
+          <span className="text-text-title ml-auto shrink-0 text-[14px] [font-weight:var(--font-weight-title)] tabular-nums md:ml-0">
             {amountLabel}
           </span>
           {deleteButton}

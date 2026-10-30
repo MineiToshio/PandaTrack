@@ -98,7 +98,7 @@ export default function OrderListGroupBy({ view, variant = "select", id, classNa
           aria-label={t("view.compactAriaLabel", { value: activeLabel })}
           className={cn(
             "inline-flex h-11 shrink-0 items-center gap-1 rounded-[var(--radius-md)] px-3",
-            "[font-size:var(--text-caption)] [line-height:var(--text-caption--line-height)] font-medium",
+            "[font-size:var(--text-caption)] [line-height:var(--text-caption--line-height)] [font-weight:var(--font-weight-medium-body)]",
             "[color:var(--text-primary)] [background:var(--surface-elevated)] [border:1px_solid_var(--border-strong)]",
             "cursor-pointer transition-colors [transition-duration:var(--motion-fast)] [transition-timing-function:var(--ease-emphasis)]",
             "hover:[background:color-mix(in_oklab,var(--text-primary)_4%,var(--surface-elevated))]",

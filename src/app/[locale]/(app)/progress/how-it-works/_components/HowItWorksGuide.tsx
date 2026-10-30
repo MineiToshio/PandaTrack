@@ -40,7 +40,7 @@ export default function HowItWorksGuide({ blocks }: HowItWorksGuideProps) {
                 >
                   <Icon className="size-4" />
                 </span>
-                <h2 className="text-text-title m-0 [font-size:var(--text-body)] [font-weight:var(--font-weight-semibold)]">
+                <h2 className="text-text-title m-0 [font-size:var(--text-body)] [font-weight:var(--font-weight-title)]">
                   {block.title}
                 </h2>
               </header>

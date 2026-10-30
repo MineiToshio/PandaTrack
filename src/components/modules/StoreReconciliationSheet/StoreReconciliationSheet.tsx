@@ -213,7 +213,7 @@ export default function StoreReconciliationSheet({
           {t("formClarifier", { store: storeName })}
         </p>
         <div className="flex items-center justify-between gap-3">
-          <p className="[font-size:var(--text-body)] font-medium [color:var(--text-primary)]">
+          <p className="[font-size:var(--text-body)] [font-weight:var(--font-weight-medium-body)] [color:var(--text-primary)]">
             {t("readOut", { amount: readOutLabel })}
           </p>
           <Button variant="ghost" size="sm" onClick={handleMarkAllSettled}>

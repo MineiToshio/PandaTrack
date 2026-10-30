@@ -63,7 +63,7 @@ export default async function MedalAlbumPage({ params }: MedalAlbumPageProps) {
           tall figure against the short bar left the two floating at different heights. */}
       <Card as="section" variant="elevated" padding="lg" className="flex flex-wrap items-end gap-[var(--space-5)]">
         <p className="m-0 flex flex-col items-center text-center">
-          <span className="text-text-title [font-family:var(--font-mono)] [font-size:var(--text-title)] [line-height:var(--text-title--line-height)] [font-weight:var(--font-weight-title)]">
+          <span className="text-text-title [font-family:var(--font-mono)] [font-size:var(--text-title)] [line-height:var(--text-title--line-height)] [font-weight:var(--font-weight-mono)]">
             {album.unlockedCount}
           </span>
           <span className="text-text-muted [font-size:var(--text-caption)]">

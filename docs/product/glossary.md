@@ -65,7 +65,7 @@ If a term you need is not listed here, add it before introducing inconsistent wo
 | The screen where a collector browses every medalla they have earned. | **álbum** | **album** | Added 2026-08-23 (**ADR 0036**, `FRD-12`). One of the surfaces, along with a medalla's own detail and celebration moments, where a medal's full animated rareza treatment plays; the dashboard shows the same medallas with a static treatment and no animation. |
 | The points-ranks-medallas system as a whole. | **progresión** | **progression** | Added 2026-08-23 (`FRD-12`). The feature's own name (`collector-progression`). Do not use **gamificación** / **gamification** in user-facing copy. |
 | A medalla or bonus only obtainable during a bounded window. | **evento de tiempo limitado** | **limited-time event** | Added 2026-08-23 (`FRD-12`). |
-| The append-only store of every point-earning action a collector has taken. | **ledger de puntos** | **point ledger** | Added 2026-08-23 (**ADR 0035**). One entry per `(userId, ruleKey, entityId)`, insert-only. Never decremented or reversed with a negative entry: a collector's live balance is derived by recomputing, per entry, whether its entity still exists and still qualifies today. See ADR 0035. |
+| The append-only store of every point-earning action a collector has taken. | **historial de puntos** | **point ledger** | User-facing Spanish uses **historial de puntos**; **ledger** remains the internal/technical term. Added 2026-08-23 (**ADR 0035**). One entry per `(userId, ruleKey, entityId)`, insert-only. Never decremented or reversed with a negative entry: a collector's live balance is derived by recomputing, per entry, whether its entity still exists and still qualifies today. See ADR 0035. |
 
 ## Domain rules tied to terminology
 

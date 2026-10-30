@@ -23,7 +23,7 @@ export default function IntakeProcessingPanel({ activeStep }: IntakeProcessingPa
 
   return (
     <section className="flex flex-col items-center gap-[var(--space-5)] py-[var(--space-10)] text-center">
-      <h2 className="[font-size:var(--text-subtitle)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">{t("title")}</h2>
+      <h2 className="[font-size:var(--text-subtitle)] [font-weight:var(--font-weight-title)] [color:var(--text-primary)]">{t("title")}</h2>
       <p className="max-w-sm [font-size:var(--text-body)] [color:var(--text-secondary)]">{t("subtitle")}</p>
 
       <ol

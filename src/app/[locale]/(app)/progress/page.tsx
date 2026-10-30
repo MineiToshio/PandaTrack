@@ -149,7 +149,7 @@ export default async function ProgressSummaryPage({ params }: ProgressPageProps)
                   className="border-border flex items-baseline justify-between gap-[var(--space-3)] border-b pb-[var(--space-2)] last:border-b-0 last:pb-0"
                 >
                   <span className="text-text-body [font-size:var(--text-body)]">{t(`groups.${line.group}`)}</span>
-                  <span className="text-text-title [font-family:var(--font-mono)] [font-size:var(--text-mono)] font-medium">
+                  <span className="text-text-title [font-family:var(--font-mono)] [font-size:var(--text-mono)] [font-weight:var(--font-weight-mono)]">
                     {t("summary.monthChip", { points: line.points })}
                   </span>
                 </li>

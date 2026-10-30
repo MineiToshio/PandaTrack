@@ -74,7 +74,7 @@ export default async function QueueRow({ item, locale, isSelected }: QueueRowPro
         >
           {category}
         </span>
-        <span className="text-text-primary truncate text-sm font-medium">{entityName}</span>
+        <span className="text-text-primary truncate text-sm [font-weight:var(--font-weight-medium-body)]">{entityName}</span>
         <span className="truncate text-xs [color:var(--text-muted)]">{metaText}</span>
       </span>
       <ChevronRight className="size-4 shrink-0 [color:var(--text-muted)]" aria-hidden />

@@ -27,7 +27,7 @@ export default function OrderCreateEmptyStores() {
     <div className="mx-auto w-full max-w-3xl space-y-4">
       <BackNavLink href={ordersHref}>{tCreate("backToList")}</BackNavLink>
 
-      <h1 className="hidden text-[28px] leading-tight font-semibold [color:var(--text-primary)] md:block">
+      <h1 className="hidden text-[28px] leading-tight [font-weight:var(--font-weight-title)] [color:var(--text-primary)] md:block">
         {tCreate("title")}
       </h1>
 

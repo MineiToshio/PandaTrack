@@ -32,7 +32,7 @@ export default async function CancellationReasonCallout({ reason, locale }: Canc
     >
       <Ban className="text-text-muted mt-0.5 size-[15px] shrink-0" aria-hidden />
       <div className="min-w-0">
-        <div className="text-text-muted text-[11px] font-semibold tracking-[0.06em] uppercase">{label}</div>
+        <div className="text-text-muted text-[11px] [font-weight:var(--font-weight-title)] tracking-[0.06em] uppercase">{label}</div>
         <p className="text-text-secondary mt-[3px] text-[13px] leading-[1.45] whitespace-pre-wrap">{reason}</p>
       </div>
     </div>

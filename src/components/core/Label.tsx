@@ -35,7 +35,7 @@ export default function Label({
   return (
     <label
       className={cn(
-        "[font-family:var(--font-sans)] [font-weight:var(--font-weight-medium)]",
+        "[font-family:var(--font-sans)] [font-weight:var(--font-weight-medium-body)]",
         "mb-[var(--space-2)] block",
         size === "md" || size === "lg"
           ? "[font-size:var(--text-body)] [line-height:var(--text-body--line-height)]"

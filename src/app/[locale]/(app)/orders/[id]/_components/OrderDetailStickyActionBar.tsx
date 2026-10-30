@@ -87,9 +87,9 @@ export default function OrderDetailStickyActionBar({
   }
 
   const primaryBtnClass =
-    "bg-primary text-primary-foreground hover:bg-primary/90 inline-flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-medium shadow-sm transition-colors";
+    "bg-primary text-primary-foreground hover:bg-primary/90 inline-flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm [font-weight:var(--font-weight-medium-body)] shadow-sm transition-colors";
   const tonalBtnClass =
-    "border-primary/30 bg-primary/10 text-primary hover:bg-primary/15 inline-flex flex-1 items-center justify-center gap-2 rounded-lg border px-4 py-3 text-sm font-medium transition-colors";
+    "border-primary/30 bg-primary/10 text-primary hover:bg-primary/15 inline-flex flex-1 items-center justify-center gap-2 rounded-lg border px-4 py-3 text-sm [font-weight:var(--font-weight-medium-body)] transition-colors";
 
   // Nothing left to do on this order from a phone (typically fully paid and fully delivered):
   // render no bar at all rather than a strip whose only action leads to an empty wizard.

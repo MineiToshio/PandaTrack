@@ -150,7 +150,7 @@
     "arrivalResolved": "ya llegó a la tienda"
   },
   "storeView": {
-    "orderSummary": "{orders} {orders, plural, one {pedido abierto} other {pedidos abiertos}} · {products} {products, plural, one {producto pendiente} other {productos pendientes}}",
+    "orderSummary": "{orders} {orders, plural, one {pedido activo} other {pedidos activos}} · {products} {products, plural, one {producto pendiente} other {productos pendientes}}",
     "search": {
       "label": "Buscar tiendas o productos",
       "placeholder": "Tienda o producto (Amazon, Nendoroid…)",
@@ -168,10 +168,10 @@
     "selection": {
       "enter": "Seleccionar",
       "exit": "Cancelar selección",
-      "selectAll": "Marcar todo",
+      "selectAll": "Seleccionar todo",
       "selectAllAriaLabel": "Seleccionar todos los productos pendientes de {store}",
       "itemAriaLabel": "Seleccionar {name}",
-      "notSelectable": "En camino en otra entrega. No se puede marcar desde aquí.",
+      "notSelectable": "En camino en otra entrega. No se puede seleccionar desde aquí.",
       "count": "{count, plural, one {# producto} other {# productos}} de {orders, plural, one {# pedido} other {# pedidos}}",
       "countSingleOrder": "{count, plural, one {# producto seleccionado} other {# productos seleccionados}}",
       "liveStatus": "{count, plural, =0 {Sin productos seleccionados} one {# producto seleccionado} other {# productos seleccionados}} en {store}",
@@ -227,7 +227,7 @@
   "empty": {
     "noOrders": {
       "title": "Aún no hay pedidos",
-      "description": "Anota tu primer pedido y empieza a seguir tus compras desde aquí."
+      "description": "Anota tu primer pedido y síguelo desde aquí."
     },
     "noResults": {
       "title": "Sin resultados",

@@ -63,7 +63,7 @@ export default function ProgressRankHero({ summary, rankName, rankLore, copy }: 
               lore. It sits above the bar, not beside it, so the bar keeps the hero's full width. */}
           <div className="order-1 flex shrink-0 flex-col items-center gap-[var(--space-2)] sm:order-2 sm:items-end">
             <p className="m-0 flex flex-col items-center sm:items-end">
-              <span className="text-text-title [font-family:var(--font-mono)] [font-size:var(--text-display)] [line-height:1] [font-weight:var(--font-weight-display)]">
+              <span className="text-text-title [font-family:var(--font-mono)] [font-size:var(--text-display)] [line-height:1] [font-weight:var(--font-weight-mono)]">
                 {/* Grouped with `"en"` like the dashboard's own figure, so the same total reads the
                     same way on both surfaces. */}
                 {summary.totalPoints.toLocaleString("en")}

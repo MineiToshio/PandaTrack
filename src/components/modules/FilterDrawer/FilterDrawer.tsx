@@ -643,7 +643,7 @@ export default function FilterDrawer({
             <SlidersHorizontal size={18} aria-hidden="true" className="[color:var(--accent)]" />
             <h2
               id={titleId}
-              className="flex-1 [font-size:var(--text-subtitle)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]"
+              className="flex-1 [font-size:var(--text-subtitle)] [font-weight:var(--font-weight-title)] [color:var(--text-primary)]"
             >
               {title}
             </h2>

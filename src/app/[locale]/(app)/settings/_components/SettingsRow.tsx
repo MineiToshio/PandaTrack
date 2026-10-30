@@ -48,7 +48,7 @@ export default function SettingsRow({
       {value !== undefined ? (
         <div
           className={cn(
-            "text-[14.5px] [font-weight:var(--font-weight-medium)] [color:var(--text-primary)]",
+            "text-[14.5px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-primary)]",
             fullWidthValue && "md:col-span-2",
           )}
         >

@@ -26,7 +26,7 @@ const TABLE_GRID =
   "grid items-center gap-3 [grid-template-columns:40px_minmax(0,1.6fr)_minmax(0,0.9fr)_minmax(0,1.2fr)_minmax(0,1fr)_24px]";
 
 const HEADER_CELL =
-  "[font-size:var(--text-caption)] [font-weight:var(--font-weight-semibold)] [color:var(--text-secondary)]";
+  "[font-size:var(--text-caption)] [font-weight:var(--font-weight-title)] [color:var(--text-secondary)]";
 
 export default function OrderListLoadingSkeleton({
   loadingLabel,

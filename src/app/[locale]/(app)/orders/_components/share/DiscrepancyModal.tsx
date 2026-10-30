@@ -54,9 +54,9 @@ export default function DiscrepancyModal({
         </div>
         <div className="flex items-baseline justify-between">
           <span className="[color:var(--text-muted)]">{t("tableEnteredLabel")}</span>
-          <span className="num font-semibold [font-variant-numeric:tabular-nums]">{entered}</span>
+          <span className="num [font-weight:var(--font-weight-title)] [font-variant-numeric:tabular-nums]">{entered}</span>
         </div>
-        <div className="mt-2 flex items-baseline justify-between pt-2 font-semibold [color:var(--warning)] [border-top:1px_solid_var(--border)]">
+        <div className="mt-2 flex items-baseline justify-between pt-2 [font-weight:var(--font-weight-title)] [color:var(--warning)] [border-top:1px_solid_var(--border)]">
           <span>{t("tableDifferenceLabel")}</span>
           <span className="num [font-variant-numeric:tabular-nums]">
             {diffSign}

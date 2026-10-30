@@ -84,7 +84,7 @@ export default function DashboardActivityTabs({ tabs, tablistLabel }: DashboardA
               onKeyDown={(event) => handleKeyDown(event, index)}
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-full px-3 py-1 whitespace-nowrap",
-                "[font-size:12px] [font-weight:var(--font-weight-medium)] transition-colors",
+                "[font-size:12px] [font-weight:var(--font-weight-medium-body)] transition-colors",
                 "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:[outline-color:var(--focus-ring)]",
                 isActive
                   ? "[color:var(--text-primary)] [box-shadow:var(--shadow-1)] [background:var(--surface)]"

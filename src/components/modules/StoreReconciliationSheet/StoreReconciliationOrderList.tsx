@@ -105,7 +105,7 @@ function ReconciliationOrderGroup({
   const headingId = `reconciliation-group-${heading.replace(/[^a-zA-Z0-9]/g, "")}`;
   return (
     <div role="group" aria-labelledby={headingId} aria-describedby={explainer ? `${headingId}-explainer` : undefined}>
-      <p id={headingId} className="[font-size:var(--text-caption)] font-medium [color:var(--text-secondary)]">
+      <p id={headingId} className="[font-size:var(--text-caption)] [font-weight:var(--font-weight-medium-body)] [color:var(--text-secondary)]">
         {heading}
       </p>
       {explainer && (
@@ -168,7 +168,7 @@ function ReconciliationOrderRow({
   return (
     <li className="flex flex-col gap-2 rounded-[var(--radius-md)] px-3 py-2.5 [background:var(--surface)] [border:1px_solid_var(--border)] sm:flex-row sm:items-center sm:justify-between sm:gap-3">
       <div className="min-w-0">
-        <p className="[font-size:var(--text-body)] font-medium [color:var(--text-primary)]">{rowLabel}</p>
+        <p className="[font-size:var(--text-body)] [font-weight:var(--font-weight-medium-body)] [color:var(--text-primary)]">{rowLabel}</p>
         <p className="mt-0.5 [font-size:var(--text-caption)] [color:var(--text-muted)]">
           {row.humanReadableId} · {t("currentBalance", { amount: balanceLabel })}
         </p>

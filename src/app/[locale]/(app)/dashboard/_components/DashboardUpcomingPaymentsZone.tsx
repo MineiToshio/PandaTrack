@@ -104,7 +104,7 @@ export default async function DashboardUpcomingPaymentsZone({ data, locale }: Da
                     <StoreAvatar store={{ name: payment.storeName }} size={32} />
                   )}
                   <div className="min-w-0 flex-1">
-                    <p className="truncate [font-size:13.5px] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
+                    <p className="truncate [font-size:13.5px] [font-weight:var(--font-weight-title)] [color:var(--text-primary)]">
                       {payment.storeName}
                     </p>
                     <p className="truncate [font-family:var(--font-mono)] [font-size:11.5px] [color:var(--text-muted)]">
@@ -112,7 +112,7 @@ export default async function DashboardUpcomingPaymentsZone({ data, locale }: Da
                     </p>
                   </div>
                   <div className="flex shrink-0 flex-col items-end gap-1.5 text-right">
-                    <span className="[font-size:13.5px] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)] tabular-nums">
+                    <span className="[font-size:13.5px] [font-weight:var(--font-weight-title)] [color:var(--text-primary)] tabular-nums">
                       {amount}
                     </span>
                     <Chip variant={chipVariant} size="sm" icon={<ChipIcon width={12} height={12} aria-hidden="true" />}>

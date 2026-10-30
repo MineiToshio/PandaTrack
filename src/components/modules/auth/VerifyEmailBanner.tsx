@@ -64,7 +64,7 @@ export default function VerifyEmailBanner({
       aria-labelledby="verify-email-banner-title"
     >
       <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-2 px-4 py-2 lg:h-full lg:flex-nowrap">
-        <Typography id="verify-email-banner-title" size="xs" className="text-text-title font-semibold">
+        <Typography id="verify-email-banner-title" size="xs" className="text-text-title [font-weight:var(--font-weight-title)]">
           {title}
         </Typography>
         <Typography size="xs" className="text-text-body min-w-0 flex-1">

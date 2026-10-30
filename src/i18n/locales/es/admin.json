@@ -46,9 +46,9 @@
     "reportedBy": "Reportada por",
     "proposedBy": "Propuesto por",
     "sellerType": {
-      "RETAILER": "Minorista",
+      "RETAILER": "Comercio",
       "PERSON": "Persona",
-      "PROXY": "Intermediario"
+      "PROXY": "Proxy"
     },
     "presence": {
       "ONLINE": "En línea",
@@ -280,7 +280,7 @@
       "voided": "Anulado",
       "empty": {
         "title": "Sin puntos registrados",
-        "subtitle": "{username} todavía no tiene ningún asiento en su historial."
+        "subtitle": "{username} todavía no tiene ningún asiento en su historial de puntos."
       },
       "pagination": {
         "regionLabel": "Paginación del historial de puntos",

@@ -1075,7 +1075,7 @@ export default function IntakeReviewScreen({
     // does: on `md` and up the actions are inline and the reserved strip would be dead space.
     <div className="intake-review-scroll-safe flex flex-col gap-[var(--space-4)] pb-[calc(148px+env(safe-area-inset-bottom))] md:pb-0">
       <header className="flex flex-col gap-[var(--space-2)]">
-        <h2 className="[font-size:var(--text-subtitle)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
+        <h2 className="[font-size:var(--text-subtitle)] [font-weight:var(--font-weight-title)] [color:var(--text-primary)]">
           {t("title")}
         </h2>
         <p className="[font-size:var(--text-body)] [color:var(--text-secondary)]">
@@ -1197,7 +1197,7 @@ export default function IntakeReviewScreen({
                 <label
                   htmlFor="intake-exchange-rate"
                   className={cn(
-                    "flex min-h-[1.625rem] items-center text-[13px] font-medium",
+                    "flex min-h-[1.625rem] items-center text-[13px] [font-weight:var(--font-weight-medium-body)]",
                     exchangeRateError ? "[color:var(--destructive)]" : "[color:var(--text-secondary)]",
                   )}
                 >

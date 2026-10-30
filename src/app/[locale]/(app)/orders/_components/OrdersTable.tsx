@@ -143,7 +143,7 @@ export default function OrdersTable({
 
               <div className="pointer-events-none relative min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <p className="min-w-0 truncate [font-size:var(--text-body)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
+                  <p className="min-w-0 truncate [font-size:var(--text-body)] [font-weight:var(--font-weight-title)] [color:var(--text-primary)]">
                     {order.store.name}
                   </p>
                   {storeTombstone.isRemoved && <StoreTombstoneNotice tone={storeTombstone.tone} variant="compact" />}
@@ -193,7 +193,7 @@ export default function OrdersTable({
 
               {/* "N productos" / "1 producto" per spec §5.5 / demo `col-product` */}
               <p className="pointer-events-none relative text-center [font-size:13px] [color:var(--text-secondary)] tabular-nums">
-                <span className="[font-weight:var(--font-weight-medium)] [color:var(--text-primary)]">
+                <span className="[font-weight:var(--font-weight-medium-body)] [color:var(--text-primary)]">
                   {order.itemCount}
                 </span>{" "}
                 {t("card.itemsSuffix", { count: order.itemCount })}
@@ -203,7 +203,7 @@ export default function OrdersTable({
               <div className="pointer-events-none relative flex flex-wrap items-center gap-1.5">
                 <span
                   className={cn(
-                    "inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] px-2.5 py-1 text-[12px] [font-weight:var(--font-weight-medium)] whitespace-nowrap [border:1px_solid]",
+                    "inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] px-2.5 py-1 text-[12px] [font-weight:var(--font-weight-medium-body)] whitespace-nowrap [border:1px_solid]",
                     getOrderListChipToneClassName(chip.toneKey),
                   )}
                 >
@@ -213,7 +213,7 @@ export default function OrdersTable({
                 {balanceChip && BalanceChipIcon && (
                   <span
                     className={cn(
-                      "inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] px-2.5 py-1 text-[12px] [font-weight:var(--font-weight-medium)] whitespace-nowrap [border:1px_solid]",
+                      "inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] px-2.5 py-1 text-[12px] [font-weight:var(--font-weight-medium-body)] whitespace-nowrap [border:1px_solid]",
                       getOrderListChipToneClassName(balanceChip.toneKey),
                     )}
                   >
@@ -223,7 +223,7 @@ export default function OrdersTable({
                 )}
               </div>
 
-              <p className="pointer-events-none relative text-right [font-size:var(--text-body)] [font-weight:var(--font-weight-medium)] [color:var(--text-primary)] tabular-nums">
+              <p className="pointer-events-none relative text-right [font-size:var(--text-body)] [font-weight:var(--font-weight-medium-body)] [color:var(--text-primary)] tabular-nums">
                 {formatAmountWithSymbol(order.totalCost, order.currencyCode, locale)}
               </p>
 

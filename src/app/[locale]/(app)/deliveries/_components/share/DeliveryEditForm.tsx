@@ -272,7 +272,7 @@ export default function DeliveryEditForm({
     <div className="mx-auto w-full max-w-6xl space-y-4 px-4 lg:px-0">
       <BackNavLink href={detailHref}>{t("edit.backToDetail")}</BackNavLink>
       <div>
-        <h1 className="text-[28px] leading-tight font-semibold [color:var(--text-primary)]">{t("edit.title")}</h1>
+        <h1 className="text-[28px] leading-tight [font-weight:var(--font-weight-title)] [color:var(--text-primary)]">{t("edit.title")}</h1>
         <p className="mt-1 font-mono text-[13px] [color:var(--text-muted)]">
           {initialDelivery.humanReadableId} · {initialDelivery.storeName}
         </p>
@@ -302,7 +302,7 @@ export default function DeliveryEditForm({
                 className="mt-3 flex items-center gap-3 rounded-xl p-3 opacity-70 [background:color-mix(in_oklch,var(--text-primary)_4%,transparent)] [border:1px_solid_var(--border)]"
               >
                 <StoreAvatar store={{ name: initialDelivery.storeName }} size={40} className="shrink-0" />
-                <span className="min-w-0 flex-1 truncate text-[14px] font-semibold [color:var(--text-primary)]">
+                <span className="min-w-0 flex-1 truncate text-[14px] [font-weight:var(--font-weight-title)] [color:var(--text-primary)]">
                   {initialDelivery.storeName}
                 </span>
                 <Lock size={13} aria-hidden className="shrink-0 [color:var(--text-muted)]" />

@@ -74,7 +74,7 @@ export default function Avatar({ user, size, ariaLabel, className }: AvatarProps
         className={cn(
           baseClass,
           "[background:color-mix(in_oklab,var(--text-primary)_14%,var(--surface-elevated))]",
-          "[font-family:var(--font-display)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]",
+          "[font-family:var(--font-display)] [font-weight:var(--font-weight-title)] [color:var(--text-primary)]",
         )}
         style={{ width: px, height: px, ...style }}
       >

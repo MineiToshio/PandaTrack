@@ -95,7 +95,7 @@ export default function OrderDeleteModal({
           <label htmlFor="delete-confirm" className="text-text-secondary block text-[13px]">
             {t.rich("detail.deleteModal.typeToConfirmLabel", {
               word: confirmWord,
-              strong: (chunks) => <strong className="text-text-title font-semibold">{chunks}</strong>,
+              strong: (chunks) => <strong className="text-text-title [font-weight:var(--font-weight-title)]">{chunks}</strong>,
             })}
           </label>
           <Input

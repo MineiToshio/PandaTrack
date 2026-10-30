@@ -408,7 +408,7 @@ export default function OrderPaymentBreakdownPanel({
           {/* THE one live figure, and it lives outside the list so it never enters the sum that
               I-1b caps. The percentage rides with it, once, because it is the input to the rule
               every row's amount comes out of. */}
-          <p className="mt-2.5 text-[13px] font-semibold [color:var(--text-primary)] tabular-nums">
+          <p className="mt-2.5 text-[13px] [font-weight:var(--font-weight-title)] [color:var(--text-primary)] tabular-nums">
             {state.mode === "byPrice" && derived.percent > 0
               ? derived.percent < 1
                 ? t(percentBasis === "remaining" ? "budgetPercentRemainingTiny" : "budgetPercentTiny", {

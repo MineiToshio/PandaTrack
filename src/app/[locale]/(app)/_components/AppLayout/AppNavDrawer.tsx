@@ -156,7 +156,7 @@ export default function AppNavDrawer({
                 href={href}
                 onClick={onClose}
                 className={cn(
-                  "focus-visible:ring-ring focus-visible:ring-offset-background flex h-11 min-h-11 items-center gap-3 rounded-lg px-2.5 pr-3 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
+                  "focus-visible:ring-ring focus-visible:ring-offset-background flex h-11 min-h-11 items-center gap-3 rounded-lg px-2.5 pr-3 text-sm [font-weight:var(--font-weight-medium-body)] transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
                   isActive
                     ? "bg-primary/20 text-primary"
                     : "text-text-body hover:bg-foreground/15 hover:text-foreground",
@@ -181,7 +181,7 @@ export default function AppNavDrawer({
               className="border-border mt-2 flex flex-col gap-1 border-t pt-3"
               aria-label={tAdmin("nav.section")}
             >
-              <p className="text-text-muted px-2.5 pb-1 text-xs font-medium tracking-wide uppercase">
+              <p className="text-text-muted px-2.5 pb-1 text-xs [font-weight:var(--font-weight-medium-body)] tracking-wide uppercase">
                 {tAdmin("nav.section")}
               </p>
               {getAdminNavItems().map((item) => {
@@ -193,7 +193,7 @@ export default function AppNavDrawer({
                     href={item.href(locale)}
                     onClick={onClose}
                     className={cn(
-                      "focus-visible:ring-ring focus-visible:ring-offset-background flex h-11 min-h-11 items-center gap-3 rounded-lg px-2.5 pr-3 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
+                      "focus-visible:ring-ring focus-visible:ring-offset-background flex h-11 min-h-11 items-center gap-3 rounded-lg px-2.5 pr-3 text-sm [font-weight:var(--font-weight-medium-body)] transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
                       isActive
                         ? "bg-primary/20 text-primary"
                         : "text-text-body hover:bg-foreground/15 hover:text-foreground",

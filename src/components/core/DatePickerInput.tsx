@@ -263,7 +263,7 @@ export default function DatePickerInput({
                 months: "relative",
                 // Caption sits behind the chevrons (which flank it) with horizontal padding to clear them.
                 month_caption:
-                  "flex items-center justify-center px-9 py-1 mb-2 [color:var(--text-primary)] font-semibold",
+                  "flex items-center justify-center px-9 py-1 mb-2 [color:var(--text-primary)] [font-weight:var(--font-weight-title)]",
                 caption_label: "[color:var(--text-primary)]",
                 // Nav overlays the caption row — chevrons appear left and right of the month label.
                 nav: "pointer-events-none absolute inset-x-0 top-0 z-10 flex items-center justify-between px-1 py-1",
@@ -273,14 +273,14 @@ export default function DatePickerInput({
                   "pointer-events-auto inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-[var(--radius-md)] [border:1px_solid_var(--border)] [background:var(--surface-elevated)] [color:var(--text-primary)] hover:[background:color-mix(in_oklch,var(--accent)_12%,transparent)] hover:[color:var(--accent)] hover:[border-color:color-mix(in_oklch,var(--accent)_28%,transparent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40 disabled:pointer-events-none transition-colors",
                 weeks: "space-y-1",
                 weekdays: "flex",
-                weekday: "w-9 text-center text-xs font-medium [color:var(--text-muted)]",
+                weekday: "w-9 text-center text-xs [font-weight:var(--font-weight-medium-body)] [color:var(--text-muted)]",
                 week: "flex",
                 day: "w-9 h-9 p-0 flex items-center justify-center",
                 day_button:
                   "w-full h-full cursor-pointer rounded-full text-center text-sm transition-colors hover:[background:color-mix(in_oklch,var(--accent)_12%,transparent)] hover:[color:var(--accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                 selected:
                   "[&>button]:rounded-full [&>button]:[background:var(--accent)] [&>button]:[color:var(--text-on-accent)] [&>button]:hover:[background:var(--accent)] [&>button]:hover:[color:var(--text-on-accent)]",
-                today: "[&>button]:font-semibold [&>button]:[color:var(--accent)]",
+                today: "[&>button]:[font-weight:var(--font-weight-title)] [&>button]:[color:var(--accent)]",
                 outside: "opacity-40",
                 disabled: "opacity-30 pointer-events-none",
               }}
