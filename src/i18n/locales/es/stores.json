@@ -212,7 +212,7 @@
       "cancelCta": "Cancelar",
       "reasons": {
         "DUPLICATE": "Tienda duplicada",
-        "CLOSED_OR_INACTIVE": "Tienda cerrada o inactiva",
+        "CLOSED_OR_INACTIVE": "Tienda cerrada o sin actividad",
         "FALSE_INFO": "Información falsa o engañosa",
         "ABUSE": "Abuso, estafa o fraude"
       }
@@ -526,17 +526,17 @@
         "nothingToAdjust": "No hay nada que ajustar: la cuenta con esta tienda ya está saldada.",
         "historyEntryHeading": "{date} · {amount}",
         "historyLineOrder": "Pedido del {date}",
-        "historyDeleteAria": "Eliminar ajuste de {amount} del {date}",
-        "historyDeleteModalTitle": "¿Eliminar este ajuste?",
-        "historyDeleteModalDescription": "Se eliminará el ajuste de {amount} del {date}.",
+        "historyDeleteAria": "Eliminar ajuste de cuadre de {amount} del {date}",
+        "historyDeleteModalTitle": "¿Eliminar este ajuste de cuadre?",
+        "historyDeleteModalDescription": "Se eliminará el ajuste de cuadre de {amount} del {date}.",
         "historyDeleteConfirm": "Eliminar",
-        "historyDeleteError": "No se pudo eliminar el ajuste. Intenta de nuevo.",
+        "historyDeleteError": "No se pudo eliminar el ajuste de cuadre. Intenta de nuevo.",
         "error": {
           "NOT_FOUND": "No se encontró la tienda o alguno de los pedidos.",
           "CURRENCY_INVALID": "La moneda seleccionada no es válida.",
           "REASON_REQUIRED": "Escribe un motivo, aunque sea \"no identificado\".",
           "NO_ADJUSTMENT_NEEDED": "Marca al menos un pedido antes de cuadrar la cuenta.",
-          "DUPLICATE_ORDER_LINE": "Un pedido no puede aparecer dos veces en el mismo ajuste.",
+          "DUPLICATE_ORDER_LINE": "Un pedido no puede aparecer dos veces en el mismo ajuste de cuadre.",
           "AMOUNT_INVALID": "Revisa los montos escritos.",
           "STORE_HAS_UNASSIGNED_MONEY": "Tienes dinero sin asignar en esta tienda. Asígnalo antes de cuadrar la cuenta.",
           "ORDER_CANCELLED": "Un pedido cancelado no puede ajustarse.",

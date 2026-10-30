@@ -29,7 +29,7 @@
       "storeNoResults": "No matching stores.",
       "eligibleCount": "{count, plural, one {# undelivered product} other {# undelivered products}}",
       "storeListAriaLabel": "Stores with eligible products",
-      "storeHelper": "Only stores with products pending delivery appear here. Stores without open orders are not listed."
+      "storeHelper": "Only stores with products pending delivery appear here. Stores without active orders are not listed."
     },
     "step2": {
       "eyebrow": "Step 2 · Products",
@@ -191,7 +191,7 @@
       "store": "Store",
       "shippedDate": "Shipping date",
       "expectedArrival": "Expected arrival",
-      "receivedDate": "Received date",
+      "receivedDate": "Arrival date",
       "cost": "Shipping cost",
       "exchangeRate": "Exchange rate",
       "exchangeRateValue": "1 {from} = {rate} {to}",
@@ -212,10 +212,10 @@
       "title": "Mark as delivered?",
       "confirm": "Mark as delivered",
       "cancel": "Cancel",
-      "dateLabel": "Received date",
+      "dateLabel": "Arrival date",
       "requiredSr": "required",
       "dateHelper": "Past dates or today only.",
-      "dateRequired": "Select the received date.",
+      "dateRequired": "Select the arrival date.",
       "dateInFuture": "The date cannot be in the future.",
       "infoBox": "{count, plural, one {The <strong>product</strong> will move} other {The <strong># products</strong> will move}} to <strong>Delivered</strong> and the source orders will update. You can reopen the delivery if something didn't arrive right."
     },

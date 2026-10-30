@@ -77,7 +77,7 @@
   "features": {
     "eyebrow": "All in one place",
     "title": "Everything you need to keep your collection up to date",
-    "subtitle": "From the purchase to the moment it reaches your hands, PandaTrack is with you every step of the way.",
+    "subtitle": "From the order to the moment it reaches your hands, PandaTrack is with you every step of the way.",
     "cards": {
       "stores": {
         "title": "Trusted stores",
@@ -93,7 +93,7 @@
       },
       "deliveries": {
         "title": "Deliveries, even split ones",
-        "description": "Follow every delivery and easily handle orders that arrive in several shipments."
+        "description": "Follow every delivery and easily handle orders that arrive in parts."
       },
       "reminders": {
         "title": "Reminders on time",

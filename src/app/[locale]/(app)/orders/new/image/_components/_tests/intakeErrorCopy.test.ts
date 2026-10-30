@@ -29,22 +29,22 @@ describe("intake error copy", () => {
     expect(extractErrorMessageKey("no-order-found")).toBe("noOrderFound");
     expect(esErrors.noOrderFound).toBe(
       "No encontramos ningún pedido en esas fotos. Suele pasar cuando la foto es solo del producto: " +
-        "necesitamos ver la compra (el chat, el correo, la página del pedido o el recibo), " +
+        "necesitamos ver el pedido (el chat, el correo, la página del pedido o el recibo), " +
         "donde salgan los productos y los montos. " +
         "Quita la foto que no corresponde y prueba con otra.",
     );
     expect(enErrors.noOrderFound).toBeTruthy();
   });
 
-  it("tells a collector whose photos held several purchases to upload one order at a time", () => {
+  it("tells a collector whose photos held several orders to upload one order at a time", () => {
     expect(extractErrorMessageKey("multiple-orders")).toBe("multipleOrders");
     // Three things this message has to carry: what we saw, the rule, and the next step. The rule
     // matters most, because "one order at a time" is not obvious on a screen that accepts twenty
     // photos, and the collector must not read it as "one product at a time".
-    expect(esErrors.multipleOrders).toContain("varias compras distintas");
+    expect(esErrors.multipleOrders).toContain("varios pedidos distintos");
     expect(esErrors.multipleOrders).toContain("por separado");
     expect(esErrors.multipleOrders).toContain("varios productos");
-    expect(enErrors.multipleOrders).toContain("several separate purchases");
+    expect(enErrors.multipleOrders).toContain("several separate orders");
     expect(enErrors.multipleOrders).toContain("on its own");
     expect(enErrors.multipleOrders).toContain("several products");
   });

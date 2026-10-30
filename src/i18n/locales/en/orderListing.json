@@ -116,10 +116,10 @@
     "CANCELLED": "Cancelled"
   },
   "card": {
-    "expand": "Show items",
-    "collapse": "Hide items",
-    "items": "{count, plural, one {# item} other {# items}}",
-    "itemsSuffix": "{count, plural, one {item} other {items}}",
+    "expand": "Show products",
+    "collapse": "Hide products",
+    "items": "{count, plural, one {# product} other {# products}}",
+    "itemsSuffix": "{count, plural, one {product} other {products}}",
     "openDetail": "Open detail",
     "paymentPercentage": "{pct}% paid",
     "paymentBarLabel": "Payment progress",
@@ -131,7 +131,7 @@
     "overdue": "Overdue",
     "overdueDays": "Overdue {days}d",
     "overdueMonths": "Overdue {months, plural, one {# month} other {# months}}",
-    "itemsSectionTitle": "Order items",
+    "itemsSectionTitle": "Order products",
     "itemQuantity": "× {quantity}",
     "itemDelivery": {
       "open": "Pending at store",
@@ -150,14 +150,14 @@
     "arrivalResolved": "already at the store"
   },
   "storeView": {
-    "orderSummary": "{orders} {orders, plural, one {open order} other {open orders}} · {products} {products, plural, one {pending product} other {pending products}}",
+    "orderSummary": "{orders} {orders, plural, one {active order} other {active orders}} · {products} {products, plural, one {pending product} other {pending products}}",
     "search": {
       "label": "Search stores or products",
       "placeholder": "Store or product (Amazon, Nendoroid…)",
       "placeholderCompact": "Store or product"
     },
     "openOrderDebtAmount": "Outstanding on open orders {amount}",
-    "creditAmount": "Credit {amount}",
+    "creditAmount": "Credit balance {amount}",
     "registerPayment": "Register payment",
     "registerPaymentDisabledHint": "No outstanding balance with this store",
     "viewStore": "View store",
@@ -220,14 +220,14 @@
     "productSummary": "{products, plural, one {# product} other {# products}}",
     "groupSummary": "{orders, plural, one {# order} other {# orders}} · {products, plural, one {# product} other {# products}}",
     "pendingLabel": "pending",
-    "creditLabel": "in your favor",
+    "creditLabel": "credit balance",
     "noDebtLabel": "no debt",
     "priceWithPaidPercent": "{price} · {pct}%"
   },
   "empty": {
     "noOrders": {
       "title": "No orders yet",
-      "description": "Log your first order and start tracking your purchases from here."
+      "description": "Log your first order and track it from here."
     },
     "noResults": {
       "title": "No results",
