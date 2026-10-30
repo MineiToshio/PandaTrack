@@ -132,7 +132,7 @@ export default async function AdminProgressionPage({ params, searchParams }: Adm
                 <Card variant="outlined" padding="md">
                   <div className="flex flex-wrap items-center justify-between gap-[var(--space-3)]">
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                      <span className="[font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
+                      <span className="[font-weight:var(--font-weight-title)] [color:var(--text-primary)]">
                         {account.username}
                       </span>
                       <span className="[font-size:var(--text-caption)] [color:var(--text-muted)]">{account.email}</span>
@@ -200,7 +200,7 @@ async function SelectedCollector({ account, page, query, basePath, locale, t, tP
           <div className="flex flex-wrap items-start justify-between gap-[var(--space-3)]">
             <div className="flex min-w-0 flex-col gap-1">
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                <h2 className="[font-size:var(--text-h4)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
+                <h2 className="[font-size:var(--text-h4)] [font-weight:var(--font-weight-title)] [color:var(--text-primary)]">
                   {account.username}
                 </h2>
                 {account.isAdmin && (
@@ -291,7 +291,7 @@ function SummaryFigure({ label, value }: { label: string; value: string }) {
       <dt className="[font-family:var(--font-mono)] [font-size:var(--text-eyebrow)] [letter-spacing:0.06em] [color:var(--text-muted)] uppercase">
         {label}
       </dt>
-      <dd className="[font-size:var(--text-body)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
+      <dd className="[font-size:var(--text-body)] [font-weight:var(--font-weight-title)] [color:var(--text-primary)]">
         {value}
       </dd>
     </div>

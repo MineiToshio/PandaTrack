@@ -318,7 +318,7 @@ export default function StoreGovernanceSummaryModal({
           <div className="flex min-w-0 items-start gap-2.5">
             <Scale className="text-warning mt-1 size-4 shrink-0" aria-hidden />
             <div className="min-w-0">
-              <Typography size="sm" className="text-text-title font-semibold">
+              <Typography size="sm" className="text-text-title [font-weight:var(--font-weight-title)]">
                 {t("detail.governanceAlertTitle")}
               </Typography>
               <Typography size="xs" className="text-text-body mt-1">
@@ -360,7 +360,7 @@ export default function StoreGovernanceSummaryModal({
               >
                 <div className="space-y-2.5 rounded-[10px] px-3.5 py-3 [background:color-mix(in_oklch,var(--warning)_9%,transparent)] [border:1px_solid_color-mix(in_oklch,var(--warning)_22%,transparent)]">
                   <div className="flex items-start justify-between gap-2">
-                    <span className="inline-flex items-center rounded-full px-2 py-0.5 [font-size:11px] [font-weight:500] [color:var(--warning)] [background:color-mix(in_oklch,var(--warning)_14%,transparent)] [border:1px_solid_color-mix(in_oklch,var(--warning)_25%,transparent)]">
+                    <span className="inline-flex items-center rounded-full px-2 py-0.5 [font-size:11px] [font-weight:var(--font-weight-medium-body)] [color:var(--warning)] [background:color-mix(in_oklch,var(--warning)_14%,transparent)] [border:1px_solid_color-mix(in_oklch,var(--warning)_25%,transparent)]">
                       {t(`governance.report.reasonOptions.${viewerOpenReport.reason}`)}
                     </span>
                     {viewerReportCreatedLabel && (
@@ -407,7 +407,7 @@ export default function StoreGovernanceSummaryModal({
                         <span className="[color:var(--text-secondary)]">
                           {t(`governance.report.reasonOptions.${item.reason}`)}
                         </span>
-                        <span className="inline-flex min-w-7 items-center justify-center rounded-full px-2 py-0.5 [font-size:11px] [font-weight:500] [color:var(--text-secondary)] tabular-nums [background:var(--surface-elevated)] [border:1px_solid_var(--border-strong)]">
+                        <span className="inline-flex min-w-7 items-center justify-center rounded-full px-2 py-0.5 [font-size:11px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-secondary)] tabular-nums [background:var(--surface-elevated)] [border:1px_solid_var(--border-strong)]">
                           {item.count}
                         </span>
                       </div>
@@ -433,7 +433,7 @@ export default function StoreGovernanceSummaryModal({
                       className="space-y-2.5 rounded-[10px] px-3.5 py-3 [background:color-mix(in_oklch,var(--warning)_7%,transparent)] [border:1px_solid_color-mix(in_oklch,var(--warning)_20%,transparent)]"
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <span className="inline-flex items-center rounded-full px-2 py-0.5 [font-size:11px] [font-weight:500] [color:var(--warning)] [background:color-mix(in_oklch,var(--warning)_14%,transparent)] [border:1px_solid_color-mix(in_oklch,var(--warning)_25%,transparent)]">
+                        <span className="inline-flex items-center rounded-full px-2 py-0.5 [font-size:11px] [font-weight:var(--font-weight-medium-body)] [color:var(--warning)] [background:color-mix(in_oklch,var(--warning)_14%,transparent)] [border:1px_solid_color-mix(in_oklch,var(--warning)_25%,transparent)]">
                           {t(`governance.report.reasonOptions.${report.reason}`)}
                         </span>
                         <span className="shrink-0 [font-size:11px] [color:var(--text-muted)]">
@@ -509,7 +509,7 @@ export default function StoreGovernanceSummaryModal({
               >
                 <div className="space-y-2.5 rounded-[10px] px-3.5 py-3 [background:color-mix(in_oklch,var(--accent)_6%,transparent)] [border:1px_solid_color-mix(in_oklch,var(--accent)_18%,transparent)]">
                   <div className="flex items-start justify-between gap-2">
-                    <span className="inline-flex items-center rounded-full px-2 py-0.5 [font-size:11px] [font-weight:500] [color:var(--accent)] [background:color-mix(in_oklch,var(--accent)_12%,transparent)] [border:1px_solid_color-mix(in_oklch,var(--accent)_25%,transparent)]">
+                    <span className="inline-flex items-center rounded-full px-2 py-0.5 [font-size:11px] [font-weight:var(--font-weight-medium-body)] [color:var(--accent)] [background:color-mix(in_oklch,var(--accent)_12%,transparent)] [border:1px_solid_color-mix(in_oklch,var(--accent)_25%,transparent)]">
                       {t("governance.summary.yourPendingChangeRequestStatus")}
                     </span>
                     {viewerChangeUpdatedLabel && (
@@ -519,7 +519,7 @@ export default function StoreGovernanceSummaryModal({
                     )}
                   </div>
                   <p className="m-0 [font-size:13px] [line-height:1.5] [color:var(--text-secondary)]">
-                    <span className="[font-weight:500] [color:var(--text-primary)]">
+                    <span className="[font-weight:var(--font-weight-medium-body)] [color:var(--text-primary)]">
                       {t("governance.summary.modifiedFieldsLabel")}:
                     </span>{" "}
                     {viewerChangeFieldKeys.length > 0
@@ -551,7 +551,7 @@ export default function StoreGovernanceSummaryModal({
               >
                 <div className="space-y-2.5 rounded-[10px] px-3.5 py-3 [background:var(--surface)] [border:1px_solid_var(--border)]">
                   <div className="flex items-start justify-between gap-2">
-                    <span className="inline-flex items-center rounded-full px-2 py-0.5 [font-size:11px] [font-weight:500] [color:var(--info)] [background:color-mix(in_oklch,var(--info)_12%,transparent)] [border:1px_solid_color-mix(in_oklch,var(--info)_25%,transparent)]">
+                    <span className="inline-flex items-center rounded-full px-2 py-0.5 [font-size:11px] [font-weight:var(--font-weight-medium-body)] [color:var(--info)] [background:color-mix(in_oklch,var(--info)_12%,transparent)] [border:1px_solid_color-mix(in_oklch,var(--info)_25%,transparent)]">
                       {t("governance.summary.pendingCountChip", { count: pendingChangeRequestsCount })}
                     </span>
                     {mostRecentChangeUpdatedLabel && (
@@ -562,7 +562,7 @@ export default function StoreGovernanceSummaryModal({
                   </div>
                   {communityChangeFields.length > 0 && (
                     <p className="m-0 [font-size:13px] [line-height:1.5] [color:var(--text-secondary)]">
-                      <span className="[font-weight:500] [color:var(--text-primary)]">
+                      <span className="[font-weight:var(--font-weight-medium-body)] [color:var(--text-primary)]">
                         {t("governance.summary.modifiedFieldsLabel")}:
                       </span>{" "}
                       {communityChangeFields
@@ -689,7 +689,7 @@ function AdminChangeRequestCard({
   return (
     <div className="space-y-2.5 rounded-[10px] px-3.5 py-3 [background:color-mix(in_oklch,var(--accent)_6%,transparent)] [border:1px_solid_color-mix(in_oklch,var(--accent)_18%,transparent)]">
       <div className="flex items-start justify-between gap-2">
-        <span className="[font-size:12px] [font-weight:500] [color:var(--text-primary)]">
+        <span className="[font-size:12px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-primary)]">
           {t("moderation.changeRequests.requestedBy", { username: changeRequest.requester.username })}
         </span>
         <span className="shrink-0 [font-size:11px] [color:var(--text-muted)]">
@@ -712,7 +712,7 @@ function AdminChangeRequestCard({
           role="alert"
           className="space-y-1 rounded-[8px] px-3 py-2 [background:color-mix(in_oklch,var(--warning)_9%,transparent)] [border:1px_solid_color-mix(in_oklch,var(--warning)_22%,transparent)]"
         >
-          <p className="m-0 [font-size:12px] [font-weight:500] [color:var(--warning)]">
+          <p className="m-0 [font-size:12px] [font-weight:var(--font-weight-medium-body)] [color:var(--warning)]">
             {t("moderation.changeRequests.driftBanner.title")}
           </p>
           <p className="m-0 [font-size:11.5px] [line-height:1.45] [color:var(--text-secondary)]">
@@ -728,11 +728,11 @@ function AdminChangeRequestCard({
             className="space-y-1 rounded-[8px] px-2.5 py-2 [background:var(--surface)] [border:1px_solid_var(--border)]"
           >
             <div className="flex items-center justify-between gap-2">
-              <span className="[font-size:11px] [font-weight:500] [color:var(--text-primary)]">
+              <span className="[font-size:11px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-primary)]">
                 {t(`governance.summary.fieldLabels.${row.fieldKey}`)}
               </span>
               {row.alreadyApplied && (
-                <span className="inline-flex items-center rounded-full px-2 py-0.5 [font-size:10px] [font-weight:500] [color:var(--text-muted)] [background:var(--surface-elevated)] [border:1px_solid_var(--border-strong)]">
+                <span className="inline-flex items-center rounded-full px-2 py-0.5 [font-size:10px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-muted)] [background:var(--surface-elevated)] [border:1px_solid_var(--border-strong)]">
                   {t("moderation.changeRequests.alreadyAppliedTag")}
                 </span>
               )}
@@ -742,7 +742,7 @@ function AdminChangeRequestCard({
               <div className="flex flex-wrap items-center gap-2 [font-size:12px]">
                 <span className="[color:var(--text-muted)] line-through">{formatScalarValue(t, row.current)}</span>
                 <ArrowRight size={12} aria-hidden="true" className="[color:var(--text-muted)]" />
-                <span className="[font-weight:500] [color:var(--text-primary)]">
+                <span className="[font-weight:var(--font-weight-medium-body)] [color:var(--text-primary)]">
                   {formatScalarValue(t, row.proposed)}
                 </span>
               </div>
@@ -752,7 +752,7 @@ function AdminChangeRequestCard({
                   <li key={item.token} className="inline-flex items-center gap-1 [font-size:12px]">
                     <span
                       className={cn(
-                        "inline-flex items-center rounded px-1.5 py-0.5 [font-size:10px] [font-weight:500]",
+                        "inline-flex items-center rounded px-1.5 py-0.5 [font-size:10px] [font-weight:var(--font-weight-medium-body)]",
                         listItemDeltaChipClass(item.delta),
                       )}
                     >

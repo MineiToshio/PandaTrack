@@ -87,14 +87,14 @@ export default function StorePaymentPanel({
     <div className="space-y-4">
       {/* Debt readout — one line, for the currency actually selected. */}
       <div className="flex items-center justify-between gap-3 rounded-xl p-3 [background:var(--surface-elevated)] [border:1px_solid_var(--border)]">
-        <span className="[font-size:11px] font-bold tracking-[0.06em] [color:var(--text-muted)] uppercase">
+        <span className="[font-size:11px] [font-weight:var(--font-weight-display)] tracking-[0.06em] [color:var(--text-muted)] uppercase">
           {t("debtLabel")}
         </span>
         <span
           className={
             debtMinor < 0
-              ? "text-success [font-size:13px] font-medium tabular-nums"
-              : "[font-size:13px] font-medium [color:var(--text-primary)] tabular-nums"
+              ? "text-success [font-size:13px] [font-weight:var(--font-weight-medium-body)] tabular-nums"
+              : "[font-size:13px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-primary)] tabular-nums"
           }
         >
           {debtMinor < 0
@@ -107,7 +107,7 @@ export default function StorePaymentPanel({
         <div className="space-y-1.5">
           <label
             htmlFor="store-payment-currency"
-            className="[font-size:13px] font-medium [color:var(--text-secondary)]"
+            className="[font-size:13px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-secondary)]"
           >
             {t("currencyLabel")}
           </label>
@@ -130,7 +130,7 @@ export default function StorePaymentPanel({
         <div className="space-y-1.5">
           <label
             htmlFor={STORE_PAYMENT_AMOUNT_FIELD_ID}
-            className="[font-size:13px] font-medium [color:var(--text-secondary)]"
+            className="[font-size:13px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-secondary)]"
           >
             {t("amountLabel")} <span className="[color:var(--destructive)]">*</span>
           </label>
@@ -148,7 +148,7 @@ export default function StorePaymentPanel({
         <div className="space-y-1.5">
           <label
             htmlFor={STORE_PAYMENT_DATE_FIELD_ID}
-            className="[font-size:13px] font-medium [color:var(--text-secondary)]"
+            className="[font-size:13px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-secondary)]"
           >
             {t("dateLabel")} <span className="[color:var(--destructive)]">*</span>
           </label>
@@ -177,9 +177,9 @@ export default function StorePaymentPanel({
       )}
 
       <div className="space-y-1.5">
-        <label htmlFor="store-payment-note" className="[font-size:13px] font-medium [color:var(--text-secondary)]">
+        <label htmlFor="store-payment-note" className="[font-size:13px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-secondary)]">
           {t("noteLabel")}{" "}
-          <span className="[font-size:11px] font-normal [color:var(--text-muted)]">{t("optional")}</span>
+          <span className="[font-size:11px] [font-weight:var(--font-weight-regular)] [color:var(--text-muted)]">{t("optional")}</span>
         </label>
         <Textarea
           id="store-payment-note"
@@ -195,9 +195,9 @@ export default function StorePaymentPanel({
           it never flickers while the list loads. */}
       <div className="flex min-h-[52px] flex-wrap items-center justify-between gap-2 rounded-xl px-3 py-2 [border:1px_solid_var(--border)]">
         <div className="min-w-0">
-          <p className="[font-size:12.5px] font-medium [color:var(--text-secondary)]">
+          <p className="[font-size:12.5px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-secondary)]">
             {t("allocations.heading")}{" "}
-            <span className="[font-size:11px] font-normal [color:var(--text-muted)]">{t("optional")}</span>
+            <span className="[font-size:11px] [font-weight:var(--font-weight-regular)] [color:var(--text-muted)]">{t("optional")}</span>
           </p>
           <p className="[font-size:11.5px] [color:var(--text-muted)] tabular-nums">
             {hasAllocations

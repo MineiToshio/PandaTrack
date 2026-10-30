@@ -53,7 +53,7 @@ export default function AvatarRemoveModal({ isOpen, onClose, displayName, onConf
       <div className="space-y-3">
         <p className="text-[13px] leading-relaxed [color:var(--text-secondary)]">
           {t("profile.avatar.removeModal.body")}{" "}
-          <span className="[font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
+          <span className="[font-weight:var(--font-weight-title)] [color:var(--text-primary)]">
             {getInitial(displayName)}
           </span>
         </p>

@@ -352,7 +352,7 @@ export default function DeliveryCreateWizard({
     <div className="space-y-4 pb-[calc(76px+env(safe-area-inset-bottom))] md:pb-0">
       <BackNavLink href={backHref}>{sourceOrder ? t("create.backToOrder") : t("create.backToDeliveries")}</BackNavLink>
       <div className="hidden md:block">
-        <h1 className="text-[28px] leading-tight font-semibold [color:var(--text-primary)]">{t("create.title")}</h1>
+        <h1 className="text-[28px] leading-tight [font-weight:var(--font-weight-title)] [color:var(--text-primary)]">{t("create.title")}</h1>
         <p className="mt-1 text-[13px] [color:var(--text-muted)]">
           {sourceOrder ? t("create.metaFromOrder") : t("create.metaStandalone")}
         </p>
@@ -414,14 +414,14 @@ export default function DeliveryCreateWizard({
                         <div className="font-mono text-[10.5px] tracking-[0.06em] [color:var(--text-muted)] uppercase">
                           ↳ {t("create.step1.fromOrderBadge", { order: sourceOrder!.orderHumanReadableId })}
                         </div>
-                        <div className="truncate text-[14px] font-semibold [color:var(--text-primary)]">
+                        <div className="truncate text-[14px] [font-weight:var(--font-weight-title)] [color:var(--text-primary)]">
                           {sourceOrder!.storeName}
                         </div>
                       </div>
                       <button
                         type="button"
                         onClick={() => setIsChangingStore(true)}
-                        className="inline-flex shrink-0 items-center gap-1.5 text-[12.5px] font-medium [color:var(--accent)] hover:underline"
+                        className="inline-flex shrink-0 items-center gap-1.5 text-[12.5px] [font-weight:var(--font-weight-medium-body)] [color:var(--accent)] hover:underline"
                       >
                         <Pencil size={13} aria-hidden />
                         {t("create.step1.changeStore")}
@@ -430,7 +430,7 @@ export default function DeliveryCreateWizard({
                   </>
                 ) : (
                   <div className="space-y-1.5">
-                    <label htmlFor="delivery-store" className="text-[13px] font-medium [color:var(--text-secondary)]">
+                    <label htmlFor="delivery-store" className="text-[13px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-secondary)]">
                       {t("create.step1.storeLabel")} <span className="[color:var(--destructive)]">*</span>
                     </label>
                     <DeliveryStoreField
@@ -528,19 +528,19 @@ export default function DeliveryCreateWizard({
                 <div className={WIZARD_CONFIRM_PANEL_CLASSNAME}>
                   <dl className="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1.5 text-[13px]">
                     <dt className="text-[11.5px] [color:var(--text-muted)]">{t("create.review.store")}</dt>
-                    <dd className="font-medium">{selectedStore?.storeName ?? "—"}</dd>
+                    <dd className="[font-weight:var(--font-weight-medium-body)]">{selectedStore?.storeName ?? "—"}</dd>
                     <dt className="text-[11.5px] [color:var(--text-muted)]">{t("create.review.products")}</dt>
-                    <dd className="font-medium">
+                    <dd className="[font-weight:var(--font-weight-medium-body)]">
                       {selectedProducts.length > 0 ? selectedProducts.map((p) => p.orderItemName).join(" · ") : "—"}
                     </dd>
                     <dt className="text-[11.5px] [color:var(--text-muted)]">{t("create.review.shippedDate")}</dt>
-                    <dd className="font-medium">{data.deliveryDate ? fmtDate(data.deliveryDate) : "—"}</dd>
+                    <dd className="[font-weight:var(--font-weight-medium-body)]">{data.deliveryDate ? fmtDate(data.deliveryDate) : "—"}</dd>
                     <dt className="text-[11.5px] [color:var(--text-muted)]">{t("create.review.arrival")}</dt>
-                    <dd className={arrivalLabel ? "font-medium" : "[color:var(--text-muted)]"}>
+                    <dd className={arrivalLabel ? "[font-weight:var(--font-weight-medium-body)]" : "[color:var(--text-muted)]"}>
                       {arrivalLabel ?? "—"}
                     </dd>
                     <dt className="text-[11.5px] [color:var(--text-muted)]">{t("create.review.cost")}</dt>
-                    <dd className="font-medium tabular-nums">
+                    <dd className="[font-weight:var(--font-weight-medium-body)] tabular-nums">
                       {costLabel ?? "—"}
                       {convertedLabel ? ` (≈ ${convertedLabel} ${baseCurrencyCode})` : ""}
                     </dd>

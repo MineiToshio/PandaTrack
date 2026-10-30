@@ -29,7 +29,7 @@ export default async function QueueCounts({ counts, locale }: QueueCountsProps) 
         >
           <span className="size-2 rounded-full" style={{ background: colorVar }} aria-hidden />
           <span>{t(`counts.${key}`)}</span>
-          <span className="text-text-primary font-semibold">{counts[key]}</span>
+          <span className="text-text-primary [font-weight:var(--font-weight-title)]">{counts[key]}</span>
         </li>
       ))}
     </ul>

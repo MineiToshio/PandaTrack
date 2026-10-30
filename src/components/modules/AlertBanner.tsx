@@ -59,7 +59,7 @@ export default function AlertBanner({ tone, icon, title, children, action, role,
       )}
       <div className="min-w-0 flex-1">
         {title != null && (
-          <p className="[font-size:var(--text-body)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
+          <p className="[font-size:var(--text-body)] [font-weight:var(--font-weight-title)] [color:var(--text-primary)]">
             {title}
           </p>
         )}

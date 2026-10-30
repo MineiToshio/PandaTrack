@@ -33,7 +33,7 @@ export default function PasswordStrengthMeter({ level, label, meterLabel, classN
         <span className="text-[11px] [color:var(--text-muted)]">{meterLabel}</span>
         {label ? (
           <span
-            className="text-[11px] [font-weight:var(--font-weight-medium)]"
+            className="text-[11px] [font-weight:var(--font-weight-medium-body)]"
             style={{
               color: level > 0 ? SEGMENT_TOKENS[level as Exclude<PasswordStrengthLevel, 0>] : "var(--text-muted)",
             }}

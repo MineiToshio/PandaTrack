@@ -116,7 +116,7 @@ export default function MarkDeliveredModal({
           <span>
             {t.rich("detail.markDeliveredModal.infoBox", {
               count: productCount,
-              strong: (chunks) => <strong className="text-text-primary font-semibold">{chunks}</strong>,
+              strong: (chunks) => <strong className="text-text-primary [font-weight:var(--font-weight-title)]">{chunks}</strong>,
             })}
           </span>
         </div>

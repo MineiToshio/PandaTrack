@@ -111,7 +111,7 @@ export default function DeliveryProductsPicker({
                   aria-expanded={!isCollapsed}
                   className="flex min-w-0 flex-1 items-center gap-2 text-left"
                 >
-                  <span className="shrink-0 font-mono text-[12px] font-semibold [color:var(--text-primary)]">
+                  <span className="shrink-0 font-mono text-[12px] [font-weight:var(--font-weight-mono)] [color:var(--text-primary)]">
                     {group.orderHumanReadableId}
                   </span>
                   <span className="min-w-0 truncate text-[12px] [color:var(--text-muted)]">
@@ -174,7 +174,7 @@ export default function DeliveryProductsPicker({
                               <span className="flex items-center gap-1 text-[12px] [color:var(--warning)]">
                                 <CornerDownLeft size={11} aria-hidden className="shrink-0" />
                                 {t.rich("edit.products.removalNotice", {
-                                  strong: (chunks) => <strong className="font-semibold">{chunks}</strong>,
+                                  strong: (chunks) => <strong className="[font-weight:var(--font-weight-title)]">{chunks}</strong>,
                                 })}
                               </span>
                             ) : isEditMode && isCurrent ? (
@@ -219,7 +219,7 @@ export default function DeliveryProductsPicker({
           <button
             type="button"
             onClick={onUndo}
-            className="inline-flex items-center gap-1.5 text-[12.5px] font-medium [color:var(--accent)] hover:underline"
+            className="inline-flex items-center gap-1.5 text-[12.5px] [font-weight:var(--font-weight-medium-body)] [color:var(--accent)] hover:underline"
           >
             <Undo2 size={13} aria-hidden />
             {t("create.products.undo")}

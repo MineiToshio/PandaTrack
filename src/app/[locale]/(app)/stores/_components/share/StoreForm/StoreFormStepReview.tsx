@@ -97,7 +97,7 @@ export default function StoreFormStepReview({
                   <div className="[font-size:var(--text-caption)] [color:var(--text-muted)]">
                     {tChannelTypes(entry.type)}
                   </div>
-                  <div className="[font-size:var(--text-caption)] [font-weight:var(--font-weight-medium)] break-all [color:var(--text-primary)]">
+                  <div className="[font-size:var(--text-caption)] [font-weight:var(--font-weight-medium-body)] break-all [color:var(--text-primary)]">
                     {entry.value}
                   </div>
                 </div>
@@ -114,7 +114,7 @@ export default function StoreFormStepReview({
               {values.addresses.map((addr) => (
                 <div
                   key={addr.id}
-                  className="[font-size:var(--text-caption)] [font-weight:var(--font-weight-medium)] [color:var(--text-primary)]"
+                  className="[font-size:var(--text-caption)] [font-weight:var(--font-weight-medium-body)] [color:var(--text-primary)]"
                 >
                   {addr.city && <div className="[color:var(--text-muted)]">{addr.city}</div>}
                   <div>{addr.reference ? `${addr.addressLine} · ${addr.reference}` : addr.addressLine}</div>
@@ -191,7 +191,7 @@ function ReviewRow({ label, value }: { label: string; value: string }) {
   return (
     <>
       <dt className="[font-size:var(--text-caption)] [color:var(--text-muted)]">{label}</dt>
-      <dd className="[font-weight:var(--font-weight-medium)] [color:var(--text-primary)]">{value}</dd>
+      <dd className="[font-weight:var(--font-weight-medium-body)] [color:var(--text-primary)]">{value}</dd>
     </>
   );
 }

@@ -131,7 +131,7 @@ export default function OrderCancelModal({
 
         {hasPayments && (
           <div className="border-border bg-surface-elevated rounded-lg border p-3">
-            <p className="text-text-primary text-[13px] leading-snug font-medium">
+            <p className="text-text-primary text-[13px] leading-snug [font-weight:var(--font-weight-medium-body)]">
               {t("detail.cancelModal.paymentsQuestion", {
                 amount: formatAmountSymbolOnly(paidAmountMinor, currencyCode, locale),
               })}

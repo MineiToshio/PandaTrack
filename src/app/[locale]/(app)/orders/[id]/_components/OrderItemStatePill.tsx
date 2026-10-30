@@ -71,7 +71,7 @@ export default function OrderItemStatePill({
 
   // Demo `.s7-istate`: gap 4px · padding 2px 8px · 11px / 500 · rounded-full · 1px border
   const baseClass = cn(
-    "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium",
+    "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] [font-weight:var(--font-weight-medium-body)]",
     STATE_CLASSES[state],
   );
 

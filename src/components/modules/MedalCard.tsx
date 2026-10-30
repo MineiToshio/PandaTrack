@@ -83,7 +83,7 @@ export default function MedalCard({
 
       <MedalStage medalKey={medalKey} grade={grade} size={size} locked={locked} imageSrc={imageSrc} label={artLabel} />
 
-      <h3 className="text-text-title mt-[var(--space-3)] [font-size:var(--text-body)] [font-weight:var(--font-weight-semibold)]">
+      <h3 className="text-text-title mt-[var(--space-3)] [font-size:var(--text-body)] [font-weight:var(--font-weight-title)]">
         {title}
       </h3>
 

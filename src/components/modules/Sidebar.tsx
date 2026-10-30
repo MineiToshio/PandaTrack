@@ -155,7 +155,7 @@ export default function Sidebar({
                 "focus-visible:ring-ring focus-visible:ring-offset-background flex h-10 items-center gap-3 rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
                 isExpanded ? "px-3" : "w-full justify-center",
                 isActive
-                  ? "bg-accent/14 text-accent font-medium"
+                  ? "bg-accent/14 text-accent [font-weight:var(--font-weight-medium-body)]"
                   : "text-text-body hover:bg-foreground/15 hover:text-foreground",
               )}
               data-ph-event={POSTHOG_EVENTS.APP_SHELL.NAV_CLICKED}
@@ -179,7 +179,7 @@ export default function Sidebar({
             aria-label={tAdmin("nav.section")}
           >
             {isExpanded && (
-              <p className="text-text-muted px-3 pb-1 text-xs font-medium tracking-wide uppercase">
+              <p className="text-text-muted px-3 pb-1 text-xs [font-weight:var(--font-weight-medium-body)] tracking-wide uppercase">
                 {tAdmin("nav.section")}
               </p>
             )}
@@ -196,7 +196,7 @@ export default function Sidebar({
                     "focus-visible:ring-ring focus-visible:ring-offset-background flex h-10 items-center gap-3 rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
                     isExpanded ? "px-3" : "w-full justify-center",
                     isActive
-                      ? "bg-accent/14 text-accent font-medium"
+                      ? "bg-accent/14 text-accent [font-weight:var(--font-weight-medium-body)]"
                       : "text-text-body hover:bg-foreground/15 hover:text-foreground",
                   )}
                   data-ph-event={POSTHOG_EVENTS.APP_SHELL.NAV_CLICKED}

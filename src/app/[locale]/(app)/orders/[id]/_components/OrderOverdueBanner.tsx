@@ -28,7 +28,7 @@ export default async function OrderOverdueBanner({
     >
       <Clock className="text-warning size-4 shrink-0" aria-hidden />
       <div className="min-w-0 flex-1 text-sm leading-snug">
-        <span className="text-warning font-semibold">{title}</span>
+        <span className="text-warning [font-weight:var(--font-weight-title)]">{title}</span>
         <span className="text-text-secondary ml-1.5">· {subtitle}</span>
       </div>
     </div>

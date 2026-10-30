@@ -20,7 +20,7 @@ export default async function DeliveryCreateEmptyState({ locale }: DeliveryCreat
   return (
     <div className="space-y-4">
       <BackNavLink href={`/${locale}${ROUTES.deliveries}`}>{t("create.backToDeliveries")}</BackNavLink>
-      <h1 className="hidden text-[28px] leading-tight font-semibold [color:var(--text-primary)] md:block">
+      <h1 className="hidden text-[28px] leading-tight [font-weight:var(--font-weight-title)] [color:var(--text-primary)] md:block">
         {t("create.title")}
       </h1>
       <EmptyState

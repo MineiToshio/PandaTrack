@@ -143,7 +143,7 @@ export default function ProgressionCelebration({
         <CelebrationDecor tintVar={ring} />
         <div className="flex flex-col items-center gap-3 text-center">
           <p
-            className="[font-family:var(--font-mono)] [font-size:var(--text-mono)] font-bold [letter-spacing:var(--text-mono--letter-spacing)] uppercase"
+            className="[font-family:var(--font-mono)] [font-size:var(--text-mono)] [font-weight:var(--font-weight-mono)] [letter-spacing:var(--text-mono--letter-spacing)] uppercase"
             style={{ color: ring }}
           >
             {t("celebration.medal.kicker", { rarity: rarityLabel })}
@@ -199,7 +199,7 @@ export default function ProgressionCelebration({
               label={t("rank.emblemLabel", { rank: rankName })}
             />
           </span>
-          <p className="text-[15px] [font-weight:var(--font-weight-medium)] [color:var(--text-primary)]">{rankName}</p>
+          <p className="text-[15px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-primary)]">{rankName}</p>
           <p className="text-[13px] [color:var(--text-secondary)]">
             {t("celebration.welcome.medals", { count: content.medalCount })}
           </p>
@@ -226,7 +226,7 @@ export default function ProgressionCelebration({
     >
       <CelebrationDecor tintVar="var(--accent-warm)" />
       <div className="flex flex-col items-center gap-3 text-center">
-        <p className="[font-family:var(--font-mono)] [font-size:var(--text-mono)] font-bold [letter-spacing:var(--text-mono--letter-spacing)] [color:var(--accent)] uppercase">
+        <p className="[font-family:var(--font-mono)] [font-size:var(--text-mono)] [font-weight:var(--font-weight-mono)] [letter-spacing:var(--text-mono--letter-spacing)] [color:var(--accent)] uppercase">
           {t("celebration.rank.kicker")}
         </p>
         {/*

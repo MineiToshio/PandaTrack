@@ -485,7 +485,7 @@ export default function OrderEditForm({ stores, productTypeKeys, baseCurrencyCod
       </BackNavLink>
 
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <h1 className="text-[28px] leading-tight font-semibold [color:var(--text-primary)]">{tEdit("heroEyebrow")}</h1>
+        <h1 className="text-[28px] leading-tight [font-weight:var(--font-weight-title)] [color:var(--text-primary)]">{tEdit("heroEyebrow")}</h1>
         <span className="[font-family:var(--font-mono)] text-[13px] [color:var(--text-muted)]">
           {initialOrder.humanReadableId}
         </span>
@@ -520,7 +520,7 @@ export default function OrderEditForm({ stores, productTypeKeys, baseCurrencyCod
                 {/* Tienda (locked) + Moneda (locked) */}
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-1.5">
-                    <label className="text-[13px] font-medium [color:var(--text-secondary)]">
+                    <label className="text-[13px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-secondary)]">
                       {tForm("storeLabel")}
                     </label>
                     <div
@@ -530,11 +530,11 @@ export default function OrderEditForm({ stores, productTypeKeys, baseCurrencyCod
                     >
                       <span
                         aria-hidden="true"
-                        className="inline-flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-[11px] font-semibold [color:var(--text-on-accent)] [background:var(--accent)]"
+                        className="inline-flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-[11px] [font-weight:var(--font-weight-title)] [color:var(--text-on-accent)] [background:var(--accent)]"
                       >
                         {storeInitial}
                       </span>
-                      <span className="min-w-0 flex-1 truncate text-[13px] font-medium [color:var(--text-primary)]">
+                      <span className="min-w-0 flex-1 truncate text-[13px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-primary)]">
                         {storeName}
                       </span>
                       <Lock size={13} aria-hidden="true" className="flex-shrink-0 [color:var(--text-muted)]" />
@@ -542,7 +542,7 @@ export default function OrderEditForm({ stores, productTypeKeys, baseCurrencyCod
                     <p className="text-[11.5px] [color:var(--text-muted)]">{tForm("storeLockedHelper")}</p>
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-[13px] font-medium [color:var(--text-secondary)]">
+                    <label className="text-[13px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-secondary)]">
                       {tForm("currencyLabel")}
                     </label>
                     <div
@@ -560,7 +560,7 @@ export default function OrderEditForm({ stores, productTypeKeys, baseCurrencyCod
                 {/* Fechas */}
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-1.5">
-                    <label htmlFor="order-date" className="text-[13px] font-medium [color:var(--text-secondary)]">
+                    <label htmlFor="order-date" className="text-[13px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-secondary)]">
                       {tForm("orderDateLabel")} <span className="[color:var(--destructive)]">*</span>
                     </label>
                     <DatePickerInput
@@ -578,7 +578,7 @@ export default function OrderEditForm({ stores, productTypeKeys, baseCurrencyCod
                     {orderDateError && <FieldErrorMsg>{orderDateError}</FieldErrorMsg>}
                   </div>
                   <div className="space-y-1.5">
-                    <label htmlFor="delivery-range" className="text-[13px] font-medium [color:var(--text-secondary)]">
+                    <label htmlFor="delivery-range" className="text-[13px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-secondary)]">
                       {tForm("deliveryRangeLabel")}
                     </label>
                     <OrderDeliveryRangeField
@@ -670,7 +670,7 @@ export default function OrderEditForm({ stores, productTypeKeys, baseCurrencyCod
 
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-1.5">
-                    <label htmlFor="order-total" className="text-[13px] font-medium [color:var(--text-secondary)]">
+                    <label htmlFor="order-total" className="text-[13px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-secondary)]">
                       {tForm("totalCostLabel")} ({currencyCode}) <span className="[color:var(--destructive)]">*</span>
                     </label>
                     <Input
@@ -701,10 +701,10 @@ export default function OrderEditForm({ stores, productTypeKeys, baseCurrencyCod
                     <div className="space-y-1.5">
                       <label
                         htmlFor="order-exchange-rate"
-                        className="text-[13px] font-medium [color:var(--text-secondary)]"
+                        className="text-[13px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-secondary)]"
                       >
                         {tForm("exchangeRateLabel")} {currencyCode}→{baseCurrencyCode}{" "}
-                        <span className="text-[11px] font-normal [color:var(--text-muted)]">
+                        <span className="text-[11px] [font-weight:var(--font-weight-regular)] [color:var(--text-muted)]">
                           {tCreate("fxOptional")}
                         </span>
                       </label>

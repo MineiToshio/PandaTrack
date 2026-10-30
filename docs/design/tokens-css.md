@@ -265,9 +265,29 @@ aliases maps legacy tokens (`--primary`, `--card`, etc.) onto the new system.
 
 ## 3. `:root` — font weights, state layers, cross-palette status defaults
 
-Use `var(--font-weight-display)` for heavy text (700 light, 670 dark).
-Tailwind's `var(--font-weight-bold)` resolves to a constant 700 in both themes and bypasses
-this reduction. Its use in `src/**/*.tsx` is blocked by `src/test/design-token-guard.test.ts`.
+Every non-regular UI weight uses a theme-aware token: `--font-weight-display`
+for 700 (700 light / 670 dark), `--font-weight-title` for 600 (600 / 580), and
+`--font-weight-medium-body` for 500 (500 / 480). Mono-family text with an explicit
+non-regular weight, including uppercase mono eyebrows, uses `--font-weight-mono`
+(500 / 480). Regular/400 stays unchanged; when declaring regular weight, prefer
+`[font-weight:var(--font-weight-regular)]` over `font-normal`. Use the same
+arbitrary-property form for other tokens, such as `[font-weight:var(--font-weight-title)]`.
+Never use fixed bold or consume the legacy `--font-weight-semibold` /
+`--font-weight-medium` variables in UI, including inline styles and SVG text.
+
+`src/test/design-token-guard.test.ts` scans `src/**/*.tsx`, `src/**/*.ts`, and
+`src/**/*.css`, including tests except the guard's own intentional regression
+fixtures. It rejects fixed weight utilities (`font-normal`, `font-medium`,
+`font-semibold`, `font-bold`, `font-extrabold`, `font-black`), arbitrary numeric
+weights from 500 upward, inline `fontWeight` / CSS `font-weight` declarations,
+JSX/SVG weight attributes from 500 upward, `bold` spellings, and references to
+`--font-weight-semibold`, `--font-weight-medium`, `--font-weight-bold`,
+`--font-weight-extrabold`, or `--font-weight-black`. Token definitions and
+regular/400 declarations remain allowed. The explicit rendering exclusions are
+`src/components/modules/OgImageTemplate.tsx`, `opengraph-image.tsx` files and
+`src/app/apple-icon.tsx` (Satori cannot resolve CSS variables),
+`src/app/_components/GlobalErrorContent.tsx` (must work without app CSS), and
+`src/lib/integrations/resend.ts` (email-client compatibility).
 
 ```css
 :root {
@@ -371,6 +391,7 @@ elevation model stay shared.
   --font-weight-display: 670;
   --font-weight-title: 580;
   --font-weight-medium-body: 480;
+  --font-weight-mono: 480;
 
   /* State mixes are stronger in dark */
   --state-hover-mix: 8%;

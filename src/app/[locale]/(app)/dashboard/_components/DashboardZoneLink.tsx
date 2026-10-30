@@ -26,7 +26,7 @@ export default function DashboardZoneLink({
       data-ph-props={posthogProps ? JSON.stringify(posthogProps) : undefined}
       className={cn(
         "inline-flex items-center gap-1 underline-offset-4 hover:underline",
-        "[font-size:var(--text-caption)] [font-weight:var(--font-weight-medium)] [color:var(--accent)]",
+        "[font-size:var(--text-caption)] [font-weight:var(--font-weight-medium-body)] [color:var(--accent)]",
         "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:[outline-color:var(--focus-ring)]",
         className,
       )}

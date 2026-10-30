@@ -236,7 +236,7 @@ const OrderPaymentsAsideCard = forwardRef<OrderPaymentsAsideCardHandle, OrderPay
             <p className="text-text-muted text-[13px]">{t("detail.payments.emptyAllocated")}</p>
             <Link
               href={storeHref}
-              className="text-accent inline-flex items-center gap-1.5 text-[13px] font-medium underline-offset-2 hover:underline"
+              className="text-accent inline-flex items-center gap-1.5 text-[13px] [font-weight:var(--font-weight-medium-body)] underline-offset-2 hover:underline"
             >
               <ExternalLink size={14} aria-hidden="true" />
               {t("detail.payments.viewStoreDebt")}
@@ -257,7 +257,7 @@ const OrderPaymentsAsideCard = forwardRef<OrderPaymentsAsideCardHandle, OrderPay
                 </Chip>
               )}
             </span>
-            <span className="text-text-title text-[13px] font-semibold tabular-nums">
+            <span className="text-text-title text-[13px] [font-weight:var(--font-weight-title)] tabular-nums">
               {formatAmountSymbolOnly(summary.paidAmount, currencyCode, locale)}
             </span>
           </div>
@@ -265,7 +265,7 @@ const OrderPaymentsAsideCard = forwardRef<OrderPaymentsAsideCardHandle, OrderPay
             <span className="text-text-secondary text-[13px]">{t("detail.payments.remainingToAllocate")}</span>
             <strong
               className={cn(
-                "text-[15px] font-bold tabular-nums",
+                "text-[15px] [font-weight:var(--font-weight-display)] tabular-nums",
                 hasUnpaidBalance ? "text-warning" : "text-text-muted",
               )}
             >
@@ -319,7 +319,7 @@ const OrderPaymentsAsideCard = forwardRef<OrderPaymentsAsideCardHandle, OrderPay
               <button
                 type="button"
                 onClick={handleOpenFormWithBalance}
-                className="mt-1.5 inline-flex min-h-9 items-center text-[12.5px] font-medium [color:var(--accent)] underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:[outline-color:var(--focus-ring)]"
+                className="mt-1.5 inline-flex min-h-9 items-center text-[12.5px] [font-weight:var(--font-weight-medium-body)] [color:var(--accent)] underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:[outline-color:var(--focus-ring)]"
               >
                 {t("detail.payments.allMarkedOpenBalanceCta", {
                   amount: formatAmountSymbolOnly(summary.remainingAmount, currencyCode, locale),
@@ -337,7 +337,7 @@ const OrderPaymentsAsideCard = forwardRef<OrderPaymentsAsideCardHandle, OrderPay
             onClick={handleOpenForm}
             className={cn(
               "mt-3 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5",
-              "text-[14px] leading-none font-medium",
+              "text-[14px] leading-none [font-weight:var(--font-weight-medium-body)]",
               "[background:color-mix(in_oklch,var(--accent)_10%,transparent)]",
               "[color:var(--accent)]",
               "[border:1px_solid_color-mix(in_oklch,var(--accent)_28%,transparent)]",

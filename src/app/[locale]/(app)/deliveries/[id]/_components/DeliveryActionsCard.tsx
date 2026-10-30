@@ -151,7 +151,7 @@ export default function DeliveryActionsCard({
         <p className="text-text-muted mt-2.5 flex items-start gap-1.5 text-[12px] leading-snug">
           <Info className="mt-0.5 size-3 shrink-0" aria-hidden />
           {t.rich("detail.actions.cancelledHelper", {
-            strong: (chunks) => <strong className="text-text-secondary font-semibold">{chunks}</strong>,
+            strong: (chunks) => <strong className="text-text-secondary [font-weight:var(--font-weight-title)]">{chunks}</strong>,
           })}
         </p>
       )}

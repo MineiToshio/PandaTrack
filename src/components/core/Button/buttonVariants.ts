@@ -12,7 +12,7 @@ export const buttonVariants = cva(
   [
     // Layout + typography
     "relative isolate inline-flex items-center justify-center gap-2",
-    "rounded-[var(--radius-md)] font-medium",
+    "rounded-[var(--radius-md)]",
     "[font-family:var(--font-sans)] [font-weight:var(--font-weight-medium-body)]",
     // Transitions — includes transform for hover lift
     "transition-[background-color,color,border-color,outline-color,box-shadow,transform]",

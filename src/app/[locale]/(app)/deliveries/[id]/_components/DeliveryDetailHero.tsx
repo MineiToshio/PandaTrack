@@ -151,7 +151,7 @@ export default function DeliveryDetailHero({
           />
         )}
         <div className="min-w-0 flex-1">
-          <h1 className="text-text-title text-[17px] leading-tight font-semibold">{delivery.storeName}</h1>
+          <h1 className="text-text-title text-[17px] leading-tight [font-weight:var(--font-weight-title)]">{delivery.storeName}</h1>
           <div className="mt-1 flex flex-wrap items-center gap-2.5">
             <CodeCopyButton
               code={delivery.humanReadableId}
@@ -160,7 +160,7 @@ export default function DeliveryDetailHero({
             />
             <StatusChip kind="deliveryStatus" value={status} overdueDays={overdueDays} />
             {fxPending && !isCancelled && (
-              <span className="border-warning/35 bg-warning/15 text-warning inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium">
+              <span className="border-warning/35 bg-warning/15 text-warning inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs [font-weight:var(--font-weight-medium-body)]">
                 <AlertTriangle className="size-3.5" aria-hidden />
                 {t("detail.hero.chipFxPending")}
               </span>
@@ -183,7 +183,7 @@ export default function DeliveryDetailHero({
           <>
             <div className="text-success flex items-center gap-2.5 leading-none">
               <CheckCircle className="size-[26px] shrink-0" aria-hidden />
-              <span className="text-[clamp(24px,4vw,30px)] font-bold tracking-[0.02em] uppercase">
+              <span className="text-[clamp(24px,4vw,30px)] [font-weight:var(--font-weight-display)] tracking-[0.02em] uppercase">
                 {t("detail.hero.deliveredTitle")}
               </span>
             </div>
@@ -201,7 +201,7 @@ export default function DeliveryDetailHero({
           <>
             <div className="text-text-muted flex items-center gap-2.5 leading-none">
               <Ban className="size-[26px] shrink-0" aria-hidden />
-              <span className="text-[clamp(24px,4vw,30px)] font-bold tracking-[0.02em] uppercase">
+              <span className="text-[clamp(24px,4vw,30px)] [font-weight:var(--font-weight-display)] tracking-[0.02em] uppercase">
                 {t("detail.hero.cancelledTitle")}
               </span>
             </div>
@@ -211,14 +211,14 @@ export default function DeliveryDetailHero({
             <div className="text-text-muted mt-1.5 text-[12px] leading-snug">
               {t.rich("detail.hero.cancelledNote", {
                 count: delivery.productCount,
-                strong: (chunks) => <strong className="text-text-secondary font-semibold">{chunks}</strong>,
+                strong: (chunks) => <strong className="text-text-secondary [font-weight:var(--font-weight-title)]">{chunks}</strong>,
               })}
             </div>
           </>
         ) : (
           <>
             <div className="text-text-secondary text-[13px]">{t("detail.hero.arrivalLabel")}</div>
-            <div className="text-text-title text-[clamp(26px,4.5vw,34px)] leading-tight font-bold tracking-[-0.02em] tabular-nums">
+            <div className="text-text-title text-[clamp(26px,4.5vw,34px)] leading-tight [font-weight:var(--font-weight-display)] tracking-[-0.02em] tabular-nums">
               {windowLabel ?? t("detail.hero.noWindow")}
             </div>
             <div className="text-text-secondary mt-1 text-[14px] tabular-nums">

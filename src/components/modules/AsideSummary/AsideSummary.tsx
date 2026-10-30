@@ -66,8 +66,8 @@ export function AsideSummaryRow({ label, value, muted, changed, strong }: AsideS
       <dt className="[font-size:var(--text-caption)] [color:var(--text-secondary)]">{label}</dt>
       <dd
         className={cn(
-          "text-right [font-size:var(--text-caption)] [font-weight:var(--font-weight-medium)]",
-          strong && "[font-weight:var(--font-weight-semibold)]",
+          "text-right [font-size:var(--text-caption)] [font-weight:var(--font-weight-medium-body)]",
+          strong && "[font-weight:var(--font-weight-title)]",
           changed ? "[color:var(--warning)]" : muted ? "[color:var(--text-muted)]" : "[color:var(--text-primary)]",
         )}
       >

@@ -345,13 +345,13 @@ Each tier exposes three Tailwind v4 sub-properties: `--text-{name}` (size), `--t
 | -------- | --------------- | ----------------------------------- | ----------- | -------------- | ---------------------------- | ---------------- | ---------------------------------------------------------- |
 | Display  | `text-display`  | `clamp(2.5rem, 4vw + 1rem, 3.5rem)` | 64px        | `-0.03em`      | 700 / 670                    | `--font-display` | Dashboard hero number, primary "next payment" amount.      |
 | Title    | `text-title`    | 32px                                | 40px        | `-0.02em`      | 600 / 580                    | `--font-display` | Page titles, detail-section headings.                      |
-| Subtitle | `text-subtitle` | 22px                                | 28px        | `-0.01em`      | 600 / 600                    | `--font-sans`    | Card headings, modal title, sub-section.                   |
+| Subtitle | `text-subtitle` | 22px                                | 28px        | `-0.01em`      | 600 / 580                    | `--font-sans`    | Card headings, modal title, sub-section.                   |
 | Body-L   | `text-body-lg`  | 17px                                | 26px        | `0`            | 400 / 400                    | `--font-sans`    | Hero descriptive subtitle, empty-state body, modal intro.  |
 | Body     | `text-body`     | 15px                                | 22px        | `0`            | 400 / 400 (medium 500 / 480) | `--font-sans`    | Default body: card, paragraph, label, value.               |
-| Caption  | `text-caption`  | 13px                                | 18px        | `+0.005em`     | 500 / 500                    | `--font-sans`    | Helper text, footnote, microcopy.                          |
-| Mono-L   | `text-mono-lg`  | 15px                                | 22px        | `0`            | 500 / 500                    | `--font-mono`    | Codes shown in detail cards.                               |
-| Mono     | `text-mono`     | 13px                                | 18px        | `+0.02em`      | 500 / 500                    | `--font-mono`    | Inline mono in body, mono badge, micro-stat tabular label. |
-| Eyebrow  | `text-eyebrow`  | 11px                                | 14px        | `+0.08em`      | 500 / 500                    | `--font-mono`    | Ceremonial uppercase eyebrow.                              |
+| Caption  | `text-caption`  | 13px                                | 18px        | `+0.005em`     | 500 / 480                    | `--font-sans`    | Helper text, footnote, microcopy.                          |
+| Mono-L   | `text-mono-lg`  | 15px                                | 22px        | `0`            | 500 / 480                    | `--font-mono`    | Codes shown in detail cards.                               |
+| Mono     | `text-mono`     | 13px                                | 18px        | `+0.02em`      | 500 / 480                    | `--font-mono`    | Inline mono in body, mono badge, micro-stat tabular label. |
+| Eyebrow  | `text-eyebrow`  | 11px                                | 14px        | `+0.08em`      | 500 / 480                    | `--font-mono`    | Ceremonial uppercase eyebrow.                              |
 
 The body scale and heading scale are implemented in `src/components/core/Typography.tsx` and `src/components/core/Heading.tsx`. One dominant `h1` per screen; it must read as the strongest heading on the page, larger and heavier than in-page section `h2`s.
 
@@ -361,19 +361,39 @@ Auxiliary weight tokens decouple components from raw numbers, so mode-specific w
 
 ```
 --font-weight-regular: 400
---font-weight-medium: 500
---font-weight-semibold: 600
+--font-weight-medium: 500    (legacy definition, never consume in UI)
+--font-weight-semibold: 600  (legacy definition, never consume in UI)
 --font-weight-display: 700   (dark: 670)
 --font-weight-title: 600     (dark: 580)
 --font-weight-medium-body: 500 (dark: 480)
---font-weight-mono: 500
+--font-weight-mono: 500     (dark: 480)
 ```
 
-Components consume `var(--font-weight-display)` and friends — never a literal `font-weight: 700`. The only typographic differences between modes are these reduced display/title/body-medium weights and body color resolving to 96% L (not 100%) in dark via `--text-primary`. Italics are prohibited in every tier.
+Components consume `var(--font-weight-display)` and friends — never a literal `font-weight: 700`. The only typographic differences between modes are these reduced display/title/body-medium/mono weights and body color resolving to 96% L (not 100%) in dark via `--text-primary`. Italics are prohibited in every tier.
 
-Tailwind's `var(--font-weight-bold)` stays at 700 in both themes, bypassing the dark-mode
-optical compensation. Use `var(--font-weight-display)` for heavy text (700 light, 670 dark).
-`src/test/design-token-guard.test.ts` rejects `var(--font-weight-bold)` in `src/**/*.tsx`.
+Every non-regular UI weight uses a theme-aware token: `--font-weight-display`
+for 700 (700 light / 670 dark), `--font-weight-title` for 600 (600 / 580), and
+`--font-weight-medium-body` for 500 (500 / 480). Mono-family text with an explicit
+non-regular weight, including uppercase mono eyebrows, uses `--font-weight-mono`
+(500 / 480). Regular/400 stays unchanged; when declaring regular weight, prefer
+`[font-weight:var(--font-weight-regular)]` over `font-normal`. Use the same
+arbitrary-property form for other tokens, such as `[font-weight:var(--font-weight-title)]`.
+Never use fixed bold or consume the legacy `--font-weight-semibold` /
+`--font-weight-medium` variables in UI, including inline styles and SVG text.
+
+`src/test/design-token-guard.test.ts` scans `src/**/*.tsx`, `src/**/*.ts`, and
+`src/**/*.css`, including tests except the guard's own intentional regression
+fixtures. It rejects fixed weight utilities (`font-normal`, `font-medium`,
+`font-semibold`, `font-bold`, `font-extrabold`, `font-black`), arbitrary numeric
+weights from 500 upward, inline `fontWeight` / CSS `font-weight` declarations,
+JSX/SVG weight attributes from 500 upward, `bold` spellings, and references to
+`--font-weight-semibold`, `--font-weight-medium`, `--font-weight-bold`,
+`--font-weight-extrabold`, or `--font-weight-black`. Token definitions and
+regular/400 declarations remain allowed. The explicit rendering exclusions are
+`src/components/modules/OgImageTemplate.tsx`, `opengraph-image.tsx` files and
+`src/app/apple-icon.tsx` (Satori cannot resolve CSS variables),
+`src/app/_components/GlobalErrorContent.tsx` (must work without app CSS), and
+`src/lib/integrations/resend.ts` (email-client compatibility).
 
 ### Letter-spacing and feature settings
 

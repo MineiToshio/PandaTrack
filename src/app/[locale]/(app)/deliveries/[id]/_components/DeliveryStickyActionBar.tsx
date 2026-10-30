@@ -36,9 +36,9 @@ export default function DeliveryStickyActionBar({
   const t = useTranslations("deliveries");
 
   const primaryBtnClass =
-    "bg-primary text-primary-foreground hover:bg-primary/90 inline-flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-medium shadow-sm transition-colors";
+    "bg-primary text-primary-foreground hover:bg-primary/90 inline-flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm [font-weight:var(--font-weight-medium-body)] shadow-sm transition-colors";
   const tonalBtnClass =
-    "border-primary/30 bg-primary/10 text-primary hover:bg-primary/15 inline-flex flex-1 items-center justify-center gap-2 rounded-lg border px-4 py-3 text-sm font-medium transition-colors";
+    "border-primary/30 bg-primary/10 text-primary hover:bg-primary/15 inline-flex flex-1 items-center justify-center gap-2 rounded-lg border px-4 py-3 text-sm [font-weight:var(--font-weight-medium-body)] transition-colors";
   const overflowBtnClass =
     "border-border-strong text-text-secondary hover:text-text-primary inline-flex size-11 shrink-0 items-center justify-center rounded-xl border transition-colors";
 

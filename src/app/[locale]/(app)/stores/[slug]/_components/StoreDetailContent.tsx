@@ -519,7 +519,7 @@ export default function StoreDetailContent({
                       the "Ver entregas" link in OrderItemsReadOnlyList. */}
                         <Link
                           href={`/${locale}${ROUTES.orders}?store=${store.id}`}
-                          className="text-accent inline-flex items-center gap-1.5 self-start [font-size:var(--text-caption)] font-medium underline-offset-2 hover:underline"
+                          className="text-accent inline-flex items-center gap-1.5 self-start [font-size:var(--text-caption)] [font-weight:var(--font-weight-medium-body)] underline-offset-2 hover:underline"
                         >
                           <ExternalLink size={14} aria-hidden="true" />
                           {tStores("redesign.detail.aside.viewLinkedOrders")}

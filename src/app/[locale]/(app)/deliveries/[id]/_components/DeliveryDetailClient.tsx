@@ -434,7 +434,7 @@ export default function DeliveryDetailClient({
               type="button"
               onClick={handleRetrySettlement}
               disabled={isRetrying}
-              className="shrink-0 rounded-[var(--radius-sm)] px-3 py-1.5 text-[13px] font-medium [color:var(--accent-foreground)] [background:var(--accent)] disabled:opacity-60"
+              className="shrink-0 rounded-[var(--radius-sm)] px-3 py-1.5 text-[13px] [font-weight:var(--font-weight-medium-body)] [color:var(--accent-foreground)] [background:var(--accent)] disabled:opacity-60"
             >
               {isRetrying ? t("detail.settlement.retrying") : t("detail.settlement.retry")}
             </button>

@@ -48,7 +48,7 @@ export default function DashboardMiniBarChart({ months, ariaLabel, emptyLabel }:
       <div className="grid auto-cols-fr grid-flow-col justify-items-center gap-3.5 pt-2 pb-1">
         {months.map((month) => (
           <div key={month.label} className="flex flex-col items-center gap-0.5">
-            <span className="[font-size:11px] [font-weight:var(--font-weight-semibold)] [color:var(--text-secondary)] tabular-nums">
+            <span className="[font-size:11px] [font-weight:var(--font-weight-title)] [color:var(--text-secondary)] tabular-nums">
               {month.formatted}
             </span>
             <span className={cn("[font-size:11px] [color:var(--text-muted)] uppercase")}>{month.label}</span>

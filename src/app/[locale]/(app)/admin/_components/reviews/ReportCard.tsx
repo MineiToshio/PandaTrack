@@ -32,7 +32,7 @@ export default async function ReportCard({
       <div className="flex flex-wrap items-center gap-1.5 text-xs [color:var(--text-muted)]">
         <User className="size-3.5 shrink-0" aria-hidden />
         <span>{t("reportedBy")}</span>
-        <span className="text-text-secondary font-medium">@{report.reporter.username}</span>
+        <span className="text-text-secondary [font-weight:var(--font-weight-medium-body)]">@{report.reporter.username}</span>
         <span className="ml-1 inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 [color:var(--warning)] [background:color-mix(in_oklch,var(--warning)_12%,transparent)]">
           <Lock className="size-3" aria-hidden />
           {t("adminOnlyShort")}

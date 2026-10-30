@@ -78,7 +78,7 @@ export default function DeliveryCard({ delivery, locale, today, returnTo, isExpa
           <StoreAvatar store={{ name: delivery.store.name }} size={40} />
         )}
         <div className="min-w-0 flex-1">
-          <p className="truncate [font-size:var(--text-body)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
+          <p className="truncate [font-size:var(--text-body)] [font-weight:var(--font-weight-title)] [color:var(--text-primary)]">
             {delivery.store.name}
           </p>
           <p className="truncate [font-size:var(--text-caption)] [color:var(--text-secondary)] tabular-nums">
@@ -105,7 +105,7 @@ export default function DeliveryCard({ delivery, locale, today, returnTo, isExpa
             <span>{arrivalLabel}</span>
           </>
         )}
-        <span className="ml-auto [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
+        <span className="ml-auto [font-weight:var(--font-weight-title)] [color:var(--text-primary)]">
           {formatAmountWithSymbol(delivery.cost, delivery.currencyCode, locale)}
         </span>
       </p>

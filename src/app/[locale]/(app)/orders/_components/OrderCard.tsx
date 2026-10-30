@@ -115,7 +115,7 @@ export default function OrderCard({
         )}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
-            <p className="min-w-0 truncate [font-size:var(--text-body)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
+            <p className="min-w-0 truncate [font-size:var(--text-body)] [font-weight:var(--font-weight-title)] [color:var(--text-primary)]">
               {order.store.name}
             </p>
             {storeTombstone.isRemoved && <StoreTombstoneNotice tone={storeTombstone.tone} variant="compact" />}
@@ -147,7 +147,7 @@ export default function OrderCard({
       <div className="pointer-events-none relative flex flex-wrap items-center gap-2">
         <span
           className={cn(
-            "inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] px-2.5 py-1 text-[12px] [font-weight:var(--font-weight-medium)] whitespace-nowrap [border:1px_solid]",
+            "inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] px-2.5 py-1 text-[12px] [font-weight:var(--font-weight-medium-body)] whitespace-nowrap [border:1px_solid]",
             getOrderListChipToneClassName(chip.toneKey),
           )}
         >
@@ -157,7 +157,7 @@ export default function OrderCard({
         {balanceChip && BalanceChipIcon && (
           <span
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] px-2.5 py-1 text-[12px] [font-weight:var(--font-weight-medium)] whitespace-nowrap [border:1px_solid]",
+              "inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] px-2.5 py-1 text-[12px] [font-weight:var(--font-weight-medium-body)] whitespace-nowrap [border:1px_solid]",
               getOrderListChipToneClassName(balanceChip.toneKey),
             )}
           >
@@ -170,7 +170,7 @@ export default function OrderCard({
       <p className="pointer-events-none relative flex flex-wrap items-center gap-x-1.5 [font-size:var(--text-caption)] [color:var(--text-secondary)] tabular-nums">
         <span>{t("card.items", { count: order.itemCount })}</span>
         <span aria-hidden>·</span>
-        <span className="[font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
+        <span className="[font-weight:var(--font-weight-title)] [color:var(--text-primary)]">
           {formatAmountWithSymbol(order.totalCost, order.currencyCode, locale)}
         </span>
       </p>

@@ -259,7 +259,7 @@ function StoreAccountAdjustmentRow({ adjustment, locale, onConfirmDelete }: Stor
       <li className="flex flex-col gap-1 py-2.5 [border-bottom:1px_solid_var(--border)] last:border-b-0">
         <div className="flex items-baseline justify-between gap-2">
           <div className="min-w-0">
-            <p className="[font-size:var(--text-body)] font-medium [color:var(--text-primary)]">
+            <p className="[font-size:var(--text-body)] [font-weight:var(--font-weight-medium-body)] [color:var(--text-primary)]">
               {tReconciliation("historyEntryHeading", { date: dateLabel, amount: amountLabel })}
             </p>
             <p className="mt-0.5 [font-size:var(--text-caption)] [color:var(--text-secondary)]">{adjustment.reason}</p>

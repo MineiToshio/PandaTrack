@@ -325,7 +325,7 @@ export default function StoreLogoField({
           <div className="min-w-0 flex-1">
             <Typography
               size="sm"
-              className="truncate [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]"
+              className="truncate [font-weight:var(--font-weight-title)] [color:var(--text-primary)]"
             >
               {submission.file?.name ?? copy.label}
             </Typography>
@@ -383,14 +383,14 @@ export default function StoreLogoField({
             <Building2 size={22} />
           </span>
           <div className="min-w-0 flex-1">
-            <Typography size="sm" className="[font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
+            <Typography size="sm" className="[font-weight:var(--font-weight-title)] [color:var(--text-primary)]">
               {copy.emptyTitle}
             </Typography>
             <Typography size="xs" className="[color:var(--text-muted)]">
               {copy.acceptedFormats} · {copy.maxSize.replace("{size}", String(sizeHint))}
             </Typography>
           </div>
-          <span className="inline-flex w-full flex-shrink-0 items-center justify-center gap-1.5 rounded-[var(--radius-pill)] px-3 py-1.5 text-xs [font-weight:var(--font-weight-medium)] [color:var(--accent)] [background:color-mix(in_oklch,var(--accent)_12%,transparent)] sm:w-auto sm:justify-start">
+          <span className="inline-flex w-full flex-shrink-0 items-center justify-center gap-1.5 rounded-[var(--radius-pill)] px-3 py-1.5 text-xs [font-weight:var(--font-weight-medium-body)] [color:var(--accent)] [background:color-mix(in_oklch,var(--accent)_12%,transparent)] sm:w-auto sm:justify-start">
             <Upload size={14} aria-hidden />
             {copy.uploadCta}
           </span>

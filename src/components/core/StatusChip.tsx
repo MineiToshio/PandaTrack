@@ -257,7 +257,7 @@ export default function StatusChip(props: StatusChipProps) {
       className={cn(
         "inline-flex items-center gap-[var(--space-1_5)] whitespace-nowrap",
         "rounded-[var(--radius-pill)]",
-        "[font-family:var(--font-sans)] [font-weight:var(--font-weight-medium)]",
+        "[font-family:var(--font-sans)] [font-weight:var(--font-weight-medium-body)]",
         size === "md" && "[font-size:var(--text-caption)] [line-height:var(--text-caption--line-height)]",
         size === "md" && "px-[var(--space-3)] py-[var(--space-1)]",
         size === "sm" && "[font-size:var(--text-mono)] [letter-spacing:var(--text-mono--letter-spacing)]",

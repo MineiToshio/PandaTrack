@@ -125,7 +125,7 @@ export default function StoreFormStepType({
               <div className="min-w-0 flex-1">
                 <div
                   id="store-private-label"
-                  className="[font-size:var(--text-body)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]"
+                  className="[font-size:var(--text-body)] [font-weight:var(--font-weight-title)] [color:var(--text-primary)]"
                 >
                   {tCreateRedesign("step1.privateLabel")}{" "}
                   <span className="[font-size:var(--text-caption)] [font-weight:var(--font-weight-regular)] [color:var(--text-muted)]">

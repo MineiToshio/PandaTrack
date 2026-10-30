@@ -214,7 +214,7 @@ function ReviewsAggregateHeader({ averageRating, reviewCount }: ReviewsAggregate
     <div className="flex items-center gap-4 pb-3.5 [border-bottom:1px_solid_var(--border)]">
       <span
         className={cn(
-          "[font-size:38px] [line-height:1] [font-weight:700] tabular-nums",
+          "[font-size:38px] [line-height:1] [font-weight:var(--font-weight-display)] tabular-nums",
           isMissing ? "[color:var(--text-muted)]" : "[color:var(--text-primary)]",
         )}
       >
@@ -306,7 +306,7 @@ function ReviewCard({
       <Avatar user={{ name: isViewer ? t("detail.reviews.youLabel") : authorName }} size={32} />
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="[font-size:13px] [font-weight:600] [color:var(--text-primary)]">
+          <span className="[font-size:13px] [font-weight:var(--font-weight-title)] [color:var(--text-primary)]">
             {isViewer ? t("detail.reviews.youLabel") : authorName}
           </span>
           <RatingStars value={review.overallRating} readOnly size="sm" />
@@ -428,7 +428,7 @@ function InlineReviewComposer({ locale, storeSlug, onOptimisticSave }: InlineRev
       <input type="hidden" name="locale" value={locale} />
       <input type="hidden" name="overallRating" value={ratingValue > 0 ? ratingValue : ""} />
 
-      <div className="[font-size:12px] [font-weight:600] [color:var(--text-secondary)]">
+      <div className="[font-size:12px] [font-weight:var(--font-weight-title)] [color:var(--text-secondary)]">
         {t("detail.reviews.form.title")}
       </div>
 

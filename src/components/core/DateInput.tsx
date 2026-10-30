@@ -215,7 +215,7 @@ export default function DateInput({
             classNames={{
               root: "[font-family:var(--font-sans)] [font-size:var(--text-body)]",
               month_caption: "flex items-center justify-center px-1 py-1 mb-2",
-              caption_label: "[font-weight:var(--font-weight-medium)] [color:var(--text-primary)]",
+              caption_label: "[font-weight:var(--font-weight-medium-body)] [color:var(--text-primary)]",
               nav: "flex items-center justify-between gap-1 mb-1",
               button_previous: cn(
                 "inline-flex h-7 w-7 cursor-pointer items-center justify-center",

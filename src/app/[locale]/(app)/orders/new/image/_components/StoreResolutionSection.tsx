@@ -250,7 +250,7 @@ export default function StoreResolutionSection({
         <label
           htmlFor="intake-store-change"
           className={cn(
-            "flex min-h-[1.625rem] flex-wrap items-center gap-2 text-[13px] font-medium",
+            "flex min-h-[1.625rem] flex-wrap items-center gap-2 text-[13px] [font-weight:var(--font-weight-medium-body)]",
             error ? "[color:var(--destructive)]" : "[color:var(--text-secondary)]",
           )}
         >
@@ -308,7 +308,7 @@ export default function StoreResolutionSection({
         <fieldset className="flex flex-col gap-[var(--space-2)]">
           <legend
             className={cn(
-              "[font-size:var(--text-caption)] [font-weight:var(--font-weight-medium)]",
+              "[font-size:var(--text-caption)] [font-weight:var(--font-weight-medium-body)]",
               error ? "[color:var(--destructive)]" : "[color:var(--text-primary)]",
             )}
           >
@@ -337,7 +337,7 @@ export default function StoreResolutionSection({
       )}
     >
       <div className="flex flex-col gap-[var(--space-1)]">
-        <span className="[font-size:var(--text-caption)] [font-weight:var(--font-weight-medium)] [color:var(--text-primary)]">
+        <span className="[font-size:var(--text-caption)] [font-weight:var(--font-weight-medium-body)] [color:var(--text-primary)]">
           {tStore("createLabel")}
         </span>
         <p className="[font-size:var(--text-caption)] [color:var(--text-secondary)]">{t("createIntro")}</p>
@@ -380,7 +380,7 @@ export default function StoreResolutionSection({
 
       {duplicateCandidates && duplicateCandidates.length > 0 && (
         <div className="flex flex-col gap-[var(--space-2)] rounded-lg p-2.5 [background:var(--surface)] [border:1px_solid_var(--border-strong)]">
-          <p className="[font-size:var(--text-caption)] [font-weight:var(--font-weight-medium)] [color:var(--text-primary)]">
+          <p className="[font-size:var(--text-caption)] [font-weight:var(--font-weight-medium-body)] [color:var(--text-primary)]">
             {tDuplicate("suggestionsTitle")}
           </p>
           <p className="[font-size:var(--text-caption)] [color:var(--text-secondary)]">
@@ -433,7 +433,7 @@ export default function StoreResolutionSection({
           <button
             type="button"
             onClick={handleBackToCandidates}
-            className="text-[12.5px] font-medium [color:var(--text-secondary)] hover:underline"
+            className="text-[12.5px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-secondary)] hover:underline"
           >
             {t("backToCandidates")}
           </button>
@@ -441,7 +441,7 @@ export default function StoreResolutionSection({
         <button
           type="button"
           onClick={handleSwitchToSearch}
-          className="text-[12.5px] font-medium [color:var(--text-secondary)] hover:underline"
+          className="text-[12.5px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-secondary)] hover:underline"
         >
           {t("switchToSearch")}
         </button>

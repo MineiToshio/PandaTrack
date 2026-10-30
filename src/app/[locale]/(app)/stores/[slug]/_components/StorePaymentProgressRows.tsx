@@ -211,7 +211,7 @@ function StorePaymentProgressBlock({
     <div className={BLOCK_CLASS}>
       <div className="flex items-baseline justify-between gap-3 [font-size:13.5px]">
         {state === "credit" ? (
-          <span className="text-success [font-weight:500]">
+          <span className="text-success [font-weight:var(--font-weight-medium-body)]">
             {tStores("redesign.detail.aside.debtCredit", {
               amount: formatAmount(Math.abs(debt.debtMinor), debt.currencyCode),
             })}
@@ -221,7 +221,7 @@ function StorePaymentProgressBlock({
             {tStores("redesign.detail.aside.paymentProgress.settled")}
           </Chip>
         ) : (
-          <span className="[font-weight:500] [color:var(--text-primary)]">
+          <span className="[font-weight:var(--font-weight-medium-body)] [color:var(--text-primary)]">
             {/* "Pendiente en pedidos abiertos" (`openOrderDebtMinor`, `ADR 0033`, `FR-05-61`), not the
                 lifetime `debtMinor`: the "Falta {amount}" headline promoted to this figure so a
                 fully delivered order leaves it together with its own payments. Deliberately NOT

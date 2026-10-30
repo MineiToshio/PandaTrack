@@ -554,7 +554,7 @@ export default function StorePaymentAllocationPanel({
         <div className="flex min-h-8 flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
           {validation.allocationExceedsAmount ? (
             <p className="flex min-w-[11rem] flex-1 flex-wrap items-center gap-x-2 [font-size:12.5px] [color:var(--destructive)]">
-              <span className="font-medium tabular-nums">
+              <span className="[font-weight:var(--font-weight-medium-body)] tabular-nums">
                 {t("allocations.totalsOver", {
                   amount: formatAmountWithSymbol(overMinor, currencyCode || "USD", locale),
                 })}
@@ -571,7 +571,7 @@ export default function StorePaymentAllocationPanel({
             // The remainder leads because it is the figure the collector is working down; what is
             // already assigned, out of how much, is its context.
             <p className="flex min-w-[11rem] flex-1 flex-col tabular-nums">
-              <span className="[font-size:13px] font-medium [color:var(--text-primary)]">
+              <span className="[font-size:13px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-primary)]">
                 {hasParkedMoney
                   ? t("allocations.totalsParked", {
                       amount: formatAmountWithSymbol(validation.parkedAmountMinor, currencyCode || "USD", locale),

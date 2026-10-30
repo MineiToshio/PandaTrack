@@ -67,7 +67,7 @@ export default function RarityChip({ grade, label, className }: RarityChipProps)
         "inline-flex items-center gap-[var(--space-1_5)] whitespace-nowrap",
         "rounded-[var(--radius-pill)] px-[var(--space-2)] py-[var(--space-0_5)]",
         "[font-family:var(--font-mono)] [font-size:var(--text-mono)] [letter-spacing:var(--text-mono--letter-spacing)]",
-        "font-bold uppercase",
+        "[font-weight:var(--font-weight-mono)] uppercase",
         className,
       )}
       style={style}

@@ -4,7 +4,7 @@ import { cn } from "@/lib/styles";
 
 /** Compact hint for catalog fields with no values (distinct icon from filled product-type / import-country tags). */
 const EMPTY_CATALOG_TAG_CLASSNAME =
-  "border-border/60 bg-muted/35 text-text-muted inline-flex max-w-full items-center gap-1.5 rounded-xl border border-dashed px-2.5 py-1 text-xs font-medium";
+  "border-border/60 bg-muted/35 text-text-muted inline-flex max-w-full items-center gap-1.5 rounded-xl border border-dashed px-2.5 py-1 text-xs [font-weight:var(--font-weight-medium-body)]";
 
 type StoreEmptyCatalogTagProps = {
   children: ReactNode;

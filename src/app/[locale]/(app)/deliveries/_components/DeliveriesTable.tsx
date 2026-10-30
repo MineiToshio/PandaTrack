@@ -116,7 +116,7 @@ export default function DeliveriesTable({
               )}
 
               <div className="pointer-events-none relative min-w-0">
-                <p className="truncate [font-size:var(--text-body)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
+                <p className="truncate [font-size:var(--text-body)] [font-weight:var(--font-weight-title)] [color:var(--text-primary)]">
                   {delivery.store.name}
                 </p>
                 <p className="truncate [font-family:var(--font-mono)] [font-size:12px] [color:var(--text-muted)] tabular-nums">
@@ -126,7 +126,7 @@ export default function DeliveriesTable({
               </div>
 
               <p className="pointer-events-none relative text-center [font-size:13px] [color:var(--text-secondary)] tabular-nums">
-                <span className="[font-weight:var(--font-weight-medium)] [color:var(--text-primary)]">
+                <span className="[font-weight:var(--font-weight-medium-body)] [color:var(--text-primary)]">
                   {delivery.productCount}
                 </span>{" "}
                 {t("list.card.itemsSuffix", { count: delivery.productCount })}
@@ -141,7 +141,7 @@ export default function DeliveriesTable({
                 />
               </div>
 
-              <p className="pointer-events-none relative text-right [font-size:var(--text-body)] [font-weight:var(--font-weight-medium)] [color:var(--text-primary)] tabular-nums">
+              <p className="pointer-events-none relative text-right [font-size:var(--text-body)] [font-weight:var(--font-weight-medium-body)] [color:var(--text-primary)] tabular-nums">
                 {formatAmountWithSymbol(delivery.cost, delivery.currencyCode, locale)}
               </p>
 

@@ -2,13 +2,13 @@ import { cn } from "@/lib/styles";
 import { VariantProps, cva } from "class-variance-authority";
 import { HTMLAttributes, forwardRef } from "react";
 
-const headingVariants = cva("text-foreground font-bold leading-tight tracking-tighter", {
+const headingVariants = cva("text-foreground [font-weight:var(--font-weight-display)] leading-tight tracking-tighter", {
   variants: {
     size: {
       lg: "text-5xl md:text-6xl lg:text-7xl",
       md: "text-4xl md:text-5xl lg:text-6xl",
       sm: "text-2xl md:text-3xl lg:text-4xl",
-      xs: "text-lg font-semibold",
+      xs: "text-lg [font-weight:var(--font-weight-title)]",
     },
   },
   defaultVariants: {

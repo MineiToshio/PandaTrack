@@ -334,7 +334,7 @@ export default function SettingsPrefsPane({
               ) : fxReconcileCount > 0 ? (
                 <Link
                   href={`/${locale}${ROUTES.orders}?fxPending=true`}
-                  className="inline-flex w-fit items-center gap-1 text-[13px] [font-weight:var(--font-weight-medium)] [color:var(--accent)] hover:underline focus-visible:[outline:2px_solid_var(--focus-ring)] focus-visible:outline-offset-2"
+                  className="inline-flex w-fit items-center gap-1 text-[13px] [font-weight:var(--font-weight-medium-body)] [color:var(--accent)] hover:underline focus-visible:[outline:2px_solid_var(--focus-ring)] focus-visible:outline-offset-2"
                 >
                   {t("preferences.collector.currency.reconcileLink", { count: fxReconcileCount })}
                   <ArrowRight size={14} aria-hidden="true" />
@@ -359,7 +359,7 @@ export default function SettingsPrefsPane({
                     aria-pressed={active}
                     className={cn(
                       "inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[13px]",
-                      "[font-weight:var(--font-weight-medium)] transition-colors",
+                      "[font-weight:var(--font-weight-medium-body)] transition-colors",
                       "focus-visible:[outline:2px_solid_var(--focus-ring)] focus-visible:[outline-offset:2px]",
                       active
                         ? "[color:var(--accent)] [background:color-mix(in_oklch,var(--accent)_10%,transparent)] [border:1.5px_solid_var(--accent)]"
@@ -436,7 +436,7 @@ export default function SettingsPrefsPane({
               },
             });
           }}
-          className="inline-flex items-center gap-2 rounded-[var(--radius-md)] px-4 py-2 text-[14px] [font-weight:var(--font-weight-medium)] [color:var(--destructive)] [border:1px_solid_color-mix(in_oklch,var(--destructive)_28%,transparent)] hover:[background:color-mix(in_oklch,var(--destructive)_8%,transparent)]"
+          className="inline-flex items-center gap-2 rounded-[var(--radius-md)] px-4 py-2 text-[14px] [font-weight:var(--font-weight-medium-body)] [color:var(--destructive)] [border:1px_solid_color-mix(in_oklch,var(--destructive)_28%,transparent)] hover:[background:color-mix(in_oklch,var(--destructive)_8%,transparent)]"
         >
           <LogOut size={16} aria-hidden="true" />
           {t("preferences.signOut.mobile")}

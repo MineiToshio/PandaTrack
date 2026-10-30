@@ -60,10 +60,10 @@ const CONTAINER_CLASSNAMES: Record<TabsVariant, string> = {
 
 const ITEM_BASE_CLASSNAMES: Record<TabsVariant, string> = {
   segmented:
-    "inline-flex min-h-11 flex-1 items-center justify-center rounded-xl px-4 py-2.5 text-base font-semibold transition-all sm:text-[1.0625rem]",
+    "inline-flex min-h-11 flex-1 items-center justify-center rounded-xl px-4 py-2.5 text-base [font-weight:var(--font-weight-title)] transition-all sm:text-[1.0625rem]",
   underline: cn(
     "inline-flex min-h-11 items-center justify-center border-b-2 whitespace-nowrap transition-colors",
-    "px-[var(--space-2)] py-[var(--space-2)] [font-size:var(--text-caption)] [font-weight:var(--font-weight-semibold)]",
+    "px-[var(--space-2)] py-[var(--space-2)] [font-size:var(--text-caption)] [font-weight:var(--font-weight-title)]",
   ),
 };
 

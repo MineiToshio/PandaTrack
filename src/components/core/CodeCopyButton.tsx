@@ -42,7 +42,7 @@ export default function CodeCopyButton({ code, copyAriaLabel, copiedAnnouncement
       type="button"
       onClick={handleCopy}
       aria-label={copyAriaLabel}
-      className="text-text-secondary hover:text-text-title -mx-1 inline-flex items-center gap-1.5 rounded-md px-1 py-0.5 text-xs font-medium transition-colors"
+      className="text-text-secondary hover:text-text-title -mx-1 inline-flex items-center gap-1.5 rounded-md px-1 py-0.5 text-xs [font-weight:var(--font-weight-medium-body)] transition-colors"
     >
       <span className="font-mono tracking-tight">{code}</span>
       {copied ? (

@@ -43,7 +43,7 @@ export default function DuplicateAlertInline({ candidates, labels, locale, class
         <AlertCircle size={14} aria-hidden="true" className="[color:var(--warning)]" />
         <Eyebrow className="[color:var(--warning)]">{labels.eyebrow}</Eyebrow>
       </div>
-      <p className="mt-1 [font-size:var(--text-body)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
+      <p className="mt-1 [font-size:var(--text-body)] [font-weight:var(--font-weight-title)] [color:var(--text-primary)]">
         {labels.title}
       </p>
       <ul className="mt-3 flex flex-col gap-2">
@@ -54,7 +54,7 @@ export default function DuplicateAlertInline({ candidates, labels, locale, class
           >
             <StoreAvatar store={{ name: candidate.name }} size={32} />
             <div className="min-w-0 flex-1">
-              <span className="block truncate [font-size:var(--text-body)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
+              <span className="block truncate [font-size:var(--text-body)] [font-weight:var(--font-weight-title)] [color:var(--text-primary)]">
                 {candidate.name}
               </span>
               <span className="block [font-size:var(--text-caption)] [color:var(--text-muted)]">
@@ -63,7 +63,7 @@ export default function DuplicateAlertInline({ candidates, labels, locale, class
             </div>
             <Link
               href={`/${locale}/stores/${candidate.slug}`}
-              className="[font-size:var(--text-caption)] [font-weight:var(--font-weight-semibold)] [color:var(--accent)] hover:underline"
+              className="[font-size:var(--text-caption)] [font-weight:var(--font-weight-title)] [color:var(--accent)] hover:underline"
             >
               {labels.viewStore}
             </Link>

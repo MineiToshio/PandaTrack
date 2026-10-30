@@ -183,14 +183,14 @@ export default function AvatarModal({ isOpen, onClose, onSubmit }: AvatarModalPr
               <Upload size={20} aria-hidden="true" />
             </span>
             <span className="space-y-1">
-              <span className="block text-[14px] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
+              <span className="block text-[14px] [font-weight:var(--font-weight-title)] [color:var(--text-primary)]">
                 {t("profile.avatar.modal.dropzoneTitle")}
               </span>
               <span className="block text-[12px] [color:var(--text-muted)]">
                 {t("profile.avatar.modal.dropzoneDescription")}
               </span>
             </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] [font-weight:var(--font-weight-medium)] [color:var(--accent)] [background:color-mix(in_oklch,var(--accent)_12%,transparent)]">
+            <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] [font-weight:var(--font-weight-medium-body)] [color:var(--accent)] [background:color-mix(in_oklch,var(--accent)_12%,transparent)]">
               {t("profile.avatar.modal.browseCta")}
             </span>
           </button>

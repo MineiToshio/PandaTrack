@@ -330,6 +330,7 @@
   --font-weight-display: 670;
   --font-weight-title: 580;
   --font-weight-medium-body: 480;
+  --font-weight-mono: 480;
   --state-hover-mix: 8%;
   --state-pressed-mix: 14%;
 
@@ -779,7 +780,7 @@ body {
   border-radius: 8px;
   font-size: 14px;
   color: var(--text-secondary);
-  font-weight: 500;
+  font-weight: var(--font-weight-medium-body);
   transition:
     color 150ms,
     background 150ms;
@@ -834,7 +835,7 @@ body {
 }
 .mk-lang .is-cur {
   color: var(--text-primary);
-  font-weight: 600;
+  font-weight: var(--font-weight-mono);
 }
 .mk-lang .sep {
   opacity: 0.5;
@@ -931,7 +932,7 @@ body {
   max-width: 600px;
 }
 .mk-hero h1 {
-  font-weight: 700;
+  font-weight: var(--font-weight-display);
   letter-spacing: -0.025em;
   line-height: 1.04;
   margin: 18px 0 0;
@@ -1022,7 +1023,7 @@ body {
 }
 .mk-mini-stat .val {
   font-size: 20px;
-  font-weight: 700;
+  font-weight: var(--font-weight-display);
   letter-spacing: -0.01em;
   margin-top: 4px;
 }
@@ -1050,7 +1051,7 @@ body {
 .mk-mini-row .body strong {
   display: block;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: var(--font-weight-title);
 }
 .mk-mini-row .body small {
   display: block;
@@ -1098,7 +1099,7 @@ body {
   text-align: center;
   font-family: var(--font-mono);
   font-size: 9.5px;
-  font-weight: 500;
+  font-weight: var(--font-weight-mono);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -1220,7 +1221,7 @@ body {
 }
 .mk-journey-step .jl {
   font-size: 11px;
-  font-weight: 600;
+  font-weight: var(--font-weight-title);
   color: currentColor;
   white-space: nowrap;
 }
@@ -1258,7 +1259,7 @@ body {
 }
 .mk-dash-head .mk-eyebrow-plain {
   font-family: var(--font-mono);
-  font-weight: 500;
+  font-weight: var(--font-weight-mono);
   font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -1297,7 +1298,7 @@ body {
 }
 .mk-banner-section h2 {
   font-size: clamp(28px, 4vw, 44px);
-  font-weight: 700;
+  font-weight: var(--font-weight-display);
   letter-spacing: -0.02em;
   line-height: 1.08;
   margin: 14px 0 0;
@@ -1331,7 +1332,7 @@ body {
 }
 .mk-section-head h2 {
   font-size: clamp(26px, 3.5vw, 38px);
-  font-weight: 700;
+  font-weight: var(--font-weight-display);
   letter-spacing: -0.02em;
   line-height: 1.12;
   margin: 12px 0 0;
@@ -1348,7 +1349,7 @@ body {
   gap: 7px;
   font-family: var(--font-mono);
   font-size: 11px;
-  font-weight: 500;
+  font-weight: var(--font-weight-mono);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--accent);
@@ -1410,7 +1411,7 @@ body {
 }
 .mk-feature-card h3 {
   font-size: 17px;
-  font-weight: 600;
+  font-weight: var(--font-weight-title);
   letter-spacing: -0.01em;
   margin: 0 0 6px;
 }
@@ -1455,12 +1456,12 @@ body {
   right: 22px;
   font-family: var(--font-mono);
   font-size: 40px;
-  font-weight: 700;
+  font-weight: var(--font-weight-mono);
   color: color-mix(in oklab, var(--text-primary) 8%, transparent);
 }
 .mk-fit-card h3 {
   font-size: 19px;
-  font-weight: 600;
+  font-weight: var(--font-weight-title);
   margin: 20px 0 8px;
   letter-spacing: -0.01em;
 }
@@ -1507,7 +1508,7 @@ body {
   border: 0;
   text-align: left;
   font-size: 15px;
-  font-weight: 600;
+  font-weight: var(--font-weight-title);
   color: var(--text-primary);
 }
 .mk-faq-q .chev {
@@ -1651,7 +1652,7 @@ body {
   padding: 13px 12px;
   border-radius: 10px;
   font-size: 16px;
-  font-weight: 500;
+  font-weight: var(--font-weight-medium-body);
   color: var(--text-primary);
 }
 .mk-sheet-panel a.mk-sheet-link:hover {
@@ -1712,7 +1713,7 @@ body {
 }
 .auth-head h1 {
   font-size: 24px;
-  font-weight: 700;
+  font-weight: var(--font-weight-display);
   letter-spacing: -0.015em;
   margin: 0;
 }
@@ -1746,7 +1747,7 @@ body {
   justify-content: space-between;
   gap: 8px;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: var(--font-weight-medium-body);
   color: var(--text-secondary);
   margin-bottom: 6px;
 }
@@ -1796,12 +1797,12 @@ body {
 }
 .auth-check a {
   color: var(--accent);
-  font-weight: 500;
+  font-weight: var(--font-weight-medium-body);
 }
 .auth-link {
   color: var(--accent);
   font-size: 13px;
-  font-weight: 500;
+  font-weight: var(--font-weight-medium-body);
 }
 .auth-link:hover {
   text-decoration: underline;
@@ -1818,7 +1819,7 @@ body {
 }
 .auth-foot a {
   color: var(--accent);
-  font-weight: 600;
+  font-weight: var(--font-weight-title);
 }
 .auth-back {
   display: inline-flex;
@@ -1915,7 +1916,7 @@ body {
 }
 .legal-head h1 {
   font-size: clamp(28px, 4vw, 38px);
-  font-weight: 700;
+  font-weight: var(--font-weight-display);
   letter-spacing: -0.02em;
   margin: 12px 0 0;
 }
@@ -1942,7 +1943,7 @@ body {
 }
 .legal-section h2 {
   font-size: 19px;
-  font-weight: 600;
+  font-weight: var(--font-weight-title);
   letter-spacing: -0.01em;
   margin: 0 0 10px;
   scroll-margin-top: 80px;

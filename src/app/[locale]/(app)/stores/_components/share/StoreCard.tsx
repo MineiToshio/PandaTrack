@@ -116,7 +116,7 @@ export default function StoreCard({ store, locale, labels, viewerOrderCount, vie
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <div className="flex min-w-0 items-center gap-1.5">
             <TypeIcon size={14} aria-hidden="true" className="flex-shrink-0 [color:var(--text-muted)]" />
-            <h3 className="min-w-0 flex-1 truncate [font-size:var(--text-body)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
+            <h3 className="min-w-0 flex-1 truncate [font-size:var(--text-body)] [font-weight:var(--font-weight-title)] [color:var(--text-primary)]">
               {store.name}
             </h3>
           </div>
@@ -133,7 +133,7 @@ export default function StoreCard({ store, locale, labels, viewerOrderCount, vie
               stronger than the muted row around it so it reads as a marker rather than as metadata.
             */}
             {showsPrivateMarker && (
-              <span className="flex flex-shrink-0 items-center gap-1 [font-weight:var(--font-weight-medium)] [color:var(--text-secondary)]">
+              <span className="flex flex-shrink-0 items-center gap-1 [font-weight:var(--font-weight-medium-body)] [color:var(--text-secondary)]">
                 <span aria-hidden="true">·</span>
                 <Lock size={11} aria-hidden="true" />
                 {labels.privateMarker}
@@ -164,7 +164,7 @@ export default function StoreCard({ store, locale, labels, viewerOrderCount, vie
       {hasImports ? (
         <div className="min-h-0 flex-1 overflow-hidden [font-size:var(--text-caption)] [line-height:1.5] [color:var(--text-muted)]">
           <p className="line-clamp-2">
-            <span className="[font-weight:var(--font-weight-semibold)]">{labels.importCountriesLabel} </span>
+            <span className="[font-weight:var(--font-weight-title)]">{labels.importCountriesLabel} </span>
             {store.importCountryCodes.map((code) => labels.countryName(code)).join(" · ")}
           </p>
         </div>
@@ -186,7 +186,7 @@ export default function StoreCard({ store, locale, labels, viewerOrderCount, vie
           <div className="flex flex-col leading-tight">
             {store.averageRating != null ? (
               <>
-                <span className="[font-size:var(--text-body)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)] [font-variant-numeric:tabular-nums]">
+                <span className="[font-size:var(--text-body)] [font-weight:var(--font-weight-title)] [color:var(--text-primary)] [font-variant-numeric:tabular-nums]">
                   {store.averageRating.toFixed(1)}
                 </span>
                 <span>{labels.ratingCount(store.reviewCount)}</span>
@@ -200,7 +200,7 @@ export default function StoreCard({ store, locale, labels, viewerOrderCount, vie
           </div>
           {viewerOrderCount != null && viewerOrderCount > 0 && labels.ordersForViewerLabel && (
             <div className="flex flex-col leading-tight">
-              <span className="[font-size:var(--text-body)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)] [font-variant-numeric:tabular-nums]">
+              <span className="[font-size:var(--text-body)] [font-weight:var(--font-weight-title)] [color:var(--text-primary)] [font-variant-numeric:tabular-nums]">
                 {viewerOrderCount}
               </span>
               <span>{labels.ordersForViewerLabel}</span>

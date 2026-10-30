@@ -138,7 +138,7 @@ export default function OrderDetailHero({
   // total is a neutral, stable figure now, so it no longer takes a warning tint — that signal
   // lives in the "Saldo pendiente" chip instead.
   const amountClass = cn(
-    "tabular-nums font-bold leading-none tracking-[-0.03em] text-[clamp(32px,5vw,40px)]",
+    "tabular-nums [font-weight:var(--font-weight-display)] leading-none tracking-[-0.03em] text-[clamp(32px,5vw,40px)]",
     isCancelled ? "text-text-secondary" : "text-text-title",
   );
 
@@ -194,7 +194,7 @@ export default function OrderDetailHero({
           />
         )}
         <div className="min-w-0 flex-1">
-          <h1 className="text-text-title text-[17px] leading-tight font-semibold">
+          <h1 className="text-text-title text-[17px] leading-tight [font-weight:var(--font-weight-title)]">
             <Link
               href={storeHref}
               className="rounded-sm hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:[outline-color:var(--focus-ring)]"
@@ -209,7 +209,7 @@ export default function OrderDetailHero({
             <OrderCodeCopyButton code={order.humanReadableId} locale={locale} />
             <span
               className={cn(
-                "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium",
+                "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs [font-weight:var(--font-weight-medium-body)]",
                 statusChipClass(order.status),
               )}
             >
@@ -217,25 +217,25 @@ export default function OrderDetailHero({
               {t(`detail.status.${order.status}`)}
             </span>
             {showPaidInFullBadge && (
-              <span className="border-success/35 bg-success/15 text-success inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium">
+              <span className="border-success/35 bg-success/15 text-success inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs [font-weight:var(--font-weight-medium-body)]">
                 <CircleCheck className="size-3.5" aria-hidden />
                 {t("detail.hero.paidInFull")}
               </span>
             )}
             {showOverdueChip && (
-              <span className="border-warning/35 bg-warning/15 text-warning inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium">
+              <span className="border-warning/35 bg-warning/15 text-warning inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs [font-weight:var(--font-weight-medium-body)]">
                 <AlertTriangle className="size-3.5" aria-hidden />
                 {t("detail.hero.chipOverdue", { days: overdueDays })}
               </span>
             )}
             {showUnpaidChip && (
-              <span className="border-warning/35 bg-warning/15 text-warning inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium">
+              <span className="border-warning/35 bg-warning/15 text-warning inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs [font-weight:var(--font-weight-medium-body)]">
                 <AlertTriangle className="size-3.5" aria-hidden />
                 {t("detail.hero.chipUnpaid")}
               </span>
             )}
             {order.needsExchangeRateUpdate && !isCancelled && (
-              <span className="border-warning/35 bg-warning/15 text-warning inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium">
+              <span className="border-warning/35 bg-warning/15 text-warning inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs [font-weight:var(--font-weight-medium-body)]">
                 <AlertTriangle className="size-3.5" aria-hidden />
                 {t("detail.hero.chipFxPending")}
               </span>
@@ -297,7 +297,7 @@ export default function OrderDetailHero({
               <Link
                 href={storeHref}
                 className={cn(
-                  "mt-1 inline-flex items-center gap-1 text-[14px] font-medium hover:underline",
+                  "mt-1 inline-flex items-center gap-1 text-[14px] [font-weight:var(--font-weight-medium-body)] hover:underline",
                   isCreditAtStore ? "text-success" : "text-text-secondary",
                 )}
               >

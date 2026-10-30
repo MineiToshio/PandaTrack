@@ -26,7 +26,7 @@ export default function HowItWorksLink({ locale, label, className }: HowItWorksL
     <Link
       href={`/${locale}${ROUTES.progressHowItWorks}`}
       className={cn(
-        "inline-flex w-fit items-center gap-1 [font-size:var(--text-caption)] [font-weight:var(--font-weight-medium)] [color:var(--accent)] hover:underline focus-visible:[outline:2px_solid_var(--focus-ring)] focus-visible:outline-offset-2",
+        "inline-flex w-fit items-center gap-1 [font-size:var(--text-caption)] [font-weight:var(--font-weight-medium-body)] [color:var(--accent)] hover:underline focus-visible:[outline:2px_solid_var(--focus-ring)] focus-visible:outline-offset-2",
         className,
       )}
     >

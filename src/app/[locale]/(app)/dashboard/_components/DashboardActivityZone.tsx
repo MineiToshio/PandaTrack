@@ -124,7 +124,7 @@ export default async function DashboardActivityZone({ data, locale }: DashboardA
             listKey="recent"
             meta={
               <>
-                <span className="[font-weight:var(--font-weight-semibold)] [color:var(--text-primary)] tabular-nums">
+                <span className="[font-weight:var(--font-weight-title)] [color:var(--text-primary)] tabular-nums">
                   {rowAmount(order)}
                 </span>
                 <span className="[color:var(--text-muted)]">

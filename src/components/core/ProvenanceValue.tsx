@@ -80,7 +80,7 @@ export default function ProvenanceValue({
         // beside it: the chip is taller than a bare label, and without this a marked field sat a
         // few pixels lower than its neighbour in every two-column row.
         className={cn(
-          "flex min-h-[1.625rem] flex-wrap items-center gap-[var(--space-2)] text-[13px] font-medium",
+          "flex min-h-[1.625rem] flex-wrap items-center gap-[var(--space-2)] text-[13px] [font-weight:var(--font-weight-medium-body)]",
           error ? "[color:var(--destructive)]" : "[color:var(--text-secondary)]",
         )}
       >

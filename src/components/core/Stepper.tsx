@@ -77,7 +77,7 @@ export default function Stepper({
           <span className="[font-family:var(--font-mono)] [font-size:var(--text-eyebrow)] [letter-spacing:0.06em] [color:var(--text-muted)] uppercase">
             {compactEyebrow ?? `${activeStep} / ${steps.length}`}
           </span>
-          <span className="truncate text-[14px] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
+          <span className="truncate text-[14px] [font-weight:var(--font-weight-title)] [color:var(--text-primary)]">
             {activeLabel}
           </span>
         </div>
@@ -115,7 +115,7 @@ export default function Stepper({
             ) : state === "errored" ? (
               <X size={14} aria-hidden="true" />
             ) : (
-              <span className="[font-family:var(--font-mono)] [font-size:0.75rem] [line-height:1] [font-weight:var(--font-weight-semibold)]">
+              <span className="[font-family:var(--font-mono)] [font-size:0.75rem] [line-height:1] [font-weight:var(--font-weight-mono)]">
                 {step.n}
               </span>
             );
@@ -135,9 +135,9 @@ export default function Stepper({
 
           const labelClass = cn(
             "block whitespace-nowrap text-xs",
-            state === "active" && "[color:var(--text-primary)] [font-weight:var(--font-weight-semibold)]",
+            state === "active" && "[color:var(--text-primary)] [font-weight:var(--font-weight-title)]",
             state === "done" && "[color:var(--text-secondary)]",
-            state === "errored" && "[color:var(--destructive)] [font-weight:var(--font-weight-semibold)]",
+            state === "errored" && "[color:var(--destructive)] [font-weight:var(--font-weight-title)]",
             state === "todo" && "[color:var(--text-muted)]",
           );
 

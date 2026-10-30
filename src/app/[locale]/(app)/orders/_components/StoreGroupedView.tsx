@@ -803,7 +803,7 @@ export default function StoreGroupedView({
                     <button
                       type="button"
                       onClick={() => (isSelectingHere ? selection.clear() : selection.begin(group.store.id))}
-                      className="relative inline-flex min-h-9 items-center px-2 [font-size:var(--text-caption)] [font-weight:var(--font-weight-medium)] [color:var(--accent)] before:absolute before:[inset:-4px_0] before:content-[''] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:[outline-color:var(--focus-ring)]"
+                      className="relative inline-flex min-h-9 items-center px-2 [font-size:var(--text-caption)] [font-weight:var(--font-weight-medium-body)] [color:var(--accent)] before:absolute before:[inset:-4px_0] before:content-[''] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:[outline-color:var(--focus-ring)]"
                     >
                       {isSelectingHere ? t("storeView.selection.exit") : t("storeView.selection.enter")}
                     </button>

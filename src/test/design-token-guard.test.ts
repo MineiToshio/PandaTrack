@@ -41,6 +41,40 @@ const OKLCH_OVER_NEUTRAL =
 
 const RAW_STATUS_AS_TEXT = /\[color:var\(--(?:warning|info|success|destructive)\)\]/;
 
+// ImageResponse/Satori cannot resolve app CSS variables. The catastrophic fallback
+// must remain usable when the root layout and its stylesheet fail. Transactional
+// email clients cannot be expected to resolve the app stylesheet or CSS variables.
+const FIXED_WEIGHT_EXCLUSIONS = [
+  /^src\/components\/modules\/OgImageTemplate\.tsx$/,
+  /^src\/app\/(?:.*\/)?opengraph-image\.tsx$/,
+  /^src\/app\/apple-icon\.tsx$/,
+  /^src\/app\/_components\/GlobalErrorContent\.tsx$/,
+  /^src\/lib\/integrations\/resend\.ts$/,
+];
+
+const NON_REGULAR_WEIGHT = String.raw`(?:[5-9]\d{2}|[1-9]\d{3,}|bold)`;
+const FIXED_FONT_WEIGHT = new RegExp(
+  [
+    String.raw`\bfont-(?:normal|medium|semibold|bold|extrabold|black)\b(?!-)`,
+    String.raw`\bfont-\[(?:(?:number|weight):)?${NON_REGULAR_WEIGHT}\]`,
+    String.raw`\b(?:fontWeight|font-weight)\s*[:=]\s*\{?\s*["']?${NON_REGULAR_WEIGHT}\b`,
+    String.raw`var\(\s*--font-weight-(?:semibold|medium|bold|extrabold|black)\s*\)`,
+  ].join("|"),
+);
+
+function scanFixedWeights(files: string[]): string[] {
+  return files.flatMap((file) => {
+    const relativePath = file.replace(SRC_DIR, "src");
+    if (FIXED_WEIGHT_EXCLUSIONS.some((pattern) => pattern.test(relativePath))) return [];
+
+    const source = readFileSync(file, "utf8");
+    return [...source.matchAll(new RegExp(FIXED_FONT_WEIGHT.source, "g"))].map((match) => {
+      const line = source.slice(0, match.index).split("\n").length;
+      return `${relativePath}:${line} → ${match[0]}`;
+    });
+  });
+}
+
 /**
  * The pre-existing debt for scan B', held as a per-file expected-hit count with a ZERO budget
  * everywhere else. Not a blanket allowance: the count is exact, so a NEW raw-status label inside an
@@ -148,12 +182,76 @@ function countByFile(files: string[], pattern: RegExp): Record<string, number> {
 }
 
 describe("design-token guard", () => {
-  it("has no theme-blind var(--font-weight-bold) in TSX files", () => {
-    const hits = scan(collect(SRC_DIR, [".tsx"], true), /var\(\s*--font-weight-bold\s*\)/);
-    expect(
-      hits,
-      `Use var(--font-weight-display) for theme-aware heavy text (700 light, 670 dark):\n${hits.join("\n")}`,
-    ).toEqual([]);
+  it("has no theme-blind weights in TypeScript and CSS files", () => {
+    // This file contains intentional regression fixtures for every rejected spelling.
+    const files = collect(SRC_DIR, [".tsx", ".ts", ".css"], true).filter(
+      (file) => file !== join(SRC_DIR, "test/design-token-guard.test.ts"),
+    );
+    const hits = scanFixedWeights(files);
+    expect(hits, `Use theme-aware display, title or medium-body weight tokens:\n${hits.join("\n")}`).toEqual([]);
+  });
+
+  it.each([
+    "font-normal",
+    "font-bold",
+    "hover:font-bold",
+    "font-extrabold",
+    "font-black",
+    "font-semibold",
+    "font-medium",
+    "font-[700]",
+    "font-[number:800]",
+    "[font-weight:900]",
+    "fontWeight: 700",
+    'fontWeight: "bold"',
+    "fontWeight:\n '600'",
+    "font-weight: bold",
+    "font-weight: 500",
+    "var(--font-weight-semibold)",
+    "var(--font-weight-medium)",
+    "fontWeight={600}",
+    "fontWeight={1000}",
+    "fontWeight: 1000",
+    "[font-weight:1000]",
+    "font-weight: 1000",
+    'fontWeight="700"',
+    "font-weight=500",
+    'font-weight="600"',
+    "font-weight={'bold'}",
+    "var(--font-weight-bold)",
+  ])("detects fixed weight %s", (source) => {
+    expect(FIXED_FONT_WEIGHT.test(source)).toBe(true);
+  });
+
+  it.each([
+    "font-boldness",
+    "--font-bold-token",
+    "font-[400]",
+    "fontWeight={400}",
+    'fontWeight="var(--font-weight-title)"',
+    "[font-weight:var(--font-weight-mono)]",
+    "[font-weight:var(--font-weight-display)]",
+    "font-weight: var(--font-weight-title)",
+    'fontWeight: "var(--font-weight-medium-body)"',
+    "--font-weight-display: 700",
+  ])("allows token references and unrelated names: %s", (source) => {
+    expect(FIXED_FONT_WEIGHT.test(source)).toBe(false);
+  });
+
+  it("reduces every non-regular semantic weight in dark mode", () => {
+    const css = readFileSync(join(SRC_DIR, "app/globals.css"), "utf8");
+    const root = css.match(/:root\s*\{([^}]*)\}/)?.[1] ?? "";
+    const light = css.match(/:root\[data-theme="light"\]\s*\{([^}]*)\}/)?.[1] ?? "";
+    const dark = css.match(/:root\[data-theme="dark"\]\s*\{([^}]*)\}/)?.[1] ?? "";
+    const weights = { display: [700, 670], title: [600, 580], "medium-body": [500, 480], mono: [500, 480] };
+
+    for (const [token, [lightWeight, darkWeight]] of Object.entries(weights)) {
+      const declaration = new RegExp(`--font-weight-${token}:\\s*(\\d+)`);
+      const lightValue = light.match(declaration)?.[1] ?? root.match(declaration)?.[1];
+      expect(Number(lightValue), `${token} light weight`).toBe(lightWeight);
+      expect(Number(dark.match(declaration)?.[1]), `${token} dark weight`).toBe(darkWeight);
+    }
+    expect(root).toMatch(/--font-weight-regular:\s*400;/);
   });
 
   it("has no theme-blind Tailwind utility classes in components", () => {

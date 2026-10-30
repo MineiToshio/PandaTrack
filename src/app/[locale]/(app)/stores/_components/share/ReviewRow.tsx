@@ -31,7 +31,7 @@ export default function ReviewRow({
       <Avatar user={{ name: displayName }} size={32} />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <span className="[font-size:var(--text-body)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
+          <span className="[font-size:var(--text-body)] [font-weight:var(--font-weight-title)] [color:var(--text-primary)]">
             {displayName}
           </span>
           <StarRating value={overallRating} size={14} />

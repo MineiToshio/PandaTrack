@@ -258,7 +258,7 @@ export default async function DashboardCollectionZone({ data, locale, storesHref
                           <span className="min-w-0 flex-1 truncate" title={category.label}>
                             {category.label}
                           </span>
-                          <span className="[font-weight:var(--font-weight-semibold)] [color:var(--text-primary)] tabular-nums">
+                          <span className="[font-weight:var(--font-weight-title)] [color:var(--text-primary)] tabular-nums">
                             {money(category.value)}
                           </span>
                         </>
@@ -318,7 +318,7 @@ export default async function DashboardCollectionZone({ data, locale, storesHref
                         <span className="min-w-0 flex-1 truncate" title={entry.label}>
                           {entry.label}
                         </span>
-                        <span className="[font-weight:var(--font-weight-semibold)] [color:var(--text-primary)] tabular-nums">
+                        <span className="[font-weight:var(--font-weight-title)] [color:var(--text-primary)] tabular-nums">
                           {entry.value.toLocaleString("en")}
                         </span>
                       </li>
@@ -351,7 +351,7 @@ export default async function DashboardCollectionZone({ data, locale, storesHref
                         style={{ width: maxCount > 0 ? `${(category.value / maxCount) * 100}%` : "0%" }}
                       />
                     </span>
-                    <span className="[font-size:12.5px] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)] tabular-nums">
+                    <span className="[font-size:12.5px] [font-weight:var(--font-weight-title)] [color:var(--text-primary)] tabular-nums">
                       {category.value.toLocaleString("en")}
                     </span>
                   </li>
@@ -400,7 +400,7 @@ export default async function DashboardCollectionZone({ data, locale, storesHref
                           style={{ width: topStoreMax > 0 ? `${(store.committedMinor / topStoreMax) * 100}%` : "0%" }}
                         />
                       </span>
-                      <span className="[font-size:12.5px] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)] tabular-nums">
+                      <span className="[font-size:12.5px] [font-weight:var(--font-weight-title)] [color:var(--text-primary)] tabular-nums">
                         {money(store.committedMinor)}
                       </span>
                     </Link>

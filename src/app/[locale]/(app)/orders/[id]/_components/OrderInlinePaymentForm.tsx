@@ -444,7 +444,7 @@ export default function OrderInlinePaymentForm({
 
   const chipClass = (isSelected: boolean) =>
     cn(
-      "inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium transition-colors",
+      "inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] [font-weight:var(--font-weight-medium-body)] transition-colors",
       isSelected
         ? "[color:var(--accent)] [background:color-mix(in_oklch,var(--accent)_12%,transparent)] [border:1px_solid_color-mix(in_oklch,var(--accent)_35%,transparent)]"
         : "[color:var(--text-secondary)] [background:var(--surface-elevated)] [border:1px_solid_var(--border-strong)] hover:[background:color-mix(in_oklab,var(--text-primary)_6%,var(--surface-elevated))]",
@@ -464,10 +464,10 @@ export default function OrderInlinePaymentForm({
       )}
     >
       {/* Header — eyebrow + X close. Demo HTML uses inline style override on the form-panel
-          eyebrow (`font-size:11px; font-weight:700; letter-spacing:0.06em`), NOT the default
+          eyebrow (`font-size:11px; font-weight:var(--font-weight-display); letter-spacing:0.06em`), NOT the default
           `.eyebrow` mono/500/0.08em. Match that override here for pixel parity. */}
       <div className="mb-3 flex items-center justify-between">
-        <span className="text-text-muted text-[11px] font-bold tracking-[0.06em] uppercase">
+        <span className="text-text-muted text-[11px] [font-weight:var(--font-weight-display)] tracking-[0.06em] uppercase">
           {t("detail.payments.newPaymentHeading")}
         </span>
         <button
@@ -513,7 +513,7 @@ export default function OrderInlinePaymentForm({
           placeholder={t("detail.payments.amountPlaceholder")}
           className={cn(
             inputClass,
-            "text-[15px] font-semibold tabular-nums",
+            "text-[15px] [font-weight:var(--font-weight-title)] tabular-nums",
             (amountExceedsBalance || isNetZero) && "[border-color:var(--destructive)]",
           )}
         />
@@ -674,7 +674,7 @@ export default function OrderInlinePaymentForm({
         disabled={!canSubmit || isPending}
         className={cn(
           "inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5",
-          "text-[14px] leading-none font-medium",
+          "text-[14px] leading-none [font-weight:var(--font-weight-medium-body)]",
           "[background:color-mix(in_oklch,var(--accent)_10%,transparent)]",
           "[color:var(--accent)]",
           "[border:1px_solid_color-mix(in_oklch,var(--accent)_28%,transparent)]",

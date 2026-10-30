@@ -417,13 +417,13 @@ export default function QuickArrivalModal({
         ) : (
           <fieldset className="space-y-1.5">
             <div className="flex items-baseline justify-between gap-3">
-              <legend className="text-[13px] font-medium [color:var(--text-secondary)]">
+              <legend className="text-[13px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-secondary)]">
                 {t("detail.quickArrival.itemsLabel")}
               </legend>
               <button
                 type="button"
                 onClick={handleToggleAll}
-                className="text-[12.5px] font-medium [color:var(--accent)] hover:underline"
+                className="text-[12.5px] [font-weight:var(--font-weight-medium-body)] [color:var(--accent)] hover:underline"
               >
                 {allSelected ? t("detail.quickArrival.selectNone") : t("detail.quickArrival.selectAll")}
               </button>
@@ -469,7 +469,7 @@ export default function QuickArrivalModal({
                   <div key={groupHeadingId} role="group" aria-labelledby={groupHeadingId}>
                     <p
                       id={groupHeadingId}
-                      className="px-2 pt-1 pb-0.5 text-[11.5px] font-medium [color:var(--text-muted)]"
+                      className="px-2 pt-1 pb-0.5 text-[11.5px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-muted)]"
                     >
                       {t("detail.quickArrival.orderGroupLabel", { code: group.orderLabel })}
                     </p>
@@ -489,7 +489,7 @@ export default function QuickArrivalModal({
         )}
 
         <div className="space-y-1.5">
-          <label htmlFor="quick-arrival-received" className="text-[13px] font-medium [color:var(--text-secondary)]">
+          <label htmlFor="quick-arrival-received" className="text-[13px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-secondary)]">
             {t("detail.quickArrival.receivedLabel")} <span className="[color:var(--destructive)]">*</span>
           </label>
           <DatePickerInput
@@ -538,7 +538,7 @@ export default function QuickArrivalModal({
                 <div className="space-y-1.5">
                   <label
                     htmlFor="quick-arrival-settlement-date"
-                    className="text-[13px] font-medium [color:var(--text-secondary)]"
+                    className="text-[13px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-secondary)]"
                   >
                     {t("detail.quickArrival.settlement.dateLabel")}
                   </label>
@@ -659,7 +659,7 @@ export default function QuickArrivalModal({
             aria-expanded={showShippingDetails}
             className="flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left"
           >
-            <span className="text-[12.5px] font-medium [color:var(--text-secondary)]">{summaryLabel}</span>
+            <span className="text-[12.5px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-secondary)]">{summaryLabel}</span>
             <ChevronDown
               size={15}
               aria-hidden
@@ -681,10 +681,10 @@ export default function QuickArrivalModal({
               <div className="space-y-1.5">
                 <label
                   htmlFor="quick-arrival-shipped"
-                  className="text-[13px] font-medium [color:var(--text-secondary)]"
+                  className="text-[13px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-secondary)]"
                 >
                   {t("detail.quickArrival.shippedLabel")}{" "}
-                  <span className="text-[11px] font-normal [color:var(--text-muted)]">
+                  <span className="text-[11px] [font-weight:var(--font-weight-regular)] [color:var(--text-muted)]">
                     {t("detail.quickArrival.optional")}
                   </span>
                 </label>
@@ -705,9 +705,9 @@ export default function QuickArrivalModal({
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <label htmlFor="quick-arrival-cost" className="text-[13px] font-medium [color:var(--text-secondary)]">
+                  <label htmlFor="quick-arrival-cost" className="text-[13px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-secondary)]">
                     {t("detail.quickArrival.costLabel")}{" "}
-                    <span className="text-[11px] font-normal [color:var(--text-muted)]">
+                    <span className="text-[11px] [font-weight:var(--font-weight-regular)] [color:var(--text-muted)]">
                       {t("detail.quickArrival.optional")}
                     </span>
                   </label>
@@ -729,7 +729,7 @@ export default function QuickArrivalModal({
                 <div className="space-y-1.5">
                   <label
                     htmlFor="quick-arrival-currency"
-                    className="text-[13px] font-medium [color:var(--text-secondary)]"
+                    className="text-[13px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-secondary)]"
                   >
                     {t("detail.quickArrival.currencyLabel")}
                   </label>
@@ -756,7 +756,7 @@ export default function QuickArrivalModal({
 
               {showExchangeRate && (
                 <div className="space-y-1.5">
-                  <label htmlFor="quick-arrival-fx" className="text-[13px] font-medium [color:var(--text-secondary)]">
+                  <label htmlFor="quick-arrival-fx" className="text-[13px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-secondary)]">
                     {t("detail.quickArrival.fxLabel")}
                   </label>
                   <Input

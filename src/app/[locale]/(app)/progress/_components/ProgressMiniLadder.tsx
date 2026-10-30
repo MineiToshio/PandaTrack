@@ -50,7 +50,7 @@ export default async function ProgressMiniLadder({ locale, currentRankIndex }: P
             <span className="flex min-w-0 flex-1 flex-col sm:w-full sm:flex-none sm:items-center">
               {/* One line with an ellipsis in the stacked row, two wrapped lines in the narrow
                   column, where an ellipsis would eat most of a rank name. */}
-              <span className="text-text-title truncate [font-size:var(--text-body)] font-medium sm:overflow-visible sm:text-center sm:[font-size:var(--text-caption)] sm:leading-tight sm:whitespace-normal">
+              <span className="text-text-title truncate [font-size:var(--text-body)] [font-weight:var(--font-weight-medium-body)] sm:overflow-visible sm:text-center sm:[font-size:var(--text-caption)] sm:leading-tight sm:whitespace-normal">
                 {t(`ranks.${rung.rankKey}.name`)}
               </span>
               <span className="text-text-muted [font-family:var(--font-mono)] [font-size:var(--text-caption)]">
@@ -59,7 +59,7 @@ export default async function ProgressMiniLadder({ locale, currentRankIndex }: P
             </span>
             <span
               className={cn(
-                "shrink-0 [font-size:var(--text-caption)] font-medium",
+                "shrink-0 [font-size:var(--text-caption)] [font-weight:var(--font-weight-medium-body)]",
                 isCurrent ? "text-accent" : "text-text-muted max-sm:hidden",
               )}
             >

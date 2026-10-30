@@ -66,7 +66,7 @@ export default function DashboardActivityRow({
           )}
         </div>
         <div className="pointer-events-none min-w-0 flex-1">
-          <p className="truncate [font-size:13.5px] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
+          <p className="truncate [font-size:13.5px] [font-weight:var(--font-weight-title)] [color:var(--text-primary)]">
             {storeName}
           </p>
           <p className="truncate [font-family:var(--font-mono)] [font-size:11.5px] [color:var(--text-muted)]">

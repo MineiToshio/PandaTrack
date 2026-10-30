@@ -172,7 +172,7 @@ export default async function MedalDetailPage({ params }: MedalDetailPageProps) 
           >
             <Users className="text-text-muted size-5 shrink-0" aria-hidden />
             <div className="min-w-0">
-              <p className="text-text-secondary m-0 [font-size:var(--text-body)] font-semibold">
+              <p className="text-text-secondary m-0 [font-size:var(--text-body)] [font-weight:var(--font-weight-title)]">
                 {t("detail.soonTitle")}
               </p>
               <p className="text-text-muted m-0 [font-size:var(--text-caption)]">{t("detail.soonCaption")}</p>

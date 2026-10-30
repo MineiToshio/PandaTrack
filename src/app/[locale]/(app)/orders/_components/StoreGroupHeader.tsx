@@ -152,7 +152,7 @@ export default function StoreGroupHeader({
 
           <span className="min-w-0 flex-1">
             <span className="flex min-w-0 items-center gap-1.5">
-              <span className="min-w-0 truncate [font-size:var(--text-body)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
+              <span className="min-w-0 truncate [font-size:var(--text-body)] [font-weight:var(--font-weight-title)] [color:var(--text-primary)]">
                 {store.name}
               </span>
               {/* Only a seller type that deviates from "Comercio" is marked, and it is marked with a
@@ -179,11 +179,11 @@ export default function StoreGroupHeader({
             <span className="shrink-0 text-right">
               <span
                 className={cn(
-                  "block [font-size:var(--text-body)] [font-weight:var(--font-weight-semibold)] whitespace-nowrap tabular-nums",
+                  "block [font-size:var(--text-body)] [font-weight:var(--font-weight-title)] whitespace-nowrap tabular-nums",
                   primary.kind === "credit"
                     ? "[color:var(--success-chip-text)]"
                     : primary.kind === "none"
-                      ? "[font-weight:var(--font-weight-medium)] [color:var(--text-muted)]"
+                      ? "[font-weight:var(--font-weight-medium-body)] [color:var(--text-muted)]"
                       : "[color:var(--text-primary)]",
                 )}
               >

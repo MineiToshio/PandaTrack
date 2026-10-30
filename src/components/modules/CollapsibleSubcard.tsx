@@ -74,7 +74,7 @@ export default function CollapsibleSubcard({
         className="hover:bg-muted/20 flex w-full items-center gap-3 px-4 py-[14px] text-left transition-colors"
       >
         {typeof eyebrow === "string" ? (
-          <span className="text-text-muted font-mono text-[11px] font-medium tracking-[0.08em] uppercase">
+          <span className="text-text-muted font-mono text-[11px] [font-weight:var(--font-weight-mono)] tracking-[0.08em] uppercase">
             {eyebrow}
           </span>
         ) : (

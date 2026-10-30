@@ -220,7 +220,7 @@ export default function WizardStep({
         ) : isErrored ? (
           <X size={14} aria-hidden="true" />
         ) : (
-          <span className="text-xs font-semibold">{n}</span>
+          <span className="text-xs [font-weight:var(--font-weight-title)]">{n}</span>
         )}
       </span>
       <div className="min-w-0 flex-1">
@@ -230,14 +230,14 @@ export default function WizardStep({
         {isAllOpen || isActive ? (
           <h3
             id={headingId}
-            className="mt-0.5 [font-size:var(--text-subtitle)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]"
+            className="mt-0.5 [font-size:var(--text-subtitle)] [font-weight:var(--font-weight-title)] [color:var(--text-primary)]"
           >
             {title}
           </h3>
         ) : (
           <span
             id={headingId}
-            className="mt-0.5 block [font-size:var(--text-body)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]"
+            className="mt-0.5 block [font-size:var(--text-body)] [font-weight:var(--font-weight-title)] [color:var(--text-primary)]"
           >
             {title}
           </span>

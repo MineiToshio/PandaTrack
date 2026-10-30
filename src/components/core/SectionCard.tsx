@@ -138,7 +138,7 @@ export default function SectionCard({
         {title && (
           <HeadingTag
             id={headingId}
-            className="[font-size:var(--text-subtitle)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]"
+            className="[font-size:var(--text-subtitle)] [font-weight:var(--font-weight-title)] [color:var(--text-primary)]"
           >
             {title}
           </HeadingTag>

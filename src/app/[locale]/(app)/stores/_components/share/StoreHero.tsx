@@ -82,7 +82,7 @@ export default function StoreHero({ store, labels, derivedSignals, className }: 
         ) : isPending && !isPerson ? (
           // Pending without logo → info-tinted placeholder (matches `s6-store-detail-pending` hero avatar).
           <span
-            className="inline-flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full [font-size:var(--text-subtitle)] [font-weight:var(--font-weight-semibold)] [color:var(--info)] [background:color-mix(in_oklch,var(--info)_18%,var(--surface-elevated))] md:rounded-[var(--radius-lg)]"
+            className="inline-flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full [font-size:var(--text-subtitle)] [font-weight:var(--font-weight-title)] [color:var(--info)] [background:color-mix(in_oklch,var(--info)_18%,var(--surface-elevated))] md:rounded-[var(--radius-lg)]"
             aria-label={store.name}
           >
             {store.name.trim().match(/\p{L}/u)?.[0]?.toUpperCase() ?? ""}
@@ -91,7 +91,7 @@ export default function StoreHero({ store, labels, derivedSignals, className }: 
           <StoreAvatar store={{ name: store.name }} size={56} isPerson={isPerson} />
         )}
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5 [font-size:17px] [font-weight:600] [color:var(--text-primary)]">
+          <div className="flex items-center gap-1.5 [font-size:17px] [font-weight:var(--font-weight-title)] [color:var(--text-primary)]">
             {isPerson && <User size={14} aria-hidden="true" className="flex-shrink-0 [color:var(--text-muted)]" />}
             <span className="min-w-0 truncate">{store.name}</span>
           </div>

@@ -218,7 +218,7 @@ export default function MobilePicker<TValue extends string = string>({
                       </span>
                     ) : null}
                     <span className="flex min-w-0 flex-1 flex-col">
-                      <span className="truncate text-[13px] font-medium [color:var(--text-primary)]">
+                      <span className="truncate text-[13px] [font-weight:var(--font-weight-medium-body)] [color:var(--text-primary)]">
                         {option.label}
                       </span>
                       {option.description && (
@@ -239,7 +239,7 @@ export default function MobilePicker<TValue extends string = string>({
                 href={inlineAction.href}
                 onClick={() => onOpenChange(false)}
                 className={cn(
-                  "flex w-full items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-medium",
+                  "flex w-full items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-[13px] [font-weight:var(--font-weight-medium-body)]",
                   "[color:var(--text-primary)] [background:transparent] [border:1px_solid_var(--border-strong)]",
                   "hover:[background:color-mix(in_oklch,var(--text-primary)_3%,transparent)]",
                   "transition-colors",
@@ -256,7 +256,7 @@ export default function MobilePicker<TValue extends string = string>({
                   inlineAction.onClick?.();
                 }}
                 className={cn(
-                  "flex w-full items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-medium",
+                  "flex w-full items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-[13px] [font-weight:var(--font-weight-medium-body)]",
                   "[color:var(--text-primary)] [background:transparent] [border:1px_solid_var(--border-strong)]",
                   "hover:[background:color-mix(in_oklch,var(--text-primary)_3%,transparent)]",
                   "transition-colors",

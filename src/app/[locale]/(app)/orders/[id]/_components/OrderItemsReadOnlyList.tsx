@@ -158,16 +158,16 @@ export default async function OrderItemsReadOnlyList({
                 {/* Demo `.item-qty` (12px mono muted, mr:8px) + `.item-price` (14px 500) */}
                 <span className="text-text-muted mr-2 font-mono text-[12px] tabular-nums">×{item.quantity}</span>
                 {itemTotal != null ? (
-                  <span className="text-text-title text-[14px] font-medium tabular-nums">
+                  <span className="text-text-title text-[14px] [font-weight:var(--font-weight-medium-body)] tabular-nums">
                     {formatAmountSymbolOnly(itemTotal, currencyCode, locale)}
                   </span>
                 ) : item.unitPrice != null ? (
-                  <span className="text-text-muted text-[14px] font-medium tabular-nums">
+                  <span className="text-text-muted text-[14px] [font-weight:var(--font-weight-medium-body)] tabular-nums">
                     {formatAmountSymbolOnly(item.unitPrice, currencyCode, locale)}
                   </span>
                 ) : (
                   // No unit price recorded — keep the column to preserve row alignment.
-                  <span className="text-text-muted text-[14px] font-medium tabular-nums" aria-hidden>
+                  <span className="text-text-muted text-[14px] [font-weight:var(--font-weight-medium-body)] tabular-nums" aria-hidden>
                     —
                   </span>
                 )}
@@ -181,7 +181,7 @@ export default async function OrderItemsReadOnlyList({
         <div className="pt-3">
           <Link
             href={`/${locale}${ROUTES.deliveriesNew}?sourceOrderId=${orderId}`}
-            className="text-accent inline-flex items-center gap-1.5 text-[13px] font-medium underline-offset-2 hover:underline"
+            className="text-accent inline-flex items-center gap-1.5 text-[13px] [font-weight:var(--font-weight-medium-body)] underline-offset-2 hover:underline"
           >
             <Truck className="size-3.5" aria-hidden />
             {t("detail.items.createDeliveryWithProducts")}
