@@ -4,6 +4,10 @@
 
 import * as Sentry from "@sentry/nextjs";
 
+import { getSentryTracesSampleRate } from "@/lib/constants";
+
+const sentryEnvironment = process.env.NEXT_PUBLIC_VERCEL_ENV ?? process.env.NODE_ENV ?? "development";
+
 Sentry.init({
   // The DSN is a public identifier (it ships in the client bundle), not a secret. Only
   // NEXT_PUBLIC_* variables are readable in the browser, so this reads NEXT_PUBLIC_SENTRY_DSN with
@@ -14,13 +18,13 @@ Sentry.init({
 
   // See the note in `sentry.server.config.ts`. Only NEXT_PUBLIC_* variables are readable in the
   // browser, so this reads Vercel's public deployment variable rather than VERCEL_ENV.
-  environment: process.env.NEXT_PUBLIC_VERCEL_ENV ?? process.env.NODE_ENV ?? "development",
+  environment: sentryEnvironment,
 
   // Add optional integrations for additional features
   integrations: [Sentry.replayIntegration()],
 
   // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
-  tracesSampleRate: 1,
+  tracesSampleRate: getSentryTracesSampleRate(sentryEnvironment),
   // Enable logs to be sent to Sentry
   enableLogs: true,
 

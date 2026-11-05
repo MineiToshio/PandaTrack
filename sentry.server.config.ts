@@ -3,6 +3,9 @@
 // https://docs.sentry.io/platforms/javascript/guides/nextjs/
 
 import * as Sentry from "@sentry/nextjs";
+import { getSentryTracesSampleRate } from "@/lib/constants";
+
+const environment = process.env.VERCEL_ENV ?? process.env.NODE_ENV ?? "development";
 
 Sentry.init({
   // The DSN is a public identifier (it ships in the client bundle), not a secret. It is read
@@ -18,10 +21,10 @@ Sentry.init({
   // laptop all report into the SAME Sentry project. Without this tag they are indistinguishable
   // there, and a real production error is invisible inside local noise, which reads as "the error
   // was never reported" while it is in fact sitting unfiltered in the list.
-  environment: process.env.VERCEL_ENV ?? process.env.NODE_ENV ?? "development",
+  environment,
 
   // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
-  tracesSampleRate: 1,
+  tracesSampleRate: getSentryTracesSampleRate(environment),
 
   // Enable logs to be sent to Sentry
   enableLogs: true,

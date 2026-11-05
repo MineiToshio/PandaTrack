@@ -26,6 +26,7 @@ Enable Sentry across all execution contexts (client, server, edge, global bounda
 - `global-error.tsx` root-layout boundary
 - `(app)/error.tsx` app-shell subtree boundary with `area: "app_shell"` tag
 - Sentry webpack plugin (source map upload, debug-log tree shaking)
+- Trace sampling at 10% in production and 100% in development/preview to constrain telemetry volume against the Vercel Hobby CPU quota; errors and Replay-on-error remain sampled at 100%.
 
 ## Out of Scope
 

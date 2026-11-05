@@ -4,6 +4,9 @@
 // https://docs.sentry.io/platforms/javascript/guides/nextjs/
 
 import * as Sentry from "@sentry/nextjs";
+import { getSentryTracesSampleRate } from "@/lib/constants";
+
+const environment = process.env.VERCEL_ENV ?? process.env.NODE_ENV ?? "development";
 
 Sentry.init({
   // The DSN is a public identifier (it ships in the client bundle), not a secret. It is read
@@ -17,10 +20,10 @@ Sentry.init({
   // See the note in `sentry.server.config.ts`: the shared fallback DSN puts production, preview and
   // local development in one Sentry project, so the deployment has to be tagged or they cannot be
   // told apart.
-  environment: process.env.VERCEL_ENV ?? process.env.NODE_ENV ?? "development",
+  environment,
 
   // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
-  tracesSampleRate: 1,
+  tracesSampleRate: getSentryTracesSampleRate(environment),
 
   // Enable logs to be sent to Sentry
   enableLogs: true,
