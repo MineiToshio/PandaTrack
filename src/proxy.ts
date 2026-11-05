@@ -47,6 +47,12 @@ function isPrivateLocalizedPath(localizedPath: string) {
 export default function proxy(request: NextRequest) {
   const localizedPathData = getLocalizedPath(request.nextUrl.pathname);
 
+  // Handle static-page fallbacks before rendering: Next.js can append a layout redirect's
+  // Location twice on the first cache miss. Keep the layout guard for unmatched paths.
+  if (!localizedPathData && request.nextUrl.pathname !== "/") {
+    return NextResponse.redirect(new URL(`/${routing.defaultLocale}`, request.url));
+  }
+
   if (
     localizedPathData &&
     (localizedPathData.localizedPath === LEGACY_PURCHASES_ROUTE_PREFIX ||
@@ -84,6 +90,10 @@ export default function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Match only internationalized pathnames
-  matcher: ["/", "/(es|en)/:path*"],
+  // Include public static fallbacks, excluding unlocalized routes and infrastructure.
+  matcher: [
+    "/",
+    "/(es|en)/:path*",
+    "/:locale((?!(?:api|_next|_vercel|ingest|monitoring|apple-icon|dev-global-error)(?:/|$))[^/.]+)/:publicPage(privacy|terms)?",
+  ],
 };

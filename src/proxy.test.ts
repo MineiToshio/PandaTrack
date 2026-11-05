@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import proxy from "@/proxy";
+import proxy, { config } from "@/proxy";
+import { unstable_doesMiddlewareMatch } from "next/experimental/testing/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { handleI18nRoutingMock, getSessionCookieMock } = vi.hoisted(() => ({
@@ -19,6 +20,37 @@ describe("proxy", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     handleI18nRoutingMock.mockReturnValue(NextResponse.next());
+  });
+
+  it.each(["/xx", "/xx/privacy", "/xx/terms", "/unsupported/privacy?from=test", "/apiculture"])(
+    "redirects invalid public locale prefixes before rendering: %s",
+    (path) => {
+      expect(unstable_doesMiddlewareMatch({ config, url: `https://pandatrack.app${path}` })).toBe(true);
+      const response = proxy(new NextRequest(`https://pandatrack.app${path}`));
+      expect(response.status).toBe(307);
+      expect(response.headers.get("location")).toBe("https://pandatrack.app/es");
+      expect(handleI18nRoutingMock).not.toHaveBeenCalled();
+      expect(getSessionCookieMock).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([
+    "/api/privacy",
+    "/api/auth/get-session",
+    "/api/notifications/dispatch",
+    "/_next/static/chunk.js",
+    "/ingest",
+    "/ingest/batch",
+    "/monitoring",
+    "/apple-icon",
+    "/dev-global-error",
+    "/icon.svg",
+    "/robots.txt",
+    "/sitemap.xml",
+    "/manifest.webmanifest",
+    "/xx/algo",
+  ])("keeps unrelated routes outside the proxy matcher: %s", (path) => {
+    expect(unstable_doesMiddlewareMatch({ config, url: `https://pandatrack.app${path}` })).toBe(false);
   });
 
   it("redirects unauthenticated requests for private localized routes to sign-in with a returnTo param", async () => {

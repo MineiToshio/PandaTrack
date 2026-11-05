@@ -7,7 +7,7 @@ status: ACTIVE
 parent: PRD-02
 children:
   - BP-01
-last_updated: 2026-08-08
+last_updated: 2026-11-05
 source_features: []
 implementation_status: PARTIALLY_IMPLEMENTED
 ---
@@ -113,6 +113,7 @@ As a collector, I want to turn reminders on or off and choose which kinds I get,
 - `BR-09-02`: A reminder for a given (`userId`, `type`, subject id, due date) is delivered once. The dedup log is the source of truth; a due date that shifts (for example the collector edits an expected-arrival date) is a new dedup key and may legitimately produce a fresh reminder.
 - `BR-09-03`: Windowing and "today" boundaries are computed in the collector's timezone, falling back to `UTC`, consistent with how budget cycles are computed in the settings domain.
 - `BR-09-04`: The dispatcher never reuses the dashboard's full aggregation. Dashboard aggregation loads every order, payment, delivery, and derivation for a rich screen; the dispatcher needs only the small set of subjects due inside the window.
+  Before loading scheduled candidates, check whether any push subscription exists, selecting only its ID. If none exists, return an empty candidate batch without querying orders, deliveries, or payment balances. The authorized cron still returns the normal all-zero summary and records its run event; this does not skip the cron invocation or hide database errors.
 - `BR-09-05`: The three reminder subjects reuse the domains' existing definitions of "due" and "arrived": a payment reminder targets a non-cancelled order with outstanding balance greater than zero whose expected date falls in the payment window; an arrival reminder targets a not-yet-arrived non-cancelled order or delivery whose expected arrival falls in the arrival window; an overdue reminder targets a not-yet-arrived non-cancelled order or delivery whose expected arrival reference date is already past.
 - `BR-09-06`: Cancelled orders and cancelled deliveries are never reminded on, matching how they are excluded from dashboard obligations and spend.
 - `BR-09-07`: Pruning an expired subscription is a normal lifecycle event. It must not raise a monitored error and must not abort the rest of the dispatch batch.

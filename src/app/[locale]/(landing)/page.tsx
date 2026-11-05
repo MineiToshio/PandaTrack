@@ -1,4 +1,5 @@
-import { getTranslations } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
+import { isLocale } from "@/types/locale";
 import type { Metadata } from "next";
 import Banner from "./_components/Banner";
 import Faqs from "./_components/Faqs";
@@ -30,6 +31,8 @@ export async function generateMetadata({ params }: HomeProps): Promise<Metadata>
 
 export default async function Home({ params }: HomeProps) {
   const { locale } = await params;
+  if (!isLocale(locale)) return null;
+  setRequestLocale(locale);
   const t = await getTranslations({ locale, namespace: "landing" });
 
   return (

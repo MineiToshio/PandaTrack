@@ -7,7 +7,7 @@ status: ACTIVE
 parent: PRD-01
 children:
   - BP-01
-last_updated: 2026-07-19
+last_updated: 2026-11-05
 source_features:
   - FEAT-0004
   - FEAT-0005
@@ -37,12 +37,12 @@ This FRD is infra-only — it has no user-facing screens of its own. Visual trea
 
 ## Functional Requirements
 
-- `FR-03-01`: Public routes must support Spanish as default and English as an alternate locale. The default locale (`es`) renders without a locale prefix (`/`, `/terms`, `/privacy`); the English locale renders under `/en`.
+- `FR-03-01`: Public routes must support Spanish as default and English as an alternate locale. Both locales use explicit URL prefixes: Spanish under `/es` and English under `/en`. The root `/` redirects through locale detection; canonical URLs and the sitemap use the prefixed destinations.
 - `FR-03-02`: User-facing copy must come from locale files instead of hardcoded strings. Locale message files are loaded per-segment in `src/i18n/request.ts`; the supported namespaces are `common`, `landing`, `terms`, `privacy`, `auth`, `dashboard`, `appLayout`, `stores`, `storeListing`, `countries`, `storeProductTypes`, `settings`, `orders`, `orderListing`, `deliveries`, and `components`.
-- `FR-03-03`: Metadata generation must be localized and reusable. `buildPageMetadata` in `src/lib/seo.ts` accepts a locale, a namespace, a path segment, and translation keys, and produces `title`, `description`, `alternates.canonical`, and `openGraph` fields in one call. `buildStoreDetailMetadata` covers the public store detail page including the `noindex` rule for `PENDING` stores.
-- `FR-03-04`: Sitemap and robots routes must expose crawler-friendly outputs. `src/app/sitemap.ts` lists all public locale variants of `/`, `/terms`, and `/privacy` with correct `changeFrequency` and `priority` values. `src/app/robots.ts` allows all user agents and points to the absolute sitemap URL.
+- `FR-03-03`: Metadata generation must be localized and reusable. `buildPageMetadata` in `src/lib/seo.ts` accepts a locale, a namespace, a path segment, and translation keys, and produces `title`, `description`, `alternates.canonical`, and `openGraph` fields in one call. `buildStoreDetailMetadata` covers store detail metadata including the `noindex` rule for `PENDING` stores.
+- `FR-03-04`: Sitemap and robots routes must expose crawler-friendly outputs. `src/app/sitemap.ts` lists all public locale variants of `/`, `/terms`, and `/privacy` with correct `changeFrequency` and `priority` values. `src/app/robots.ts` keeps public content crawlable, excludes private and access route prefixes in localized and unlocalized form, and points to the absolute sitemap URL. The production public site remains indexable: `Allow: /` for all user agents, with `Disallow` prefixes for dashboard, orders, deliveries, stores, settings, progress, admin, payments, budget, legacy purchases, sign-in, sign-up, forgot-password, reset-password, and verify-email (including confirmation and required variants). Each prefix is emitted without a locale and under both `/es` and `/en`. Home, privacy, terms, and their public OG images remain crawlable. Robots rules complement session authorization; they do not replace it.
 - `FR-03-05`: OG images must resolve through absolute URLs and locale-aware routes. A private (non-exported) `getOgImageUrl` helper in `src/lib/seo.ts` constructs the full URL (using `getSiteUrl()`) for each page's OG image; it is consumed internally by `buildPageMetadata` and is not part of the module's public API. `ImageResponse` routes are placed at segment level: `src/app/[locale]/opengraph-image.tsx` (landing), `src/app/[locale]/terms/opengraph-image.tsx`, and `src/app/[locale]/privacy/opengraph-image.tsx`. All three use the Node.js runtime so fonts can be read from disk before render.
-- `FR-03-06`: Canonical paths must avoid duplicate locale ambiguity for the default locale. `buildCanonicalPath` in `src/lib/seo.ts` omits the locale prefix for `es` and adds `/{locale}` only for alternates. The root locale layout sets `metadataBase` via `getSiteUrl()` and the per-page `generateMetadata` calls set explicit `alternates.canonical` URLs.
+- `FR-03-06`: Canonical paths must avoid duplicate locale ambiguity for the default locale. `buildCanonicalPath` in `src/lib/seo.ts` includes `/{locale}` for both `es` and `en`, matching the existing routing policy. Sitemap and JSON-LD reuse it. The root locale layout sets `metadataBase` via `getSiteUrl()` and the per-page `generateMetadata` calls set explicit `alternates.canonical` URLs.
 - `FR-03-07`: The middleware must protect private routes for unauthenticated visitors. `src/proxy.ts` inspects the session cookie for requests to any of `/dashboard`, `/orders`, `/deliveries`, `/payments`, `/budget` (under any locale); if no session token is present the visitor is redirected to the locale-scoped sign-in page with a `returnTo` query parameter encoding the original URL.
 - `FR-03-08`: A legacy `/purchases` route must redirect permanently to `/orders`. The middleware redirects `/{locale}/purchases/*` to `/{locale}/orders/*` with HTTP 308.
 - `FR-03-12`: The middleware must redirect authenticated visitors away from the localized home to the dashboard. `src/proxy.ts` inspects the session cookie for requests to the localized home (`/{locale}`, i.e. `/es` or `/en`); if a session token is present the visitor is redirected to `/{locale}/dashboard`. The check is cookie-only (no database round-trip); a stale cookie that no longer maps to a valid session is caught downstream by the `(app)` layout's server-side session check, which redirects to sign-in. Unauthenticated visitors continue to the marketing landing unchanged.
@@ -50,11 +50,19 @@ This FRD is infra-only — it has no user-facing screens of its own. Visual trea
 - `FR-03-10`: OG image rendering must degrade gracefully when network fonts are unavailable. `getOgFonts` in `src/lib/og.ts` attempts fonts from `@fontsource` packages in `node_modules`, then falls back to `public/fonts/`, then falls back to Google Fonts. The cascade is all-or-nothing per tier — it advances to the next tier only when the current tier returns zero fonts, not per individual font. Each `OgImageTemplate` invocation receives a `fontsLoaded` flag and substitutes system-safe fallbacks when any font family is absent.
 - `FR-03-11`: The base URL used for canonical URLs, OG tags, the sitemap, and the JSON-LD `url` field must derive from `NEXT_PUBLIC_SITE_URL` (preferred in production), then from `VERCEL_URL`, then fall back to `http://localhost:3000`. The production value is `https://pandatrack.app`.
 
+## Public Page Rendering
+
+- The landing, privacy, and terms Open Graph images are also prerendered for both locales (six PNG routes). Each `opengraph-image.tsx` exports `generateStaticParams` from `routing.locales`; supported variants render at build time rather than on every crawler request. Preserve the Node runtime, localized copy, shared template, and font fallback.
+
+- The localized home, privacy, and terms pages must be prerendered for both `es` and `en` using the locale layout's existing `generateStaticParams`. Build output must classify `/[locale]`, `/[locale]/privacy`, and `/[locale]/terms` as SSG, with both locale variants.
+- Locale initialization must remain scoped to the current render. Private pages that read the session, including dashboard, orders, settings, and stores, must remain dynamically rendered; static forcing must not suppress request APIs.
+- This rendering optimization preserves content, metadata, session guards, and current URL handling. The proxy redirects invalid prefixes for home, privacy, and terms to `/es` before rendering, avoiding duplicate Location headers on a static fallback cache miss. The locale layout retains its redirect guard for unmatched paths before initializing translations. The owner confirmed the existing prefixed Spanish routing policy. Canonicals, JSON-LD and sitemap follow that policy; routing is unchanged.
+
 ## Business Rules
 
-- `BR-03-01`: `es` is the default locale; it never appears as a URL prefix. `/` and `/es` both resolve to Spanish, but canonical is always the prefix-free form.
+- `BR-03-01`: `es` is the default locale and uses the `/es` prefix. Without a locale cookie or language preference, `/` redirects to `/es`; alternate locale detection may select `/en`. Canonicals always include the selected locale prefix.
 - `BR-03-02`: Locale detection is enabled in the middleware (`localeDetection: true`), so a visitor arriving at `/` without a cookie or `Accept-Language` header is served the default locale.
-- `BR-03-03`: The locale layout (`src/app/[locale]/layout.tsx`) validates the `locale` param against `routing.locales`; an unknown locale segment resolves to 404 via `notFound()`.
+- `BR-03-03`: The locale layout (`src/app/[locale]/layout.tsx`) validates the `locale` param against `routing.locales`; an unknown locale segment redirects to the default localized home (`/es`) before translations initialize. The proxy handles public static entry paths first; the layout remains the fallback guard. The first response must carry a single Location header.
 - `BR-03-04`: The title template at the root layout level is `%s | PandaTrack`. The landing page overrides with `absoluteTitle: true` to prevent "PandaTrack | PandaTrack" duplication.
 - `BR-03-05`: `PENDING` stores must carry a `robots: { index: false, follow: false }` directive. This is implemented in `buildStoreDetailMetadata` via the `noindex` flag.
 - `BR-03-06`: The sitemap includes only public locale variants of `/`, `/terms`, and `/privacy`. App shell and authenticated routes are excluded.
@@ -66,8 +74,8 @@ This FRD is infra-only — it has no user-facing screens of its own. Visual trea
 ### `AC-03-01`
 
 - Given a visitor opens `/`
-- When the page renders
-- Then content resolves in Spanish (default locale) without a locale prefix in the URL.
+- When locale detection has no cookie or language preference
+- Then the visitor redirects to `/es`, whose canonical is the prefixed Spanish URL.
 
 ### `AC-03-02`
 
@@ -85,13 +93,13 @@ This FRD is infra-only — it has no user-facing screens of its own. Visual trea
 
 - Given crawlers request `/robots.txt`
 - When the route resolves
-- Then it allows all user agents and references the absolute sitemap URL.
+- Then public content and public OG images remain crawlable, private/access prefixes are disallowed under both locales and without a prefix, and it references the absolute sitemap URL.
 
 ### `AC-03-05`
 
 - Given crawlers request `/sitemap.xml`
 - When the route resolves
-- Then it lists `/`, `/terms`, and `/privacy` for both `es` (prefix-free) and `en` locales.
+- Then it lists exactly `/es`, `/es/terms`, `/es/privacy`, `/en`, `/en/terms`, and `/en/privacy`, matching each page's canonical and Open Graph URL.
 
 ### `AC-03-06`
 
@@ -143,12 +151,12 @@ Unit-tested in `src/proxy.test.ts` (redirects unauthenticated private requests; 
 
 ### Root locale layout — `src/app/[locale]/layout.tsx`
 
-Sets `metadataBase`, the `%s | PandaTrack` title template, and the default description from `common.meta.description`. Validates the locale param and calls `notFound()` for unknown values. Sets `html[lang]` and includes the theme-init inline script to prevent flash-of-wrong-theme. Generates static params via `routing.locales`.
+Sets `metadataBase`, the `%s | PandaTrack` title template, and the default description from `common.meta.description`. Validates the locale param and redirects to `/es` for unknown values before calling `setRequestLocale(locale)` and loading messages. Sets `html[lang]` and includes the theme-init inline script to prevent flash-of-wrong-theme. Generates static params via `routing.locales`.
 
 ### SEO helpers — `src/lib/seo.ts`
 
 - `getSiteUrl()`: resolves `NEXT_PUBLIC_SITE_URL` → `VERCEL_URL` → `localhost:3000`.
-- `buildCanonicalPath(locale, segment)`: returns `/{locale}/{segment}` for non-default locales; omits the prefix for `es`.
+- `buildCanonicalPath(locale, segment)`: returns `/{locale}` for home and `/{locale}/{segment}` for other segments, including the default locale.
 - `buildPageMetadata(opts)`: full `Metadata` object (title, description, `alternates.canonical`, `openGraph` with explicit `images` array). Accepts `absoluteTitle` to bypass the template.
 - `buildStoreDetailMetadata(opts)`: variant for store detail pages; supports `noindex` for `PENDING` stores.
 - `PageCanonicalSegment` union type: `""`, `"terms"`, `"privacy"`, `"dashboard"`, `"stores"`, `"orders"`, `"deliveries"`, `"settings"`.
@@ -176,15 +184,15 @@ All use `export const runtime = "nodejs"`.
 
 ### Robots — `src/app/robots.ts`
 
-Returns `{ rules: { userAgent: "*", allow: "/" }, sitemap: "<baseUrl>/sitemap.xml" }`.
+Returns `userAgent: "*"`, `allow: "/"`, private/access `disallow` prefixes, and the absolute sitemap URL. The route-family list follows FR-03-04 and is tested against the app/auth page inventory.
 
 ### Sitemap — `src/app/sitemap.ts`
 
-Iterates `routing.locales`. For the default locale (`es`) the URL prefix is empty; for `en` the prefix is `/en`. Publishes: `/` (priority 1, weekly), `/terms` (0.5, monthly), `/privacy` (0.5, monthly) — two locale variants each, six entries total.
+Iterates `routing.locales` and uses `buildCanonicalPath` for every URL. Publishes `/es` and `/en` (priority 1, weekly), plus each locale's `/terms` and `/privacy` (0.5, monthly), exactly six entries. Private and access routes are excluded.
 
 ### JSON-LD — `src/app/[locale]/(landing)/_components/LandingJsonLd.tsx`
 
-Server component. Injects `WebSite` and `SoftwareApplication` schema objects. URL is the locale-aware home URL (prefix-free for `es`). Only `WebSite` carries `inLanguage` (`"es"` or `"en"`); `SoftwareApplication` carries `applicationCategory: "UtilitiesApplication"` and `operatingSystem: "Web"` instead.
+Server component. Injects `WebSite` and `SoftwareApplication` schema objects. URL reuses the canonical helper and includes `/es` or `/en`. Only `WebSite` carries `inLanguage` (`"es"` or `"en"`); `SoftwareApplication` carries `applicationCategory: "UtilitiesApplication"` and `operatingSystem: "Web"` instead.
 
 ---
 
@@ -225,7 +233,7 @@ Five cases:
 - FAQ accordion: first item open by default; second item toggles correctly
 - No waitlist form remains on the landing (regression guard)
 
-No dedicated E2E spec covers robots/sitemap; those are verified manually or via integration build smoke tests.
+`src/app/_tests/seoMetadata.test.ts` checks robots against the actual app/auth page inventory, public/OG crawlability, all six sitemap URLs, canonicals, Open Graph URLs and JSON-LD. Production build smoke checks verify the emitted crawler files. No E2E is needed for these metadata contracts.
 
 ---
 

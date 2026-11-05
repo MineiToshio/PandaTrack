@@ -14,6 +14,7 @@ import {
 
 const { prismaMock } = vi.hoisted(() => ({
   prismaMock: {
+    pushSubscription: { findFirst: vi.fn() },
     order: { findMany: vi.fn() },
     delivery: { findMany: vi.fn() },
     storeAccountAdjustmentLine: { groupBy: vi.fn() },
@@ -26,6 +27,7 @@ const NOW = new Date("2026-07-14T12:00:00Z");
 
 beforeEach(() => {
   vi.clearAllMocks();
+  prismaMock.pushSubscription.findFirst.mockResolvedValue({ id: "subscription-1" });
   prismaMock.order.findMany.mockResolvedValue([]);
   prismaMock.delivery.findMany.mockResolvedValue([]);
   prismaMock.storeAccountAdjustmentLine.groupBy.mockResolvedValue([]);
@@ -255,5 +257,115 @@ describe("getArrivalOverdueCandidates", () => {
     // A stored locale flows through; a collector without one stays null and the dispatcher
     // falls back to the default locale.
     expect(candidates.map((candidate) => candidate.locale)).toEqual(["en", null]);
+  });
+});
+
+describe("getAllReminderCandidates", () => {
+  it("skips all candidate queries when no push subscriptions exist", async () => {
+    const { getAllReminderCandidates } = await import("../reminderCandidateQueries");
+    prismaMock.pushSubscription.findFirst.mockResolvedValueOnce(null);
+
+    await expect(getAllReminderCandidates(NOW)).resolves.toEqual([]);
+
+    expect(prismaMock.pushSubscription.findFirst).toHaveBeenCalledWith({ select: { id: true } });
+    expect(prismaMock.order.findMany).not.toHaveBeenCalled();
+    expect(prismaMock.delivery.findMany).not.toHaveBeenCalled();
+  });
+
+  it("loads the same candidate batches when a push subscription exists", async () => {
+    const { getAllReminderCandidates } = await import("../reminderCandidateQueries");
+
+    const user = { timezone: "America/Lima", locale: "en" };
+    const store = { name: "Subscribed Store" };
+    const dueDate = new Date("2026-07-16T00:00:00Z");
+    const overdueDate = new Date("2026-07-10T00:00:00Z");
+    prismaMock.order.findMany
+      .mockResolvedValueOnce([
+        {
+          id: "payment-open",
+          userId: "user-1",
+          expectedDeliveryFrom: dueDate,
+          totalCost: 10000,
+          allocatedAmountMinor: 4000,
+          user,
+          store,
+        },
+        {
+          id: "payment-paid",
+          userId: "user-1",
+          expectedDeliveryFrom: dueDate,
+          totalCost: 10000,
+          allocatedAmountMinor: 10000,
+          user,
+          store,
+        },
+      ])
+      .mockResolvedValueOnce([{ id: "arrival-order", userId: "user-1", expectedDeliveryFrom: dueDate, user, store }])
+      .mockResolvedValueOnce([
+        {
+          id: "overdue-order",
+          userId: "user-1",
+          expectedDeliveryFrom: new Date("2026-07-01T00:00:00Z"),
+          expectedDeliveryTo: overdueDate,
+          user,
+          store,
+        },
+      ]);
+    prismaMock.delivery.findMany
+      .mockResolvedValueOnce([{ id: "arrival-delivery", userId: "user-1", expectedArrivalFrom: dueDate, user, store }])
+      .mockResolvedValueOnce([
+        {
+          id: "overdue-delivery",
+          userId: "user-1",
+          expectedArrivalFrom: overdueDate,
+          expectedArrivalTo: null,
+          user,
+          store,
+        },
+      ]);
+
+    const candidates = await getAllReminderCandidates(NOW);
+    const common = { userId: "user-1", descriptor: store.name, ...user };
+    expect(candidates).toEqual([
+      {
+        ...common,
+        type: NotificationType.PAYMENT_DUE,
+        subjectType: NotificationSubjectType.ORDER,
+        subjectId: "payment-open",
+        dueDate,
+      },
+      {
+        ...common,
+        type: NotificationType.ARRIVAL_DUE,
+        subjectType: NotificationSubjectType.ORDER,
+        subjectId: "arrival-order",
+        dueDate,
+      },
+      {
+        ...common,
+        type: NotificationType.ARRIVAL_DUE,
+        subjectType: NotificationSubjectType.DELIVERY,
+        subjectId: "arrival-delivery",
+        dueDate,
+      },
+      {
+        ...common,
+        type: NotificationType.ARRIVAL_OVERDUE,
+        subjectType: NotificationSubjectType.ORDER,
+        subjectId: "overdue-order",
+        dueDate: overdueDate,
+      },
+      {
+        ...common,
+        type: NotificationType.ARRIVAL_OVERDUE,
+        subjectType: NotificationSubjectType.DELIVERY,
+        subjectId: "overdue-delivery",
+        dueDate: overdueDate,
+      },
+    ]);
+
+    expect(prismaMock.pushSubscription.findFirst).toHaveBeenCalledWith({ select: { id: true } });
+    expect(prismaMock.order.findMany).toHaveBeenCalledTimes(3);
+    expect(prismaMock.delivery.findMany).toHaveBeenCalledTimes(2);
   });
 });

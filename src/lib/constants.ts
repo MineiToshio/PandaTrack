@@ -1,6 +1,14 @@
 export const APP_NAME = "PandaTrack";
 export const EMAIL_FROM_NAME = APP_NAME;
 
+/** Production trace sampling rate, reduced to protect the Vercel Hobby CPU quota. */
+export const SENTRY_PRODUCTION_TRACES_SAMPLE_RATE = 0.1;
+
+/** Keep full trace sampling outside production while limiting production volume. */
+export function getSentryTracesSampleRate(environment: string): number {
+  return environment === "production" ? SENTRY_PRODUCTION_TRACES_SAMPLE_RATE : 1;
+}
+
 export const THEME_STORAGE_KEY = "pandatrack-theme";
 
 /** Local storage key for private app sidebar expanded/collapsed preference. */

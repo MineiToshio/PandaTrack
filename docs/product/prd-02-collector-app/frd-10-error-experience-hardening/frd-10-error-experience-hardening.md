@@ -7,7 +7,7 @@ status: ACTIVE
 parent: PRD-02
 children:
   - BP-01
-last_updated: 2026-07-14
+last_updated: 2026-11-05
 source_features: []
 implementation_status: IMPLEMENTED
 ---
@@ -222,7 +222,7 @@ Error surfaces are stateless render tiers selected by the framework, not lifecyc
 
 - Whether `global-error.tsx` should lead with a language guessed from the URL path or always present both languages stacked. Deferred to WO-02 implementation; both satisfy the bilingual requirement.
 - Whether a future error-recovery metric is worth introducing. Deferred; out of scope for this hardening pass.
-- Whether the `sendDefaultPii: true` and sampling-rate production policy (open hardening item) should tighten before a wider launch. This touches Sentry config owned by [`FRD-02` (PRD-01)](../../prd-01-public-landing/frd-02-growth-and-observability-foundation/frd-02-growth-and-observability-foundation.md) and is reviewed in WO-03; any config change must be coordinated with that owner.
+- Sentry production policy is resolved in [`FRD-02` (PRD-01)](../../prd-01-public-landing/frd-02-growth-and-observability-foundation/frd-02-growth-and-observability-foundation.md): `sendDefaultPii: false`, production traces at 10%, other environments at 100%, with error capture and Replay-on-error at 100%. Future policy changes remain owned there and coordinated with WO-03.
 
 ## Out of Scope
 

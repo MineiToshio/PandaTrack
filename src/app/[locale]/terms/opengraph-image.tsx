@@ -1,12 +1,17 @@
 import { ImageResponse } from "next/og";
 import { OgImageTemplate, OG_IMAGE_WIDTH, OG_IMAGE_HEIGHT } from "@/components/modules/OgImageTemplate";
 import { getOgImageData } from "@/lib/og";
+import { routing } from "@/i18n/routing";
 
 export const runtime = "nodejs";
 
 export const alt = "Terms of Service - PandaTrack";
 export const size = { width: OG_IMAGE_WIDTH, height: OG_IMAGE_HEIGHT };
 export const contentType = "image/png";
+
+export function generateStaticParams(): { locale: string }[] {
+  return routing.locales.map((locale) => ({ locale }));
+}
 
 type OpengraphImageProps = {
   params: Promise<{ locale: string }>;

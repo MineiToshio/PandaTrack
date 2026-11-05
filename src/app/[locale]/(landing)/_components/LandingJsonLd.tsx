@@ -1,5 +1,4 @@
-import { getSiteUrl } from "@/lib/seo";
-import { routing } from "@/i18n/routing";
+import { buildCanonicalPath, getSiteUrl } from "@/lib/seo";
 
 type LandingJsonLdProps = {
   locale: string;
@@ -9,8 +8,7 @@ type LandingJsonLdProps = {
 
 function getHomeUrl(locale: string): string {
   const baseUrl = getSiteUrl();
-  const path = locale === routing.defaultLocale ? "" : `/${locale}`;
-  return path ? `${baseUrl}${path}` : baseUrl;
+  return `${baseUrl}${buildCanonicalPath(locale, "")}`;
 }
 
 export default function LandingJsonLd({ locale, name, description }: LandingJsonLdProps) {

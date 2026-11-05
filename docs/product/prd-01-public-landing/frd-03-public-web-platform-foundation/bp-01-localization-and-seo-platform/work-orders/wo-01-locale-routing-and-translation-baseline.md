@@ -5,7 +5,7 @@ slug: locale-routing-and-translation-baseline
 title: Locale Routing and Translation Baseline
 status: ACTIVE
 parent: BP-01
-last_updated: 2026-07-19
+last_updated: 2026-11-05
 source_features:
   - FEAT-0005
 implementation_status: IMPLEMENTED
@@ -19,7 +19,7 @@ Establish route-level localization and translation loading for the public web.
 
 ## In Scope
 
-- `es` default locale (no URL prefix)
+- `es` default locale (prefix `/es`)
 - `en` alternate locale (prefix `/en`)
 - Per-request locale validation and message namespace loading
 - Locale-preserving navigation for public routes
@@ -63,7 +63,9 @@ Establish route-level localization and translation loading for the public web.
 
 ## Acceptance Criteria
 
-- `/` renders Spanish content by default, without a locale prefix in the URL.
+- Invalid locale prefixes on home, privacy, and terms redirect once to `/es` in the proxy before static fallback rendering. The first cache miss must have one Location header. Keep API, Next assets, public metadata files, unlocalized icon/error routes, and PostHog/Sentry tunnels outside the added matcher; existing localized auth guards and the root layout fallback stay intact. `src/proxy.test.ts` covers redirect and matcher boundaries.
+
+- `/` redirects through locale detection, falling back to `/es` without a language preference or locale cookie. Both supported locales use explicit prefixes.
 - `/en` renders English content with correct navigation links.
 - An unauthenticated visitor landing on `/{locale}/dashboard` is redirected to `/{locale}/sign-in?returnTo=/{locale}/dashboard`.
 - An authenticated visitor opening `/{locale}` is redirected to `/{locale}/dashboard`; an unauthenticated visitor at `/{locale}` still sees the marketing landing.

@@ -8,7 +8,7 @@ parent: FRD-02
 children:
   - WO-01
   - WO-02
-last_updated: 2026-06-16
+last_updated: 2026-11-05
 implementation_status: IMPLEMENTED
 ---
 
@@ -38,6 +38,7 @@ Describe the technical layer that captures public behavior through PostHog and u
 - The PostHog ingest proxy routes browser events through the app domain (`/ingest`) to reduce ad-blocker interference.
 - Monitoring stays non-blocking and avoids noisy duplicate reporting; each error boundary captures once.
 - Session Replay is enabled at 10% session sampling and 100% error session sampling.
+- Client, server, and edge use the shared `getSentryTracesSampleRate` policy: 10% of production traces and 100% elsewhere. Environment detection keeps Vercel production and preview distinct. Error capture and Replay rates are unchanged.
 
 ## Linked Work Orders
 

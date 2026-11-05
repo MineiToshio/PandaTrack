@@ -13,7 +13,7 @@ children:
   - WO-05
   - WO-06
   - WO-07
-last_updated: 2026-07-22
+last_updated: 2026-11-05
 implementation_status: PARTIALLY_IMPLEMENTED
 ---
 
@@ -159,6 +159,8 @@ flowchart LR
 - Sequencing is essentially linear (`WO-01` → `WO-02` → `WO-03` → `WO-04` → `WO-05` → `WO-06`). The one safe parallelization: once `WO-01` is merged, the `WO-02` installability assets (manifest, icons, metadata) can be built alongside early `WO-03` settings-UI scaffolding, but `WO-03`'s subscribe path cannot be finished until `WO-02`'s registered worker lands. `WO-05` and `WO-06` are independent of each other and could run in parallel after `WO-04`; they are listed in the order they were executed. `WO-07` is a further independent branch off `WO-01`, gated externally by `PRD-02 FRD-04`'s `WO-09` rather than by anything later in this blueprint.
 
 ## Linked Work Orders
+
+The scheduled candidate loader checks for any push subscription before its domain queries. An empty subscription table produces an empty batch; the authorized dispatch still reports its normal zero summary and run event. See WO-04 for the query contract and coverage.
 
 Implementation order (largely linear; see the parallelization notes above):
 

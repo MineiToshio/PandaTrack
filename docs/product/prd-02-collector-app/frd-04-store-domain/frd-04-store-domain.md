@@ -7,7 +7,7 @@ status: ACTIVE
 parent: PRD-02
 children:
   - BP-01
-last_updated: 2026-08-20
+last_updated: 2026-11-05
 source_features:
   - FEAT-0012
 implementation_status: PARTIALLY_IMPLEMENTED
@@ -69,8 +69,8 @@ It also defines how the listing layer behaves when upstream navigation chooses t
 - `Retailer store` (`RETAILER`, es "Comercio"): a business that sells its own products. Exposes logo, contact channels, and addresses; owns a catalog (product types, stock, pre-order signal). Was `BUSINESS`.
 - `Person store` (`PERSON`, es "Persona", en "Individual"): an individual reseller. Hides logo, contact channels, and addresses; may be marked private; owns a catalog.
 - `Proxy store` (`PROXY`, es/en "Proxy"): a forwarding/intermediary service (e.g. ZenMarket) that buys on your behalf and is **not** a direct seller. Exposes logo, import countries, contact channels, addresses, and reviews like a retailer, but has **no catalog** (no product types, no `hasStock`, no `receivesOrders`) and is always public.
-- `Pending store`: a public store created by a non-admin user that is visible in-app but not SEO-indexable
-- `Approved store`: a public store approved for normal indexable public visibility
+- `Pending store`: a public store created by a non-admin user that is visible in-app with explicit noindex metadata
+- `Approved store`: a public store approved for normal in-app public visibility
 - `Presence`: where the store operates, currently `ONLINE` and/or `PHYSICAL`
 - `Product type`: collector-focused product category assigned to the store
 - `Import country`: country from which the store imports items
@@ -211,14 +211,14 @@ These requirements are the inline moderation controls exposed on the store surfa
 
 ## Business Rules
 
-- `BR-04-01`: Canonical public store routes use `/stores/[slug]`.
+- `BR-04-01`: Canonical store detail routes use `/[locale]/stores/[slug]`.
 - `BR-04-02`: Store slugs are generated from the store name plus a 6-character short suffix.
 - `BR-04-03`: Store slugs must not change automatically when a store name changes.
 - `BR-04-04`: Pending stores are public in-app but must remain non-indexable for SEO.
-- `BR-04-05`: Approved stores are public and SEO-indexable.
+- `BR-04-05`: Approved stores are public within the app. The production crawler policy excludes all session-dependent store routes, including approved stores, under both locales and without a prefix, as defined by [PRD-01 FRD-03](../../prd-01-public-landing/frd-03-public-web-platform-foundation/frd-03-public-web-platform-foundation.md#functional-requirements). Approval does not change that route-level crawler policy.
 - `BR-04-06`: Closed (inactive) stores are hidden from the public listing and search by default and are excluded from the order-creation store picker, but they remain reachable by their direct detail URL, where they must surface an inactivity warning. The listing exposes an opt-in "show closed" filter to include them (`FR-04-36`).
 - `BR-04-07`: Review publication does not require a linked order in MVP. The community-reviews section is **authenticated-only**: it is loaded server-side only when a session is present, so anonymous visitors do not load or see any reviews. For a signed-in viewer the list is fully loaded server-side, but the public review section progressively discloses long lists: it renders a 4-review community preview and expands to all remaining reviews in a single "Ver todas" reveal rather than showing the full list by default.
-- `BR-04-20`: Pending stores support the same user interactions as approved stores — any authenticated user may write reviews, annotate orders, annotate deliveries, save notes, report, or suggest changes on a pending store. The only behavioral difference for pending stores is the moderation disclaimer shown on the detail page and the absence of SEO indexing.
+- `BR-04-20`: Pending stores support the same user interactions as approved stores: any authenticated user may write reviews, annotate orders, annotate deliveries, save notes, report, or suggest changes on a pending store. Pending stores carry a moderation disclaimer and explicit noindex metadata; all store routes share the production crawler exclusions.
 - `BR-04-21`: Private person stores are excluded from all public listing and search surfaces. They remain accessible via their direct URL only to their creator.
 - `BR-04-21a`: **"All surfaces" means every query that can return a store to a user, not only the listing.** _(Added 2026-08-05.)_ The rule was originally implemented in the listing filter and the detail page's 404 and nowhere else, which left a private store hidden from its own creator and visible to everyone else: its name appeared in every collector's order-form store picker, an image-intake match could resolve onto it, the duplicate-candidate search returned its `slug`, and the edit route served its full record, contact channels included, to any signed-in user. Every such query now applies one shared predicate (a store qualifies when it is not private, or when the viewer created it), and the edit route applies the same owner/admin 404 as the detail page. A collector's own private stores appear in **their** listing, which is what `FR-04-33`'s "visible only to its creator" always promised and what the creation-form copy ("Solo tú puedes verlo") states.
 - `BR-04-21b`: **A contact channel the app inferred is never presented as one the store published.** A phone read out of a chat screenshot by image intake, or learned when a collector confirms a store match, is stored non-public: it serves matching and nothing else. It is not shown in the edit form, is not rewritten when that form is saved (so editing a store no longer destroys the matching hint, which used to cause a duplicate on the next intake), and does not appear in the moderation queue, since approving or rejecting a store is a decision about the store rather than about a number taken from a private conversation.
