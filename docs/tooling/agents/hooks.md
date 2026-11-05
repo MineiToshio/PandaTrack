@@ -52,3 +52,36 @@ only wires events to scripts.
 ## References
 
 - [Claude Code hooks documentation](https://docs.anthropic.com/en/docs/claude-code/hooks)
+
+## Automatic worktree cleanup
+
+After merge, the primary agent runs `scripts/cleanup-worktrees.sh --tmp` (default base:
+`staging`; optional first positional argument selects another local base branch). Use
+`--dry-run` to inspect. Deletion is permanent by default, with no approval prompt.
+
+`.claude/settings.json` allows only `Bash(scripts/cleanup-worktrees.sh:*)` and
+`Bash(./scripts/cleanup-worktrees.sh:*)` for this workflow. `allow-shell.mjs` already allows
+these invocations: its destructive-command patterns do not match the cleanup script.
+No generic `rm -rf` permission or hook bypass is added. Compound commands still pass
+through the existing destructive-command checks. Reload Claude Code to load settings.
+
+The script checks ancestry and working-tree cleanliness before removing a worktree and
+its branch, preserves locked/detached/base worktrees, and prunes Git registrations.
+`git worktree remove --force` removes the directory including ignored build/dependency
+artifacts; failed removal never triggers a fallback filesystem deletion. Active sessions
+must lock their worktrees before dispatching workers. Run this only after workers finish.
+Deletion waits synchronously with progress messages; poll the shell session to completion
+instead of imposing a two-minute timeout. Disk output is the `df` available-space delta
+on the repository filesystem, which can include unrelated concurrent disk activity.
+
+`--tmp` removes only top-level `pandatrack-*` artifacts in `$TMPDIR` and `/private/tmp`,
+without following symlinks. Registered checkout ancestors and directories containing
+Git metadata are preserved, so temporary repository copies cannot bypass the merge/clean
+requirements. Review those copies separately. Prefer disposable session scratchpads.
+
+Sandbox workers only edit files. The primary agent owns Git metadata mutations and
+cleanup. Claude permissions and hooks do not override Codex filesystem sandbox policy:
+if the primary runtime also cannot write `.git` or a target directory, it must report
+that blocked operation. This configuration cannot elevate runtime filesystem access.
+This is tooling maintenance; the public landing and collector app product contracts
+in `docs/product/README.md` are unaffected.

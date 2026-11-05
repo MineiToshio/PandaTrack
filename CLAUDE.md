@@ -27,3 +27,4 @@
 @.agents/rules/icons.mdc
 @.agents/rules/next-intl-translation-apis.mdc
 @.agents/rules/prisma-migration-workflow.mdc
+@.agents/rules/worktree-cleanup.mdc
