@@ -289,6 +289,9 @@ export async function getArrivalOverdueCandidates(now: Date): Promise<ReminderCa
 
 /** Loads every reminder candidate across the three types for a single dispatch run. */
 export async function getAllReminderCandidates(now: Date): Promise<ReminderCandidate[]> {
+  const hasPushSubscription = await prisma.pushSubscription.findFirst({ select: { id: true } });
+  if (!hasPushSubscription) return [];
+
   const [paymentDue, arrivalDue, arrivalOverdue] = await Promise.all([
     getPaymentDueCandidates(now),
     getArrivalDueCandidates(now),
