@@ -2,7 +2,7 @@ import { routing } from "@/i18n/routing";
 import { isLocale } from "@/types/locale";
 import { redirect } from "next/navigation";
 import { NextIntlClientProvider } from "next-intl";
-import { getMessages, getTranslations } from "next-intl/server";
+import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
 import type { Metadata, Viewport } from "next";
 import "../globals.css";
 import { interFont, logoFont, monoFont, secondaryFont } from "@/lib/fonts";
@@ -86,7 +86,8 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
     redirect(`/${routing.defaultLocale}`);
   }
 
-  const messages = await getMessages();
+  setRequestLocale(locale);
+  const messages = await getMessages({ locale });
 
   return (
     // next/font's `variable` classes set --font-inter / --font-jetbrains-mono / --font-secondary /

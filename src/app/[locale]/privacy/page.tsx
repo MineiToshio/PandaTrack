@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { setRequestLocale } from "next-intl/server";
+import { isLocale } from "@/types/locale";
 import LegalPageLayout from "../_components/LegalPageLayout";
 import { buildPageMetadata } from "@/lib/seo";
 
@@ -35,6 +37,8 @@ export async function generateMetadata({ params }: PrivacyPageProps): Promise<Me
 
 export default async function PrivacyPage({ params }: PrivacyPageProps) {
   const { locale } = await params;
+  if (!isLocale(locale)) return null;
+  setRequestLocale(locale);
 
   return <LegalPageLayout namespace="privacy" sectionKeys={PRIVACY_SECTION_KEYS} locale={locale} />;
 }

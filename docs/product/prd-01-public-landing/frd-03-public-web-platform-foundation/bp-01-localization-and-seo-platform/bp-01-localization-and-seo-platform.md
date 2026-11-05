@@ -8,7 +8,7 @@ parent: FRD-03
 children:
   - WO-01
   - WO-02
-last_updated: 2026-06-16
+last_updated: 2026-11-05
 implementation_status: IMPLEMENTED
 ---
 
@@ -40,13 +40,21 @@ Describe the shared technical platform that serves localized public routes and r
 
 - Localization is route-based (`[locale]` segment); the default locale `es` has no URL prefix.
 - `localeDetection: true` in the middleware; `Accept-Language` triggers automatic locale inference on first visit.
-- The locale layout validates the `locale` param against `routing.locales` and calls `notFound()` for invalid values.
+- The locale layout validates the `locale` param against `routing.locales` and redirects to `/es` for invalid values before translation initialization.
 - Metadata generation is centralized in `src/lib/seo.ts` to avoid per-page duplication. All pages call `buildPageMetadata` or `buildStoreDetailMetadata`; the root locale layout sets the shared title template and `metadataBase`.
 - OG image routes are placed at the `[locale]` segment level (not inside route groups) to avoid Next.js App Router 404 edge cases with `opengraph-image` inside route groups.
 - All OG image routes use `export const runtime = "nodejs"` so fonts can be read from disk before Satori renders.
 - Font loading in `getOgFonts` has a three-tier fallback: `@fontsource` packages → `public/fonts/` → Google Fonts. This ensures OG images render even in offline or restricted environments.
 - The middleware (`src/proxy.ts`) doubles as auth guard: it checks the `better-auth` session cookie before forwarding private routes, redirecting to `/{locale}/sign-in?returnTo=<original>` when no session is found.
 - `NEXT_PUBLIC_SITE_URL` must be set in production. Its resolved value flows into canonical URLs, OG image URLs, the sitemap, and the JSON-LD `url` field via `getSiteUrl()`.
+
+## Public Prerendering Contract
+
+- Keep the existing locale `generateStaticParams` in `src/app/[locale]/layout.tsx`; do not duplicate enumeration in pages.
+- After validating the locale, call the stable `setRequestLocale(locale)` export from `next-intl/server` before loading messages or rendering translated descendants. Load layout messages with `getMessages({ locale })`.
+- The landing layout and the home, privacy, and terms page entry points also validate and initialize supported locales before rendering, because Next.js can render layouts and pages independently. These entry points return no content for invalid locales, leaving the root locale layout to issue a single redirect to the default localized home. This prevents static-to-dynamic errors from translated descendants. The root layout remains the sole owner of the invalid-prefix redirect; its initial fallback response must be checked in production-mode HTTP verification as well as in function tests. The locale cache is request-scoped through React, never shared session state.
+- Verify six public HTML routes in the prerender manifest and SSG build table: `/es`, `/en`, `/es/privacy`, `/en/privacy`, `/es/terms`, and `/en/terms`. Dashboard, orders, settings, and stores must remain dynamic through their session reads. Do not use `force-static`.
+- Preserve the existing invalid-prefix redirect to `/es` before layout translation initialization. The older prefix-free Spanish notes above require a separate routing-policy reconciliation; public prerendering changes neither URL handling nor canonical generation.
 
 ## Linked Work Orders
 

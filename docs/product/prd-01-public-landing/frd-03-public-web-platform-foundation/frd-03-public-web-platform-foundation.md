@@ -7,7 +7,7 @@ status: ACTIVE
 parent: PRD-01
 children:
   - BP-01
-last_updated: 2026-07-19
+last_updated: 2026-11-05
 source_features:
   - FEAT-0004
   - FEAT-0005
@@ -50,11 +50,17 @@ This FRD is infra-only — it has no user-facing screens of its own. Visual trea
 - `FR-03-10`: OG image rendering must degrade gracefully when network fonts are unavailable. `getOgFonts` in `src/lib/og.ts` attempts fonts from `@fontsource` packages in `node_modules`, then falls back to `public/fonts/`, then falls back to Google Fonts. The cascade is all-or-nothing per tier — it advances to the next tier only when the current tier returns zero fonts, not per individual font. Each `OgImageTemplate` invocation receives a `fontsLoaded` flag and substitutes system-safe fallbacks when any font family is absent.
 - `FR-03-11`: The base URL used for canonical URLs, OG tags, the sitemap, and the JSON-LD `url` field must derive from `NEXT_PUBLIC_SITE_URL` (preferred in production), then from `VERCEL_URL`, then fall back to `http://localhost:3000`. The production value is `https://pandatrack.app`.
 
+## Public Page Rendering
+
+- The localized home, privacy, and terms pages must be prerendered for both `es` and `en` using the locale layout's existing `generateStaticParams`. Build output must classify `/[locale]`, `/[locale]/privacy`, and `/[locale]/terms` as SSG, with both locale variants.
+- Locale initialization must remain scoped to the current render. Private pages that read the session, including dashboard, orders, settings, and stores, must remain dynamically rendered; static forcing must not suppress request APIs.
+- This rendering optimization preserves content, metadata, session guards, and current URL handling. The locale layout continues redirecting invalid prefixes to `/es` before initializing translations. The existing prefix-free Spanish descriptions elsewhere in this document are pending routing-policy reconciliation; this change does not implement that policy or alter canonicals, sitemap, or proxy behavior.
+
 ## Business Rules
 
 - `BR-03-01`: `es` is the default locale; it never appears as a URL prefix. `/` and `/es` both resolve to Spanish, but canonical is always the prefix-free form.
 - `BR-03-02`: Locale detection is enabled in the middleware (`localeDetection: true`), so a visitor arriving at `/` without a cookie or `Accept-Language` header is served the default locale.
-- `BR-03-03`: The locale layout (`src/app/[locale]/layout.tsx`) validates the `locale` param against `routing.locales`; an unknown locale segment resolves to 404 via `notFound()`.
+- `BR-03-03`: The locale layout (`src/app/[locale]/layout.tsx`) validates the `locale` param against `routing.locales`; an unknown locale segment redirects to the default localized home (`/es`) before translations initialize.
 - `BR-03-04`: The title template at the root layout level is `%s | PandaTrack`. The landing page overrides with `absoluteTitle: true` to prevent "PandaTrack | PandaTrack" duplication.
 - `BR-03-05`: `PENDING` stores must carry a `robots: { index: false, follow: false }` directive. This is implemented in `buildStoreDetailMetadata` via the `noindex` flag.
 - `BR-03-06`: The sitemap includes only public locale variants of `/`, `/terms`, and `/privacy`. App shell and authenticated routes are excluded.
@@ -143,7 +149,7 @@ Unit-tested in `src/proxy.test.ts` (redirects unauthenticated private requests; 
 
 ### Root locale layout — `src/app/[locale]/layout.tsx`
 
-Sets `metadataBase`, the `%s | PandaTrack` title template, and the default description from `common.meta.description`. Validates the locale param and calls `notFound()` for unknown values. Sets `html[lang]` and includes the theme-init inline script to prevent flash-of-wrong-theme. Generates static params via `routing.locales`.
+Sets `metadataBase`, the `%s | PandaTrack` title template, and the default description from `common.meta.description`. Validates the locale param and redirects to `/es` for unknown values before calling `setRequestLocale(locale)` and loading messages. Sets `html[lang]` and includes the theme-init inline script to prevent flash-of-wrong-theme. Generates static params via `routing.locales`.
 
 ### SEO helpers — `src/lib/seo.ts`
 

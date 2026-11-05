@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { setRequestLocale } from "next-intl/server";
+import { isLocale } from "@/types/locale";
 import LegalPageLayout from "../_components/LegalPageLayout";
 import { buildPageMetadata } from "@/lib/seo";
 
@@ -33,6 +35,8 @@ export async function generateMetadata({ params }: TermsPageProps): Promise<Meta
 
 export default async function TermsPage({ params }: TermsPageProps) {
   const { locale } = await params;
+  if (!isLocale(locale)) return null;
+  setRequestLocale(locale);
 
   return <LegalPageLayout namespace="terms" sectionKeys={TERMS_SECTION_KEYS} locale={locale} />;
 }
