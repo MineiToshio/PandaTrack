@@ -1,0 +1,33 @@
+---
+description: Automatic post-merge worktree cleanup and sandbox-safe Git ownership
+alwaysApply: true
+---
+
+# Worktree lifecycle
+
+- After implementation and merge, the primary agent MUST run
+  `scripts/cleanup-worktrees.sh --tmp` without requesting permission. Pass the base branch
+  explicitly when it is not `staging`. Cleanup is required before declaring completion.
+- Only delete a worktree if its branch passes `git merge-base --is-ancestor` against the
+  base and it has no tracked or untracked changes. Never delete the main checkout,
+  unmerged branches, locked worktrees, or detached worktrees. List preserved paths and reasons.
+- Never bypass a failed safety check, lock, or Git removal with raw filesystem deletion.
+- Sandbox workers never write `.git`: no commit, merge, fetch, worktree add/remove/prune,
+  branch mutations, or index writes. Workers edit files and report results; the primary
+  agent performs Git mutations in a runtime with the required access.
+- Check primary runtime permissions first. Claude allow rules do not grant Codex filesystem
+  access. If Git metadata is read-only, report the blocked step without repeated approvals
+  or pretending cleanup succeeded.
+- Create worktrees only in `../<repo>-wt/<name>`. Never sweep neighboring projects or windows.
+- Active sessions must lock their worktrees through the primary agent before workers start
+  and unlock only after workers finish. Never unlock another session's worktree. A clean,
+  merged branch alone cannot identify a running session.
+- Never leave repository copies, archives, logs, or dependency caches in shared temporary
+  folders. Use the session scratchpad and remove disposable artifacts after completion.
+- `--tmp` only considers top-level `pandatrack-*` artifacts in `$TMPDIR` and `/private/tmp`.
+  It preserves registered checkouts and directories containing Git metadata. Repository
+  copies require a separate safety review; never bypass the merge/clean requirements.
+- Permanent deletion is enabled by default; `--dry-run` is available for inspection.
+  Poll long-running shell sessions to completion and keep the owner informed. The script
+  waits with progress; do not impose a two-minute kill timeout or abandon deletion.
+- Report the before/after `df` delta, preserved paths, and failures.

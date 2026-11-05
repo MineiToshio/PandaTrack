@@ -25,6 +25,8 @@ Before implementing a task:
 
 Read these on every implementation because they define project-wide defaults:
 
+- `worktree-cleanup.mdc`: Read on every implementation. The primary agent cleans merged, clean worktrees after merge without requesting approval; sandbox workers never write Git metadata.
+
 - `adr-decision-records.mdc`: Read when evaluating whether the change creates or updates a cross-feature architectural decision.
 - `data-layer-user-id-duplication.mdc`: Read when adding child Prisma models or writing query/mutation functions that operate on child records. It defines when to duplicate `userId` on child records for authorization and query efficiency.
 - `coding-standards.mdc`: Read for every coding task. It defines core implementation behavior, English-only code, Server Actions preference, reuse expectations, and general coding discipline.
@@ -138,6 +140,7 @@ Read these on every implementation because they define project-wide defaults:
 | `typescript-practices.mdc`             | TypeScript typing conventions                                                                            | TypeScript code or shared types change                                                                                                                                                   |
 | `ui-libs-policy.mdc`                   | UI primitive libs policy (ADR 0010)                                                                      | Adding/replacing any UI primitive dependency or considering a design-system lib                                                                                                          |
 | `validation-checklist.mdc`             | Final validation commands                                                                                | Final verification before completion                                                                                                                                                     |
+| `worktree-cleanup.mdc` | Post-merge cleanup, safe deletion, and sandbox Git ownership | Every implementation, before dispatching workers and after merge |
 
 ## Tooling references
 
