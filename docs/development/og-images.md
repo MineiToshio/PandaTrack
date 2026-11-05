@@ -1,8 +1,10 @@
 # Open Graph (OG) images
 
-Dynamic OG images are generated per route so that when a link is shared (e.g. on social networks), the preview shows a branded image with title and short copy instead of a generic thumbnail.
+Localized OG images are generated at build time per route so that when a link is shared (e.g. on social networks), the preview shows a branded image with title and short copy instead of a generic thumbnail.
 
 ## How it works
+
+- Each of the three image entries exports `generateStaticParams` mapping `routing.locales` to `{ locale }`. This prerenders six localized PNGs. Keep that export when adding or changing an image route; the public prerender guard checks it and `validate-build` must list the image variants as SSG.
 
 - Next.js [Metadata File Convention](https://nextjs.org/docs/app/api-reference/file-conventions/metadata/opengraph-image): a segment can export an `opengraph-image.tsx` (or `.js`) file that returns an `ImageResponse`. The framework uses it as the `og:image` for that segment.
 - We use `next/og` (Satori) to render JSX into a PNG (1200x630). Fonts must be loaded and passed to `ImageResponse` so each text element uses the correct typeface.

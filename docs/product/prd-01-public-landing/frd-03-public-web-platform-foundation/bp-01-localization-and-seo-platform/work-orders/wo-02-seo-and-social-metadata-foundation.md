@@ -5,7 +5,7 @@ slug: seo-and-social-metadata-foundation
 title: SEO and Social Metadata Foundation
 status: ACTIVE
 parent: BP-01
-last_updated: 2026-06-16
+last_updated: 2026-11-05
 source_features:
   - FEAT-0004
 implementation_status: IMPLEMENTED
@@ -75,6 +75,8 @@ Ship reusable SEO, canonical, OG image, sitemap, robots, and structured-data beh
 `OgImageTemplate` receives a `fontsLoaded: { logo, title, body }` object and substitutes system-safe CSS font stacks (`system-ui, sans-serif` / `Georgia, serif`) when any family is absent, ensuring the image always renders.
 
 ## Acceptance Criteria
+
+- All three OG entries export `generateStaticParams` for `routing.locales`; the six localized PNG routes appear as SSG in the production build and prerender manifest. `src/test/public-prerender-guard.test.ts` guards the exports.
 
 - Public pages expose localized `title`, `description`, `alternates.canonical`, and `openGraph` metadata with correct absolute URLs.
 - The landing page canonical for `es` is `https://pandatrack.app` (no prefix); for `en` it is `https://pandatrack.app/en`.

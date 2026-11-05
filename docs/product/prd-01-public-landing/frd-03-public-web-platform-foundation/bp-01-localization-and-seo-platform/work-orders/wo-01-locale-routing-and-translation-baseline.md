@@ -5,7 +5,7 @@ slug: locale-routing-and-translation-baseline
 title: Locale Routing and Translation Baseline
 status: ACTIVE
 parent: BP-01
-last_updated: 2026-07-19
+last_updated: 2026-11-05
 source_features:
   - FEAT-0005
 implementation_status: IMPLEMENTED
@@ -62,6 +62,8 @@ Establish route-level localization and translation loading for the public web.
 - E2E: `e2e/landing.spec.ts` — hero CTA navigates to `/en/sign-up`; header sign-in link navigates to `/en/sign-in` (implicitly validates both locale route and navigation).
 
 ## Acceptance Criteria
+
+- Invalid locale prefixes on home, privacy, and terms redirect once to `/es` in the proxy before static fallback rendering. The first cache miss must have one Location header. Keep API, Next assets, public metadata files, unlocalized icon/error routes, and PostHog/Sentry tunnels outside the added matcher; existing localized auth guards and the root layout fallback stay intact. `src/proxy.test.ts` covers redirect and matcher boundaries.
 
 - `/` renders Spanish content by default, without a locale prefix in the URL.
 - `/en` renders English content with correct navigation links.

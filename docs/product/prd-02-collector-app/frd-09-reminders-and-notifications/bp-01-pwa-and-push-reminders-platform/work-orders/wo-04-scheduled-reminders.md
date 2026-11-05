@@ -8,7 +8,7 @@ parent: BP-01
 source_issue: 117
 source_features: []
 implementation_status: IMPLEMENTED
-last_updated: 2026-07-14
+last_updated: 2026-11-05
 ---
 
 # WO-04 Scheduled Reminders
@@ -81,6 +81,7 @@ Deliver the reminders themselves: thin due-soon / overdue candidate queries, a `
 ## Dispatch Contract
 
 - **Guard (before any work).** The bearer token must equal `Bearer ${CRON_SECRET}`. A missing/wrong token, or an unset `CRON_SECRET`, returns `401` before any candidate query or send runs (`FR-09-20`, `AC-09-08`), fail-closed.
+- **Empty subscription guard.** After authorization, `getAllReminderCandidates` first queries `pushSubscription.findFirst({ select: { id: true } })`. No subscription means an immediate empty candidate batch, avoiding every order, delivery, and balance candidate query. The dispatcher and route retain their normal zero-count summary, `200` response, and PostHog run event. With any subscription present, all existing candidate filters, timezone windows, preferences, and dedup rules still apply. Database errors propagate to the normal monitored failure path. Covered by `reminderCandidateQueries` tests for both absent and present subscriptions.
 - **Per-candidate skip rules, in order:**
   1. per-type preference off -> skip (`BR-09-01`, `AC-09-09`).
   2. no active subscription for the collector -> skip (`BR-09-01`).

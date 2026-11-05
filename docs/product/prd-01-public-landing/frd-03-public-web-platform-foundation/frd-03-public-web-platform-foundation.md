@@ -52,15 +52,17 @@ This FRD is infra-only — it has no user-facing screens of its own. Visual trea
 
 ## Public Page Rendering
 
+- The landing, privacy, and terms Open Graph images are also prerendered for both locales (six PNG routes). Each `opengraph-image.tsx` exports `generateStaticParams` from `routing.locales`; supported variants render at build time rather than on every crawler request. Preserve the Node runtime, localized copy, shared template, and font fallback.
+
 - The localized home, privacy, and terms pages must be prerendered for both `es` and `en` using the locale layout's existing `generateStaticParams`. Build output must classify `/[locale]`, `/[locale]/privacy`, and `/[locale]/terms` as SSG, with both locale variants.
 - Locale initialization must remain scoped to the current render. Private pages that read the session, including dashboard, orders, settings, and stores, must remain dynamically rendered; static forcing must not suppress request APIs.
-- This rendering optimization preserves content, metadata, session guards, and current URL handling. The locale layout continues redirecting invalid prefixes to `/es` before initializing translations. The existing prefix-free Spanish descriptions elsewhere in this document are pending routing-policy reconciliation; this change does not implement that policy or alter canonicals, sitemap, or proxy behavior.
+- This rendering optimization preserves content, metadata, session guards, and current URL handling. The proxy redirects invalid prefixes for home, privacy, and terms to `/es` before rendering, avoiding duplicate Location headers on a static fallback cache miss. The locale layout retains its redirect guard for unmatched paths before initializing translations. The existing prefix-free Spanish descriptions elsewhere in this document are pending routing-policy reconciliation; this change does not implement that policy or alter canonicals, sitemap, or proxy behavior.
 
 ## Business Rules
 
 - `BR-03-01`: `es` is the default locale; it never appears as a URL prefix. `/` and `/es` both resolve to Spanish, but canonical is always the prefix-free form.
 - `BR-03-02`: Locale detection is enabled in the middleware (`localeDetection: true`), so a visitor arriving at `/` without a cookie or `Accept-Language` header is served the default locale.
-- `BR-03-03`: The locale layout (`src/app/[locale]/layout.tsx`) validates the `locale` param against `routing.locales`; an unknown locale segment redirects to the default localized home (`/es`) before translations initialize.
+- `BR-03-03`: The locale layout (`src/app/[locale]/layout.tsx`) validates the `locale` param against `routing.locales`; an unknown locale segment redirects to the default localized home (`/es`) before translations initialize. The proxy handles public static entry paths first; the layout remains the fallback guard. The first response must carry a single Location header.
 - `BR-03-04`: The title template at the root layout level is `%s | PandaTrack`. The landing page overrides with `absoluteTitle: true` to prevent "PandaTrack | PandaTrack" duplication.
 - `BR-03-05`: `PENDING` stores must carry a `robots: { index: false, follow: false }` directive. This is implemented in `buildStoreDetailMetadata` via the `noindex` flag.
 - `BR-03-06`: The sitemap includes only public locale variants of `/`, `/terms`, and `/privacy`. App shell and authenticated routes are excluded.

@@ -82,8 +82,7 @@ export default withSentryConfig(withNextIntl(nextConfig), {
   // reaches this app through the first-party `/ingest/` rewrite above for the same reason; Sentry
   // was left un-tunnelled, so the two halves of the telemetry disagreed about what a user hit.
   //
-  // The route must not collide with the proxy's matcher, which is `["/", "/(es|en)/:path*"]`
-  // (`src/proxy.ts`): `/monitoring` carries no locale segment, so it does not match and the tunnel
+  // The route must stay excluded from the proxy matcher (`src/proxy.ts`), so the tunnel
   // reaches the Sentry rewrite intact. Keep that true if either the matcher or this path changes.
   tunnelRoute: "/monitoring",
 
