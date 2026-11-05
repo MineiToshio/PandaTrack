@@ -78,7 +78,7 @@ Four hooks cover all execution contexts:
 | ------------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/instrumentation-client.ts` | Browser client        | Runs on page load; also exports `onRouterTransitionStart = Sentry.captureRouterTransitionStart`                                                                     |
 | `src/instrumentation.ts`        | Node.js server + edge | Next.js `register()` hook; conditionally loads `sentry.server.config.ts` or `sentry.edge.config.ts`; exports `onRequestError = Sentry.captureRequestError`          |
-| `sentry.server.config.ts`       | Node.js server        | Sentry init with `tracesSampleRate: 1`, `enableLogs: true`, `sendDefaultPii: false`; DSN read from `SENTRY_DSN` / `NEXT_PUBLIC_SENTRY_DSN` with a built-in fallback |
+| `sentry.server.config.ts`       | Node.js server        | Sentry init with production `tracesSampleRate: 0.1` and full sampling elsewhere, `enableLogs: true`, `sendDefaultPii: false`; DSN read from `SENTRY_DSN` / `NEXT_PUBLIC_SENTRY_DSN` with a built-in fallback |
 | `sentry.edge.config.ts`         | Edge runtime          | Same config as server                                                                                                                                               |
 
 Two error boundaries add product context:
@@ -92,13 +92,17 @@ Session Replay is enabled on the client with `replaysSessionSampleRate: 0.1` (10
 
 The Sentry webpack plugin (`withSentryConfig` in `next.config.ts`) uploads source maps with `widenClientFileUpload: true` for readable production stack traces. Debug logging is stripped from the bundle via `treeshake.removeDebugLogging: true`, and `automaticVercelMonitors: true` enables automatic instrumentation of Vercel Cron Monitors.
 
+#### Configuration policy note (2026-11-05, production trace sampling)
+
+All three Sentry runtimes use `tracesSampleRate: 0.1` in production and `1` in development and preview, using the existing Vercel/Next environment detection. Production sampling is reduced to limit telemetry volume against the Vercel Hobby CPU quota; this is a quota-control choice, not a claim that trace sampling reduces CPU proportionally. Error capture remains enabled at 100%. Session Replay remains at `replaysSessionSampleRate: 0.1` and `replaysOnErrorSampleRate: 1.0`.
+
 #### Configuration policy note (2026-07-14, coordinated with FRD-10 · BP-01 · WO-03)
 
 The Sentry configuration hardening items were reviewed and resolved during the FRD-10 error-contract audit, which touches these FRD-02-owned init files:
 
 - **DSN externalization (applied here):** the three init files now read the DSN from `NEXT_PUBLIC_SENTRY_DSN` (client) and `SENTRY_DSN` / `NEXT_PUBLIC_SENTRY_DSN` (server and edge), keeping the current project DSN as an inline fallback so init never breaks when the variable is unset. Both keys are documented in `.env.example`. The DSN is a public identifier that ships in the client bundle, not a secret. `next.config.ts` holds only `org`/`project` for source-map upload, never the DSN.
 - **`sendDefaultPii: false` (confirmed):** already flipped to `false` in commit `1b40070` (2026-07-10) to satisfy `BR-02-04`; this doc's references are corrected to match. Enabling it would attach request headers, including session cookies, to captured events.
-- **`tracesSampleRate: 1` (kept):** acceptable at current pre-launch traffic; revisit and lower before a wider launch (see Open Questions in FRD-10).
+- **Trace sampling:** see the production sampling policy above; error capture and Replay-on-error remain at 100%.
 
 The capture-point inventory of record lives in `docs/development/sentry.md`.
 
