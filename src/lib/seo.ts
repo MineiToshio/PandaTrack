@@ -1,7 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 import { APP_NAME } from "@/lib/constants";
-import { routing } from "@/i18n/routing";
 
 /**
  * Base URL for the site. Used for canonical URLs, Open Graph, and sitemap.
@@ -19,10 +18,10 @@ export type PageCanonicalSegment =
   "" | "terms" | "privacy" | "dashboard" | "stores" | "orders" | "deliveries" | "settings";
 
 /**
- * Builds the path segment for a canonical URL (no leading slash for home, e.g. "" or "/en", "/terms", "/en/terms").
+ * Builds a locale-prefixed canonical path, including the default locale (e.g. "/es", "/en/terms").
  */
 export function buildCanonicalPath(locale: string, segment: PageCanonicalSegment): string {
-  const prefix = locale === routing.defaultLocale ? "" : `/${locale}`;
+  const prefix = `/${locale}`;
   if (segment === "") return prefix;
   return `${prefix}/${segment}`;
 }
@@ -100,7 +99,7 @@ export async function buildPageMetadata({
 }
 
 /**
- * Builds metadata for the public store detail page.
+ * Builds metadata for the locale-prefixed store detail page.
  * When noindex is true (e.g. PENDING stores), search engines are asked not to index the page.
  */
 export async function buildStoreDetailMetadata({

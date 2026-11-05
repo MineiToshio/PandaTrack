@@ -1,32 +1,27 @@
 import type { MetadataRoute } from "next";
-import { ROUTES } from "@/lib/constants";
-import { getSiteUrl } from "@/lib/seo";
+import { buildCanonicalPath, getSiteUrl, type PageCanonicalSegment } from "@/lib/seo";
 import { routing } from "@/i18n/routing";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = getSiteUrl();
   const now = new Date();
   const locales = routing.locales;
-  const defaultLocale = routing.defaultLocale;
 
   const entries: MetadataRoute.Sitemap = [];
 
   const localePages: Array<{
-    path: string;
+    segment: PageCanonicalSegment;
     changeFrequency: "weekly" | "monthly";
     priority: number;
   }> = [
-    { path: ROUTES.home, changeFrequency: "weekly", priority: 1 },
-    { path: ROUTES.terms, changeFrequency: "monthly", priority: 0.5 },
-    { path: ROUTES.privacy, changeFrequency: "monthly", priority: 0.5 },
+    { segment: "", changeFrequency: "weekly", priority: 1 },
+    { segment: "terms", changeFrequency: "monthly", priority: 0.5 },
+    { segment: "privacy", changeFrequency: "monthly", priority: 0.5 },
   ];
 
   for (const locale of locales) {
-    const prefix = locale === defaultLocale ? "" : `/${locale}`;
-    const localeBase = prefix ? `${baseUrl}${prefix}` : baseUrl;
-
     const localeEntries = localePages.map((page) => ({
-      url: page.path ? `${localeBase}${page.path}` : localeBase,
+      url: `${baseUrl}${buildCanonicalPath(locale, page.segment)}`,
       lastModified: now,
       changeFrequency: page.changeFrequency,
       priority: page.priority,

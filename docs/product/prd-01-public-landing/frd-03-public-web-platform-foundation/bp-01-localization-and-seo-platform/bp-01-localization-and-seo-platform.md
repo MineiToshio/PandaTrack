@@ -32,13 +32,13 @@ Describe the shared technical platform that serves localized public routes and r
 | `src/app/[locale]/opengraph-image.tsx`                     | OG image for landing page (namespace: `landing`)                                    |
 | `src/app/[locale]/terms/opengraph-image.tsx`               | OG image for Terms of Service (namespace: `terms`)                                  |
 | `src/app/[locale]/privacy/opengraph-image.tsx`             | OG image for Privacy Policy (namespace: `privacy`)                                  |
-| `src/app/robots.ts`                                        | `robots.txt` route — allows all, references absolute sitemap URL                    |
+| `src/app/robots.ts`                                        | `robots.txt`: public Allow, private/access Disallow, absolute sitemap URL                    |
 | `src/app/sitemap.ts`                                       | `sitemap.xml` route — 6 entries: `/`, `/terms`, `/privacy` × 2 locales              |
 | `src/app/[locale]/(landing)/_components/LandingJsonLd.tsx` | JSON-LD `WebSite` + `SoftwareApplication` schema injection                          |
 
 ## Architecture Notes
 
-- Localization is route-based (`[locale]` segment); the default locale `es` has no URL prefix.
+- Localization is route-based (`[locale]` segment); both `es` and `en` use a URL prefix, including the default locale.
 - `localeDetection: true` in the middleware; `Accept-Language` triggers automatic locale inference on first visit.
 - The locale layout validates the `locale` param against `routing.locales` and redirects to `/es` for invalid values before translation initialization.
 - Metadata generation is centralized in `src/lib/seo.ts` to avoid per-page duplication. All pages call `buildPageMetadata` or `buildStoreDetailMetadata`; the root locale layout sets the shared title template and `metadataBase`.
@@ -56,7 +56,11 @@ Describe the shared technical platform that serves localized public routes and r
 - After validating the locale, call the stable `setRequestLocale(locale)` export from `next-intl/server` before loading messages or rendering translated descendants. Load layout messages with `getMessages({ locale })`.
 - The landing layout and the home, privacy, and terms page entry points also validate and initialize supported locales before rendering, because Next.js can render layouts and pages independently. These entry points return no content for invalid locales, leaving the redirect to the proxy or root locale layout. This prevents static-to-dynamic errors from translated descendants. The proxy handles invalid-prefix home, privacy, and terms paths before rendering; the root layout remains the guard for unmatched paths. This avoids Next.js duplicating Location on the first static fallback cache miss. Verify the initial production-mode HTTP response has exactly one Location, alongside proxy function and matcher tests. The locale cache is request-scoped through React, never shared session state.
 - Verify six public HTML routes in the prerender manifest and SSG build table: `/es`, `/en`, `/es/privacy`, `/en/privacy`, `/es/terms`, and `/en/terms`. Dashboard, orders, settings, and stores must remain dynamic through their session reads. Do not use `force-static`.
-- Preserve the existing invalid-prefix redirect to `/es` before layout translation initialization. The older prefix-free Spanish notes above require a separate routing-policy reconciliation; public prerendering changes neither URL handling nor canonical generation.
+- Preserve the existing invalid-prefix redirect to `/es` before layout translation initialization. The owner confirmed prefixed Spanish URLs; sitemap, canonical metadata and JSON-LD share `buildCanonicalPath` and include both locale prefixes. Routing is unchanged.
+
+## Crawler Metadata Contract
+
+`robots.ts` emits public Allow plus private/access Disallow prefixes in all locale forms, following FR-03-04. `sitemap.ts` enumerates only home, privacy and terms in both locales using `buildCanonicalPath`, also shared by canonical metadata and landing JSON-LD. The metadata contract test scans app/auth pages so newly added protected families require a matching crawler exclusion.
 
 ## Linked Work Orders
 
