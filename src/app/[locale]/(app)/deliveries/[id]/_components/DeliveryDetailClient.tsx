@@ -72,6 +72,8 @@ export default function DeliveryDetailClient({
 }: DeliveryDetailClientProps) {
   const router = useRouter();
   const t = useTranslations("deliveries");
+  const tArrival = useTranslations("orders.detail.quickArrival");
+  const tPayment = useTranslations("orders.detail.storePayment");
   const { addToast } = useToast();
   const { announceProgression } = useProgressionFeedback();
 
@@ -366,6 +368,20 @@ export default function DeliveryDetailClient({
           clearPendingSettlement(pendingEntry.deliveryId);
           setPendingEntry(null);
           addToast(t("detail.toast.retryNoLongerPending"), { variant: "neutral" });
+          return;
+        }
+        const refusedOutcome = result.outcomes.find((outcome) => outcome.status === "refused");
+        if (refusedOutcome) {
+          clearPendingSettlement(pendingEntry.deliveryId);
+          setPendingEntry(null);
+          const key = `error.${refusedOutcome.error}` as const;
+          addToast(
+            tArrival("settlement.refused", {
+              reason: tPayment.has(key as never) ? tPayment(key as never) : tPayment("error.server_error"),
+            }),
+            { variant: "error" },
+          );
+          router.refresh();
           return;
         }
         const stillFailing = result.outcomes.some((outcome) => outcome.status !== "settled");

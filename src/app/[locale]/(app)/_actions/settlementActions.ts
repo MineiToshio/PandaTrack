@@ -125,19 +125,19 @@ export async function getSettlementContextAction(input: {
 
       if (closesOrder) {
         const appliedUnassignedMinor = Math.max(0, Math.min(openBalanceApprox, unassignedMinor));
+        const amountMinor = openBalanceApprox - appliedUnassignedMinor;
         contexts.push({
           orderId,
           currencyCode: order.currencyCode,
           closesOrder,
           unassignedMinor,
-          plan: {
-            kind: "computedFull",
-            amountMinor: openBalanceApprox - appliedUnassignedMinor,
-            appliedUnassignedMinor,
-          },
+          plan:
+            amountMinor === 0
+              ? { kind: "nothingToSettle" }
+              : { kind: "computedFull", amountMinor, appliedUnassignedMinor },
           // Informative branch (WO-08 "double-counting guard"): consumption always runs first when
           // the arrival closes the order, so there is nothing left to double-count against.
-          defaultChecked: true,
+          defaultChecked: amountMinor > 0,
         });
         continue;
       }
@@ -175,8 +175,11 @@ export async function getSettlementContextAction(input: {
         currencyCode: order.currencyCode,
         closesOrder,
         unassignedMinor,
-        plan: { kind: "computedPartial", amountMinor: cappedAmount, undetailed: cappedAmount < computedSum },
-        defaultChecked: unassignedMinor === 0,
+        plan:
+          cappedAmount === 0
+            ? { kind: "nothingToSettle" }
+            : { kind: "computedPartial", amountMinor: cappedAmount, undetailed: cappedAmount < computedSum },
+        defaultChecked: cappedAmount > 0 && unassignedMinor === 0,
       });
     }
 

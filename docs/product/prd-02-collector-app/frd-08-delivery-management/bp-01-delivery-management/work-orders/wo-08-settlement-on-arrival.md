@@ -23,6 +23,15 @@ safely can, and asks the collector only when it genuinely cannot. Recording the 
 payment are two separate transactions, not one, because delivery must never block on a payment write
 (`ADR 0032`). Implemented 2026-08-20 (uncommitted, staging).
 
+## Zero-remainder and refusal acceptance rules
+
+- Fully allocated delivered products contribute neither a settlement amount nor a zero allocation line, even when other products keep the order balance open. A mixed selection writes only the positive remaining product lines.
+- A capped computed remainder of zero resolves to `nothingToSettle`; the preview hides its settlement block and defaults unchecked. This includes a complete arrival whose balance is fully covered by automatic consumption of unassigned money.
+- The money transaction treats a computed zero as `settled` with `settledAmountMinor: null` and creates no `StorePayment`. Manual zero inputs still follow amount validation.
+- Arrival success remains visible when settlement is refused: preserve optimistic arrival state, show the arrival-success toast, and separately explain that the remaining payment was not recorded, with its localized reason. Apply the same contextual refusal notice to retries, including delivery detail.
+- Refusals discovered after automatic consumption throw a typed rollback error inside the money transaction and map to the public outcome outside it. No partial monetary write may commit on refusal; the independent arrival stays recorded.
+- Regression verification covers a 15000 order with delivered product 5000 already allocated and undelivered product 10000, plus a mixed selection adding an unpaid delivered product of 3000. Only that last product may receive the new 3000 payment allocation.
+
 ## Prerequisites
 
 - [`WO-01`](wo-01-delivery-foundation.md) — lifecycle helpers, `deriveOrderStatus` wrapper
@@ -135,9 +144,9 @@ payment are two separate transactions, not one, because delivery must never bloc
   - **The arrival closes the order.** The consumption half of `FR-08-46` runs automatically, unconditionally,
     and _before_ the settlement amount is computed, so any unassigned money in that store and currency is
     already folded into the order's `openBalanceMinor` by the time the settlement branch reads it. There is no
-    double-count left to guard against: the checkbox pre-marks exactly as it would with no unassigned money at
-    all, and the modal's copy is purely **informative**, naming that some or all of the settlement amount comes
-    from money the collector already paid earlier rather than from a fresh payment being written now.
+    double-count left to guard against. If a positive remainder remains, the checkbox pre-marks and the copy
+    names the money already paid earlier. If consumption covers the entire balance, hide the settlement
+    block; consumption still runs automatically on arrival.
   - **The arrival does not close the order** (a partial delivery, or the last item was already covered by an
     earlier settlement). No consumption runs for an order that stays open, so unassigned money in that store
     and currency is never folded in automatically. The guard stays exactly as it reads today: the checkbox

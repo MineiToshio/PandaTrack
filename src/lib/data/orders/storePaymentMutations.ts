@@ -1002,6 +1002,7 @@ export async function resolveSettlementPlan(
     const base = isSingleProductOrder ? order.totalCost : (item.unitPrice as number) * item.quantity;
     const alreadyAllocated = allocatedByItemId.get(item.id) ?? 0;
     const lineAmount = Math.max(0, base - alreadyAllocated);
+    if (lineAmount === 0) continue;
     itemLines.push({ orderItemId: item.id, amountMinor: lineAmount });
     computedSum += lineAmount;
   }
@@ -1012,6 +1013,7 @@ export async function resolveSettlementPlan(
   // BR-08-16 forbids in every branch, and once an order-level line forced the cap, the app can no
   // longer honestly say which item's own line shrank and by how much.
   const cappedAmount = Math.min(computedSum, openBalance);
+  if (cappedAmount === 0) return { kind: "nothingToSettle" };
   if (cappedAmount < computedSum) {
     return { kind: "computedPartial", amountMinor: cappedAmount, undetailed: true, itemLines: null, coveredItemIds };
   }
@@ -1087,6 +1089,15 @@ export type OrderCloseMoneyOutcome =
       error: CreateStorePaymentError;
     }
   | { orderId: string; status: "pending"; consumedMinor: null; settledAmountMinor: null };
+
+// Settlement validation depends on the post-consumption balance. A refusal must roll back
+// that consumption too, so it cannot be returned from inside the transaction.
+class SettlementRefusalRollback extends Error {
+  constructor(readonly error: CreateStorePaymentError) {
+    super(error);
+    this.name = "SettlementRefusalRollback";
+  }
+}
 
 /**
  * The order-close money transaction (`FR-08-46`, `ADR 0032`, `ADR 0033`): the call site for
@@ -1173,16 +1184,13 @@ export async function runOrderCloseMoneyTransaction(input: {
       }
 
       const amountMinor = plan.kind === "manual" ? closedOrder.settlement.manualAmountMinor : plan.amountMinor;
+      if (plan.kind !== "manual" && amountMinor === 0) {
+        return { orderId: closedOrder.orderId, status: "settled", consumedMinor, settledAmountMinor: null };
+      }
       if (amountMinor === undefined) {
         // The plan asked the collector for a figure and the caller supplied none. Refused the same
         // way a malformed amount always is, rather than guessing or writing a zero payment.
-        return {
-          orderId: closedOrder.orderId,
-          status: "refused",
-          consumedMinor,
-          settledAmountMinor: null,
-          error: "AMOUNT_INVALID",
-        };
+        throw new SettlementRefusalRollback("AMOUNT_INVALID");
       }
 
       const written = await createStorePaymentInTx(tx, {
@@ -1202,17 +1210,20 @@ export async function runOrderCloseMoneyTransaction(input: {
       });
 
       if (!written.ok) {
-        return {
-          orderId: closedOrder.orderId,
-          status: "refused",
-          consumedMinor,
-          settledAmountMinor: null,
-          error: written.error,
-        };
+        throw new SettlementRefusalRollback(written.error);
       }
 
       return { orderId: closedOrder.orderId, status: "settled", consumedMinor, settledAmountMinor: amountMinor };
     }).catch((error: unknown) => {
+      if (error instanceof SettlementRefusalRollback) {
+        return {
+          orderId: closedOrder.orderId,
+          status: "refused",
+          consumedMinor: 0,
+          settledAmountMinor: null,
+          error: error.error,
+        } satisfies OrderCloseMoneyOutcome;
+      }
       // `createStorePaymentInTx`'s one sentinel, mapped the same way `createStorePayment` maps it.
       // The whole transaction (including this order's own consumption) rolled back: an exceedingly
       // rare concurrent-delete race, safe to report as refused and safe to retry.

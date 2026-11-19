@@ -302,9 +302,12 @@ export default function StoreGroupedView({
           if (refusedOutcome) {
             clearPendingSettlement(deliveryId);
             const key = `error.${refusedOutcome.error}` as const;
-            addToast(tPayment.has(key as never) ? tPayment(key as never) : tPayment("error.server_error"), {
-              variant: "error",
-            });
+            addToast(
+              tArrival("settlement.refused", {
+                reason: tPayment.has(key as never) ? tPayment(key as never) : tPayment("error.server_error"),
+              }),
+              { variant: "error" },
+            );
             router.refresh();
             return;
           }
@@ -442,10 +445,14 @@ export default function StoreGroupedView({
         // included, so each of them announces what it credited after raising its own toast. Only
         // one branch ever runs, so the collector sees the announcement exactly once.
         if (refusedOutcome) {
+          addToast(tArrival("toast.success", { count: result.productCount }), { variant: "success" });
           const key = `error.${refusedOutcome.error}` as const;
-          addToast(tPayment.has(key as never) ? tPayment(key as never) : tPayment("error.server_error"), {
-            variant: "error",
-          });
+          addToast(
+            tArrival("settlement.refused", {
+              reason: tPayment.has(key as never) ? tPayment(key as never) : tPayment("error.server_error"),
+            }),
+            { variant: "error" },
+          );
           announceProgression(result.progression);
           return;
         }

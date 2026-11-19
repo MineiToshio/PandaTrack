@@ -28,6 +28,7 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), refresh: 
 vi.mock("next-intl", () => ({
   useTranslations: () => {
     const t = (key: string, vars?: Record<string, unknown>) => (vars ? `${key}|${JSON.stringify(vars)}` : key);
+    t.has = () => true;
     return t;
   },
 }));
@@ -286,6 +287,32 @@ describe("DeliveryDetailClient reopen (WO-08 two-amount copy + Retry affordance)
 
     expect(screen.getByText("detail.settlement.pendingNotice")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "detail.settlement.retry" })).toBeInTheDocument();
+  });
+
+  it("settlement refusal confirms the recorded arrival and clears the retry banner", async () => {
+    readPendingSettlementMock.mockReturnValue({
+      deliveryId: "delivery-1",
+      settleRemainder: true,
+      settlementDate: "2026-05-02",
+      settlementIntents: [],
+      createdAt: "2026-05-02T10:00:00.000Z",
+    });
+    retrySettlementActionMock.mockResolvedValue({
+      ok: true,
+      noLongerPending: false,
+      outcomes: [
+        { orderId: "order-1", status: "refused", error: "AMOUNT_INVALID", consumedMinor: 0, settledAmountMinor: null },
+      ],
+    });
+    renderClient();
+    await userEvent.click(screen.getByRole("button", { name: "detail.settlement.retry" }));
+    await waitFor(() =>
+      expect(addToastMock).toHaveBeenCalledWith('settlement.refused|{"reason":"error.AMOUNT_INVALID"}', {
+        variant: "error",
+      }),
+    );
+    expect(clearPendingSettlementMock).toHaveBeenCalledWith("delivery-1");
+    expect(screen.queryByText("detail.settlement.pendingNotice")).not.toBeInTheDocument();
   });
 
   it("does not show the Retry banner when nothing is pending", () => {

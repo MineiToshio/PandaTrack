@@ -84,6 +84,34 @@ describe("getSettlementContextAction", () => {
     getOpenBalanceMinorByOrderIdsMock.mockResolvedValue(new Map());
   });
 
+  it("zero settlement: hides a partial settlement when delivered items are already fully allocated", async () => {
+    getOrderDetailMock.mockResolvedValue(
+      orderDetailFixture({
+        totalCost: 15000,
+        remainingAmount: 10000,
+        items: [
+          { id: ITEM_ID, unitPrice: 5000, quantity: 1, allocatedMinor: 5000, deliveryState: "open" },
+          { id: ITEM_ID_2, unitPrice: 10000, quantity: 1, allocatedMinor: 0, deliveryState: "in_transit" },
+        ],
+      }),
+    );
+    const result = await getSettlementContextAction({ orders: [{ orderId: ORDER_ID, deliveredItemIds: [ITEM_ID] }] });
+    expect(result).toMatchObject({
+      ok: true,
+      contexts: [{ closesOrder: false, plan: { kind: "nothingToSettle" }, defaultChecked: false }],
+    });
+  });
+
+  it("zero settlement: hides a full settlement entirely covered by unassigned money", async () => {
+    getOrderDetailMock.mockResolvedValue(orderDetailFixture());
+    getStoreDebtByCurrencyMock.mockResolvedValue([{ currencyCode: "USD", unassignedMinor: 5000 }]);
+    const result = await getSettlementContextAction({ orders: [{ orderId: ORDER_ID, deliveredItemIds: [ITEM_ID] }] });
+    expect(result).toMatchObject({
+      ok: true,
+      contexts: [{ closesOrder: true, plan: { kind: "nothingToSettle" }, defaultChecked: false }],
+    });
+  });
+
   it("rejects an unauthenticated caller", async () => {
     getSessionMock.mockResolvedValue(null);
 

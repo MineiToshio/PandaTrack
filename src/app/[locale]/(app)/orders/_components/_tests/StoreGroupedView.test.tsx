@@ -1212,7 +1212,11 @@ describe("StoreGroupedView", () => {
       selectProduct("Alpha");
       await confirmArrivalSingle();
 
-      await waitFor(() => expect(screen.getByText("error.AMOUNT_INVALID")).toBeInTheDocument());
+      await waitFor(() =>
+        expect(screen.getByText('settlement.refused:{"reason":"error.AMOUNT_INVALID"}')).toBeInTheDocument(),
+      );
+      expect(screen.getAllByText('toast.success:{"count":1}').length).toBeGreaterThan(0);
+      expect(screen.queryByText("error.AMOUNT_INVALID")).not.toBeInTheDocument();
       expect(writePendingSettlementMock).not.toHaveBeenCalled();
     });
 

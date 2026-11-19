@@ -139,11 +139,15 @@ describe("useQuickArrival", () => {
 
       expect(writePendingSettlementMock).not.toHaveBeenCalled();
       expect(addToastMock).toHaveBeenCalledWith(
-        "orders.detail.storePayment.error.AMOUNT_INVALID",
+        'orders.detail.quickArrival.settlement.refused|{"reason":"orders.detail.storePayment.error.AMOUNT_INVALID"}',
         expect.objectContaining({ variant: "error" }),
       );
+      expect(addToastMock).toHaveBeenCalledWith(
+        'orders.detail.quickArrival.toast.success|{"count":1}',
+        expect.objectContaining({ variant: "success" }),
+      );
       // No retry action attached: this is a dismissable notice, not the persisted Retry banner.
-      const [, options] = addToastMock.mock.calls[0];
+      const [, options] = addToastMock.mock.calls.find(([, options]) => options.variant === "error")!;
       expect(options.action).toBeUndefined();
     });
 
@@ -171,7 +175,7 @@ describe("useQuickArrival", () => {
       await waitFor(() => expect(addToastMock).toHaveBeenCalled());
 
       expect(addToastMock).toHaveBeenCalledWith(
-        "orders.detail.storePayment.error.server_error",
+        'orders.detail.quickArrival.settlement.refused|{"reason":"orders.detail.storePayment.error.server_error"}',
         expect.objectContaining({ variant: "error" }),
       );
     });

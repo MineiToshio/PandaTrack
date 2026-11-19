@@ -41,7 +41,62 @@ function fullyDeliveredOrder(overrides: Partial<OrderCloseMoneyOrder> = {}): Ord
   };
 }
 
+function paidDeliveredItemFixture(includeUnpaidItem = false) {
+  return makeOrderCloseMoneyTx({
+    orders: [
+      {
+        id: "order-1",
+        storeId: "store-1",
+        currencyCode: "PEN",
+        totalCost: includeUnpaidItem ? 18000 : 15000,
+        allocatedAmountMinor: 5000,
+        items: [
+          { id: "item-a", unitPrice: 5000, quantity: 1, deliveryState: DELIVERED },
+          { id: "item-b", unitPrice: 10000, quantity: 1, deliveryState: IN_TRANSIT },
+          ...(includeUnpaidItem ? [{ id: "item-c", unitPrice: 3000, quantity: 1, deliveryState: DELIVERED }] : []),
+        ],
+      },
+    ],
+    payments: [
+      {
+        id: "p-existing",
+        storeId: "store-1",
+        currencyCode: "PEN",
+        amount: 5000,
+        paymentDate: new Date("2019-06-01"),
+        allocations: [{ orderId: "order-1", orderItemId: "item-a", amountMinor: 5000 }],
+      },
+    ],
+  });
+}
+
 describe("resolveSettlementPlan", () => {
+  it("zero settlement: a paid delivered item has nothing to settle while other items remain unpaid", async () => {
+    const fixture = paidDeliveredItemFixture();
+    expect(
+      await resolveSettlementPlan(fixture as never, "user-1", {
+        orderId: "order-1",
+        deliveredItemIds: ["item-a"],
+      }),
+    ).toEqual({ kind: "nothingToSettle" });
+  });
+
+  it("zero settlement: mixed paid and unpaid items produce only a positive allocation line", async () => {
+    const fixture = paidDeliveredItemFixture(true);
+    expect(
+      await resolveSettlementPlan(fixture as never, "user-1", {
+        orderId: "order-1",
+        deliveredItemIds: ["item-a", "item-c"],
+      }),
+    ).toEqual({
+      kind: "computedPartial",
+      amountMinor: 3000,
+      undetailed: false,
+      itemLines: [{ orderItemId: "item-c", amountMinor: 3000 }],
+      coveredItemIds: ["item-a", "item-c"],
+    });
+  });
+
   it("full-order branch, order not yet fully allocated: amount = openBalanceMinor, no per-item lines required", async () => {
     const fixture = makeOrderCloseMoneyTx({
       orders: [fullyDeliveredOrder({ totalCost: 10000, allocatedAmountMinor: 4000 })],
@@ -547,6 +602,88 @@ describe("createStorePaymentInTx / createStorePayment write path for a resolved 
 });
 
 describe("runOrderCloseMoneyTransaction", () => {
+  it("settlement refusal rejects the transaction callback after consumption instead of committing it", async () => {
+    const fixture = makeOrderCloseMoneyTx({
+      orders: [fullyDeliveredOrder()],
+      payments: [
+        {
+          id: "pool",
+          storeId: "store-1",
+          currencyCode: "USD",
+          amount: 2000,
+          paymentDate: new Date("2019-01-01"),
+          allocations: [],
+        },
+      ],
+    });
+    const rejected = vi.fn();
+    prismaMock.$transaction.mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) => {
+      try {
+        return await callback(fixture);
+      } catch (error) {
+        rejected(error);
+        throw error;
+      }
+    });
+    const outcomes = await runOrderCloseMoneyTransaction({
+      userId: "user-1",
+      deliveryId: "delivery-1",
+      closedOrders: [
+        {
+          orderId: "order-1",
+          closed: true,
+          settlement: {
+            enabled: true,
+            deliveredItemIds: ["item-1"],
+            settlementDate: new Date("2018-01-01"),
+          },
+        },
+      ],
+    });
+    expect(rejected).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ name: "SettlementRefusalRollback" }));
+    expect(outcomes).toEqual([
+      { orderId: "order-1", status: "refused", consumedMinor: 0, settledAmountMinor: null, error: "DATE_BEFORE_ORDER" },
+    ]);
+    expect(fixture.storePayment.create).not.toHaveBeenCalled();
+  });
+
+  it.each([false, true])(
+    "zero settlement: paid delivered items do not create zero payments or allocations (mixed=%s)",
+    async (mixed) => {
+      const fixture = paidDeliveredItemFixture(mixed);
+      runOrderCloseMoneyTx(prismaMock, fixture);
+      const outcomes = await runOrderCloseMoneyTransaction({
+        userId: "user-1",
+        deliveryId: "delivery-1",
+        closedOrders: [
+          {
+            orderId: "order-1",
+            closed: false,
+            settlement: {
+              enabled: true,
+              deliveredItemIds: mixed ? ["item-a", "item-c"] : ["item-a"],
+              settlementDate: new Date("2020-01-01"),
+            },
+          },
+        ],
+      });
+      expect(outcomes).toEqual([
+        { orderId: "order-1", status: "settled", consumedMinor: 0, settledAmountMinor: mixed ? 3000 : null },
+      ]);
+      if (mixed) {
+        expect(fixture.storePayment.create).toHaveBeenCalledTimes(1);
+        expect(fixture.__state.paymentRows.at(-1)).toMatchObject({
+          amount: 3000,
+          allocations: [{ orderId: "order-1", orderItemId: "item-c", amountMinor: 3000 }],
+        });
+      } else {
+        expect(fixture.storePayment.create).not.toHaveBeenCalled();
+        expect(fixture.paymentAllocation.createMany).not.toHaveBeenCalled();
+        expect(fixture.__state.paymentRows).toHaveLength(1);
+      }
+    },
+  );
+
   beforeEach(() => {
     vi.clearAllMocks();
   });
