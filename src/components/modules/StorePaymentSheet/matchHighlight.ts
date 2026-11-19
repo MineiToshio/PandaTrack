@@ -1,3 +1,5 @@
+import { foldSearchText } from "@/lib/strings/foldSearchText";
+
 /**
  * Diacritic-insensitive matching shared by the allocation panel's filter and the row's highlight,
  * so what the filter kept and what the row paints can never disagree.
@@ -30,9 +32,9 @@ export function normalizeForMatch(value: string): string {
 
 /** True when `query` appears anywhere in `value`, ignoring case and diacritics. An empty query matches everything. */
 export function matchesQuery(value: string, query: string): boolean {
-  const normalizedQuery = normalizeForMatch(query.trim());
+  const normalizedQuery = foldSearchText(query);
   if (normalizedQuery === "") return true;
-  return normalizeForMatch(value).includes(normalizedQuery);
+  return foldSearchText(value).includes(normalizedQuery);
 }
 
 export type MatchPart = { text: string; isMatch: boolean };
