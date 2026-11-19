@@ -5,7 +5,7 @@ slug: order-payment-shipment
 title: Orders, Payments & Shipment — Feature Design Document
 status: ACTIVE
 parent: FRD-05
-last_updated: 2026-08-08
+last_updated: 2026-11-19
 prototype: ./prototype/order-payment-shipment.html
 design_system: ../../../design/README.md
 demo_anchors:
@@ -1482,6 +1482,12 @@ specifics:
   the native `<input type="date">`; add/edit product opens a bottom sheet.
 - **Modals → sheets**: pay, cancel, delete, discard, discrepancy render as `ModalSheet`
   (vaul) on mobile; the FX flow renders as a full-screen sheet.
+  The canonical sheet keeps the focused amount/note field visible inside its scrollable body
+  above the software keyboard and restores its exact resting position and natural height on
+  dismissal, including keyboard height changes and focus moves. Payment allocation's `92dvh`
+  cap also respects the visible viewport. This behavior belongs to the
+  [shared keyboard contract](../../../design/interface-patterns.md#5-modals-and-overlays),
+  rather than individual payment forms.
 
 Known issue inherited at the list level: the mobile action row can overflow the viewport by
 a few pixels at ~390px (tracked in the FRD).
