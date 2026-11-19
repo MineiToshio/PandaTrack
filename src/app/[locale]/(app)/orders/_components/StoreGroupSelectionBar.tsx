@@ -1,5 +1,6 @@
 "use client";
 
+import { useLayoutEffect, useRef } from "react";
 import { PackageCheck } from "lucide-react";
 import Button from "@/components/core/Button/Button";
 
@@ -12,29 +13,12 @@ export type StoreGroupSelectionBarProps = {
   clearLabel: string;
   onConfirm: () => void;
   onClear: () => void;
+  onHeightChange: (height: number) => void;
 };
 
 /**
- * Batch actions for the products selected inside ONE store group.
- *
- * It is `sticky` at the foot of the group's own card, in flow, rather than `fixed` to the viewport:
- * a bar pinned to the window could not say which store it belongs to, and the "mobile-only, with a
- * desktop counterpart" rule of `docs/design/interface-patterns.md` §1 exists for viewport-fixed
- * bars precisely because they read as detached from their column. This one never leaves its card,
- * so it is the same control at every width.
- *
- * On touch it is lifted clear of the "Nuevo pedido" FAB with the same offset contract the toast
- * container already uses (`--fab-offset` + `--fab-h`), instead of inventing a second one.
- *
- * The count is the only thing this bar says, so it is never clipped: it carries a width floor and
- * the row wraps rather than truncating. On a phone the two buttons alone are wider than the space
- * a count would need beside them (210px of the 228px a 320px viewport leaves inside the card), so
- * the single row is not a layout that exists at that width, whatever the copy says.
- *
- * A single action, and it is the arrival. The delivery wizard is deliberately not offered here:
- * its first two steps are exactly what the selection just did, so wiring it would need a URL
- * preload contract that does not exist, and `FR-08-36` already demoted it to a secondary action
- * everywhere else.
+ * One store's batch actions. Floats in the mobile bottom action slot and stays inside its
+ * group on desktop. Report the actual height so wrapped summaries never cover list content.
  */
 export default function StoreGroupSelectionBar({
   summary,
@@ -44,12 +28,26 @@ export default function StoreGroupSelectionBar({
   clearLabel,
   onConfirm,
   onClear,
+  onHeightChange,
 }: StoreGroupSelectionBarProps) {
+  const barRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const bar = barRef.current;
+    if (!bar) return;
+    const measure = () => onHeightChange(bar.getBoundingClientRect().height);
+    measure();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(bar);
+    return () => observer.disconnect();
+  }, [onHeightChange]);
+
   return (
     <div
+      ref={barRef}
       role="toolbar"
       aria-label={ariaLabel}
-      className="animate-selection-bar-in sticky bottom-0 z-[var(--z-sticky)] mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-[var(--radius-xl)] px-3 py-2 backdrop-blur [background:color-mix(in_oklch,var(--surface-elevated)_92%,transparent)] [border:1px_solid_var(--border)] max-lg:bottom-[calc(var(--fab-offset)+var(--fab-h)+var(--space-3))]"
+      className="animate-selection-bar-in fixed inset-x-[var(--fab-offset)] bottom-[calc(env(safe-area-inset-bottom,0px)+var(--fab-offset))] z-[var(--z-sticky)] flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-[var(--radius-xl)] px-3 py-2 [box-shadow:var(--elevation-2)] [background:var(--surface-elevated)] [border:1px_solid_var(--border-strong)] lg:sticky lg:inset-x-auto lg:bottom-0 lg:mt-2"
     >
       {/*
         `flex-[1_1_13rem]` is the whole mechanism. 208px clears the widest summary the ICU message
@@ -63,13 +61,14 @@ export default function StoreGroupSelectionBar({
         {summary}
       </p>
       <div className="ml-auto flex shrink-0 items-center gap-2">
-        <Button type="button" variant="ghost" size="sm" onClick={onClear}>
+        <Button type="button" variant="ghost" size="sm" className="max-lg:min-h-11" onClick={onClear}>
           {clearLabel}
         </Button>
         <Button
           type="button"
           variant="primary"
           size="sm"
+          className="max-lg:min-h-11"
           leadingIcon={<PackageCheck size={14} aria-hidden />}
           onClick={onConfirm}
           aria-label={confirmAriaLabel}

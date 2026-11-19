@@ -137,6 +137,7 @@ export default function StoreGroupedView({
   const [flaggedIneligibleIds, setFlaggedIneligibleIds] = useState<Set<string>>(() => new Set());
   const sheet = useStorePaymentSheetOrders();
   const selection = useStoreProductSelection();
+  const [selectionBarHeight, setSelectionBarHeight] = useState(0);
 
   // Reset local state whenever the server hands down a genuinely different `groups` list (a new
   // navigation, a filter change) — never mid-flight of this view's own optimistic patch, which
@@ -657,7 +658,14 @@ export default function StoreGroupedView({
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div
+      className={cn(
+        "flex flex-col gap-3",
+        selectedProducts.length > 0 &&
+          "max-lg:pb-[calc(var(--selection-bar-height)+var(--fab-offset)+env(safe-area-inset-bottom,0px))]",
+      )}
+      style={{ "--selection-bar-height": `${selectionBarHeight}px` } as React.CSSProperties}
+    >
       {/*
         A node of its own, never the toolbar container: `role="status"` implies `aria-atomic`, so a
         live region wrapping the buttons would re-read their labels on every count change.
@@ -829,6 +837,7 @@ export default function StoreGroupedView({
 
                 {selectionStoreId === group.store.id && selectedProducts.length > 0 && (
                   <StoreGroupSelectionBar
+                    onHeightChange={setSelectionBarHeight}
                     summary={selectionSummary}
                     ariaLabel={t("storeView.selection.barAriaLabel", { store: group.store.name })}
                     confirmLabel={tActions("quickArrival")}
