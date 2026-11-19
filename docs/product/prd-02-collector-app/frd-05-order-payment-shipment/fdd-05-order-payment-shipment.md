@@ -163,15 +163,14 @@ demo_anchors:
 >   width**: `1fr | auto | 140px` from `md` (52px rows) and `1fr | auto | 96px` below it (56px rows),
 >   every cell vertically centred, the name clamped to two lines on desktop and three on a phone.
 >   The order's `humanReadableId` is printed **once**, in the header that opens its block (with the
->   order's balance), and never repeated under each name: the filter keeps blocks whole, so the
->   header always travels with its rows. A hairline separates one block from the next. When an
+>   order's balance), and never repeated under each name: the header travels with the first visible product even when earlier products are filtered out. A hairline separates one block from the next. When an
 >   order's products cannot absorb its balance, a **"Resto del pedido"** row closes its block. The shortcut cell is a **fill
 >   control**, not a label: labelled **"Máx."**, it writes the largest amount assignable without
 >   invalidating the draft and prints no figure of its own, the amount it will write living only in
 >   its accessible name (`computeFillableMinor`, recomputed live). A settled line is **not listed
 >   unless searched for** (`FR-05-42`, 2026-10-07): the unfiltered list ends with a muted line,
 >   "{n} productos ya saldados no se muestran. Búscalos para verlos.", the filter is shown whenever
->   anything is hidden, a search brings back whole orders with their settled lines, and an order
+>   anything is hidden, a case- and accent-insensitive substring search (NFD, removing diacritics) matches product names and order identifiers. An identifier match brings back the whole order, including settled lines; a product-only match shows only matching products. No match shows the localized empty state with a clear-search action, and an order
 >   with nothing left but settled lines shows "Los productos de estos pedidos ya están saldados.
 >   Búscalos si quieres verlos." A settled line the draft is touching (money typed, a rule, a
 >   server refusal) stays listed until the panel is left, so emptying it never unmounts the field

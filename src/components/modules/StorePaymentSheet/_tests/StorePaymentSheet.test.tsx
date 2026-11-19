@@ -1219,8 +1219,8 @@ describe("StorePaymentSheet — la lista dice lo que escribe (ADR 0027)", () => 
     await typeAmount("100");
     await openAllocationPanel();
 
-    // Two products, one order: the filter keeps blocks whole, so the header always travels with its
-    // rows and repeating the reference under each name only made every row two lines tall.
+    // Two products, one order: the header travels with the first visible product.
+    // Repeating the reference under each name only made every row two lines tall.
     expect(screen.getAllByText("ORD-20260105-01")).toHaveLength(1);
   });
 
@@ -1784,7 +1784,7 @@ describe("StorePaymentSheet — filtro (C11)", () => {
     return orders;
   }
 
-  it("keeps every line of a matched order, not just the matching one", async () => {
+  it("keeps only matching products when the order reference does not match", async () => {
     renderSheet({ orders: makeBigStore(), debts: [{ currencyCode: "PEN", debtMinor: 100000 }] });
     await typeAmount("100");
     await openAllocationPanel();
@@ -1794,9 +1794,30 @@ describe("StorePaymentSheet — filtro (C11)", () => {
 
     const list = screen.getByRole("list");
     expect(within(list).getByText("Producto A3")).toBeInTheDocument();
-    // Its sibling under the same order survives even though it does not match.
-    expect(within(list).getByText("Producto B3")).toBeInTheDocument();
+    // A product match must not retain its unrelated sibling.
+    expect(within(list).queryByText("Producto B3")).not.toBeInTheDocument();
     expect(within(list).queryByText("Producto A2")).not.toBeInTheDocument();
+  });
+
+  it.each(["zoro", "ZORO", "zóro"])("filters product names and order references for %s", async (query) => {
+    const orders = makeBigStore();
+    orders[0].items[0].name = "Figure Zóro deluxe";
+    orders[1].humanReadableId = "ORD-ZORO-02";
+    renderSheet({ orders, debts: [{ currencyCode: "PEN", debtMinor: 100000 }] });
+    await typeAmount("100");
+    await openAllocationPanel();
+    await userEvent.type(screen.getByRole("searchbox"), query);
+
+    const rows = screen.getAllByRole("listitem");
+    expect(rows.map((row) => row.getAttribute("data-line-key"))).toEqual([
+      "order-0:item-0-a",
+      "order-1:item-1-a",
+      "order-1:item-1-b",
+    ]);
+    expect(screen.queryByText("Producto B0")).not.toBeInTheDocument();
+    expect(screen.queryByText("Producto A2")).not.toBeInTheDocument();
+    await userEvent.clear(screen.getByRole("searchbox"));
+    expect(screen.getAllByRole("listitem")).toHaveLength(14);
   });
 
   it("matches on the order reference too, which each row shows", async () => {
