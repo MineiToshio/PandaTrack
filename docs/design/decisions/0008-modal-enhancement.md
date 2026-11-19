@@ -1,7 +1,7 @@
 ---
 title: ADR 0008 — Modal Enhancement · Semantic Depth (M01) + Adaptive (S7-A.2)
 date: 2026-05-03
-last_extended: 2026-05-11
+last_extended: 2026-11-19
 status: accepted
 session: M01-modal-enhancement + S7-A.2-adaptive-modal
 owner: Sergio Minei
@@ -376,3 +376,39 @@ cambios el focus trap, Esc, devolución de foco y semántica de diálogo ya vali
 formulario o un confirm. Todo lo accionable sigue siendo `adaptive`. El límite está escrito en el
 JSDoc del tipo y en la regla, porque una prop de presentación sin criterio se convierte en la puerta
 por la que se cuela cualquier preferencia personal.
+
+
+## Keyboard geometry correction (2026-11-19)
+
+The installed Vaul version is **1.1.2** (`package.json` requests `^1.1.2`). References below are to its installed `node_modules/vaul/dist/index.mjs` bundle:
+
+- Line 879 defaults `repositionInputs` to `true`; the original `ModalSheet` passed no override and capped the sheet at `78vh`.
+- Lines 1117 and 1131-1132 gate resize handling on input focus or a remembered keyboard flag, then **toggle** that flag for any height difference over 60px. A keyboard suggestion row / keyboard type change can toggle it off while the keyboard remains open.
+- Lines 1126-1127 remember the drawer height once, and lines 1148-1158 write inline `height` and `bottom`. Reproduction: an 812px layout viewport and a 600px sheet, focus input, visual viewport 500px then 420px, focus a button, restore viewport to 812px. The remembered flag is false, so the final event is ignored and **`bottom: 392px` remains**. Restoring a cached pixel height also prevents natural content-height recovery. The regression test reproduces this exact sequence with the original component.
+- Line 1163 listens only for viewport `resize`, ignoring `offsetTop` changes delivered as `scroll`; line 1166 does remove its listener. The app had no separate VisualViewport listener or one-time maximum-height calculation. Its locale layout has no `interactive-widget` directive. Neither is the observed cause.
+- Lines 770-878 fix the body on iOS and restore its styles and page position. Lines 816-820 show that `preventScrollRestoration` only skips the scroll restoration after a URL change, not after keyboard dismissal. Leave that mechanism in Vaul. Disabling `repositionInputs` also disables Vaul's extra mobile input scroll-prevention path (line 940), avoiding its competing `window.scrollTo` calls at lines 264 and 273. The modal's existing body lock / Radix focus trap remain active.
+- No snap points are supplied by `ModalSheet`; the snap-point correction at lines 1134-1136 cannot be the source of this case.
+
+**Decision:** disable Vaul input repositioning and derive sheet-local CSS variables from the current visual viewport through `src/components/modules/Modal/useSheetKeyboardViewport.ts`. Use dynamic viewport units, constrain the body, and scroll only that body to reveal focus. Reset to zero on focus loss, viewport recovery, close and unmount, removing all subscriptions and pending work. Keep natural height, Vaul gestures and body restoration. The larger payment allocation panel sets `--sheet-max-height: 92dvh` so it inherits the same visible-height ceiling.
+
+**Alternative rejected:** changing only `vh` to `dvh`, enabling snap points, or setting `preventScrollRestoration` leaves the stateful inline writes and missed reset intact. Keeping Vaul's repositioning while adding a second listener would give two systems ownership of the drawer geometry.
+
+**Consumer audit:** the public Modal has 37 production importers (36 adaptive and one centered-only media viewer). Paths below are relative to `src/`; each listed name is a `.tsx` file unless a nested path is shown. `ModalSheet` itself is imported only by `Modal.tsx`.
+
+| Directory | Consumers |
+| --- | --- |
+| `components/modules/` | `StoreRemovalModal`, `ProgressionCelebration`, `OrderCreateMethodSelector/OrderCreateMethodSelector`, `StorePaymentSheet/StorePaymentSheet`, `StoreReconciliationSheet/StoreReconciliationSheet`, `QuickArrival/QuickArrivalModal` |
+| `app/[locale]/(app)/deliveries/[id]/_components/` | `MarkDeliveredModal`, `DeliveryDeleteModal`, `DeliveryCancelModal` |
+| `app/[locale]/(app)/deliveries/_components/share/` | `DeliveryEditForm` |
+| `app/[locale]/(app)/orders/_components/` | `StoreUndetailedPaymentsModal`, `FxReconciliationModal` |
+| `app/[locale]/(app)/orders/[id]/_components/` | `OrderPaymentMobileSheet`, `OrderDeleteModal`, `OrderPaymentRow`, `OrderCancelModal` |
+| `app/[locale]/(app)/orders/new/image/_components/` | `IntakeUploadPanel` |
+| `app/[locale]/(app)/orders/_components/share/` | `DiscrepancyModal`, `OrderEditForm`, `ProductSplitMergeModal/ProductSplitMergeModal` |
+| `app/[locale]/(app)/stores/[slug]/_components/` | `StoreGovernanceSummaryModal`, `StorePaymentsSection`, `StorePaymentRow`, `StoreReportModal`, `StorePublicReviewsSection` |
+| `app/[locale]/(app)/stores/_components/share/` | `StoreLogoZoom` (centered only), `StoreProductTypeRequestModal`, `StoreForm/StoreForm`, `StoreLogoField/StoreLogoField` |
+| `app/[locale]/(app)/admin/progression/_components/` | `VoidPointsControl` |
+| `app/[locale]/(app)/settings/_components/` | `EmailModal`, `AvatarModal`, `DisplayNameModal`, `UsernameModal`, `AvatarRemoveModal`, `SettingsProgressionSection`, `PasswordModal` |
+
+`Sheet/Sheet.tsx` is a separate hand-rolled surface (no Vaul); its consumers are `MobilePicker`, `DeliveryActionsSheet`, and `OrderAddProductSheet`. They are outside this Vaul correction. `FilterDrawer` is also independent.
+
+**Verification:** unit tests mock VisualViewport resize/scroll, keyboard height changes, focus transfer and blur, window resize, pinch zoom, unavailable API and cleanup. The isolated Playwright fixture renders the production Modal and stylesheet at 375x812, checks exact before/after sheet coordinates, focused-field visibility, footer position, zero page scroll and reopening, for both themes and default / expanded caps. It uses a local Vite server (port 5173 with automatic free-port fallback), without app auth or database access: `npm run test:e2e -- --config e2e/modal-keyboard.config.ts`. The override simulates viewport events, not a native keyboard. Real Safari iOS and Chrome Android still need checks for keyboard animation, toolbar panning, interactive dismissal and page-scroll restoration after closing the modal.
