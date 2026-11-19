@@ -3,6 +3,8 @@ import { join } from "node:path";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ComponentProps, ReactNode } from "react";
+import CreateOrderFab from "@/components/modules/CreateOrderFab/CreateOrderFab";
+import { FabVisibilityProvider } from "@/components/modules/CreateOrderFab/FabVisibilityContext";
 import { ToastProvider } from "@/contexts/ToastContext";
 import type { PendingProductRow, PendingProductsByStoreGroup } from "@/lib/data/orders/pendingProductsByStoreQueries";
 import { formatAmountSymbolOnly, formatAmountWithSymbol } from "@/lib/currency";
@@ -24,8 +26,12 @@ vi.mock("@/components/core/ViewTransitionLink", () => ({
   default: ({ children, ...props }: { children?: ReactNode }) => <a {...props}>{children}</a>,
 }));
 vi.mock("@/components/core/StoreAvatar", () => ({ default: () => <span data-testid="store-avatar" /> }));
+vi.mock("@/components/modules/OrderCreateMethodSelector/OrderCreateMethodSelector", () => ({ default: () => null }));
 vi.mock("posthog-js", () => ({ default: { capture: vi.fn() } }));
-vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }) }));
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/es/orders",
+  useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
+}));
 vi.mock("../../_actions/orderItemActions", () => ({
   setOrderItemArrivedAction: vi.fn().mockResolvedValue({ ok: true }),
 }));
@@ -112,20 +118,32 @@ function renderView(
   props: Partial<ComponentProps<typeof StoreGroupedView>> & {
     groups: PendingProductsByStoreGroup[];
     startExpanded?: boolean;
+    renderFab?: boolean;
   },
 ) {
-  const { startExpanded = true, ...componentProps } = props;
+  const { startExpanded = true, renderFab = false, ...componentProps } = props;
+  const view = (
+    <StoreGroupedView
+      locale="es"
+      returnTo="/es/orders?view=store"
+      baseCurrencyCode="PEN"
+      storeSort="arrival-asc"
+      today={utcMidnightToday()}
+      {...componentProps}
+    />
+  );
   const result = render(
     <ToastProvider>
-      <StoreGroupedView
-        locale="es"
-        returnTo="/es/orders?view=store"
-        baseCurrencyCode="PEN"
-        storeSort="arrival-asc"
-        today={utcMidnightToday()}
-        {...componentProps}
-      />
+      {renderFab ? (
+        <>
+          <CreateOrderFab locale="es" />
+          {view}
+        </>
+      ) : (
+        view
+      )}
     </ToastProvider>,
+    { wrapper: FabVisibilityProvider },
   );
   if (startExpanded) expandAllGroups();
   return result;
@@ -592,6 +610,74 @@ describe("StoreGroupedView", () => {
       expect(tile("One Piece Vol. 1")).toBeInstanceOf(HTMLInputElement);
       expect(tile("One Piece Vol. 1").type).toBe("checkbox");
       expect(screen.queryByRole("checkbox", { name: tileName("Shipped") })).not.toBeInTheDocument();
+    });
+
+    it("replaces the FAB throughout selection mode, including an empty selection, and restores it on exit", () => {
+      renderView({ groups: [makeGroup()], renderFab: true });
+      const fab = () => screen.queryByRole("button", { name: "fabLabel" });
+      expect(fab()).toBeInTheDocument();
+      fireEvent.click(screen.getByRole("button", { name: "storeView.selection.enter" }));
+      expect(fab()).not.toBeInTheDocument();
+      selectProduct("One Piece Vol. 1");
+      expect(screen.getByRole("toolbar")).toBeInTheDocument();
+      expect(fab()).not.toBeInTheDocument();
+      selectProduct("One Piece Vol. 1");
+      expect(screen.queryByRole("toolbar")).not.toBeInTheDocument();
+      expect(fab()).not.toBeInTheDocument();
+      fireEvent.click(screen.getByRole("button", { name: "storeView.selection.exit" }));
+      expect(fab()).toBeInTheDocument();
+      selectProduct("One Piece Vol. 1");
+      fireEvent.click(screen.getByRole("button", { name: "storeView.selection.clear" }));
+      expect(fab()).toBeInTheDocument();
+    });
+
+    it("floats on an opaque elevated surface, clears the safe area and reserves its measured height only while visible", () => {
+      const { container } = renderView({ groups: [makeGroup()] });
+      const list = container.firstElementChild as HTMLElement;
+      expect(list.className).not.toContain("--selection-bar-height");
+      let measure: (() => void) | undefined;
+      const disconnect = vi.fn();
+      vi.stubGlobal(
+        "ResizeObserver",
+        class {
+          constructor(callback: () => void) {
+            measure = callback;
+          }
+          observe = vi.fn();
+          disconnect = disconnect;
+        },
+      );
+      const bounds = vi
+        .spyOn(HTMLElement.prototype, "getBoundingClientRect")
+        .mockReturnValue({ height: 96 } as DOMRect);
+      try {
+        selectProduct("One Piece Vol. 1");
+        const toolbar = screen.getByRole("toolbar");
+        expect(toolbar).toHaveClass(
+          "[background:var(--surface-elevated)]",
+          "[box-shadow:var(--elevation-2)]",
+          "[border:1px_solid_var(--border-strong)]",
+        );
+        expect(toolbar).toHaveClass(
+          "fixed",
+          "lg:sticky",
+          "bottom-[calc(env(safe-area-inset-bottom,0px)+var(--fab-offset))]",
+        );
+        expect(list).toHaveClass(
+          "max-lg:pb-[calc(var(--selection-bar-height)+var(--fab-offset)+env(safe-area-inset-bottom,0px))]",
+        );
+        expect(list.style.getPropertyValue("--selection-bar-height")).toBe("96px");
+        bounds.mockReturnValue({ height: 140 } as DOMRect);
+        act(() => measure?.());
+        expect(list.style.getPropertyValue("--selection-bar-height")).toBe("140px");
+        expect(screen.getByRole("status")).toHaveTextContent("storeView.selection.liveStatus");
+        fireEvent.click(screen.getByRole("button", { name: "storeView.selection.clear" }));
+        expect(list.className).not.toContain("--selection-bar-height");
+        expect(disconnect).toHaveBeenCalled();
+      } finally {
+        bounds.mockRestore();
+        vi.unstubAllGlobals();
+      }
     });
 
     it("mounts the action bar only once something is marked, and names the count", () => {

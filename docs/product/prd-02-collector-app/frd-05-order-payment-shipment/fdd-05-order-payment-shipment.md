@@ -296,10 +296,14 @@ demo_anchors:
 >   **not** to the document: `Modal` already listens at document level, so a single press meant to
 >   dismiss the arrival dialog would otherwise wipe the selection behind it. Dismissing the dialog
 >   keeps the selection.
-> - **The action bar** (`StoreGroupSelectionBar`) is `sticky` at the foot of the group's own card,
->   in flow, never `fixed` to the viewport, so it can never be ambiguous about which store it
->   belongs to; on touch it is lifted clear of the "Nuevo pedido" FAB with the same
->   `--fab-offset` + `--fab-h` contract `ToastContainer` uses. It carries the count
+> - **The action bar** (`StoreGroupSelectionBar`) replaces the mobile "Nuevo pedido" FAB:
+>   selection mode suppresses the FAB even before a product is marked, and exiting restores it.
+>   Below `lg` the bar floats in the bottom action slot, above the bottom safe area; at `lg` it
+>   stays sticky inside its store card. The list reserves the bar's measured height plus offset
+>   and safe area only while the mobile bar is visible, so the last product can scroll clear.
+>   It uses opaque `--surface-elevated`, `--border-strong` and `--elevation-2`, following
+>   `docs/design/interface-patterns.md` §1. Text uses `--text-secondary` (AA in both themes).
+>   It carries the count
 >   ("3 productos de 2 pedidos") and **never an amount** (a large share of pending products have no
 >   derivable price, so any total would be blank or wrong), plus exactly two actions: "Cancelar"
 >   (ghost) and "Ya me llegó" (primary, right). The count is never truncated: the two buttons alone

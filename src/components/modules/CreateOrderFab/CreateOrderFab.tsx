@@ -8,6 +8,7 @@ import Button from "@/components/core/Button/Button";
 import OrderCreateMethodSelector from "@/components/modules/OrderCreateMethodSelector/OrderCreateMethodSelector";
 import type { PhotoCounterSnapshot } from "@/app/[locale]/(app)/orders/_components/share/photoCounterContract";
 import { POSTHOG_EVENTS } from "@/lib/constants";
+import { useFabSelectionActive } from "./FabVisibilityContext";
 import { isFabEligibleRoute } from "./fabRouteGate";
 
 type CreateOrderFabProps = {
@@ -25,10 +26,11 @@ type CreateOrderFabProps = {
  */
 export default function CreateOrderFab({ locale, photoCounter = null }: CreateOrderFabProps) {
   const pathname = usePathname();
+  const selectionActive = useFabSelectionActive();
   const t = useTranslations("orders.createEntry");
   const [isSelectorOpen, setIsSelectorOpen] = useState(false);
 
-  if (!isFabEligibleRoute(pathname ?? "", locale)) return null;
+  if (selectionActive || !isFabEligibleRoute(pathname ?? "", locale)) return null;
 
   return (
     <>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSelectionFabSuppression } from "@/components/modules/CreateOrderFab/FabVisibilityContext";
 import posthog from "posthog-js";
 import { POSTHOG_EVENTS } from "@/lib/constants";
 import { isItemEligibleForDelivery } from "@/lib/orders/orderState";
@@ -62,6 +63,7 @@ export type ToggleOptions = {
 
 export function useStoreProductSelection() {
   const [selection, setSelection] = useState<StoreProductSelection | null>(null);
+  useSelectionFabSuppression(selection !== null);
   /** Last tile the collector toggled, the anchor a `Shift` + click extends from. */
   const anchorRef = useRef<string | null>(null);
   const startedStoreRef = useRef<string | null>(null);
