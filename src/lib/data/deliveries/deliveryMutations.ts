@@ -1,3 +1,4 @@
+import { compareSettlementOrders } from "@/lib/deliveries/settlementOrder";
 import type { Prisma } from "../../../../generated/prisma/client";
 import { DeliveryStatus, OrderItemDeliveryState, OrderStatus } from "../../../../generated/prisma/client";
 import { deriveOrderStatus } from "@/lib/orders/orderState";
@@ -195,9 +196,7 @@ async function buildClosedOrderSnapshots(
       orderDate: order.orderDate,
       humanReadableId: order.humanReadableId,
     }))
-    .sort(
-      (a, b) => a.orderDate.getTime() - b.orderDate.getTime() || a.humanReadableId.localeCompare(b.humanReadableId),
-    );
+    .sort((a, b) => compareSettlementOrders({ ...a, closesOrder: true }, { ...b, closesOrder: true }));
 }
 
 /**

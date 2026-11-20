@@ -16,6 +16,8 @@ This file is the source of truth for shared app-level utilities in `src/lib/`.
 
 ## Inventory
 
+`src/lib/deliveries/settlementOrder.ts` defines the shared settlement comparator: closed orders first, then order date and readable id, used by write snapshots, previews, and retries.
+
 `src/lib/deliveries/pendingSettlementStore.ts` persists delivery settlement recovery, selects only unattempted orders for the next retry through `getRemainingPendingSettlement`, and formats settled totals by currency. A business refusal removes only its own intent, preserving the remaining batch.
 
 | File                                                      | Purpose                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |

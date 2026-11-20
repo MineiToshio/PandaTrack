@@ -460,6 +460,31 @@ describe("QuickArrivalModal settlement on arrival (WO-08)", () => {
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
+  it.each(["0", "0.00"])("regression: refuses a zero manual amount (%s) before submitting", async (amount) => {
+    getSettlementContextActionMock.mockResolvedValue({
+      ok: true,
+      contexts: [
+        {
+          orderId: "order-1",
+          currencyCode: "USD",
+          closesOrder: false,
+          unassignedMinor: 0,
+          plan: { kind: "manual", reasonCode: "missingPrice", referenceAmountMinor: 3000 },
+          defaultChecked: true,
+        },
+      ],
+    });
+
+    const { onSubmit } = renderModal({ items: SINGLE_ITEM, orderId: "order-1" });
+
+    await screen.findByRole("checkbox", { name: "detail.quickArrival.settlement.checkboxLabel" });
+    await userEvent.type(screen.getByPlaceholderText("detail.quickArrival.costPlaceholder"), amount);
+    await userEvent.click(screen.getByRole("button", { name: /detail\.quickArrival\.confirm/ }));
+
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(screen.getByText("detail.quickArrival.settlement.validation.amountRequired")).toBeVisible();
+  });
+
   it("submits the computed amount's order id as a settlement intent, with the settlement date defaulted to the arrival date", async () => {
     getSettlementContextActionMock.mockResolvedValue({
       ok: true,

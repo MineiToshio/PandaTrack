@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nextjs";
 import { OrderItemDeliveryState, OrderStatus, type Prisma } from "../../../../generated/prisma/client";
 import { isWholeMajorAmount, isZeroDecimalCurrency } from "@/lib/currency";
 import { MAX_PAYMENT_AMOUNT } from "@/lib/orders/orderValidation";
@@ -1074,8 +1075,8 @@ export type ClosedOrderInput = {
 /**
  * One closed order's outcome from the money transaction.
  *
- * `status: "pending"` means this order was never attempted because an earlier order in the same
- * batch was refused: the caller's `Retry` re-invokes with the same (or a narrowed) `closedOrders`
+ * `status: "pending"` means this order failed with an infrastructure error or was not attempted
+ * after an earlier order failed: the caller's `Retry` re-invokes with the same (or a narrowed) `closedOrders`
  * list, and every order here is safe to reattempt because consumption is idempotent and settlement
  * always re-resolves from current state.
  */
@@ -1216,38 +1217,37 @@ export async function runOrderCloseMoneyTransaction(input: {
       }
 
       return { orderId: closedOrder.orderId, status: "settled", consumedMinor, settledAmountMinor: amountMinor };
-    }).catch(async (error: unknown) => {
-      if (error instanceof SettlementRefusalRollback) {
-        const consumedMinor = closedOrder.closed
-          ? await runSerializableTransaction((tx) =>
-              consumeUnassignedStoreMoneyOnOrderClose(tx, userId, closedOrder.orderId, deliveryId),
-            )
-          : 0;
-        return {
-          orderId: closedOrder.orderId,
-          status: "refused",
-          consumedMinor,
-          settledAmountMinor: null,
-          error: error.error,
-        } satisfies OrderCloseMoneyOutcome;
-      }
-      // `createStorePaymentInTx`'s one sentinel, mapped the same way `createStorePayment` maps it.
-      // The whole transaction (including this order's own consumption) rolled back: an exceedingly
-      // rare concurrent-delete race, safe to report as refused and safe to retry.
-      if (error instanceof DeclaredItemsRollback) {
-        return {
-          orderId: closedOrder.orderId,
-          status: "refused",
-          consumedMinor: 0,
-          settledAmountMinor: null,
-          error: "ITEM_ORDER_MISMATCH",
-        } satisfies OrderCloseMoneyOutcome;
-      }
-      throw error;
-    });
+    })
+      .catch(async (error: unknown) => {
+        if (error instanceof SettlementRefusalRollback || error instanceof DeclaredItemsRollback) {
+          const consumedMinor = closedOrder.closed
+            ? await runSerializableTransaction((tx) =>
+                consumeUnassignedStoreMoneyOnOrderClose(tx, userId, closedOrder.orderId, deliveryId),
+              )
+            : 0;
+          return {
+            orderId: closedOrder.orderId,
+            status: "refused",
+            consumedMinor,
+            settledAmountMinor: null,
+            error: error instanceof SettlementRefusalRollback ? error.error : "ITEM_ORDER_MISMATCH",
+          } satisfies OrderCloseMoneyOutcome;
+        }
+        throw error;
+      })
+      .catch((error: unknown): OrderCloseMoneyOutcome => {
+        // Preserve earlier commits when either this order's payment or its recovery transaction fails.
+        Sentry.withScope((scope) => {
+          scope.setTag("feature", "delivery_settlement");
+          scope.setTag("action", "order_close_money_transaction");
+          scope.setContext("settlement", { deliveryId, orderId: closedOrder.orderId });
+          Sentry.captureException(error);
+        });
+        return { orderId: closedOrder.orderId, status: "pending", consumedMinor: null, settledAmountMinor: null };
+      });
 
     outcomes.push(outcome);
-    if (outcome.status === "refused") stopped = true;
+    if (outcome.status !== "settled") stopped = true;
   }
 
   return outcomes;

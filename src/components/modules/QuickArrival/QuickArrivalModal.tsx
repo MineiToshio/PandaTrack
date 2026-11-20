@@ -301,7 +301,7 @@ export default function QuickArrivalModal({
       if (!settlementDate) next.settlementDate = t("detail.quickArrival.validation.settlementDateRequired");
       for (const context of manualSettlementContexts) {
         const raw = manualAmounts[context.orderId] ?? "";
-        if (raw.trim() === "" || !isValidNonNegativeDecimal(raw, context.currencyCode)) {
+        if (raw.trim() === "" || !isValidNonNegativeDecimal(raw, context.currencyCode) || parseFloat(raw) <= 0) {
           next[`manualAmount-${context.orderId}`] = t("detail.quickArrival.settlement.validation.amountRequired");
         }
       }
