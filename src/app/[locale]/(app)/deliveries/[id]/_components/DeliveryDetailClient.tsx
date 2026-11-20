@@ -15,6 +15,7 @@ import { domainDateToIsoString } from "@/lib/domainDate";
 import {
   clearPendingSettlement,
   formatSettledTotals,
+  getRemainingPendingSettlement,
   readPendingSettlement,
   writePendingSettlement,
   type PendingSettlementEntry,
@@ -370,10 +371,17 @@ export default function DeliveryDetailClient({
           addToast(t("detail.toast.retryNoLongerPending"), { variant: "neutral" });
           return;
         }
+        const remainingEntry = getRemainingPendingSettlement(pendingEntry, result.outcomes);
+        if (remainingEntry) writePendingSettlement(remainingEntry);
+        else clearPendingSettlement(pendingEntry.deliveryId);
+        setPendingEntry(remainingEntry);
+
+        const settledLabel = formatSettledTotals(result.outcomes, locale);
+        if (settledLabel) {
+          addToast(t("detail.toast.retrySettled", { amount: settledLabel }), { variant: "success" });
+        }
         const refusedOutcome = result.outcomes.find((outcome) => outcome.status === "refused");
         if (refusedOutcome) {
-          clearPendingSettlement(pendingEntry.deliveryId);
-          setPendingEntry(null);
           const key = `error.${refusedOutcome.error}` as const;
           addToast(
             tArrival("settlement.refused", {
@@ -381,21 +389,11 @@ export default function DeliveryDetailClient({
             }),
             { variant: "error" },
           );
-          router.refresh();
-          return;
-        }
-        const stillFailing = result.outcomes.some((outcome) => outcome.status !== "settled");
-        if (stillFailing) {
+        } else if (remainingEntry) {
           addToast(t("detail.toast.retrySettlementError"), { variant: "error" });
-          return;
+        } else if (!settledLabel) {
+          addToast(t("detail.toast.retrySettledPlain"), { variant: "success" });
         }
-        clearPendingSettlement(pendingEntry.deliveryId);
-        setPendingEntry(null);
-        const settledLabel = formatSettledTotals(result.outcomes, locale);
-        addToast(
-          settledLabel ? t("detail.toast.retrySettled", { amount: settledLabel }) : t("detail.toast.retrySettledPlain"),
-          { variant: "success" },
-        );
         router.refresh();
       },
       () => {

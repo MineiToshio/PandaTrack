@@ -22,6 +22,7 @@ import { domainDateToIsoString } from "@/lib/domainDate";
 import {
   clearPendingSettlement,
   formatSettledTotals,
+  getRemainingPendingSettlement,
   writePendingSettlement,
   type PendingSettlementEntry,
 } from "@/lib/deliveries/pendingSettlementStore";
@@ -299,9 +300,16 @@ export default function StoreGroupedView({
             return;
           }
 
+          const remainingEntry = getRemainingPendingSettlement(entry, result.outcomes);
+          if (remainingEntry) writePendingSettlement(remainingEntry);
+          else clearPendingSettlement(deliveryId);
+
+          const settledLabel = formatSettledTotals(result.outcomes, locale);
+          if (settledLabel) {
+            addToast(tArrival("settlement.confirmation", { amount: settledLabel }), { variant: "success" });
+          }
           const refusedOutcome = result.outcomes.find((outcome) => outcome.status === "refused");
           if (refusedOutcome) {
-            clearPendingSettlement(deliveryId);
             const key = `error.${refusedOutcome.error}` as const;
             addToast(
               tArrival("settlement.refused", {
@@ -309,30 +317,18 @@ export default function StoreGroupedView({
               }),
               { variant: "error" },
             );
-            router.refresh();
-            return;
           }
-
-          const stillPending = result.outcomes.some((outcome) => outcome.status === "pending");
-          if (stillPending) {
+          if (remainingEntry) {
             addToast(tArrival("settlement.retryFailed"), {
               variant: "error",
               action: {
                 label: tArrival("settlement.retry"),
-                onClick: () => retryBatchPendingRef.current(deliveryId, entry),
+                onClick: () => retryBatchPendingRef.current(deliveryId, remainingEntry),
               },
             });
-            return;
+          } else if (!refusedOutcome && !settledLabel) {
+            addToast(tArrival("toast.success", { count: 1 }), { variant: "success" });
           }
-
-          clearPendingSettlement(deliveryId);
-          const settledLabel = formatSettledTotals(result.outcomes, locale);
-          addToast(
-            settledLabel
-              ? tArrival("settlement.confirmation", { amount: settledLabel })
-              : tArrival("toast.success", { count: 1 }),
-            { variant: "success" },
-          );
           router.refresh();
         },
         () => {
@@ -433,20 +429,12 @@ export default function StoreGroupedView({
           return;
         }
 
-        // Settlement on arrival (`WO-08`), applied per closed order across the batch: a batch
-        // toast states the SUMMED settled amount in one confirmation. MAJOR F7 (2026-08-20 review):
-        // "refused" is a genuine business refusal, never transient, so it gets a dismissable notice
-        // instead of a persisted Retry entry — only "pending" (the money transaction threw) still
-        // surfaces the `Retry` affordance, and the retry intent is persisted so it survives
-        // navigation.
+        // Settlement outcomes are independent: report committed money and preserve unattempted orders.
         const refusedOutcome = result.moneyOutcomes.find((outcome) => outcome.status === "refused");
         const needsRetry = result.moneyOutcomes.some((outcome) => outcome.status === "pending");
+        const settledLabel = formatSettledTotals(result.moneyOutcomes, locale);
 
-        // The arrival itself is committed on every branch below, refusals of the MONEY step
-        // included, so each of them announces what it credited after raising its own toast. Only
-        // one branch ever runs, so the collector sees the announcement exactly once.
         if (refusedOutcome) {
-          addToast(tArrival("toast.success", { count: result.productCount }), { variant: "success" });
           const key = `error.${refusedOutcome.error}` as const;
           addToast(
             tArrival("settlement.refused", {
@@ -454,11 +442,9 @@ export default function StoreGroupedView({
             }),
             { variant: "error" },
           );
-          announceProgression(result.progression);
-          return;
         }
 
-        if (needsRetry && input.settleRemainder) {
+        if (needsRetry) {
           const entry: PendingSettlementEntry = {
             deliveryId: result.deliveryId,
             settleRemainder: input.settleRemainder,
@@ -471,16 +457,19 @@ export default function StoreGroupedView({
             settlementIntents: input.settlementIntents ?? [],
             createdAt: new Date().toISOString(),
           };
-          writePendingSettlement(entry);
+          const remainingEntry = getRemainingPendingSettlement(entry, result.moneyOutcomes)!;
+          writePendingSettlement(remainingEntry);
           addToast(
-            owedAfter
-              ? tArrival("toast.successStoreLeft", { count: result.productCount, store: storeName, debt: owedAfter })
-              : tArrival("toast.success", { count: result.productCount }),
+            settledLabel
+              ? tArrival("settlement.confirmation", { amount: settledLabel })
+              : owedAfter && !refusedOutcome
+                ? tArrival("toast.successStoreLeft", { count: result.productCount, store: storeName, debt: owedAfter })
+                : tArrival("toast.success", { count: result.productCount }),
             {
               variant: "success",
               action: {
                 label: tArrival("settlement.retry"),
-                onClick: () => retryBatchPending(result.deliveryId, entry),
+                onClick: () => retryBatchPending(result.deliveryId, remainingEntry),
               },
             },
           );
@@ -488,11 +477,10 @@ export default function StoreGroupedView({
           return;
         }
 
-        const settledLabel = formatSettledTotals(result.moneyOutcomes, locale);
         addToast(
           settledLabel
             ? tArrival("settlement.confirmation", { amount: settledLabel })
-            : owedAfter
+            : owedAfter && !refusedOutcome
               ? tArrival("toast.successStoreLeft", { count: result.productCount, store: storeName, debt: owedAfter })
               : tArrival("toast.success", { count: result.productCount }),
           {

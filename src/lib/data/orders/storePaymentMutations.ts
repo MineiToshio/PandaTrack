@@ -1091,7 +1091,8 @@ export type OrderCloseMoneyOutcome =
   | { orderId: string; status: "pending"; consumedMinor: null; settledAmountMinor: null };
 
 // Settlement validation depends on the post-consumption balance. A refusal must roll back
-// that consumption too, so it cannot be returned from inside the transaction.
+// the transaction, so it cannot be returned from inside the callback. Close-time consumption
+// is independently required and is retried alone after the rollback.
 class SettlementRefusalRollback extends Error {
   constructor(readonly error: CreateStorePaymentError) {
     super(error);
@@ -1117,10 +1118,11 @@ class SettlementRefusalRollback extends Error {
  * `Delivery` or `OrderItem.deliveryState`, only `StorePayment` / `PaymentAllocation` / the order's
  * own allocation cache.
  *
- * One `runSerializableTransaction` PER ORDER, not one for the whole batch: each order's consumption
- * and settlement commit (or refuse) together, but one order's outcome never rolls back another's
- * already-committed write. Orders are processed in the sequence the caller passes (`orderDate ASC,
- * humanReadableId ASC` for a store-scoped batch, `FR-08-45`); a store-scoped batch therefore drains
+ * Transactions are scoped per order, not to the whole batch: each order's consumption
+ * and settlement are attempted together. A settlement refusal rolls back that attempt, then a
+ * separate consumption-only transaction preserves the close-time invariant. One order's outcome
+ * never rolls back another's already-committed write. Orders are processed in the sequence the caller
+ * passes (`orderDate ASC, humanReadableId ASC` for a store-scoped batch); a store-scoped batch therefore drains
  * one shared unassigned pool deterministically, one order at a time.
  *
  * On the first refused order, processing STOPS: every following order in `closedOrders` is
@@ -1214,12 +1216,17 @@ export async function runOrderCloseMoneyTransaction(input: {
       }
 
       return { orderId: closedOrder.orderId, status: "settled", consumedMinor, settledAmountMinor: amountMinor };
-    }).catch((error: unknown) => {
+    }).catch(async (error: unknown) => {
       if (error instanceof SettlementRefusalRollback) {
+        const consumedMinor = closedOrder.closed
+          ? await runSerializableTransaction((tx) =>
+              consumeUnassignedStoreMoneyOnOrderClose(tx, userId, closedOrder.orderId, deliveryId),
+            )
+          : 0;
         return {
           orderId: closedOrder.orderId,
           status: "refused",
-          consumedMinor: 0,
+          consumedMinor,
           settledAmountMinor: null,
           error: error.error,
         } satisfies OrderCloseMoneyOutcome;

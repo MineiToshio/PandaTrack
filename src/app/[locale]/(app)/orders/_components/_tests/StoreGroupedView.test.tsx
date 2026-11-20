@@ -1306,6 +1306,115 @@ describe("StoreGroupedView", () => {
       expect(writePendingSettlementMock).not.toHaveBeenCalled();
     });
 
+    it.each([false, true])(
+      "regression: mixed batch preserves only pending intents and confirms settled money (retry=%s)",
+      async (retry) => {
+        const orderIds = ["order-a", "order-b", "order-c"];
+        getSettlementContextActionMock.mockResolvedValue({
+          ok: true,
+          contexts: orderIds.map((orderId) => ({
+            ...SETTLEMENT_CONTEXT,
+            orderId,
+          })),
+        });
+        const mixedOutcomes = [
+          { orderId: "order-a", currencyCode: "PEN", status: "settled", consumedMinor: 0, settledAmountMinor: 5000 },
+          {
+            orderId: "order-b",
+            currencyCode: "PEN",
+            status: "refused",
+            consumedMinor: 0,
+            settledAmountMinor: null,
+            error: "AMOUNT_INVALID",
+          },
+          { orderId: "order-c", currencyCode: "PEN", status: "pending", consumedMinor: null, settledAmountMinor: null },
+        ];
+        storeArrivalActionMock.mockResolvedValue({
+          ok: true,
+          deliveryId: "delivery-1",
+          productCount: 3,
+          orderCount: 3,
+          moneyOutcomes: retry
+            ? orderIds.map((orderId) => ({
+                orderId,
+                currencyCode: "PEN",
+                status: "pending",
+                consumedMinor: null,
+                settledAmountMinor: null,
+              }))
+            : mixedOutcomes,
+        });
+        retrySettlementActionMock.mockResolvedValue({ ok: true, noLongerPending: false, outcomes: mixedOutcomes });
+        renderView({
+          groups: [
+            makeGroup({
+              pendingProducts: orderIds.map((orderId, index) =>
+                makeProduct({
+                  orderId,
+                  itemId: `item-${index}`,
+                  name: `Product ${index}`,
+                }),
+              ),
+            }),
+          ],
+        });
+        for (let index = 0; index < 3; index++) selectProduct(`Product ${index}`);
+        await confirmArrivalSingle();
+        if (retry) fireEvent.click(await screen.findByRole("button", { name: "settlement.retry" }));
+        await waitFor(() => expect(screen.getByText(/^settlement\.refused:/)).toBeInTheDocument());
+        expect(screen.getByText(/^settlement\.confirmation:/)).toBeInTheDocument();
+        expect(clearPendingSettlementMock).not.toHaveBeenCalled();
+        const entry = writePendingSettlementMock.mock.calls.at(-1)?.[0];
+        expect(entry?.settlementIntents).toEqual([{ orderId: "order-c", branchHint: "full" }]);
+        const buttons = screen.getAllByRole("button", { name: "settlement.retry" });
+        fireEvent.click(buttons[buttons.length - 1]);
+        await waitFor(() =>
+          expect(retrySettlementActionMock).toHaveBeenLastCalledWith(
+            expect.objectContaining({
+              settlementIntents: [{ orderId: "order-c", branchHint: "full" }],
+            }),
+          ),
+        );
+      },
+    );
+
+    it("regression: a refused batch retry clears recovery and uses the arrival-preserving refusal notice", async () => {
+      storeArrivalActionMock.mockResolvedValue({
+        ok: true,
+        deliveryId: "delivery-1",
+        productCount: 1,
+        orderCount: 1,
+        moneyOutcomes: [
+          { orderId: "order-1", currencyCode: "PEN", status: "pending", consumedMinor: null, settledAmountMinor: null },
+        ],
+      });
+      retrySettlementActionMock.mockResolvedValue({
+        ok: true,
+        noLongerPending: false,
+        outcomes: [
+          {
+            orderId: "order-1",
+            currencyCode: "PEN",
+            status: "refused",
+            consumedMinor: 0,
+            settledAmountMinor: null,
+            error: "AMOUNT_INVALID",
+          },
+        ],
+      });
+      renderView({ groups: oneStoreOneProduct() });
+      selectProduct("Alpha");
+      await confirmArrivalSingle();
+      fireEvent.click(await screen.findByRole("button", { name: "settlement.retry" }));
+      await waitFor(() =>
+        expect(screen.getByText('settlement.refused:{"reason":"error.AMOUNT_INVALID"}')).toBeInTheDocument(),
+      );
+      expect(clearPendingSettlementMock).toHaveBeenCalledWith("delivery-1");
+      expect(screen.queryByText("error.AMOUNT_INVALID")).not.toBeInTheDocument();
+      expect(screen.queryByText("settlement.retryFailed")).not.toBeInTheDocument();
+      expect(screen.queryByText(/^settlement\.confirmation:/)).not.toBeInTheDocument();
+    });
+
     it("MAJOR F10: the batch retry names the settled total on success", async () => {
       storeArrivalActionMock.mockResolvedValue({
         ok: true,

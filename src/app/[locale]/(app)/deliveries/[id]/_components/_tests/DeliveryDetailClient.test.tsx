@@ -12,6 +12,7 @@ const {
   refreshMock,
   readPendingSettlementMock,
   clearPendingSettlementMock,
+  writePendingSettlementMock,
 } = vi.hoisted(() => ({
   markDeliveredActionMock: vi.fn(),
   reopenDeliveryActionMock: vi.fn(),
@@ -22,6 +23,7 @@ const {
   refreshMock: vi.fn(),
   readPendingSettlementMock: vi.fn(),
   clearPendingSettlementMock: vi.fn(),
+  writePendingSettlementMock: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), refresh: refreshMock }) }));
@@ -56,7 +58,7 @@ vi.mock("@/lib/deliveries/pendingSettlementStore", async () => {
   return {
     ...actual,
     readPendingSettlement: readPendingSettlementMock,
-    writePendingSettlement: vi.fn(),
+    writePendingSettlement: writePendingSettlementMock,
     clearPendingSettlement: clearPendingSettlementMock,
   };
 });
@@ -313,6 +315,53 @@ describe("DeliveryDetailClient reopen (WO-08 two-amount copy + Retry affordance)
     );
     expect(clearPendingSettlementMock).toHaveBeenCalledWith("delivery-1");
     expect(screen.queryByText("detail.settlement.pendingNotice")).not.toBeInTheDocument();
+  });
+
+  it("regression: mixed retry confirms settled money and retains only the unattempted order", async () => {
+    const entry = {
+      deliveryId: "delivery-1",
+      settleRemainder: true,
+      settlementDate: "2026-05-02",
+      settlementIntents: ["order-a", "order-b", "order-c"].map((orderId) => ({ orderId, branchHint: "full" })),
+      createdAt: "2026-05-02T10:00:00.000Z",
+    };
+    readPendingSettlementMock.mockReturnValue(entry);
+    retrySettlementActionMock.mockResolvedValue({
+      ok: true,
+      noLongerPending: false,
+      outcomes: [
+        { orderId: "order-a", currencyCode: "USD", status: "settled", consumedMinor: 0, settledAmountMinor: 5000 },
+        {
+          orderId: "order-b",
+          currencyCode: "USD",
+          status: "refused",
+          consumedMinor: 0,
+          settledAmountMinor: null,
+          error: "AMOUNT_INVALID",
+        },
+        { orderId: "order-c", currencyCode: "USD", status: "pending", consumedMinor: null, settledAmountMinor: null },
+      ],
+    });
+    renderClient();
+    await userEvent.click(screen.getByRole("button", { name: "detail.settlement.retry" }));
+    await waitFor(() =>
+      expect(addToastMock).toHaveBeenCalledWith(expect.stringContaining("settlement.refused"), { variant: "error" }),
+    );
+    expect(addToastMock).toHaveBeenCalledWith(expect.stringContaining("detail.toast.retrySettled|"), {
+      variant: "success",
+    });
+    expect(clearPendingSettlementMock).not.toHaveBeenCalled();
+    expect(writePendingSettlementMock).toHaveBeenLastCalledWith({
+      ...entry,
+      settlementIntents: [{ orderId: "order-c", branchHint: "full" }],
+    });
+    expect(screen.getByText("detail.settlement.pendingNotice")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "detail.settlement.retry" }));
+    expect(retrySettlementActionMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        settlementIntents: [{ orderId: "order-c", branchHint: "full" }],
+      }),
+    );
   });
 
   it("does not show the Retry banner when nothing is pending", () => {

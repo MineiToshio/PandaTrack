@@ -756,7 +756,7 @@
         "appliedUnassigned": "{amount} de este pago ya estaba pagado a la tienda.",
         "unassignedNotice": "En {store} tienes {amount} pagados sin asignar.",
         "confirmation": "Llegada anotada y {amount} registrados como pago.",
-        "refused": "Llegada anotada. El pago del resto no se registró: {reason}",
+        "refused": "Llegada anotada. No se pudo registrar el pago de un pedido: {reason}",
         "loading": "Calculando el pago…",
         "retry": "Reintentar",
         "retryFailed": "No se pudo registrar el pago. Reintenta.",
