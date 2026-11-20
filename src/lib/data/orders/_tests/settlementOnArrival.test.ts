@@ -602,50 +602,74 @@ describe("createStorePaymentInTx / createStorePayment write path for a resolved 
 });
 
 describe("runOrderCloseMoneyTransaction", () => {
-  it("settlement refusal rejects the transaction callback after consumption instead of committing it", async () => {
-    const fixture = makeOrderCloseMoneyTx({
-      orders: [fullyDeliveredOrder()],
-      payments: [
-        {
-          id: "pool",
-          storeId: "store-1",
-          currencyCode: "USD",
-          amount: 2000,
-          paymentDate: new Date("2019-01-01"),
-          allocations: [],
-        },
-      ],
-    });
-    const rejected = vi.fn();
-    prismaMock.$transaction.mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) => {
-      try {
-        return await callback(fixture);
-      } catch (error) {
-        rejected(error);
-        throw error;
-      }
-    });
-    const outcomes = await runOrderCloseMoneyTransaction({
-      userId: "user-1",
-      deliveryId: "delivery-1",
-      closedOrders: [
-        {
-          orderId: "order-1",
-          closed: true,
-          settlement: {
-            enabled: true,
-            deliveredItemIds: ["item-1"],
-            settlementDate: new Date("2018-01-01"),
+  it.each(["DATE_BEFORE_ORDER", "STORE_DEBT_EXCEEDED", "AMOUNT_FRACTIONAL_SUBUNITS"])(
+    "regression: refused settlement %s rolls back then commits close-time consumption separately",
+    async (errorCode) => {
+      const fixture = makeOrderCloseMoneyTx({
+        orders: [
+          fullyDeliveredOrder({
+            currencyCode: errorCode === "AMOUNT_FRACTIONAL_SUBUNITS" ? "JPY" : "USD",
+            totalCost: errorCode === "AMOUNT_FRACTIONAL_SUBUNITS" ? 10050 : 10000,
+          }),
+        ],
+        payments: [
+          {
+            id: "pool",
+            storeId: "store-1",
+            currencyCode: errorCode === "AMOUNT_FRACTIONAL_SUBUNITS" ? "JPY" : "USD",
+            amount: 2000,
+            paymentDate: new Date("2019-01-01"),
+            allocations: [],
           },
-        },
-      ],
-    });
-    expect(rejected).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ name: "SettlementRefusalRollback" }));
-    expect(outcomes).toEqual([
-      { orderId: "order-1", status: "refused", consumedMinor: 0, settledAmountMinor: null, error: "DATE_BEFORE_ORDER" },
-    ]);
-    expect(fixture.storePayment.create).not.toHaveBeenCalled();
-  });
+        ],
+      });
+      if (errorCode === "STORE_DEBT_EXCEEDED") {
+        fixture.order.aggregate.mockResolvedValue({ _sum: { totalCost: 9000 } });
+      }
+      const rejected = vi.fn();
+      const committed = vi.fn();
+      prismaMock.$transaction.mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) => {
+        const ordersBefore = structuredClone(fixture.__state.ordersById);
+        const paymentsBefore = structuredClone(fixture.__state.paymentRows);
+        try {
+          const result = await callback(fixture);
+          committed(result);
+          return result;
+        } catch (error) {
+          fixture.__state.ordersById.clear();
+          for (const [id, order] of ordersBefore) fixture.__state.ordersById.set(id, order);
+          fixture.__state.paymentRows.splice(0, fixture.__state.paymentRows.length, ...paymentsBefore);
+          rejected(error);
+          throw error;
+        }
+      });
+      const outcomes = await runOrderCloseMoneyTransaction({
+        userId: "user-1",
+        deliveryId: "delivery-1",
+        closedOrders: [
+          {
+            orderId: "order-1",
+            closed: true,
+            settlement: {
+              enabled: true,
+              deliveredItemIds: ["item-1"],
+              settlementDate: new Date(errorCode === "DATE_BEFORE_ORDER" ? "2018-01-01" : "2026-01-01"),
+            },
+          },
+        ],
+      });
+      expect(rejected).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ name: "SettlementRefusalRollback" }));
+      expect(outcomes).toEqual([
+        { orderId: "order-1", status: "refused", consumedMinor: 2000, settledAmountMinor: null, error: errorCode },
+      ]);
+      expect(committed).toHaveBeenCalledExactlyOnceWith(2000);
+      expect(fixture.storePayment.create).not.toHaveBeenCalled();
+      expect(fixture.__state.ordersById.get("order-1")?.allocatedAmountMinor).toBe(2000);
+      expect(fixture.__state.paymentRows[0].allocations).toEqual([
+        expect.objectContaining({ orderId: "order-1", amountMinor: 2000 }),
+      ]);
+    },
+  );
 
   it.each([false, true])(
     "zero settlement: paid delivered items do not create zero payments or allocations (mixed=%s)",

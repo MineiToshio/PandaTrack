@@ -756,7 +756,7 @@
         "appliedUnassigned": "{amount} of this payment was already paid to the store.",
         "unassignedNotice": "{store} holds {amount} already paid and not assigned.",
         "confirmation": "Arrival recorded, and {amount} logged as a payment.",
-        "refused": "Arrival recorded. The remaining payment was not recorded: {reason}",
+        "refused": "Arrival recorded. Payment for one order could not be recorded: {reason}",
         "loading": "Calculating the payment…",
         "retry": "Retry",
         "retryFailed": "The payment could not be recorded. Retry.",

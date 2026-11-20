@@ -35,7 +35,7 @@ type BuildOrderInputsParams = {
 /**
  * Builds one batch of {@link ClosedOrderInput}s, all sharing the same `closed` value. Shared by
  * {@link buildClosedOrderInputs} and {@link buildOpenOrderSettlementInputs} so the "settlement
- * enabled only when the checkbox was checked, deliveredItemIds always the full submitted selection"
+ * enabled only for explicit intents with the checkbox checked, deliveredItemIds always the full selection"
  * rule lives in exactly one place regardless of which branch (full close or partial-still-open) an
  * order falls into.
  *
@@ -44,23 +44,20 @@ type BuildOrderInputsParams = {
  * same batch is simply ignored rather than mis-attributed.
  */
 function buildOrderInputs(orderIds: string[], closed: boolean, params: BuildOrderInputsParams): ClosedOrderInput[] {
-  const manualByOrderId = new Map(
-    (params.settlementIntents ?? [])
-      .filter((intent) => intent.manualAmountMinor !== undefined)
-      .map((intent) => [intent.orderId, intent.manualAmountMinor as number]),
-  );
+  const intentByOrderId = new Map((params.settlementIntents ?? []).map((intent) => [intent.orderId, intent]));
 
   return orderIds.map((orderId) => ({
     orderId,
     closed,
-    settlement: params.settleRemainder
-      ? {
-          enabled: true,
-          deliveredItemIds: params.submittedProductIds,
-          settlementDate: params.settlementDate,
-          manualAmountMinor: manualByOrderId.get(orderId),
-        }
-      : undefined,
+    settlement:
+      params.settleRemainder && intentByOrderId.has(orderId)
+        ? {
+            enabled: true,
+            deliveredItemIds: params.submittedProductIds,
+            settlementDate: params.settlementDate,
+            manualAmountMinor: intentByOrderId.get(orderId)?.manualAmountMinor,
+          }
+        : undefined,
   }));
 }
 

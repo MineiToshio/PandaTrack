@@ -101,6 +101,24 @@ export function writePendingSettlement(entry: PendingSettlementEntry): void {
   }
 }
 
+/** Selects only unattempted orders so a business refusal cannot block the next retry. */
+export function getRemainingPendingSettlement(
+  entry: PendingSettlementEntry,
+  outcomes: { orderId: string; status: string }[],
+): PendingSettlementEntry | null {
+  const pendingIds = new Set(
+    outcomes.filter((outcome) => outcome.status === "pending").map((outcome) => outcome.orderId),
+  );
+  if (pendingIds.size === 0) {
+    return null;
+  }
+  const remaining = {
+    ...entry,
+    settlementIntents: entry.settlementIntents.filter((intent) => pendingIds.has(intent.orderId)),
+  };
+  return remaining;
+}
+
 /** Clears the pending entry once its money transaction has succeeded or is confirmed moot. */
 export function clearPendingSettlement(deliveryId: string): void {
   if (!isBrowser()) return;

@@ -73,6 +73,7 @@ function buildInput(overrides: Partial<StoreArrivalActionInput> = {}): StoreArri
     currencyCode: "USD",
     exchangeRate: null,
     settleRemainder: true,
+    settlementIntents: [{ orderId: ORDER_A_SNAPSHOT.orderId }, { orderId: ORDER_B_SNAPSHOT.orderId }],
     ...overrides,
   };
 }
@@ -427,7 +428,11 @@ describe("storeArrivalAction", () => {
         { orderId: ORDER_C_ID, status: "settled", consumedMinor: 0, settledAmountMinor: 700 },
       ]);
 
-      await storeArrivalAction(buildInput());
+      await storeArrivalAction(
+        buildInput({
+          settlementIntents: [{ orderId: ORDER_A_SNAPSHOT.orderId }, { orderId: ORDER_C_ID }],
+        }),
+      );
 
       expect(runOrderCloseMoneyTransactionMock).toHaveBeenCalledWith({
         userId: "user-1",
