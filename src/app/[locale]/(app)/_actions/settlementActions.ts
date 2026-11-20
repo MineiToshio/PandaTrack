@@ -1,5 +1,6 @@
 "use server";
 
+import { compareSettlementOrders } from "@/lib/deliveries/settlementOrder";
 import * as Sentry from "@sentry/nextjs";
 import { getSession } from "@/lib/auth/auth-server";
 import { getPostHogClient } from "@/lib/analytics/posthog-server";
@@ -107,11 +108,8 @@ export async function getSettlementContextAction(input: {
     // The write path consumes closed orders first, oldest first, with the readable id breaking ties.
     const orderedRequests = requestedOrders
       .filter((entry) => entry !== null)
-      .sort(
-        (a, b) =>
-          Number(b.closesOrder) - Number(a.closesOrder) ||
-          a.order.orderDate.getTime() - b.order.orderDate.getTime() ||
-          a.order.humanReadableId.localeCompare(b.order.humanReadableId),
+      .sort((a, b) =>
+        compareSettlementOrders({ ...a.order, closesOrder: a.closesOrder }, { ...b.order, closesOrder: b.closesOrder }),
       );
     const remainingPoolByKey = new Map<string, number>();
     for (const { order, orderId, deliveredIdSet, closesOrder } of orderedRequests) {
@@ -264,12 +262,16 @@ export async function retrySettlementAction(input: {
     const currencyByOrderId = new Map<string, string>();
     const closedOrderIds: string[] = [];
     const openOrderIds: string[] = [];
+    const sourceOrders = [];
     for (const group of delivery.sourceOrders) {
       const order = await getOrderDetail(group.orderId, userId);
       if (!order) continue;
       currencyByOrderId.set(group.orderId, order.currencyCode);
-      if (order.status === "COMPLETED") closedOrderIds.push(group.orderId);
-      else openOrderIds.push(group.orderId);
+      sourceOrders.push({ ...order, orderId: group.orderId, closesOrder: order.status === "COMPLETED" });
+    }
+    for (const order of sourceOrders.sort(compareSettlementOrders)) {
+      if (order.closesOrder) closedOrderIds.push(order.orderId);
+      else openOrderIds.push(order.orderId);
     }
 
     if (closedOrderIds.length === 0 && openOrderIds.length === 0) {

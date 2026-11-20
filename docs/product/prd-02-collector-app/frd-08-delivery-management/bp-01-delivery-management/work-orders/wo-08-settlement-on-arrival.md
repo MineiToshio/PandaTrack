@@ -27,10 +27,10 @@ payment are two separate transactions, not one, because delivery must never bloc
 
 - Fully allocated delivered products contribute neither a settlement amount nor a zero allocation line, even when other products keep the order balance open. A mixed selection writes only the positive remaining product lines.
 - A capped computed remainder of zero resolves to `nothingToSettle`; the preview hides its settlement block and defaults unchecked. This includes a complete arrival whose balance is fully covered by automatic consumption of unassigned money.
-- The money transaction treats a computed zero as `settled` with `settledAmountMinor: null` and creates no `StorePayment`. Manual zero inputs still follow amount validation.
+- The money transaction treats a computed zero as `settled` with `settledAmountMinor: null` and creates no `StorePayment`. Manual inputs must be strictly positive; the client rejects zero with the existing amount-validation message before submission, and the server independently enforces the same rule.
 - Arrival success remains visible when settlement is refused: preserve optimistic arrival state, confirm any payments already recorded, and separately explain that one order's payment was refused, with its localized reason. Apply the same contextual refusal notice to retries, including delivery detail. Remove rejected and settled orders from persisted settlement intents, but retain every pending (unattempted) order and its retry recovery, including consumption-only recovery. A mixed batch must confirm the settled amount and show the refusal while keeping Retry for the pending orders.
-- Refusals discovered after automatic consumption throw a typed rollback error inside the money transaction and map to the public outcome outside it. After that rollback, a closed order runs a second Serializable transaction that only consumes unassigned money. The refused outcome reports the amount actually committed by this second transaction. The rejected settlement leaves no partial write; the independent arrival and mandatory close-time consumption remain recorded. If the separate consumption transaction fails, recovery remains pending.
-- Batch previews drain a separate simulated pool per store and currency, processing closed orders in `orderDate ASC, humanReadableId ASC`, as the server does. Only positive remainders are shown: with a 10000 pool, balances 10000 + 10000 show only the second 10000; balances 10000 + 8000 + 30000 show 8000 and 30000. Settlement requires both the checked checkbox and an explicit per-order client intent; hidden or unselected orders never gain settlement implicitly. Closed orders still consume the pool without a settlement intent.
+- Refusals discovered after automatic consumption throw a typed rollback error inside the money transaction and map to the public outcome outside it. After that rollback, a closed order runs a second Serializable transaction that only consumes unassigned money. The refused outcome reports the amount actually committed by this second transaction. The rejected settlement leaves no partial write; the independent arrival and mandatory close-time consumption remain recorded. This also applies to a rollback while declaring delivered items paid. If either the initial money transaction or the separate consumption transaction fails with an infrastructure error, report it once to Sentry, keep earlier committed outcomes settled, mark only the failing order and all following orders pending, and stop the batch. Persisted retry intents exclude earlier settled orders, including their typed amounts.
+- Batch previews drain a separate simulated pool per store and currency, processing closed orders first, then `orderDate ASC, humanReadableId ASC`. One shared comparator governs the write snapshots, preview, and retry; delivery item positions must not decide settlement order. Only positive remainders are shown: with a 10000 pool, balances 10000 + 10000 show only the second 10000; balances 10000 + 8000 + 30000 show 8000 and 30000. Settlement requires both the checked checkbox and an explicit per-order client intent; hidden or unselected orders never gain settlement implicitly. Closed orders still consume the pool without a settlement intent.
 - Regression verification covers a 15000 order with delivered product 5000 already allocated and undelivered product 10000, plus a mixed selection adding an unpaid delivered product of 3000. Only that last product may receive the new 3000 payment allocation.
 
 ## Prerequisites
@@ -274,12 +274,11 @@ money transaction's own refusals, for both its consumption half and its settleme
 its own writes. The two transactions are not atomic with each other by design (`FR-08-42`); that gap is
 exactly what the `Retry` affordance exists to cover.
 
-`runOrderCloseMoneyTransaction` reports a refused settlement (status `"refused"`) AFTER its consumption half
-has already written, and this is deliberate rather than a violation of the rule above: `FR-08-46` orders the
-consumption before the settlement inside the same per-order transaction, and a settlement refusal is
-returned, not thrown, so per `ADR 0022` that `return` commits the transaction with the consumption's write
-intact. The refusal is surfaced per order with `consumedMinor` reported alongside it, never silently, so the
-caller can tell the two halves apart instead of assuming the whole order's money transaction rolled back.
+`runOrderCloseMoneyTransaction` throws a typed sentinel when a settlement refusal follows consumption,
+rolling back the complete per-order attempt. Outside that transaction, a closed order runs consumption
+alone in a separate Serializable transaction. Only after that commit does the function report `refused`
+with the committed `consumedMinor`. An infrastructure failure in either transaction reports this order
+and the remaining batch as `pending`, while preserving every earlier committed outcome as `settled`.
 
 ## Technical Notes
 

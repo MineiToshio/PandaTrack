@@ -326,6 +326,34 @@ describe("getSettlementContextAction", () => {
 });
 
 describe("retrySettlementAction", () => {
+  it("regression: retries same-date orders by readable id despite reversed item positions", async () => {
+    const secondId = "clh4444444444abcdefghijk";
+    getDeliveryDetailMock.mockResolvedValue({
+      status: "DELIVERED",
+      sourceOrders: [
+        { orderId: secondId, items: [{ id: ITEM_ID_2 }] },
+        { orderId: ORDER_ID, items: [{ id: ITEM_ID }] },
+      ],
+    });
+    getOrderDetailMock.mockImplementation(async (id: string) => ({
+      ...orderDetailFixture(),
+      id,
+      status: "COMPLETED",
+      humanReadableId: id === ORDER_ID ? "ORD-001" : "ORD-002",
+    }));
+    runOrderCloseMoneyTransactionMock.mockResolvedValue([]);
+    await retrySettlementAction({
+      deliveryId: DELIVERY_ID,
+      settleRemainder: true,
+      settlementDate: new Date("2026-05-01"),
+    });
+    expect(
+      runOrderCloseMoneyTransactionMock.mock.calls[0][0].closedOrders.map(
+        (order: { orderId: string }) => order.orderId,
+      ),
+    ).toEqual([ORDER_ID, secondId]);
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     getSessionMock.mockResolvedValue(AUTHENTICATED_SESSION);
