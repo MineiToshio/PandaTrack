@@ -3,6 +3,8 @@ import { join } from "node:path";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ComponentProps, ReactNode } from "react";
+import CreateOrderFab from "@/components/modules/CreateOrderFab/CreateOrderFab";
+import { FabVisibilityProvider } from "@/components/modules/CreateOrderFab/FabVisibilityContext";
 import { ToastProvider } from "@/contexts/ToastContext";
 import type { PendingProductRow, PendingProductsByStoreGroup } from "@/lib/data/orders/pendingProductsByStoreQueries";
 import { formatAmountSymbolOnly, formatAmountWithSymbol } from "@/lib/currency";
@@ -24,8 +26,12 @@ vi.mock("@/components/core/ViewTransitionLink", () => ({
   default: ({ children, ...props }: { children?: ReactNode }) => <a {...props}>{children}</a>,
 }));
 vi.mock("@/components/core/StoreAvatar", () => ({ default: () => <span data-testid="store-avatar" /> }));
+vi.mock("@/components/modules/OrderCreateMethodSelector/OrderCreateMethodSelector", () => ({ default: () => null }));
 vi.mock("posthog-js", () => ({ default: { capture: vi.fn() } }));
-vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }) }));
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/es/orders",
+  useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
+}));
 vi.mock("../../_actions/orderItemActions", () => ({
   setOrderItemArrivedAction: vi.fn().mockResolvedValue({ ok: true }),
 }));
@@ -112,20 +118,32 @@ function renderView(
   props: Partial<ComponentProps<typeof StoreGroupedView>> & {
     groups: PendingProductsByStoreGroup[];
     startExpanded?: boolean;
+    renderFab?: boolean;
   },
 ) {
-  const { startExpanded = true, ...componentProps } = props;
+  const { startExpanded = true, renderFab = false, ...componentProps } = props;
+  const view = (
+    <StoreGroupedView
+      locale="es"
+      returnTo="/es/orders?view=store"
+      baseCurrencyCode="PEN"
+      storeSort="arrival-asc"
+      today={utcMidnightToday()}
+      {...componentProps}
+    />
+  );
   const result = render(
     <ToastProvider>
-      <StoreGroupedView
-        locale="es"
-        returnTo="/es/orders?view=store"
-        baseCurrencyCode="PEN"
-        storeSort="arrival-asc"
-        today={utcMidnightToday()}
-        {...componentProps}
-      />
+      {renderFab ? (
+        <>
+          <CreateOrderFab locale="es" />
+          {view}
+        </>
+      ) : (
+        view
+      )}
     </ToastProvider>,
+    { wrapper: FabVisibilityProvider },
   );
   if (startExpanded) expandAllGroups();
   return result;
@@ -592,6 +610,74 @@ describe("StoreGroupedView", () => {
       expect(tile("One Piece Vol. 1")).toBeInstanceOf(HTMLInputElement);
       expect(tile("One Piece Vol. 1").type).toBe("checkbox");
       expect(screen.queryByRole("checkbox", { name: tileName("Shipped") })).not.toBeInTheDocument();
+    });
+
+    it("replaces the FAB throughout selection mode, including an empty selection, and restores it on exit", () => {
+      renderView({ groups: [makeGroup()], renderFab: true });
+      const fab = () => screen.queryByRole("button", { name: "fabLabel" });
+      expect(fab()).toBeInTheDocument();
+      fireEvent.click(screen.getByRole("button", { name: "storeView.selection.enter" }));
+      expect(fab()).not.toBeInTheDocument();
+      selectProduct("One Piece Vol. 1");
+      expect(screen.getByRole("toolbar")).toBeInTheDocument();
+      expect(fab()).not.toBeInTheDocument();
+      selectProduct("One Piece Vol. 1");
+      expect(screen.queryByRole("toolbar")).not.toBeInTheDocument();
+      expect(fab()).not.toBeInTheDocument();
+      fireEvent.click(screen.getByRole("button", { name: "storeView.selection.exit" }));
+      expect(fab()).toBeInTheDocument();
+      selectProduct("One Piece Vol. 1");
+      fireEvent.click(screen.getByRole("button", { name: "storeView.selection.clear" }));
+      expect(fab()).toBeInTheDocument();
+    });
+
+    it("floats on an opaque elevated surface, clears the safe area and reserves its measured height only while visible", () => {
+      const { container } = renderView({ groups: [makeGroup()] });
+      const list = container.firstElementChild as HTMLElement;
+      expect(list.className).not.toContain("--selection-bar-height");
+      let measure: (() => void) | undefined;
+      const disconnect = vi.fn();
+      vi.stubGlobal(
+        "ResizeObserver",
+        class {
+          constructor(callback: () => void) {
+            measure = callback;
+          }
+          observe = vi.fn();
+          disconnect = disconnect;
+        },
+      );
+      const bounds = vi
+        .spyOn(HTMLElement.prototype, "getBoundingClientRect")
+        .mockReturnValue({ height: 96 } as DOMRect);
+      try {
+        selectProduct("One Piece Vol. 1");
+        const toolbar = screen.getByRole("toolbar");
+        expect(toolbar).toHaveClass(
+          "[background:var(--surface-elevated)]",
+          "[box-shadow:var(--elevation-2)]",
+          "[border:1px_solid_var(--border-strong)]",
+        );
+        expect(toolbar).toHaveClass(
+          "fixed",
+          "lg:sticky",
+          "bottom-[calc(env(safe-area-inset-bottom,0px)+var(--fab-offset))]",
+        );
+        expect(list).toHaveClass(
+          "max-lg:pb-[calc(var(--selection-bar-height)+var(--fab-offset)+env(safe-area-inset-bottom,0px))]",
+        );
+        expect(list.style.getPropertyValue("--selection-bar-height")).toBe("96px");
+        bounds.mockReturnValue({ height: 140 } as DOMRect);
+        act(() => measure?.());
+        expect(list.style.getPropertyValue("--selection-bar-height")).toBe("140px");
+        expect(screen.getByRole("status")).toHaveTextContent("storeView.selection.liveStatus");
+        fireEvent.click(screen.getByRole("button", { name: "storeView.selection.clear" }));
+        expect(list.className).not.toContain("--selection-bar-height");
+        expect(disconnect).toHaveBeenCalled();
+      } finally {
+        bounds.mockRestore();
+        vi.unstubAllGlobals();
+      }
     });
 
     it("mounts the action bar only once something is marked, and names the count", () => {
@@ -1212,8 +1298,121 @@ describe("StoreGroupedView", () => {
       selectProduct("Alpha");
       await confirmArrivalSingle();
 
-      await waitFor(() => expect(screen.getByText("error.AMOUNT_INVALID")).toBeInTheDocument());
+      await waitFor(() =>
+        expect(screen.getByText('settlement.refused:{"reason":"error.AMOUNT_INVALID"}')).toBeInTheDocument(),
+      );
+      expect(screen.getAllByText('toast.success:{"count":1}').length).toBeGreaterThan(0);
+      expect(screen.queryByText("error.AMOUNT_INVALID")).not.toBeInTheDocument();
       expect(writePendingSettlementMock).not.toHaveBeenCalled();
+    });
+
+    it.each([false, true])(
+      "regression: mixed batch preserves only pending intents and confirms settled money (retry=%s)",
+      async (retry) => {
+        const orderIds = ["order-a", "order-b", "order-c"];
+        getSettlementContextActionMock.mockResolvedValue({
+          ok: true,
+          contexts: orderIds.map((orderId) => ({
+            ...SETTLEMENT_CONTEXT,
+            orderId,
+          })),
+        });
+        const mixedOutcomes = [
+          { orderId: "order-a", currencyCode: "PEN", status: "settled", consumedMinor: 0, settledAmountMinor: 5000 },
+          {
+            orderId: "order-b",
+            currencyCode: "PEN",
+            status: "refused",
+            consumedMinor: 0,
+            settledAmountMinor: null,
+            error: "AMOUNT_INVALID",
+          },
+          { orderId: "order-c", currencyCode: "PEN", status: "pending", consumedMinor: null, settledAmountMinor: null },
+        ];
+        storeArrivalActionMock.mockResolvedValue({
+          ok: true,
+          deliveryId: "delivery-1",
+          productCount: 3,
+          orderCount: 3,
+          moneyOutcomes: retry
+            ? orderIds.map((orderId) => ({
+                orderId,
+                currencyCode: "PEN",
+                status: "pending",
+                consumedMinor: null,
+                settledAmountMinor: null,
+              }))
+            : mixedOutcomes,
+        });
+        retrySettlementActionMock.mockResolvedValue({ ok: true, noLongerPending: false, outcomes: mixedOutcomes });
+        renderView({
+          groups: [
+            makeGroup({
+              pendingProducts: orderIds.map((orderId, index) =>
+                makeProduct({
+                  orderId,
+                  itemId: `item-${index}`,
+                  name: `Product ${index}`,
+                }),
+              ),
+            }),
+          ],
+        });
+        for (let index = 0; index < 3; index++) selectProduct(`Product ${index}`);
+        await confirmArrivalSingle();
+        if (retry) fireEvent.click(await screen.findByRole("button", { name: "settlement.retry" }));
+        await waitFor(() => expect(screen.getByText(/^settlement\.refused:/)).toBeInTheDocument());
+        expect(screen.getByText(/^settlement\.confirmation:/)).toBeInTheDocument();
+        expect(clearPendingSettlementMock).not.toHaveBeenCalled();
+        const entry = writePendingSettlementMock.mock.calls.at(-1)?.[0];
+        expect(entry?.settlementIntents).toEqual([{ orderId: "order-c", branchHint: "full" }]);
+        const buttons = screen.getAllByRole("button", { name: "settlement.retry" });
+        fireEvent.click(buttons[buttons.length - 1]);
+        await waitFor(() =>
+          expect(retrySettlementActionMock).toHaveBeenLastCalledWith(
+            expect.objectContaining({
+              settlementIntents: [{ orderId: "order-c", branchHint: "full" }],
+            }),
+          ),
+        );
+      },
+    );
+
+    it("regression: a refused batch retry clears recovery and uses the arrival-preserving refusal notice", async () => {
+      storeArrivalActionMock.mockResolvedValue({
+        ok: true,
+        deliveryId: "delivery-1",
+        productCount: 1,
+        orderCount: 1,
+        moneyOutcomes: [
+          { orderId: "order-1", currencyCode: "PEN", status: "pending", consumedMinor: null, settledAmountMinor: null },
+        ],
+      });
+      retrySettlementActionMock.mockResolvedValue({
+        ok: true,
+        noLongerPending: false,
+        outcomes: [
+          {
+            orderId: "order-1",
+            currencyCode: "PEN",
+            status: "refused",
+            consumedMinor: 0,
+            settledAmountMinor: null,
+            error: "AMOUNT_INVALID",
+          },
+        ],
+      });
+      renderView({ groups: oneStoreOneProduct() });
+      selectProduct("Alpha");
+      await confirmArrivalSingle();
+      fireEvent.click(await screen.findByRole("button", { name: "settlement.retry" }));
+      await waitFor(() =>
+        expect(screen.getByText('settlement.refused:{"reason":"error.AMOUNT_INVALID"}')).toBeInTheDocument(),
+      );
+      expect(clearPendingSettlementMock).toHaveBeenCalledWith("delivery-1");
+      expect(screen.queryByText("error.AMOUNT_INVALID")).not.toBeInTheDocument();
+      expect(screen.queryByText("settlement.retryFailed")).not.toBeInTheDocument();
+      expect(screen.queryByText(/^settlement\.confirmation:/)).not.toBeInTheDocument();
     });
 
     it("MAJOR F10: the batch retry names the settled total on success", async () => {

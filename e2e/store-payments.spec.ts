@@ -119,7 +119,7 @@ async function createFixtureOrder(page: Page) {
     .getByLabel(/^unit price$/i)
     .first()
     .fill("60.00");
-  await page.getByRole("button", { name: /^add item$/i }).click();
+  await page.getByRole("button", { name: /^add (item|product)$/i }).click();
   await page
     .getByLabel(/^name$/i)
     .nth(1)

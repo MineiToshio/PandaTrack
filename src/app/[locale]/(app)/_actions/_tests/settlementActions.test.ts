@@ -52,6 +52,8 @@ vi.mock("@sentry/nextjs", () => ({
 
 import { getSettlementContextAction, retrySettlementAction, undoReopenAction } from "../settlementActions";
 
+import { buildClosedOrderInputs, buildOpenOrderSettlementInputs } from "../settlementActionHelpers";
+
 const AUTHENTICATED_SESSION = { user: { id: "user-1" } };
 const ORDER_ID = "clh1234567890abcdefghijk";
 const ITEM_ID = "clh0000000000abcdefghijk";
@@ -61,6 +63,8 @@ const DELIVERY_ID = "clh2222222222abcdefghijk";
 function orderDetailFixture(overrides: Record<string, unknown> = {}) {
   return {
     id: ORDER_ID,
+    orderDate: new Date("2026-01-01"),
+    humanReadableId: "ORD-001",
     storeId: "store-1",
     currencyCode: "USD",
     status: "OPEN",
@@ -82,6 +86,91 @@ describe("getSettlementContextAction", () => {
     // itself) keeps exercising the same gross figure it always has. The one test that cares sets
     // this explicitly.
     getOpenBalanceMinorByOrderIdsMock.mockResolvedValue(new Map());
+  });
+
+  it.each([
+    [10000, 10000],
+    [10000, 8000, 30000],
+  ])("regression: batch preview drains the shared pool once in server order (%j)", async (...balances: number[]) => {
+    const ids = [ORDER_ID, "clh3333333333abcdefghijk", "clh4444444444abcdefghijk"];
+    const orders = balances.map((balance, index) =>
+      orderDetailFixture({
+        id: ids[index],
+        currencyCode: "PEN",
+        totalCost: balance,
+        remainingAmount: balance,
+        orderDate: new Date(index < 2 ? "2026-01-01" : "2026-01-02"),
+        humanReadableId: `ORD-${index + 1}`,
+      }),
+    );
+    getOrderDetailMock.mockImplementation(async (id: string) => orders.find((order) => order.id === id));
+    getStoreDebtByCurrencyMock.mockResolvedValue([{ currencyCode: "PEN", unassignedMinor: 10000 }]);
+    const result = await getSettlementContextAction({
+      orders: orders.toReversed().map((order) => ({ orderId: order.id, deliveredItemIds: [ITEM_ID] })),
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("Expected preview");
+    expect(result.contexts.map((context) => ({ orderId: context.orderId, plan: context.plan }))).toEqual(
+      orders.map((order, index) => ({
+        orderId: order.id,
+        plan:
+          index === 0
+            ? { kind: "nothingToSettle" }
+            : {
+                kind: "computedFull",
+                amountMinor: balances[index],
+                appliedUnassignedMinor: 0,
+              },
+      })),
+    );
+    expect(getStoreDebtByCurrencyMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("regression: settlement is enabled only for submitted intents, including computed orders", () => {
+    const params = {
+      submittedProductIds: [ITEM_ID],
+      settleRemainder: true,
+      settlementDate: new Date("2026-05-01"),
+      settlementIntents: [{ orderId: "order-c", branchHint: "full" as const }],
+    };
+    const inputs = buildClosedOrderInputs(["order-a", "order-b", "order-c"], params);
+    expect(inputs.map((input) => input.settlement?.enabled ?? false)).toEqual([false, false, true]);
+    expect(
+      buildClosedOrderInputs(["order-a"], { ...params, settlementIntents: undefined })[0].settlement,
+    ).toBeUndefined();
+    expect(
+      buildOpenOrderSettlementInputs(["order-b", "order-c"], params)
+        .filter((input) => input.settlement?.enabled)
+        .map((input) => input.orderId),
+    ).toEqual(["order-c"]);
+  });
+
+  it("zero settlement: hides a partial settlement when delivered items are already fully allocated", async () => {
+    getOrderDetailMock.mockResolvedValue(
+      orderDetailFixture({
+        totalCost: 15000,
+        remainingAmount: 10000,
+        items: [
+          { id: ITEM_ID, unitPrice: 5000, quantity: 1, allocatedMinor: 5000, deliveryState: "open" },
+          { id: ITEM_ID_2, unitPrice: 10000, quantity: 1, allocatedMinor: 0, deliveryState: "in_transit" },
+        ],
+      }),
+    );
+    const result = await getSettlementContextAction({ orders: [{ orderId: ORDER_ID, deliveredItemIds: [ITEM_ID] }] });
+    expect(result).toMatchObject({
+      ok: true,
+      contexts: [{ closesOrder: false, plan: { kind: "nothingToSettle" }, defaultChecked: false }],
+    });
+  });
+
+  it("zero settlement: hides a full settlement entirely covered by unassigned money", async () => {
+    getOrderDetailMock.mockResolvedValue(orderDetailFixture());
+    getStoreDebtByCurrencyMock.mockResolvedValue([{ currencyCode: "USD", unassignedMinor: 5000 }]);
+    const result = await getSettlementContextAction({ orders: [{ orderId: ORDER_ID, deliveredItemIds: [ITEM_ID] }] });
+    expect(result).toMatchObject({
+      ok: true,
+      contexts: [{ closesOrder: true, plan: { kind: "nothingToSettle" }, defaultChecked: false }],
+    });
   });
 
   it("rejects an unauthenticated caller", async () => {
@@ -237,6 +326,34 @@ describe("getSettlementContextAction", () => {
 });
 
 describe("retrySettlementAction", () => {
+  it("regression: retries same-date orders by readable id despite reversed item positions", async () => {
+    const secondId = "clh4444444444abcdefghijk";
+    getDeliveryDetailMock.mockResolvedValue({
+      status: "DELIVERED",
+      sourceOrders: [
+        { orderId: secondId, items: [{ id: ITEM_ID_2 }] },
+        { orderId: ORDER_ID, items: [{ id: ITEM_ID }] },
+      ],
+    });
+    getOrderDetailMock.mockImplementation(async (id: string) => ({
+      ...orderDetailFixture(),
+      id,
+      status: "COMPLETED",
+      humanReadableId: id === ORDER_ID ? "ORD-001" : "ORD-002",
+    }));
+    runOrderCloseMoneyTransactionMock.mockResolvedValue([]);
+    await retrySettlementAction({
+      deliveryId: DELIVERY_ID,
+      settleRemainder: true,
+      settlementDate: new Date("2026-05-01"),
+    });
+    expect(
+      runOrderCloseMoneyTransactionMock.mock.calls[0][0].closedOrders.map(
+        (order: { orderId: string }) => order.orderId,
+      ),
+    ).toEqual([ORDER_ID, secondId]);
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     getSessionMock.mockResolvedValue(AUTHENTICATED_SESSION);
@@ -281,6 +398,7 @@ describe("retrySettlementAction", () => {
     const result = await retrySettlementAction({
       deliveryId: DELIVERY_ID,
       settleRemainder: true,
+      settlementIntents: [{ orderId: ORDER_ID, branchHint: "full" }],
       settlementDate: new Date("2026-05-01T00:00:00.000Z"),
     });
 
@@ -350,6 +468,10 @@ describe("retrySettlementAction", () => {
     await retrySettlementAction({
       deliveryId: DELIVERY_ID,
       settleRemainder: true,
+      settlementIntents: [
+        { orderId: ORDER_ID, branchHint: "full" },
+        { orderId: "clh4444444444abcdefghijk", branchHint: "partial_computed" },
+      ],
       settlementDate: new Date("2026-05-01T00:00:00.000Z"),
     });
 

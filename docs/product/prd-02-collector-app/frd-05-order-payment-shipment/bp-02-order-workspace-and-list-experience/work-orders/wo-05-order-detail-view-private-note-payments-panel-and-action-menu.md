@@ -7,7 +7,7 @@ status: ACTIVE
 parent: BP-02
 source_features:
   - FEAT-0014
-last_updated: 2026-04-26
+last_updated: 2026-11-19
 implementation_status: IMPLEMENTED
 ---
 
@@ -391,6 +391,7 @@ Server-side trim comparison lives in `saveOrderNote` (`orderMutations.ts`). Opti
 
 ### Payments panel
 
+- On mobile, focusing a payment field keeps it visible above the software keyboard through the canonical `ModalSheet`. After repeated keyboard height changes, focus loss, or keyboard dismissal with the input still focused, the sheet returns to the same resting coordinates and natural height, with no residual inline height or bottom offset. The regression is covered by `src/components/modules/Modal/_tests/ModalSheetKeyboard.test.tsx` and the isolated browser fixture in `e2e/modal-keyboard.spec.ts`; real iOS Safari and Android Chrome keyboard behavior still requires device verification.
 - Adding a valid payment updates `paidAmount`, `remainingAmount`, and `paymentPercentage` immediately (optimistic) and keeps the values after the Server Action response.
 - Adding a payment greater than `remainingAmount` is rejected both client-side (button disabled) and server-side (error visible).
 - Adding a payment exactly equal to `remainingAmount` completes the fully-paid state; the add CTA disappears.

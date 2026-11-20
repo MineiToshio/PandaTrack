@@ -15,6 +15,7 @@ import { domainDateToIsoString } from "@/lib/domainDate";
 import {
   clearPendingSettlement,
   formatSettledTotals,
+  getRemainingPendingSettlement,
   readPendingSettlement,
   writePendingSettlement,
   type PendingSettlementEntry,
@@ -72,6 +73,8 @@ export default function DeliveryDetailClient({
 }: DeliveryDetailClientProps) {
   const router = useRouter();
   const t = useTranslations("deliveries");
+  const tArrival = useTranslations("orders.detail.quickArrival");
+  const tPayment = useTranslations("orders.detail.storePayment");
   const { addToast } = useToast();
   const { announceProgression } = useProgressionFeedback();
 
@@ -368,18 +371,29 @@ export default function DeliveryDetailClient({
           addToast(t("detail.toast.retryNoLongerPending"), { variant: "neutral" });
           return;
         }
-        const stillFailing = result.outcomes.some((outcome) => outcome.status !== "settled");
-        if (stillFailing) {
-          addToast(t("detail.toast.retrySettlementError"), { variant: "error" });
-          return;
-        }
-        clearPendingSettlement(pendingEntry.deliveryId);
-        setPendingEntry(null);
+        const remainingEntry = getRemainingPendingSettlement(pendingEntry, result.outcomes);
+        if (remainingEntry) writePendingSettlement(remainingEntry);
+        else clearPendingSettlement(pendingEntry.deliveryId);
+        setPendingEntry(remainingEntry);
+
         const settledLabel = formatSettledTotals(result.outcomes, locale);
-        addToast(
-          settledLabel ? t("detail.toast.retrySettled", { amount: settledLabel }) : t("detail.toast.retrySettledPlain"),
-          { variant: "success" },
-        );
+        if (settledLabel) {
+          addToast(t("detail.toast.retrySettled", { amount: settledLabel }), { variant: "success" });
+        }
+        const refusedOutcome = result.outcomes.find((outcome) => outcome.status === "refused");
+        if (refusedOutcome) {
+          const key = `error.${refusedOutcome.error}` as const;
+          addToast(
+            tArrival("settlement.refused", {
+              reason: tPayment.has(key as never) ? tPayment(key as never) : tPayment("error.server_error"),
+            }),
+            { variant: "error" },
+          );
+        } else if (remainingEntry) {
+          addToast(t("detail.toast.retrySettlementError"), { variant: "error" });
+        } else if (!settledLabel) {
+          addToast(t("detail.toast.retrySettledPlain"), { variant: "success" });
+        }
         router.refresh();
       },
       () => {

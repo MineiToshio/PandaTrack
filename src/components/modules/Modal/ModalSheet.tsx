@@ -5,6 +5,7 @@ import { Drawer } from "vaul";
 import { cn } from "@/lib/styles";
 import type { ModalProps } from "./Modal.types";
 import { hasModalFooter, ModalFooter, ModalHeader } from "./ModalContent";
+import { useSheetKeyboardViewport } from "./useSheetKeyboardViewport";
 
 /**
  * # ModalSheet — mobile bottom sheet (ADR 0008 Extension · Adaptive)
@@ -42,6 +43,7 @@ export default function ModalSheet({
   descriptionId: descriptionIdProp,
   closeButtonLabel,
 }: ModalProps) {
+  const contentRef = useSheetKeyboardViewport(isOpen);
   const generatedTitleId = useId();
   const generatedDescriptionId = useId();
   const titleId = titleIdProp ?? generatedTitleId;
@@ -56,7 +58,13 @@ export default function ModalSheet({
   };
 
   return (
-    <Drawer.Root open={isOpen} onOpenChange={handleOpenChange} dismissible={isDismissible} direction="bottom">
+    <Drawer.Root
+      open={isOpen}
+      onOpenChange={handleOpenChange}
+      dismissible={isDismissible}
+      direction="bottom"
+      repositionInputs={false}
+    >
       <Drawer.Portal>
         <Drawer.Overlay
           className={cn(
@@ -66,11 +74,12 @@ export default function ModalSheet({
           )}
         />
         <Drawer.Content
+          ref={contentRef}
           role={role}
           aria-labelledby={titleId}
           aria-describedby={hasSubtitle ? descriptionId : undefined}
           className={cn(
-            "fixed right-0 bottom-0 left-0 z-[var(--z-modal,80)] flex max-h-[78vh] flex-col [outline:none]",
+            "fixed right-0 bottom-[var(--sheet-keyboard-offset,0px)] left-0 z-[var(--z-modal,80)] flex max-h-[min(var(--sheet-max-height,78dvh),var(--sheet-viewport-height,100dvh))] flex-col [outline:none]",
             "[border-radius:20px_20px_0_0] [background:var(--surface-elevated)] [border-top:1px_solid_var(--border-strong)]",
             "[box-shadow:0_-8px_32px_color-mix(in_oklch,var(--text-primary)_22%,transparent)]",
             className,
@@ -96,8 +105,9 @@ export default function ModalSheet({
           />
           {children != null && children !== false && (
             <div
+              data-modal-sheet-body=""
               className={cn(
-                "flex-1 overflow-y-auto px-6 pt-4",
+                "min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 pt-4",
                 // Without a footer the body is the last thing in the sheet, so it also inherits the
                 // footer's job of clearing the iOS home indicator.
                 hasModalFooter({ primaryAction, secondaryAction, tertiaryAction })

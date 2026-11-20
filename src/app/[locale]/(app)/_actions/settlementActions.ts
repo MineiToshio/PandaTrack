@@ -1,5 +1,6 @@
 "use server";
 
+import { compareSettlementOrders } from "@/lib/deliveries/settlementOrder";
 import * as Sentry from "@sentry/nextjs";
 import { getSession } from "@/lib/auth/auth-server";
 import { getPostHogClient } from "@/lib/analytics/posthog-server";
@@ -45,7 +46,7 @@ export type SettlementOrderContext = {
       product of the order DELIVERED. Purely a client-facing prediction: the actual write always
       re-derives this from the delivery transaction's own commit (`persistDerivedOrderStatuses`). */
   closesOrder: boolean;
-  /** Unassigned money currently sitting in this order's (store, currency) pool. */
+  /** Unassigned money remaining in this order's (store, currency) pool at its turn in the preview. */
   unassignedMinor: number;
   plan: SettlementPlanPreview;
   /** The checkbox's recommended default for this order, per the double-counting guard (`FR-08-44`,
@@ -93,21 +94,35 @@ export async function getSettlementContextAction(input: {
       parsed.data.orders.map((order) => order.orderId),
     );
 
-    for (const { orderId, deliveredItemIds } of parsed.data.orders) {
-      const order: OrderDetailFull | null = await getOrderDetail(orderId, userId);
-      if (!order) continue;
-
-      const deliveredIdSet = new Set(deliveredItemIds);
-      const closesOrder = order.items.every(
-        (item) => item.deliveryState === "delivered" || deliveredIdSet.has(item.id),
+    const requestedOrders = await Promise.all(
+      parsed.data.orders.map(async ({ orderId, deliveredItemIds }) => {
+        const order: OrderDetailFull | null = await getOrderDetail(orderId, userId);
+        if (!order) return null;
+        const deliveredIdSet = new Set(deliveredItemIds);
+        const closesOrder = order.items.every(
+          (item) => item.deliveryState === "delivered" || deliveredIdSet.has(item.id),
+        );
+        return { order, orderId, deliveredIdSet, closesOrder };
+      }),
+    );
+    // The write path consumes closed orders first, oldest first, with the readable id breaking ties.
+    const orderedRequests = requestedOrders
+      .filter((entry) => entry !== null)
+      .sort((a, b) =>
+        compareSettlementOrders({ ...a.order, closesOrder: a.closesOrder }, { ...b.order, closesOrder: b.closesOrder }),
       );
-
+    const remainingPoolByKey = new Map<string, number>();
+    for (const { order, orderId, deliveredIdSet, closesOrder } of orderedRequests) {
       let debtRows = debtRowsByStoreId.get(order.storeId);
       if (!debtRows) {
         debtRows = await getStoreDebtByCurrency(userId, order.storeId);
         debtRowsByStoreId.set(order.storeId, debtRows);
       }
-      const unassignedMinor = debtRows.find((row) => row.currencyCode === order.currencyCode)?.unassignedMinor ?? 0;
+      const poolKey = `${order.storeId}:${order.currencyCode}`;
+      const unassignedMinor =
+        remainingPoolByKey.get(poolKey) ??
+        debtRows.find((row) => row.currencyCode === order.currencyCode)?.unassignedMinor ??
+        0;
 
       const openBalanceApprox = openBalanceByOrderId.get(orderId) ?? order.remainingAmount;
 
@@ -125,19 +140,20 @@ export async function getSettlementContextAction(input: {
 
       if (closesOrder) {
         const appliedUnassignedMinor = Math.max(0, Math.min(openBalanceApprox, unassignedMinor));
+        const amountMinor = openBalanceApprox - appliedUnassignedMinor;
+        remainingPoolByKey.set(poolKey, unassignedMinor - appliedUnassignedMinor);
         contexts.push({
           orderId,
           currencyCode: order.currencyCode,
           closesOrder,
           unassignedMinor,
-          plan: {
-            kind: "computedFull",
-            amountMinor: openBalanceApprox - appliedUnassignedMinor,
-            appliedUnassignedMinor,
-          },
+          plan:
+            amountMinor === 0
+              ? { kind: "nothingToSettle" }
+              : { kind: "computedFull", amountMinor, appliedUnassignedMinor },
           // Informative branch (WO-08 "double-counting guard"): consumption always runs first when
           // the arrival closes the order, so there is nothing left to double-count against.
-          defaultChecked: true,
+          defaultChecked: amountMinor > 0,
         });
         continue;
       }
@@ -175,8 +191,11 @@ export async function getSettlementContextAction(input: {
         currencyCode: order.currencyCode,
         closesOrder,
         unassignedMinor,
-        plan: { kind: "computedPartial", amountMinor: cappedAmount, undetailed: cappedAmount < computedSum },
-        defaultChecked: unassignedMinor === 0,
+        plan:
+          cappedAmount === 0
+            ? { kind: "nothingToSettle" }
+            : { kind: "computedPartial", amountMinor: cappedAmount, undetailed: cappedAmount < computedSum },
+        defaultChecked: cappedAmount > 0 && unassignedMinor === 0,
       });
     }
 
@@ -243,12 +262,16 @@ export async function retrySettlementAction(input: {
     const currencyByOrderId = new Map<string, string>();
     const closedOrderIds: string[] = [];
     const openOrderIds: string[] = [];
+    const sourceOrders = [];
     for (const group of delivery.sourceOrders) {
       const order = await getOrderDetail(group.orderId, userId);
       if (!order) continue;
       currencyByOrderId.set(group.orderId, order.currencyCode);
-      if (order.status === "COMPLETED") closedOrderIds.push(group.orderId);
-      else openOrderIds.push(group.orderId);
+      sourceOrders.push({ ...order, orderId: group.orderId, closesOrder: order.status === "COMPLETED" });
+    }
+    for (const order of sourceOrders.sort(compareSettlementOrders)) {
+      if (order.closesOrder) closedOrderIds.push(order.orderId);
+      else openOrderIds.push(order.orderId);
     }
 
     if (closedOrderIds.length === 0 && openOrderIds.length === 0) {

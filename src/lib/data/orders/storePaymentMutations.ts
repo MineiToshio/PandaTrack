@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nextjs";
 import { OrderItemDeliveryState, OrderStatus, type Prisma } from "../../../../generated/prisma/client";
 import { isWholeMajorAmount, isZeroDecimalCurrency } from "@/lib/currency";
 import { MAX_PAYMENT_AMOUNT } from "@/lib/orders/orderValidation";
@@ -1002,6 +1003,7 @@ export async function resolveSettlementPlan(
     const base = isSingleProductOrder ? order.totalCost : (item.unitPrice as number) * item.quantity;
     const alreadyAllocated = allocatedByItemId.get(item.id) ?? 0;
     const lineAmount = Math.max(0, base - alreadyAllocated);
+    if (lineAmount === 0) continue;
     itemLines.push({ orderItemId: item.id, amountMinor: lineAmount });
     computedSum += lineAmount;
   }
@@ -1012,6 +1014,7 @@ export async function resolveSettlementPlan(
   // BR-08-16 forbids in every branch, and once an order-level line forced the cap, the app can no
   // longer honestly say which item's own line shrank and by how much.
   const cappedAmount = Math.min(computedSum, openBalance);
+  if (cappedAmount === 0) return { kind: "nothingToSettle" };
   if (cappedAmount < computedSum) {
     return { kind: "computedPartial", amountMinor: cappedAmount, undetailed: true, itemLines: null, coveredItemIds };
   }
@@ -1072,8 +1075,8 @@ export type ClosedOrderInput = {
 /**
  * One closed order's outcome from the money transaction.
  *
- * `status: "pending"` means this order was never attempted because an earlier order in the same
- * batch was refused: the caller's `Retry` re-invokes with the same (or a narrowed) `closedOrders`
+ * `status: "pending"` means this order failed with an infrastructure error or was not attempted
+ * after an earlier order failed: the caller's `Retry` re-invokes with the same (or a narrowed) `closedOrders`
  * list, and every order here is safe to reattempt because consumption is idempotent and settlement
  * always re-resolves from current state.
  */
@@ -1087,6 +1090,16 @@ export type OrderCloseMoneyOutcome =
       error: CreateStorePaymentError;
     }
   | { orderId: string; status: "pending"; consumedMinor: null; settledAmountMinor: null };
+
+// Settlement validation depends on the post-consumption balance. A refusal must roll back
+// the transaction, so it cannot be returned from inside the callback. Close-time consumption
+// is independently required and is retried alone after the rollback.
+class SettlementRefusalRollback extends Error {
+  constructor(readonly error: CreateStorePaymentError) {
+    super(error);
+    this.name = "SettlementRefusalRollback";
+  }
+}
 
 /**
  * The order-close money transaction (`FR-08-46`, `ADR 0032`, `ADR 0033`): the call site for
@@ -1106,10 +1119,11 @@ export type OrderCloseMoneyOutcome =
  * `Delivery` or `OrderItem.deliveryState`, only `StorePayment` / `PaymentAllocation` / the order's
  * own allocation cache.
  *
- * One `runSerializableTransaction` PER ORDER, not one for the whole batch: each order's consumption
- * and settlement commit (or refuse) together, but one order's outcome never rolls back another's
- * already-committed write. Orders are processed in the sequence the caller passes (`orderDate ASC,
- * humanReadableId ASC` for a store-scoped batch, `FR-08-45`); a store-scoped batch therefore drains
+ * Transactions are scoped per order, not to the whole batch: each order's consumption
+ * and settlement are attempted together. A settlement refusal rolls back that attempt, then a
+ * separate consumption-only transaction preserves the close-time invariant. One order's outcome
+ * never rolls back another's already-committed write. Orders are processed in the sequence the caller
+ * passes (`orderDate ASC, humanReadableId ASC` for a store-scoped batch); a store-scoped batch therefore drains
  * one shared unassigned pool deterministically, one order at a time.
  *
  * On the first refused order, processing STOPS: every following order in `closedOrders` is
@@ -1173,16 +1187,13 @@ export async function runOrderCloseMoneyTransaction(input: {
       }
 
       const amountMinor = plan.kind === "manual" ? closedOrder.settlement.manualAmountMinor : plan.amountMinor;
+      if (plan.kind !== "manual" && amountMinor === 0) {
+        return { orderId: closedOrder.orderId, status: "settled", consumedMinor, settledAmountMinor: null };
+      }
       if (amountMinor === undefined) {
         // The plan asked the collector for a figure and the caller supplied none. Refused the same
         // way a malformed amount always is, rather than guessing or writing a zero payment.
-        return {
-          orderId: closedOrder.orderId,
-          status: "refused",
-          consumedMinor,
-          settledAmountMinor: null,
-          error: "AMOUNT_INVALID",
-        };
+        throw new SettlementRefusalRollback("AMOUNT_INVALID");
       }
 
       const written = await createStorePaymentInTx(tx, {
@@ -1202,34 +1213,41 @@ export async function runOrderCloseMoneyTransaction(input: {
       });
 
       if (!written.ok) {
-        return {
-          orderId: closedOrder.orderId,
-          status: "refused",
-          consumedMinor,
-          settledAmountMinor: null,
-          error: written.error,
-        };
+        throw new SettlementRefusalRollback(written.error);
       }
 
       return { orderId: closedOrder.orderId, status: "settled", consumedMinor, settledAmountMinor: amountMinor };
-    }).catch((error: unknown) => {
-      // `createStorePaymentInTx`'s one sentinel, mapped the same way `createStorePayment` maps it.
-      // The whole transaction (including this order's own consumption) rolled back: an exceedingly
-      // rare concurrent-delete race, safe to report as refused and safe to retry.
-      if (error instanceof DeclaredItemsRollback) {
-        return {
-          orderId: closedOrder.orderId,
-          status: "refused",
-          consumedMinor: 0,
-          settledAmountMinor: null,
-          error: "ITEM_ORDER_MISMATCH",
-        } satisfies OrderCloseMoneyOutcome;
-      }
-      throw error;
-    });
+    })
+      .catch(async (error: unknown) => {
+        if (error instanceof SettlementRefusalRollback || error instanceof DeclaredItemsRollback) {
+          const consumedMinor = closedOrder.closed
+            ? await runSerializableTransaction((tx) =>
+                consumeUnassignedStoreMoneyOnOrderClose(tx, userId, closedOrder.orderId, deliveryId),
+              )
+            : 0;
+          return {
+            orderId: closedOrder.orderId,
+            status: "refused",
+            consumedMinor,
+            settledAmountMinor: null,
+            error: error instanceof SettlementRefusalRollback ? error.error : "ITEM_ORDER_MISMATCH",
+          } satisfies OrderCloseMoneyOutcome;
+        }
+        throw error;
+      })
+      .catch((error: unknown): OrderCloseMoneyOutcome => {
+        // Preserve earlier commits when either this order's payment or its recovery transaction fails.
+        Sentry.withScope((scope) => {
+          scope.setTag("feature", "delivery_settlement");
+          scope.setTag("action", "order_close_money_transaction");
+          scope.setContext("settlement", { deliveryId, orderId: closedOrder.orderId });
+          Sentry.captureException(error);
+        });
+        return { orderId: closedOrder.orderId, status: "pending", consumedMinor: null, settledAmountMinor: null };
+      });
 
     outcomes.push(outcome);
-    if (outcome.status === "refused") stopped = true;
+    if (outcome.status !== "settled") stopped = true;
   }
 
   return outcomes;

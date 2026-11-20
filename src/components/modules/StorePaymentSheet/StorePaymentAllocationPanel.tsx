@@ -268,17 +268,13 @@ export default function StorePaymentAllocationPanel({
   // hidden, not only past the length at which typing starts to beat scanning.
   const showSearch = status === "ready" && (lines.length > ALLOCATION_SEARCH_THRESHOLD || hiddenSettledCount > 0);
 
-  // The filter selects orders, not lines: a matched order keeps every one of its lines, settled ones
-  // included, which is how a product already paid in full is found again.
+  // A reference match keeps the order whole; a product match keeps only that product.
   const visibleLines = useMemo(() => {
     if (query.trim() === "") return lines.filter(isListedWithoutQuery);
-    const matchedOrderIds = new Set<string>();
-    for (const line of lines) {
-      const label = labelByKey.get(line.key) ?? "";
-      if (matchesQuery(label, query) || matchesQuery(line.humanReadableId, query)) matchedOrderIds.add(line.orderId);
-    }
-    return lines.filter((line) => matchedOrderIds.has(line.orderId));
-  }, [lines, labelByKey, query, isListedWithoutQuery]);
+    return lines.filter(
+      (line) => matchesQuery(line.humanReadableId, query) || (line.name !== null && matchesQuery(line.name, query)),
+    );
+  }, [lines, query, isListedWithoutQuery]);
 
   /** The last line of each order block, which is where an order-level message is written. */
   const lastLineKeyByOrderId = useMemo(() => {
@@ -290,9 +286,8 @@ export default function StorePaymentAllocationPanel({
   /**
    * The first line of each order block, which is where that order's own balance is named. Once per
    * order and never per line: the balance is one budget its lines compete for, so printing it on
-   * each of them would advertise it as many times as the order has products (ADR 0027). Blocks stay
-   * whole under the filter, which selects orders, so the first visible line of a block is its first
-   * line.
+   * each of them would advertise it as many times as the order has products (ADR 0027). The first
+   * visible product carries the header even when earlier products are filtered out.
    */
   const firstLineKeyByOrderId = useMemo(() => {
     const map = new Map<string, string>();

@@ -68,6 +68,7 @@ function buildInput(overrides: Partial<QuickArrivalActionInput> = {}): QuickArri
     currencyCode: "USD",
     exchangeRate: null,
     settleRemainder: true,
+    settlementIntents: [{ orderId: VALID_ORDER_ID }],
     ...overrides,
   };
 }

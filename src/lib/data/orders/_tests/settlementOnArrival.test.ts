@@ -1,10 +1,21 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
-const { prismaMock } = vi.hoisted(() => ({
+const { prismaMock, captureExceptionMock } = vi.hoisted(() => ({
+  captureExceptionMock: vi.fn(),
   prismaMock: { $transaction: vi.fn() },
 }));
 
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
+vi.mock("@sentry/nextjs", () => ({
+  withScope: (callback: (scope: unknown) => void) => callback({ setTag: vi.fn(), setContext: vi.fn() }),
+  captureException: captureExceptionMock,
+}));
+
+import { getRemainingPendingSettlement } from "@/lib/deliveries/pendingSettlementStore";
+import {
+  buildClosedOrderInputs,
+  buildOpenOrderSettlementInputs,
+} from "@/app/[locale]/(app)/_actions/settlementActionHelpers";
 
 import { OrderItemDeliveryState } from "../../../../../generated/prisma/client";
 import {
@@ -41,7 +52,62 @@ function fullyDeliveredOrder(overrides: Partial<OrderCloseMoneyOrder> = {}): Ord
   };
 }
 
+function paidDeliveredItemFixture(includeUnpaidItem = false) {
+  return makeOrderCloseMoneyTx({
+    orders: [
+      {
+        id: "order-1",
+        storeId: "store-1",
+        currencyCode: "PEN",
+        totalCost: includeUnpaidItem ? 18000 : 15000,
+        allocatedAmountMinor: 5000,
+        items: [
+          { id: "item-a", unitPrice: 5000, quantity: 1, deliveryState: DELIVERED },
+          { id: "item-b", unitPrice: 10000, quantity: 1, deliveryState: IN_TRANSIT },
+          ...(includeUnpaidItem ? [{ id: "item-c", unitPrice: 3000, quantity: 1, deliveryState: DELIVERED }] : []),
+        ],
+      },
+    ],
+    payments: [
+      {
+        id: "p-existing",
+        storeId: "store-1",
+        currencyCode: "PEN",
+        amount: 5000,
+        paymentDate: new Date("2019-06-01"),
+        allocations: [{ orderId: "order-1", orderItemId: "item-a", amountMinor: 5000 }],
+      },
+    ],
+  });
+}
+
 describe("resolveSettlementPlan", () => {
+  it("zero settlement: a paid delivered item has nothing to settle while other items remain unpaid", async () => {
+    const fixture = paidDeliveredItemFixture();
+    expect(
+      await resolveSettlementPlan(fixture as never, "user-1", {
+        orderId: "order-1",
+        deliveredItemIds: ["item-a"],
+      }),
+    ).toEqual({ kind: "nothingToSettle" });
+  });
+
+  it("zero settlement: mixed paid and unpaid items produce only a positive allocation line", async () => {
+    const fixture = paidDeliveredItemFixture(true);
+    expect(
+      await resolveSettlementPlan(fixture as never, "user-1", {
+        orderId: "order-1",
+        deliveredItemIds: ["item-a", "item-c"],
+      }),
+    ).toEqual({
+      kind: "computedPartial",
+      amountMinor: 3000,
+      undetailed: false,
+      itemLines: [{ orderItemId: "item-c", amountMinor: 3000 }],
+      coveredItemIds: ["item-a", "item-c"],
+    });
+  });
+
   it("full-order branch, order not yet fully allocated: amount = openBalanceMinor, no per-item lines required", async () => {
     const fixture = makeOrderCloseMoneyTx({
       orders: [fullyDeliveredOrder({ totalCost: 10000, allocatedAmountMinor: 4000 })],
@@ -547,6 +613,210 @@ describe("createStorePaymentInTx / createStorePayment write path for a resolved 
 });
 
 describe("runOrderCloseMoneyTransaction", () => {
+  it.each(["payment", "consumption-only"])(
+    "regression: %s infrastructure failure preserves committed outcomes and retry never pays A twice",
+    async (failureStage) => {
+      const fixture = makeOrderCloseMoneyTx({
+        orders: [
+          fullyDeliveredOrder({
+            id: "order-a",
+            items: [
+              { id: "item-a", unitPrice: null, quantity: 1, deliveryState: DELIVERED },
+              { id: "item-later", unitPrice: null, quantity: 1, deliveryState: IN_TRANSIT },
+            ],
+          }),
+          fullyDeliveredOrder({
+            id: "order-b",
+            items: [{ id: "item-b", unitPrice: 10000, quantity: 1, deliveryState: DELIVERED }],
+          }),
+          fullyDeliveredOrder({
+            id: "order-c",
+            items: [{ id: "item-c", unitPrice: 10000, quantity: 1, deliveryState: DELIVERED }],
+          }),
+        ],
+      });
+      const infrastructureError = new Error("Database connection lost");
+      let transactionCount = 0;
+      prismaMock.$transaction.mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) => {
+        transactionCount += 1;
+        if (transactionCount === (failureStage === "payment" ? 2 : 3)) throw infrastructureError;
+        const ordersBefore = structuredClone(fixture.__state.ordersById);
+        const paymentsBefore = structuredClone(fixture.__state.paymentRows);
+        try {
+          return await callback(fixture);
+        } catch (error) {
+          fixture.__state.ordersById.clear();
+          for (const [id, order] of ordersBefore) fixture.__state.ordersById.set(id, order);
+          fixture.__state.paymentRows.splice(0, fixture.__state.paymentRows.length, ...paymentsBefore);
+          throw error;
+        }
+      });
+      const settlementDate = new Date("2026-01-01");
+      const outcomes = await runOrderCloseMoneyTransaction({
+        userId: "user-1",
+        deliveryId: "delivery-1",
+        closedOrders: [
+          {
+            orderId: "order-a",
+            closed: false,
+            settlement: { enabled: true, deliveredItemIds: ["item-a"], settlementDate, manualAmountMinor: 1000 },
+          },
+          {
+            orderId: "order-b",
+            closed: true,
+            settlement: { enabled: true, deliveredItemIds: ["item-b"], settlementDate: new Date("2018-01-01") },
+          },
+          { orderId: "order-c", closed: true },
+        ],
+      });
+      expect(outcomes).toEqual([
+        { orderId: "order-a", status: "settled", consumedMinor: 0, settledAmountMinor: 1000 },
+        { orderId: "order-b", status: "pending", consumedMinor: null, settledAmountMinor: null },
+        { orderId: "order-c", status: "pending", consumedMinor: null, settledAmountMinor: null },
+      ]);
+      expect(captureExceptionMock).toHaveBeenCalledExactlyOnceWith(infrastructureError);
+      const pending = getRemainingPendingSettlement(
+        {
+          deliveryId: "delivery-1",
+          settleRemainder: true,
+          settlementDate: "2026-01-01",
+          createdAt: new Date().toISOString(),
+          settlementIntents: [{ orderId: "order-a", manualAmountMinor: 1000 }, { orderId: "order-b" }],
+        },
+        outcomes,
+      );
+      expect(pending?.settlementIntents).toEqual([{ orderId: "order-b" }]);
+      const params = { ...pending!, settlementDate, submittedProductIds: ["item-a", "item-b", "item-c"] };
+      await runOrderCloseMoneyTransaction({
+        userId: "user-1",
+        deliveryId: "delivery-1",
+        closedOrders: [
+          ...buildClosedOrderInputs(["order-b", "order-c"], params),
+          ...buildOpenOrderSettlementInputs(["order-a"], params),
+        ],
+      });
+      const paymentsForA = fixture.__state.paymentRows.filter((payment) =>
+        payment.allocations.some((line) => line.orderId === "order-a"),
+      );
+      expect(paymentsForA).toHaveLength(1);
+      expect(paymentsForA[0].amount).toBe(1000);
+      expect(fixture.__state.ordersById.get("order-a")?.allocatedAmountMinor).toBe(1000);
+    },
+  );
+
+  it.each(["DATE_BEFORE_ORDER", "STORE_DEBT_EXCEEDED", "AMOUNT_FRACTIONAL_SUBUNITS", "ITEM_ORDER_MISMATCH"])(
+    "regression: refused settlement %s rolls back then commits close-time consumption separately",
+    async (errorCode) => {
+      const fixture = makeOrderCloseMoneyTx({
+        orders: [
+          fullyDeliveredOrder({
+            currencyCode: errorCode === "AMOUNT_FRACTIONAL_SUBUNITS" ? "JPY" : "USD",
+            totalCost: errorCode === "AMOUNT_FRACTIONAL_SUBUNITS" ? 10050 : 10000,
+          }),
+        ],
+        payments: [
+          {
+            id: "pool",
+            storeId: "store-1",
+            currencyCode: errorCode === "AMOUNT_FRACTIONAL_SUBUNITS" ? "JPY" : "USD",
+            amount: 2000,
+            paymentDate: new Date("2019-01-01"),
+            allocations: [],
+          },
+        ],
+      });
+      if (errorCode === "STORE_DEBT_EXCEEDED") {
+        fixture.order.aggregate.mockResolvedValue({ _sum: { totalCost: 9000 } });
+      }
+      if (errorCode === "ITEM_ORDER_MISMATCH") fixture.orderItem.count.mockResolvedValue(0);
+      const rejected = vi.fn();
+      const committed = vi.fn();
+      prismaMock.$transaction.mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) => {
+        const ordersBefore = structuredClone(fixture.__state.ordersById);
+        const paymentsBefore = structuredClone(fixture.__state.paymentRows);
+        try {
+          const result = await callback(fixture);
+          committed(result);
+          return result;
+        } catch (error) {
+          fixture.__state.ordersById.clear();
+          for (const [id, order] of ordersBefore) fixture.__state.ordersById.set(id, order);
+          fixture.__state.paymentRows.splice(0, fixture.__state.paymentRows.length, ...paymentsBefore);
+          rejected(error);
+          throw error;
+        }
+      });
+      const outcomes = await runOrderCloseMoneyTransaction({
+        userId: "user-1",
+        deliveryId: "delivery-1",
+        closedOrders: [
+          {
+            orderId: "order-1",
+            closed: true,
+            settlement: {
+              enabled: true,
+              deliveredItemIds: ["item-1"],
+              settlementDate: new Date(errorCode === "DATE_BEFORE_ORDER" ? "2018-01-01" : "2026-01-01"),
+            },
+          },
+        ],
+      });
+      expect(rejected).toHaveBeenCalledExactlyOnceWith(
+        expect.objectContaining({
+          name: errorCode === "ITEM_ORDER_MISMATCH" ? "DeclaredItemsRollback" : "SettlementRefusalRollback",
+        }),
+      );
+      expect(outcomes).toEqual([
+        { orderId: "order-1", status: "refused", consumedMinor: 2000, settledAmountMinor: null, error: errorCode },
+      ]);
+      expect(committed).toHaveBeenCalledExactlyOnceWith(2000);
+      expect(captureExceptionMock).not.toHaveBeenCalled();
+      if (errorCode !== "ITEM_ORDER_MISMATCH") expect(fixture.storePayment.create).not.toHaveBeenCalled();
+      expect(fixture.__state.paymentRows).toHaveLength(1);
+      expect(fixture.__state.ordersById.get("order-1")?.allocatedAmountMinor).toBe(2000);
+      expect(fixture.__state.paymentRows[0].allocations).toEqual([
+        expect.objectContaining({ orderId: "order-1", amountMinor: 2000 }),
+      ]);
+    },
+  );
+
+  it.each([false, true])(
+    "zero settlement: paid delivered items do not create zero payments or allocations (mixed=%s)",
+    async (mixed) => {
+      const fixture = paidDeliveredItemFixture(mixed);
+      runOrderCloseMoneyTx(prismaMock, fixture);
+      const outcomes = await runOrderCloseMoneyTransaction({
+        userId: "user-1",
+        deliveryId: "delivery-1",
+        closedOrders: [
+          {
+            orderId: "order-1",
+            closed: false,
+            settlement: {
+              enabled: true,
+              deliveredItemIds: mixed ? ["item-a", "item-c"] : ["item-a"],
+              settlementDate: new Date("2020-01-01"),
+            },
+          },
+        ],
+      });
+      expect(outcomes).toEqual([
+        { orderId: "order-1", status: "settled", consumedMinor: 0, settledAmountMinor: mixed ? 3000 : null },
+      ]);
+      if (mixed) {
+        expect(fixture.storePayment.create).toHaveBeenCalledTimes(1);
+        expect(fixture.__state.paymentRows.at(-1)).toMatchObject({
+          amount: 3000,
+          allocations: [{ orderId: "order-1", orderItemId: "item-c", amountMinor: 3000 }],
+        });
+      } else {
+        expect(fixture.storePayment.create).not.toHaveBeenCalled();
+        expect(fixture.paymentAllocation.createMany).not.toHaveBeenCalled();
+        expect(fixture.__state.paymentRows).toHaveLength(1);
+      }
+    },
+  );
+
   beforeEach(() => {
     vi.clearAllMocks();
   });

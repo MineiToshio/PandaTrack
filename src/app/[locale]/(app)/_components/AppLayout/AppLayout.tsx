@@ -3,6 +3,7 @@
 import { useCallback, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { ShellIdentityContext } from "@/contexts/ShellIdentityContext";
+import { FabVisibilityProvider } from "@/components/modules/CreateOrderFab/FabVisibilityContext";
 import { ToastProvider } from "@/contexts/ToastContext";
 import { ProgressionFeedbackProvider } from "@/contexts/ProgressionFeedbackContext";
 import Sidebar from "@/components/modules/Sidebar";
@@ -75,83 +76,85 @@ export default function AppLayout({
 
   return (
     <ShellIdentityContext.Provider value={{ user: currentUser, updateUser }}>
-      <ToastProvider fabOffsetActive={fabEligible}>
-        <ProgressionFeedbackProvider
-          locale={locale}
-          progressionVisible={progressionVisible}
-          onProgressionVisibleChange={setProgressionVisible}
-          welcomeCelebrationPending={welcomeCelebrationPending}
-        >
-          <ServiceWorkerRegistration />
-          <SessionKeepAlive />
-          <TimezoneCapture storedTimezone={storedTimezone} />
-          {/* Shell root: carries --sidebar-current-w so all children can reference it */}
-          <div
-            className="flex min-h-screen flex-col"
-            style={{ "--sidebar-current-w": sidebarCurrentW } as React.CSSProperties}
+      <FabVisibilityProvider>
+        <ToastProvider fabOffsetActive={fabEligible}>
+          <ProgressionFeedbackProvider
+            locale={locale}
+            progressionVisible={progressionVisible}
+            onProgressionVisibleChange={setProgressionVisible}
+            welcomeCelebrationPending={welcomeCelebrationPending}
           >
-            {/* Skip link */}
-            <a
-              href="#main-content"
-              className="focus:bg-surface sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[200] focus:rounded-lg focus:px-4 focus:py-2 focus:shadow-lg focus:outline-none"
+            <ServiceWorkerRegistration />
+            <SessionKeepAlive />
+            <TimezoneCapture storedTimezone={storedTimezone} />
+            {/* Shell root: carries --sidebar-current-w so all children can reference it */}
+            <div
+              className="flex min-h-screen flex-col"
+              style={{ "--sidebar-current-w": sidebarCurrentW } as React.CSSProperties}
             >
-              Saltar al contenido
-            </a>
+              {/* Skip link */}
+              <a
+                href="#main-content"
+                className="focus:bg-surface sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[200] focus:rounded-lg focus:px-4 focus:py-2 focus:shadow-lg focus:outline-none"
+              >
+                Saltar al contenido
+              </a>
 
-            {/* Desktop sidebar — PUSH: width drives content offset via --sidebar-current-w */}
-            <Sidebar
-              locale={locale}
-              currentUser={currentUser}
-              signOutLabel={signOutLabel}
-              expanded={expanded}
-              onToggle={toggle}
-              floatingOpen={floatingOpen}
-              onFloatingChange={setFloatingOpen}
-              storesHref={storesHref}
-              isAdmin={isAdmin}
-              showProgression={progressionVisible}
-            />
+              {/* Desktop sidebar — PUSH: width drives content offset via --sidebar-current-w */}
+              <Sidebar
+                locale={locale}
+                currentUser={currentUser}
+                signOutLabel={signOutLabel}
+                expanded={expanded}
+                onToggle={toggle}
+                floatingOpen={floatingOpen}
+                onFloatingChange={setFloatingOpen}
+                storesHref={storesHref}
+                isAdmin={isAdmin}
+                showProgression={progressionVisible}
+              />
 
-            {/* Mobile nav drawer */}
-            <AppNavDrawer
-              locale={locale}
-              currentUser={currentUser}
-              signOutLabel={signOutLabel}
-              isOpen={drawerOpen}
-              onClose={handleCloseDrawer}
-              returnFocusRef={burgerButtonRef}
-              storesHref={storesHref}
-              isAdmin={isAdmin}
-              showProgression={progressionVisible}
-            />
+              {/* Mobile nav drawer */}
+              <AppNavDrawer
+                locale={locale}
+                currentUser={currentUser}
+                signOutLabel={signOutLabel}
+                isOpen={drawerOpen}
+                onClose={handleCloseDrawer}
+                returnFocusRef={burgerButtonRef}
+                storesHref={storesHref}
+                isAdmin={isAdmin}
+                showProgression={progressionVisible}
+              />
 
-            {/* Content area: padded left on desktop to accommodate sidebar PUSH */}
-            <div className="flex min-w-0 flex-1 flex-col transition-[padding-left] duration-[var(--motion-base)] ease-[var(--ease-out-expressive)] motion-reduce:transition-none lg:pl-[var(--sidebar-current-w)]">
-              <HeaderTitleProvider>
-                <Header
-                  locale={locale}
-                  pathname={pathname ?? ""}
-                  drawerOpen={drawerOpen}
-                  onOpenDrawer={handleOpenDrawer}
-                  burgerButtonRef={burgerButtonRef}
-                />
-                <main
-                  id="main-content"
-                  className={cn(
-                    APP_SHELL_MAIN_CLASSNAME,
-                    // Reserve the same inset the FAB raises the toast by, so the last list card
-                    // never ends up underneath it. Matches the FAB's own `lg:hidden`.
-                    fabEligible && "max-lg:pb-[calc(var(--fab-offset)+var(--fab-h)+var(--space-3))]",
-                  )}
-                >
-                  {children}
-                </main>
-              </HeaderTitleProvider>
+              {/* Content area: padded left on desktop to accommodate sidebar PUSH */}
+              <div className="flex min-w-0 flex-1 flex-col transition-[padding-left] duration-[var(--motion-base)] ease-[var(--ease-out-expressive)] motion-reduce:transition-none lg:pl-[var(--sidebar-current-w)]">
+                <HeaderTitleProvider>
+                  <Header
+                    locale={locale}
+                    pathname={pathname ?? ""}
+                    drawerOpen={drawerOpen}
+                    onOpenDrawer={handleOpenDrawer}
+                    burgerButtonRef={burgerButtonRef}
+                  />
+                  <main
+                    id="main-content"
+                    className={cn(
+                      APP_SHELL_MAIN_CLASSNAME,
+                      // Reserve the same inset the FAB raises the toast by, so the last list card
+                      // never ends up underneath it. Matches the FAB's own `lg:hidden`.
+                      fabEligible && "max-lg:pb-[calc(var(--fab-offset)+var(--fab-h)+var(--space-3))]",
+                    )}
+                  >
+                    {children}
+                  </main>
+                </HeaderTitleProvider>
+              </div>
             </div>
-          </div>
-          <CreateOrderFab locale={locale} photoCounter={photoCounter} />
-        </ProgressionFeedbackProvider>
-      </ToastProvider>
+            <CreateOrderFab locale={locale} photoCounter={photoCounter} />
+          </ProgressionFeedbackProvider>
+        </ToastProvider>
+      </FabVisibilityProvider>
     </ShellIdentityContext.Provider>
   );
 }

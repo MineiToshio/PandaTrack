@@ -47,8 +47,8 @@ type UseQuickArrivalParams = {
  * Settlement on arrival (`WO-08`): the arrival itself is committed by the time this handler's
  * promise resolves, but the MONEY step (`moneyOutcomes`) can come back `refused` or `pending`
  * (the delivery transaction and the money transaction are independent, `ADR 0032`). When that
- * happens the arrival-only toast is shown with a `Retry` action, and the retry intent is persisted
- * to `pendingSettlementStore` so the affordance survives navigation to the delivery detail.
+ * happens the arrival stays confirmed. A refusal gets a separate payment notice; a pending outcome
+ * offers `Retry` and persists its intent so the affordance survives navigation to delivery detail.
  */
 export function useQuickArrival({ orderId, locale, source, sourceList }: UseQuickArrivalParams) {
   const t = useTranslations("orders");
@@ -100,9 +100,12 @@ export function useQuickArrival({ orderId, locale, source, sourceList }: UseQuic
           if (refusedOutcome) {
             clearPendingSettlement(deliveryId);
             const key = `error.${refusedOutcome.error}` as const;
-            addToast(tPayment.has(key as never) ? tPayment(key as never) : tPayment("error.server_error"), {
-              variant: "error",
-            });
+            addToast(
+              t("detail.quickArrival.settlement.refused", {
+                reason: tPayment.has(key as never) ? tPayment(key as never) : tPayment("error.server_error"),
+              }),
+              { variant: "error" },
+            );
             return;
           }
 
@@ -167,10 +170,14 @@ export function useQuickArrival({ orderId, locale, source, sourceList }: UseQuic
           // included, so each of them announces what it credited after raising its own toast. Only
           // one branch ever runs, so the collector sees the announcement exactly once.
           if (refusedOutcome) {
+            addToast(t("detail.quickArrival.toast.success", { count: result.productCount }), { variant: "success" });
             const key = `error.${refusedOutcome.error}` as const;
-            addToast(tPayment.has(key as never) ? tPayment(key as never) : tPayment("error.server_error"), {
-              variant: "error",
-            });
+            addToast(
+              t("detail.quickArrival.settlement.refused", {
+                reason: tPayment.has(key as never) ? tPayment(key as never) : tPayment("error.server_error"),
+              }),
+              { variant: "error" },
+            );
             announceProgression(result.progression);
             router.refresh();
             return;

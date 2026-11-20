@@ -18,7 +18,7 @@ children:
   - FRD-10
   - FRD-11
   - FRD-12
-last_updated: 2026-08-23
+last_updated: 2026-11-19
 ---
 
 # PRD-02 PandaTrack Collector App
@@ -97,6 +97,7 @@ A collector with lower order volume who still wants:
 - Budget awareness without accounting complexity
 - Trust and memory in the same workflow
 - Strong defaults, simple states, low ambiguity
+- Mobile form dialogs keep the focused field and actions above the software keyboard. Dismissing the keyboard restores the sheet's original position and natural height without a gap or clipped content; this is owned by the [canonical modal pattern](../../design/interface-patterns.md#5-modals-and-overlays), shared across features.
 
 ## MVP Workflow Priority
 

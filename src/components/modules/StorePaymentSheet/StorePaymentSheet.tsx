@@ -624,7 +624,7 @@ export default function StorePaymentSheet({
       initialFocusRef={amountRef}
       // The allocation list is the one dense task this sheet hosts, so on a phone it takes nearly the
       // whole screen instead of the default 78%: at 78% the list kept barely two rows in view.
-      className={activePanel === "allocation" ? "max-md:max-h-[92dvh]" : undefined}
+      className={activePanel === "allocation" ? "[--sheet-max-height:92dvh]" : undefined}
       primaryAction={{
         label: isSubmitting ? t("allocations.submitPending") : t("submit"),
         onClick: () => void handleConfirm(),

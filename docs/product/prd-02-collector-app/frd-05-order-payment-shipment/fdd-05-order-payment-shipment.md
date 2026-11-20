@@ -5,7 +5,7 @@ slug: order-payment-shipment
 title: Orders, Payments & Shipment — Feature Design Document
 status: ACTIVE
 parent: FRD-05
-last_updated: 2026-08-08
+last_updated: 2026-11-19
 prototype: ./prototype/order-payment-shipment.html
 design_system: ../../../design/README.md
 demo_anchors:
@@ -163,15 +163,14 @@ demo_anchors:
 >   width**: `1fr | auto | 140px` from `md` (52px rows) and `1fr | auto | 96px` below it (56px rows),
 >   every cell vertically centred, the name clamped to two lines on desktop and three on a phone.
 >   The order's `humanReadableId` is printed **once**, in the header that opens its block (with the
->   order's balance), and never repeated under each name: the filter keeps blocks whole, so the
->   header always travels with its rows. A hairline separates one block from the next. When an
+>   order's balance), and never repeated under each name: the header travels with the first visible product even when earlier products are filtered out. A hairline separates one block from the next. When an
 >   order's products cannot absorb its balance, a **"Resto del pedido"** row closes its block. The shortcut cell is a **fill
 >   control**, not a label: labelled **"Máx."**, it writes the largest amount assignable without
 >   invalidating the draft and prints no figure of its own, the amount it will write living only in
 >   its accessible name (`computeFillableMinor`, recomputed live). A settled line is **not listed
 >   unless searched for** (`FR-05-42`, 2026-10-07): the unfiltered list ends with a muted line,
 >   "{n} productos ya saldados no se muestran. Búscalos para verlos.", the filter is shown whenever
->   anything is hidden, a search brings back whole orders with their settled lines, and an order
+>   anything is hidden, a case- and accent-insensitive substring search (NFD, removing diacritics) matches product names and order identifiers. An identifier match brings back the whole order, including settled lines; a product-only match shows only matching products. No match shows the localized empty state with a clear-search action, and an order
 >   with nothing left but settled lines shows "Los productos de estos pedidos ya están saldados.
 >   Búscalos si quieres verlos." A settled line the draft is touching (money typed, a rule, a
 >   server refusal) stays listed until the panel is left, so emptying it never unmounts the field
@@ -297,10 +296,14 @@ demo_anchors:
 >   **not** to the document: `Modal` already listens at document level, so a single press meant to
 >   dismiss the arrival dialog would otherwise wipe the selection behind it. Dismissing the dialog
 >   keeps the selection.
-> - **The action bar** (`StoreGroupSelectionBar`) is `sticky` at the foot of the group's own card,
->   in flow, never `fixed` to the viewport, so it can never be ambiguous about which store it
->   belongs to; on touch it is lifted clear of the "Nuevo pedido" FAB with the same
->   `--fab-offset` + `--fab-h` contract `ToastContainer` uses. It carries the count
+> - **The action bar** (`StoreGroupSelectionBar`) replaces the mobile "Nuevo pedido" FAB:
+>   selection mode suppresses the FAB even before a product is marked, and exiting restores it.
+>   Below `lg` the bar floats in the bottom action slot, above the bottom safe area; at `lg` it
+>   stays sticky inside its store card. The list reserves the bar's measured height plus offset
+>   and safe area only while the mobile bar is visible, so the last product can scroll clear.
+>   It uses opaque `--surface-elevated`, `--border-strong` and `--elevation-2`, following
+>   `docs/design/interface-patterns.md` §1. Text uses `--text-secondary` (AA in both themes).
+>   It carries the count
 >   ("3 productos de 2 pedidos") and **never an amount** (a large share of pending products have no
 >   derivable price, so any total would be blank or wrong), plus exactly two actions: "Cancelar"
 >   (ghost) and "Ya me llegó" (primary, right). The count is never truncated: the two buttons alone
@@ -1483,6 +1486,12 @@ specifics:
   the native `<input type="date">`; add/edit product opens a bottom sheet.
 - **Modals → sheets**: pay, cancel, delete, discard, discrepancy render as `ModalSheet`
   (vaul) on mobile; the FX flow renders as a full-screen sheet.
+  The canonical sheet keeps the focused amount/note field visible inside its scrollable body
+  above the software keyboard and restores its exact resting position and natural height on
+  dismissal, including keyboard height changes and focus moves. Payment allocation's `92dvh`
+  cap also respects the visible viewport. This behavior belongs to the
+  [shared keyboard contract](../../../design/interface-patterns.md#5-modals-and-overlays),
+  rather than individual payment forms.
 
 Known issue inherited at the list level: the mobile action row can overflow the viewport by
 a few pixels at ~390px (tracked in the FRD).
