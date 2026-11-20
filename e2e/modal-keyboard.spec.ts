@@ -6,6 +6,12 @@ let server: ViteDevServer;
 let fixtureUrl: string;
 const VIEWPORT_HEIGHT = 812;
 
+test.use({
+  viewport: { width: 375, height: VIEWPORT_HEIGHT },
+  isMobile: true,
+  hasTouch: true,
+});
+
 test.beforeAll(async () => {
   server = await createServer({
     configFile: false,
