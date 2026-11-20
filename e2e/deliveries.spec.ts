@@ -195,7 +195,7 @@ async function createOrderWithTwoItems(page: Page, item1: string, item2: string)
     .getByLabel(/^name$/i)
     .first()
     .fill(item1);
-  await page.getByRole("button", { name: /^add item$/i }).click();
+  await page.getByRole("button", { name: /^add (item|product)$/i }).click();
   await page
     .getByLabel(/^name$/i)
     .nth(1)

@@ -51,7 +51,7 @@ async function createOrderWithOneItem(page: Page): Promise<string> {
 
   const isMobileViewport = (page.viewportSize()?.width ?? 0) < MOBILE_BREAKPOINT_PX;
   if (isMobileViewport) {
-    await page.getByRole("button", { name: /^add item$/i }).click();
+    await page.getByRole("button", { name: /^add (item|product)$/i }).click();
     await page.getByLabel(/^name$/i).fill(`E2E entry item ${Date.now()}`);
     await page.getByRole("button", { name: /^add$/i }).click();
   } else {
